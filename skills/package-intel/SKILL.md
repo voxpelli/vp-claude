@@ -7,7 +7,6 @@ allowed-tools:
   - Grep
   - Glob
   - Bash
-  - Agent
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__write_note
   - mcp__basic-memory__edit_note

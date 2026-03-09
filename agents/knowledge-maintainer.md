@@ -43,7 +43,6 @@ tools:
   - Read
   - Grep
   - Glob
-  - Bash
   - Agent
   - Skill
   - mcp__basic-memory__search_notes
@@ -77,7 +76,7 @@ fix them. You are the write-capable counterpart to the read-only gardener.
 **Auto-fix without confirmation** (structural, low-risk):
 - Add missing `## Observations` or `## Relations` sections to notes
 - Add `[category]` formatting to unformatted observation lines
-- Fix `type` frontmatter to match the correct schema (e.g., `npm_package` → `npm-package`)
+- Fix `type` frontmatter to match the correct schema (e.g., `npm-package` → `npm_package`)
 - Link orphan notes to related notes via `## Relations`
 - Add missing `[[wiki-links]]` where two notes clearly reference each other
 - Run `/package-intel` for Tier 1 undocumented packages (3+ imports in codebase)
@@ -100,7 +99,7 @@ run a lightweight audit:
 
 ```
 list_directory(dir_name="/", depth=2)
-schema_validate(noteType="npm-package")
+schema_validate(note_type="npm_package")
 recent_activity(timeframe="90d", output_format="json")
 ```
 
@@ -108,10 +107,12 @@ Categorize findings into auto-fixable vs needs-confirmation.
 
 ### 2. Auto-fix structural issues
 
+> All tool call examples below are MCP tool invocations — call them directly, do not write or execute scripts.
+
 Work through auto-fixable items in priority order:
 
 **Missing sections:** Read the note, identify what's missing, add it:
-```python
+```
 edit_note(
   identifier="note-title",
   operation="append",
@@ -120,29 +121,31 @@ edit_note(
 ```
 
 **Broken frontmatter:** Fix type values to match schema conventions:
-```python
+```
 edit_note(
   identifier="note-title",
   operation="find_replace",
-  find_text="type: npm_package",
-  content="type: npm-package"
+  find_text="type: npm-package",
+  content="type: npm_package"
 )
 ```
 
 **Orphan linking:** For each orphan, use `build_context` and `search_notes`
-to find related notes, then add relations:
-```python
+to find related notes, then add relations using `find_replace` (not `append`
+with `section` — that appends to end of file, not end of section):
+```
 edit_note(
   identifier="orphan-note",
-  operation="append",
-  section="Relations",
-  content="- relates_to [[Related Note]]"
+  operation="find_replace",
+  find_text="- relates_to [[Last Existing Relation]]",
+  content="- relates_to [[Last Existing Relation]]\n- relates_to [[Related Note]]"
 )
 ```
 
 **Important `edit_note` gotcha:** Do NOT use `operation="append"` with
-`section="Observations"` — it appends to end of file, not end of section.
-Use `operation="find_replace"` targeting the last observation line instead.
+`section="Observations"` or `section="Relations"` — it appends to end of
+file, not end of section. Use `operation="find_replace"` targeting the last
+line of the section instead.
 
 ### 3. Enrich undocumented packages
 
@@ -209,6 +212,7 @@ Same principles as the knowledge-gardener:
   structured access
 - Use `build_context(max_related=10)` to limit traversal
 - Batch related edits on the same note into minimal `edit_note` calls
+- Examples in this file use bare pseudo-code — invoke them as MCP tool calls, never as scripts
 
 ## Guidelines
 

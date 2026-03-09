@@ -7,6 +7,7 @@ allowed-tools:
   - Grep
   - Glob
   - Bash
+  - Skill
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__list_directory
 ---

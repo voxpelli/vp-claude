@@ -34,7 +34,6 @@ tools:
   - Read
   - Grep
   - Glob
-  - Bash
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__read_note
   - mcp__basic-memory__build_context
@@ -85,13 +84,13 @@ list_directory(dir_name="schema", depth=1)
 
 Run `schema_validate` for each note type that has a schema:
 ```
-schema_validate(noteType="npm-package")
-schema_validate(noteType="engineering")
+schema_validate(note_type="npm_package")
+schema_validate(note_type="engineering")
 ```
 
 Also run `schema_infer` to check field frequencies:
 ```
-schema_infer(note_type="npm-package")
+schema_infer(note_type="npm_package")
 schema_infer(note_type="engineering")
 ```
 
