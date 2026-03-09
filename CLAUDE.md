@@ -71,7 +71,7 @@ Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Prompt-based hooks are pre
 
 - Title: `npm:<package-name>` (resolves `[[npm:pkg]]` wiki-links)
 - Directory: `npm/`
-- Type: `npm-package` (kebab-case, matches BM schema)
+- Type: `npm_package` (snake_case — Basic Memory enforces snake_case for all type fields)
 - Three enrichment layers: frontmatter metadata, `## Observations` with `[category]` tags, `## Relations` with `[[wiki-links]]`
 - Use `edit_note` with `find_replace` for updates — `append` with `section` goes to end of file, not end of section
 

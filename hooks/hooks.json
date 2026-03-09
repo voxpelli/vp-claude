@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "A Basic Memory note was just written or edited. Check if the note follows the expected structure for its type:\n\n1. If the note has `type: npm-package` in frontmatter, verify it has: `packages` array in frontmatter, `## Observations` section with `[category]` tagged items, `## Relations` section with at least one `[[wiki-link]]`, and title matching `npm:<package-name>` convention.\n\n2. For any note type, verify it has: valid YAML frontmatter with `title`, at least one `## Observations` or `## Relations` section.\n\nIf issues are found, provide a brief systemMessage describing what's missing. If the note looks well-formed, return with no systemMessage.\n\nDo NOT block the operation — this is informational feedback only.",
+            "prompt": "A Basic Memory note was just written or edited. Check if the note follows the expected structure for its type:\n\n1. If the note has `type: npm_package` in frontmatter, verify it has: `packages` array in frontmatter, `## Observations` section with `[category]` tagged items, `## Relations` section with at least one `[[wiki-link]]`, and title matching `npm:<package-name>` convention.\n\n2. For any note type, verify it has: valid YAML frontmatter with `title`, at least one `## Observations` or `## Relations` section.\n\nIf issues are found, provide a brief systemMessage describing what's missing. If the note looks well-formed, return with no systemMessage.\n\nDo NOT block the operation — this is informational feedback only.",
             "timeout": 15
           }
         ]

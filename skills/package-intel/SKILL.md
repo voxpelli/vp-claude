@@ -117,13 +117,13 @@ See `references/note-template.md` for the full template. Key conventions:
 
 - **Title**: `npm:<package-name>` (resolves `[[npm:pkg]]` wiki-links)
 - **Directory**: `npm/`
-- **Type**: `npm-package` (kebab-case, matches BM schema)
+- **Type**: `npm_package` (snake_case — Basic Memory's canonical convention)
 - **Three layers**: frontmatter metadata, `## Observations` with `[category]` tags, `## Relations` with `[[wiki-links]]`
 
 ### 5. Write or update the note
 
 **New package:** Use `write_note` with the full template. Set
-`note_type="npm-package"`.
+`note_type="npm_package"`.
 
 **Existing package:** Use `edit_note` with `find_replace` to insert new
 observations after the last existing `- [category]` line in `## Observations`.

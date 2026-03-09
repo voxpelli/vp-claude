@@ -6,7 +6,7 @@ Use this template when creating new `npm:*` notes with `write_note`. Place in th
 ```markdown
 ---
 title: npm:<package-name>
-type: npm-package
+type: npm_package
 tags: [<domain>, <subdomain>]
 packages: ["<npm-package-name>"]
 ---
@@ -55,7 +55,7 @@ GitHub: [owner/repo](https://github.com/owner/repo) | v<version> | <license>
 
 Always a JSON array with the exact npm package name: `["@fastify/postgres"]`.
 One package per note. This is how `schema_validate` matches notes to the
-`npm-package` schema.
+`npm_package` schema.
 
 ### Observation categories
 
