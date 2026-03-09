@@ -31,9 +31,6 @@ General health check — gardener produces the report, maintainer would act on i
 model: inherit
 color: cyan
 tools:
-  - Read
-  - Grep
-  - Glob
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__read_note
   - mcp__basic-memory__build_context

@@ -43,7 +43,6 @@ tools:
   - Read
   - Grep
   - Glob
-  - Agent
   - Skill
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__read_note
@@ -57,14 +56,6 @@ tools:
   - mcp__basic-memory__schema_validate
   - mcp__basic-memory__list_directory
   - mcp__basic-memory__view_note
-  - mcp__deepwiki__ask_question
-  - mcp__deepwiki__read_wiki_structure
-  - mcp__plugin_context7_context7__resolve-library-id
-  - mcp__plugin_context7_context7__query-docs
-  - mcp__tavily__tavily_search
-  - mcp__tavily__tavily_extract
-  - mcp__raindrop__find_bookmarks
-  - mcp__raindrop__fetch_bookmark_content
 ---
 
 You are an autonomous agent that actively maintains and enhances a Basic Memory

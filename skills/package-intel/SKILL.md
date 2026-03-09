@@ -3,18 +3,14 @@ name: package-intel
 description: "This skill should be used when the user asks to 'research package', 'package intel', 'what does [npm-pkg] do', 'add package to knowledge graph', 'enrich [pkg]', or when adding depends_on [[npm:*]] relations. Researches an npm package using five-source enrichment (DeepWiki, Context7, Tavily, Raindrop, changelog) and creates/updates a structured Basic Memory note."
 user-invocable: true
 allowed-tools:
-  - Read
-  - Grep
-  - Glob
   - Bash
   - mcp__basic-memory__search_notes
+  - mcp__basic-memory__read_note
   - mcp__basic-memory__write_note
   - mcp__basic-memory__edit_note
-  - mcp__basic-memory__read_note
   - mcp__basic-memory__build_context
   - mcp__basic-memory__list_directory
   - mcp__deepwiki__ask_question
-  - mcp__deepwiki__read_wiki_structure
   - mcp__plugin_context7_context7__resolve-library-id
   - mcp__plugin_context7_context7__query-docs
   - mcp__tavily__tavily_search

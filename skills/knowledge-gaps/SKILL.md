@@ -5,8 +5,6 @@ user-invocable: true
 allowed-tools:
   - Read
   - Grep
-  - Glob
-  - Bash
   - Skill
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__list_directory
@@ -49,21 +47,19 @@ Limit this fallback to Tier 1 candidates to avoid excessive API calls.
 
 ### 3. Tier by import frequency
 
-For undocumented packages, estimate importance by counting imports across
-the project's source directories. Discover source directories dynamically:
+For undocumented packages, count imports using the Grep tool. The underlying
+ripgrep automatically respects `.gitignore`, skipping `node_modules`, `.git`,
+and other ignored paths:
 
-```bash
-# Find directories containing JS/TS source files (exclude node_modules, test fixtures)
-find . -maxdepth 2 -type f \( -name "*.js" -o -name "*.ts" -o -name "*.mjs" \) \
-  -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/fixtures/*" \
-  | sed 's|/[^/]*$||' | sort -u | head -20
+```
+Grep(pattern="from ['\"]<package-name>['\"/]", glob="**/*.{js,ts,mjs,cjs}", output_mode="count")
+Grep(pattern="require\\(['\"]<package-name>['\"/]", glob="**/*.{js,ts,mjs,cjs}", output_mode="count")
 ```
 
-Then count imports using the Grep tool:
-```
-Grep(pattern="from ['\"]<package-name>", path="<source-dir>", output_mode="count")
-Grep(pattern="require\\(['\"]<package-name>", path="<source-dir>", output_mode="count")
-```
+For scoped packages (e.g., `@fastify/postgres`), match the full name literally —
+the `@` and `/` don't need escaping in the pattern. If `node_modules` is not
+gitignored in this project, scope the `path` parameter to a known source directory
+instead: `Grep(pattern=..., path="src/", output_mode="count")`.
 
 Classify:
 - **Tier 1** (3+ files import it): Must document — core dependency
