@@ -119,10 +119,10 @@ Add to `~/.claude/settings.json`:
 claude mcp add basic-memory -- basic-memory mcp
 ```
 
-**[basic-memory-skills](https://github.com/basicmachines-co/basic-memory-skills)** — core `memory-*` skills this plugin builds on:
+**[basic-memory-skills](https://github.com/basicmachines-co/basic-memory-skills)** — core `memory-*` skills this plugin builds on. Install via [skills.sh](https://skills.sh), the open agent skills CLI:
 
 ```bash
-/install-skills basicmachines-co/basic-memory-skills
+npx skills add basicmachines-co/basic-memory-skills
 ```
 
 ### Required for `/package-intel` enrichment pipeline
