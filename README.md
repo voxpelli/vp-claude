@@ -32,10 +32,10 @@ Scans your `package.json`, checks which packages have Basic Memory notes, and ti
 ### Coverage: 12/47 packages documented (25%)
 
 ### Tier 1 — Must Document (3+ imports)
-| Package     | Import Count | Domain              |
-|-------------|-------------|---------------------|
-| fastify     | 12          | engineering/fastify/ |
-| pg          | 8           | engineering/        |
+| Package | Import Count | Domain               |
+|---------|--------------|----------------------|
+| fastify | 12           | engineering/fastify/ |
+| pg      | 8            | engineering/         |
 
 ### Tier 2 — Should Document (1-2 imports)
 ...
@@ -121,26 +121,26 @@ claude mcp add basic-memory -- basic-memory mcp
 
 The five-source research pipeline needs these additional MCP servers and plugins:
 
-**DeepWiki** — repository documentation and architecture questions:
+**[DeepWiki](https://docs.devin.ai/work-with-devin/deepwiki-mcp)** — repository documentation and architecture questions:
 
 ```bash
 claude mcp add --transport http deepwiki https://mcp.deepwiki.com/mcp
 ```
 
-**Context7** — library documentation and code examples:
+**[Context7](https://context7.com/docs/clients/claude-code)** — library documentation and code examples:
 
 ```bash
 /plugin install context7@claude-plugins-official
 ```
 
-**Tavily** — web search for security advisories, CVEs, and recent articles. Requires a [Tavily API key](https://tavily.com):
+**[Tavily](https://docs.tavily.com/documentation/mcp)** — web search for security advisories, CVEs, and recent articles. Requires a [Tavily API key](https://tavily.com):
 
 ```bash
 claude mcp add --transport http tavily https://mcp.tavily.com/mcp \
   --header "Authorization: Bearer tvly-YOUR_KEY_HERE"
 ```
 
-**Raindrop** — searches your bookmarked articles. Requires a [Raindrop.io](https://raindrop.io) account with API access:
+**[Raindrop](https://help.raindrop.io/mcp)** — searches your bookmarked articles. Requires a [Raindrop.io](https://raindrop.io) Pro account:
 
 ```bash
 claude mcp add --transport http raindrop https://api.raindrop.io/rest/v2/ai/mcp
@@ -148,7 +148,7 @@ claude mcp add --transport http raindrop https://api.raindrop.io/rest/v2/ai/mcp
 
 ### Optional
 
-- **`gh` CLI** — enables changelog analysis via GitHub releases in `/package-intel`
+- **[`gh` CLI](https://cli.github.com)** — enables changelog analysis via GitHub releases in `/package-intel`
 
 ## Plugin structure
 
