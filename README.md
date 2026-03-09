@@ -73,7 +73,7 @@ Three hooks run automatically in the background:
 
 - **PostToolUse** — After any `write_note` or `edit_note`, validates the note structure against its schema. Catches malformed notes immediately.
 - **PreCompact** — Before context compaction, reviews the conversation for decisions, lessons, and gotchas worth saving. Writes them to Basic Memory so insights survive across sessions.
-- **SessionStart** — Reminds Claude that graph tools and research skills are available.
+- **SessionStart** — Injects a brief knowledge graph status summary (note count, recent activity, top gaps) so Claude is graph-aware from the start of every session.
 
 ## Installation
 
@@ -177,7 +177,7 @@ hooks/
  /knowledge-gaps   -> knowledge-gaps skill-> gap report + offers /package-intel
  "audit graph"     -> knowledge-gardener  -> health report (read-only)
  "fix the graph"   -> knowledge-maintainer-> structural fixes + confirmations
-                      ├── runs gardener audit internally
+                      ├── audits graph inline (lightweight)
                       ├── auto-fixes structure
                       ├── auto-runs /package-intel for Tier 1 gaps
                       └── asks before content changes
