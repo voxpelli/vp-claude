@@ -105,19 +105,10 @@ Add to `~/.claude/settings.json`:
 
 ### Required
 
-**[Basic Memory](https://github.com/basicmachines-co/basic-memory)** MCP server — the knowledge graph backend.
+**[Basic Memory](https://github.com/basicmachines-co/basic-memory)** MCP server — the knowledge graph backend:
 
-Add to `~/.claude/.mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "basic-memory": {
-      "command": "uvx",
-      "args": ["basic-memory", "mcp"]
-    }
-  }
-}
+```bash
+claude mcp add basic-memory -- basic-memory mcp
 ```
 
 **[basic-memory-skills](https://github.com/basicmachines-co/basic-memory-skills)** — core `memory-*` skills this plugin builds on:
@@ -130,7 +121,11 @@ Add to `~/.claude/.mcp.json`:
 
 The five-source research pipeline needs these additional MCP servers and plugins:
 
-**DeepWiki** — repository documentation and architecture questions. Enable in Claude Code settings or add as an MCP server.
+**DeepWiki** — repository documentation and architecture questions:
+
+```bash
+claude mcp add --transport http deepwiki https://mcp.deepwiki.com/mcp
+```
 
 **Context7** — library documentation and code examples:
 
@@ -138,40 +133,17 @@ The five-source research pipeline needs these additional MCP servers and plugins
 /plugin install context7@claude-plugins-official
 ```
 
-**Tavily** — web search for security advisories, CVEs, and recent articles. Requires a [Tavily API key](https://tavily.com).
+**Tavily** — web search for security advisories, CVEs, and recent articles. Requires a [Tavily API key](https://tavily.com):
 
-Add to `~/.claude/.mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "tavily": {
-      "command": "npx",
-      "args": ["-y", "@anthropic-ai/mcp-server-tavily@latest"],
-      "env": {
-        "TAVILY_API_KEY": "tvly-YOUR_KEY_HERE"
-      }
-    }
-  }
-}
+```bash
+claude mcp add --transport http tavily https://mcp.tavily.com/mcp \
+  --header "Authorization: Bearer tvly-YOUR_KEY_HERE"
 ```
 
-**Raindrop** — searches your bookmarked articles. Requires a [Raindrop API key](https://developer.raindrop.io).
+**Raindrop** — searches your bookmarked articles. Requires a [Raindrop.io](https://raindrop.io) account with API access:
 
-Add to `~/.claude/.mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "raindrop": {
-      "command": "npx",
-      "args": ["-y", "@anthropic-ai/mcp-server-raindrop@latest"],
-      "env": {
-        "RAINDROP_API_KEY": "YOUR_KEY_HERE"
-      }
-    }
-  }
-}
+```bash
+claude mcp add --transport http raindrop https://api.raindrop.io/rest/v2/ai/mcp
 ```
 
 ### Optional
