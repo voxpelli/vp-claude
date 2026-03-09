@@ -3,3 +3,4 @@
 *.swo
 *~
 .claude/*.local.md
+node_modules/

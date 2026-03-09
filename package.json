@@ -1,0 +1,24 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "npm run check:plugin && npm run check:md && npm run check:shell",
+    "check:plugin": "node validate-plugin.mjs",
+    "check:md": "remark . --quiet --frail",
+    "check:shell": "shellcheck hooks/session-start.sh"
+  },
+  "devDependencies": {
+    "js-yaml": "^4.1.0",
+    "remark-cli": "^12.0.0",
+    "remark-frontmatter": "^5.0.0",
+    "remark-preset-lint-consistent": "^6.0.0",
+    "remark-preset-lint-recommended": "^7.0.0"
+  },
+  "remarkConfig": {
+    "plugins": [
+      "remark-frontmatter",
+      "remark-preset-lint-consistent",
+      "remark-preset-lint-recommended"
+    ]
+  }
+}
