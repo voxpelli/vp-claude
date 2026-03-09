@@ -100,16 +100,29 @@ Flag notes missing any layer.
 
 ### 3. Orphan detection
 
-Use `build_context` with specific notes to check connectivity:
+**Pass 1 — Identify zero-outgoing notes:**
+For each note from the step 1 inventory, call:
 ```
-build_context(url="memory://npm/*", depth=1, max_related=5)
+read_note(identifier="<permalink>", include_frontmatter=false, output_format="json")
 ```
 
-Find notes that:
-- Have zero incoming links (no other note references them)
-- Have zero outgoing links (reference nothing)
+Check the structured `relations` field in the JSON response. Notes with an empty
+or missing `relations` array have zero outgoing links. Collect these as candidates.
 
-True orphans (zero in + zero out) are highest priority.
+Batch this efficiently — read in groups, stop early if the graph is large (>100 notes).
+For large graphs, sample: prioritize notes in `engineering/` and `npm/` directories first.
+
+**Pass 2 — Check incoming links for candidates:**
+For each zero-outgoing candidate, call:
+```
+build_context(url="memory://<permalink>", depth=1, max_related=5)
+```
+
+If the result contains only the note itself (no related nodes returned), it has zero
+incoming links → true orphan (zero in + zero out).
+
+True orphans are highest priority. Notes with zero outgoing but some incoming links
+are semi-orphans — worth flagging but lower priority.
 
 ### 4. Relation integrity
 
@@ -128,6 +141,9 @@ Report frequently-referenced but undocumented packages as candidates for
 Use `recent_activity(timeframe="90d", output_format="json")` to find recently
 updated notes. Cross-reference against the full inventory from step 1 to
 identify notes NOT updated in 90+ days. Flag these for review.
+
+Note: `recent_activity` may paginate on large graphs. Paginate until `has_more=false`
+before cross-referencing with the step 1 inventory.
 
 ### 6. Duplicate detection
 

@@ -64,8 +64,16 @@ Acts on audit findings with tiered autonomy:
 | Fix frontmatter type to match schema | Auto-fix |
 | Run `/package-intel` for Tier 1 undocumented packages | Auto-fix |
 | Merge duplicate notes | Asks first |
-| Archive/delete abandoned notes | Asks first |
+| Archive abandoned notes (move to `archive/`) | Asks first |
 | Rewrite note prose | Asks first |
+
+### Session Reflector — On-demand conversation capture
+
+A user-triggered agent that reviews the current conversation and saves insights to Basic Memory with your approval:
+
+> "Reflect on this session" / "Save what we learned" / "Commit this to memory"
+
+Unlike the automatic PreCompact hook (brief, fires under compaction pressure), the reflector is deliberate — it extracts candidates, finds the right target notes, shows a grouped preview, and waits before writing anything. Uses the same `[decision]`, `[lesson]`, `[gotcha]`, `[pattern]`, `[limitation]`, `[breaking]` observation vocabulary as PreCompact for consistency.
 
 ### Hooks — Automated quality guardrails
 
@@ -163,6 +171,7 @@ skills/
 agents/
   knowledge-gardener.md                Read-only graph auditor
   knowledge-maintainer.md              Read-write graph enhancer
+  session-reflector.md                 On-demand conversation capture
 hooks/
   hooks.json                           PostToolUse, PreCompact, SessionStart
   session-start.sh                     Graph context injection script
@@ -185,11 +194,20 @@ hooks/
  [any BM write]    -> PostToolUse hook    -> schema validation feedback
  [context compact] -> PreCompact hook     -> insights saved to BM
  [session start]   -> SessionStart hook   -> graph context reminder
+ "save insights"   -> session-reflector   -> preview + write to BM
 ```
 
 ## Relationship to upstream
 
 This plugin depends on but does not duplicate the 9 core `memory-*` skills from [`basicmachines-co/basic-memory-skills`](https://github.com/basicmachines-co/basic-memory-skills) (notes, schema, tasks, lifecycle, reflect, etc.). It adds npm-ecosystem-specific research, project-level gap analysis, and autonomous graph maintenance on top of those foundations.
+
+## Possible future additions
+
+These are scoped out of current releases but worth tracking:
+
+- **Tier-drift log for `knowledge-gaps`** — track when packages move between tiers over time so you can see which undocumented packages are becoming more critical (medium effort, medium value)
+- **Per-audit reflection notes from `knowledge-gardener`** — the gardener is intentionally read-only; surfacing audit findings to Basic Memory would need a new output mechanism (e.g. a paired write agent step or a PostToolUse hook on the audit output)
+- **Adaptive research depth in `package-intel`** — extend the 60-day freshness check into a multi-tier strategy: skip specific sources based on what changed since last update, weight sources by past yield for a given package (Phase 2+ from ACE/MemInsight research patterns)
 
 ## License
 

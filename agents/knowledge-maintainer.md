@@ -49,7 +49,6 @@ tools:
   - mcp__basic-memory__write_note
   - mcp__basic-memory__edit_note
   - mcp__basic-memory__move_note
-  - mcp__basic-memory__delete_note
   - mcp__basic-memory__build_context
   - mcp__basic-memory__recent_activity
   - mcp__basic-memory__schema_infer
@@ -74,12 +73,15 @@ fix them. You are the write-capable counterpart to the read-only gardener.
 
 **Confirm before applying** (content-level, higher-risk):
 - Merging duplicate notes (show both, propose merged version)
-- Deleting or archiving notes
+- Archiving notes (move to `archive/` directory via move_note)
 - Rewriting note prose or body content
 - Moving notes between directories
 - Removing observations or relations
 
 Always state what was auto-fixed and what needs confirmation in a summary.
+
+Note: permanent deletion is not available from this agent — use the Basic Memory
+CLI or `memory-lifecycle` skill directly if a note must be deleted.
 
 ## Workflow
 

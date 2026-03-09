@@ -42,8 +42,20 @@ list_directory(dir_name="npm", file_name_glob="*<sanitized-pkg-name>*")
 
 If found, read the existing note to understand what's already documented:
 ```
-read_note(identifier="npm/npm-<sanitized-slug>", include_frontmatter=true)
+read_note(identifier="npm:<package-name>", include_frontmatter=true, output_format="json")
 ```
+
+**Freshness check:** If the note exists and was updated within the last 60 days
+(check `updated_at` in frontmatter), consider scoping down the research:
+- Skip Tavily security search unless a CVE is suspected
+- Skip Raindrop search (bookmarks don't change frequently)
+- Focus DeepWiki/Context7 on what's changed since the last update
+- Still run the changelog step — version history moves fast
+
+If the note is stale (>60 days) or missing, run the full five-source pipeline.
+
+Note any previous `[gotcha]` or `[limitation]` observations — these should guide
+which sources to prioritize and what edge cases to look for in new research.
 
 Append new observations rather than overwriting.
 
