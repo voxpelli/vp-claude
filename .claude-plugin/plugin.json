@@ -1,0 +1,12 @@
+{
+  "name": "vp-claude",
+  "version": "0.1.0",
+  "description": "Basic Memory power tools: npm package research, knowledge gap analysis, graph maintenance, and automated quality hooks.",
+  "author": {
+    "name": "Pelle Wessman",
+    "url": "https://github.com/voxpelli"
+  },
+  "repository": "https://github.com/voxpelli/vp-claude",
+  "license": "MIT",
+  "keywords": ["basic-memory", "knowledge-graph", "npm", "research"]
+}
