@@ -1,15 +1,22 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "vp-plugins",
-  "description": "Basic Memory power tools for Claude Code",
+  "description": "Knowledge graph management and sprint workflow automation for Claude Code",
   "owner": {
     "name": "Pelle Wessman"
   },
   "plugins": [
     {
-      "name": "vp-claude",
+      "name": "vp-knowledge",
       "source": "./",
       "description": "npm package research, knowledge gap analysis, graph maintenance agents, and quality hooks for Basic Memory",
-      "version": "0.2.0"
+      "version": "0.4.0"
+    },
+    {
+      "name": "vp-beads",
+      "source": { "source": "github", "repo": "voxpelli/claude-beads" },
+      "description": "Sprint workflow automation: retrospectives, upstream vendor tracking, and vendor sync for projects using beads and Basic Memory",
+      "version": "0.1.0"
     }
   ]
 }

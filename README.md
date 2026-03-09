@@ -1,4 +1,4 @@
-# vp-claude
+# vp-knowledge
 
 A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https://github.com/basicmachines-co/basic-memory) into an actively maintained knowledge graph. Research npm packages from five sources at once, find documentation gaps in your projects, and let autonomous agents audit and improve your notes — all without leaving your terminal.
 
@@ -89,7 +89,7 @@ Three hooks run automatically in the background:
 
 ```bash
 /plugin marketplace add voxpelli/vp-claude
-/plugin install vp-claude@vp-plugins
+/plugin install vp-knowledge@vp-plugins
 ```
 
 ### Manual settings.json
@@ -104,7 +104,7 @@ Add to `~/.claude/settings.json`:
     }
   },
   "enabledPlugins": {
-    "vp-claude@vp-plugins": true
+    "vp-knowledge@vp-plugins": true
   }
 }
 ```

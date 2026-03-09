@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0][] - 2026-03-09
+
+### Changed
+
+- **Plugin renamed from `vp-claude` to `vp-knowledge`** — the old name
+  didn't reflect what the plugin does (Basic Memory knowledge graph
+  management). If you have `vp-claude@vp-plugins` installed, uninstall
+  and reinstall as `vp-knowledge@vp-plugins`.
+- **`vp-plugins` marketplace adds `vp-beads`** — sprint workflow automation
+  (retrospectives, upstream vendor tracking) now available as a separate
+  installable plugin at `voxpelli/vp-beads`.
+
 ## [0.3.0][] - 2026-03-09
 
 ### Fixed
@@ -58,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.4.0]: https://github.com/voxpelli/vp-claude/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/voxpelli/vp-claude/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/voxpelli/vp-claude/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/voxpelli/vp-claude/releases/tag/v0.1.0

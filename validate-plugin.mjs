@@ -81,51 +81,73 @@ if (plugin !== undefined) {
   }
 }
 
-// --- marketplace.json ---
+// --- marketplace.json (optional) ---
 
 const marketplacePath = join(ROOT, '.claude-plugin', 'marketplace.json')
-await readJson(marketplacePath)
+if (existsSync(marketplacePath)) {
+  const marketplace = await readJson(marketplacePath)
 
-// --- hooks.json ---
+  // Version consistency: local ./ entry must match plugin.json version
+  if (marketplace !== undefined && plugin !== undefined) {
+    const m = /** @type {Record<string, unknown>} */ (marketplace)
+    const pluginVersion = /** @type {Record<string, unknown>} */ (plugin).version
+    const entries = Array.isArray(m.plugins) ? m.plugins : []
+    for (const entry of entries) {
+      const e = /** @type {Record<string, unknown>} */ (entry)
+      if (e.source === './') {
+        if (e.version !== pluginVersion) {
+          error(
+            marketplacePath,
+            `Local "./" entry version "${String(e.version)}" does not match plugin.json version "${String(pluginVersion)}"`,
+          )
+        }
+      }
+    }
+  }
+}
+
+// --- hooks.json (optional) ---
 
 const hooksPath = join(ROOT, 'hooks', 'hooks.json')
-const hooksData = await readJson(hooksPath)
-if (hooksData !== undefined) {
-  const h = /** @type {Record<string, unknown>} */ (hooksData)
-  if (!h.hooks || typeof h.hooks !== 'object') {
-    error(hooksPath, 'Missing top-level "hooks" object')
-  } else {
-    const hooks = /** @type {Record<string, unknown>} */ (h.hooks)
-    for (const [event, entries] of Object.entries(hooks)) {
-      if (!Array.isArray(entries)) {
-        error(hooksPath, `hooks.${event} must be an array`)
-        continue
-      }
-      for (const entry of entries) {
-        const e = /** @type {Record<string, unknown>} */ (entry)
-        if (typeof e.matcher !== 'string') {
-          error(hooksPath, `hooks.${event}: entry missing "matcher" (string)`)
-        }
-        if (!Array.isArray(e.hooks)) {
-          error(hooksPath, `hooks.${event}: entry missing "hooks" (array)`)
+if (existsSync(hooksPath)) {
+  const hooksData = await readJson(hooksPath)
+  if (hooksData !== undefined) {
+    const h = /** @type {Record<string, unknown>} */ (hooksData)
+    if (!h.hooks || typeof h.hooks !== 'object') {
+      error(hooksPath, 'Missing top-level "hooks" object')
+    } else {
+      const hooks = /** @type {Record<string, unknown>} */ (h.hooks)
+      for (const [event, entries] of Object.entries(hooks)) {
+        if (!Array.isArray(entries)) {
+          error(hooksPath, `hooks.${event} must be an array`)
           continue
         }
-        for (const hook of e.hooks) {
-          const hk = /** @type {Record<string, unknown>} */ (hook)
-          if (hk.type !== 'prompt' && hk.type !== 'command') {
-            error(hooksPath, `hooks.${event}: hook type must be "prompt" or "command", got "${String(hk.type)}"`)
+        for (const entry of entries) {
+          const e = /** @type {Record<string, unknown>} */ (entry)
+          if (typeof e.matcher !== 'string') {
+            error(hooksPath, `hooks.${event}: entry missing "matcher" (string)`)
           }
-          if (typeof hk.timeout !== 'number') {
-            error(hooksPath, `hooks.${event}: hook missing "timeout" (number)`)
+          if (!Array.isArray(e.hooks)) {
+            error(hooksPath, `hooks.${event}: entry missing "hooks" (array)`)
+            continue
           }
-          // Validate command hook paths
-          if (hk.type === 'command' && typeof hk.command === 'string') {
-            const resolved = hk.command.replace(/\$\{CLAUDE_PLUGIN_ROOT\}/g, ROOT)
-            // Extract the file path from the command (after "bash " or similar)
-            const parts = resolved.split(/\s+/)
-            const scriptPath = parts.find((p) => p.startsWith('/') || p.startsWith('./'))
-            if (scriptPath && !existsSync(scriptPath)) {
-              error(hooksPath, `hooks.${event}: referenced file does not exist: ${hk.command}`)
+          for (const hook of e.hooks) {
+            const hk = /** @type {Record<string, unknown>} */ (hook)
+            if (hk.type !== 'prompt' && hk.type !== 'command') {
+              error(hooksPath, `hooks.${event}: hook type must be "prompt" or "command", got "${String(hk.type)}"`)
+            }
+            if (typeof hk.timeout !== 'number') {
+              error(hooksPath, `hooks.${event}: hook missing "timeout" (number)`)
+            }
+            // Validate command hook paths
+            if (hk.type === 'command' && typeof hk.command === 'string') {
+              const resolved = hk.command.replace(/\$\{CLAUDE_PLUGIN_ROOT\}/g, ROOT)
+              // Extract the file path from the command (after "bash " or similar)
+              const parts = resolved.split(/\s+/)
+              const scriptPath = parts.find((p) => p.startsWith('/') || p.startsWith('./'))
+              if (scriptPath && !existsSync(scriptPath)) {
+                error(hooksPath, `hooks.${event}: referenced file does not exist: ${hk.command}`)
+              }
             }
           }
         }
@@ -162,39 +184,42 @@ for (const file of skillFiles) {
   }
 }
 
-// --- Agents ---
+// --- Agents (optional) ---
 
-const agentFiles = (await readdir(join(ROOT, 'agents')))
-  .filter((f) => f.endsWith('.md'))
-  .map((f) => join(ROOT, 'agents', f))
+const agentsDir = join(ROOT, 'agents')
+if (existsSync(agentsDir)) {
+  const agentFiles = (await readdir(agentsDir))
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => join(agentsDir, f))
 
-const AGENT_REQUIRED = ['name', 'description', 'model', 'color', 'tools']
+  const AGENT_REQUIRED = ['name', 'description', 'model', 'color', 'tools']
 
-for (const file of agentFiles) {
-  const content = await readFile(file, 'utf8')
-  const fm = extractFrontmatter(content)
-  if (!fm) {
-    error(file, 'Missing or invalid YAML frontmatter')
-    continue
-  }
-  for (const field of AGENT_REQUIRED) {
-    if (!(field in fm)) {
-      error(file, `Missing required frontmatter field: ${field}`)
+  for (const file of agentFiles) {
+    const content = await readFile(file, 'utf8')
+    const fm = extractFrontmatter(content)
+    if (!fm) {
+      error(file, 'Missing or invalid YAML frontmatter')
+      continue
     }
-  }
-  if ('tools' in fm && !Array.isArray(fm.tools)) {
-    error(file, 'tools must be an array')
-  }
-  if (Array.isArray(fm.tools)) {
-    validateMcpPrefixes(file, /** @type {string[]} */ (fm.tools))
-  }
+    for (const field of AGENT_REQUIRED) {
+      if (!(field in fm)) {
+        error(file, `Missing required frontmatter field: ${field}`)
+      }
+    }
+    if ('tools' in fm && !Array.isArray(fm.tools)) {
+      error(file, 'tools must be an array')
+    }
+    if (Array.isArray(fm.tools)) {
+      validateMcpPrefixes(file, /** @type {string[]} */ (fm.tools))
+    }
 
-  // Gardener read-only invariant
-  if (file.endsWith('knowledge-gardener.md') && Array.isArray(fm.tools)) {
-    const forbidden = ['write_note', 'edit_note', 'delete_note']
-    for (const tool of /** @type {string[]} */ (fm.tools)) {
-      if (forbidden.some((f) => tool.includes(f))) {
-        error(file, `Read-only agent must not have write tool: ${tool}`)
+    // Gardener read-only invariant
+    if (file.endsWith('knowledge-gardener.md') && Array.isArray(fm.tools)) {
+      const forbidden = ['write_note', 'edit_note', 'delete_note']
+      for (const tool of /** @type {string[]} */ (fm.tools)) {
+        if (forbidden.some((f) => tool.includes(f))) {
+          error(file, `Read-only agent must not have write tool: ${tool}`)
+        }
       }
     }
   }
