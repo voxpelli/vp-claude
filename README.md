@@ -75,17 +75,108 @@ Three hooks run automatically in the background:
 - **PreCompact** — Before context compaction, reviews the conversation for decisions, lessons, and gotchas worth saving. Writes them to Basic Memory so insights survive across sessions.
 - **SessionStart** — Reminds Claude that graph tools and research skills are available.
 
-## Prerequisites
-
-- [Basic Memory](https://github.com/basicmachines-co/basic-memory) running as an MCP server
-- The upstream [`basic-memory-skills`](https://github.com/basicmachines-co/basic-memory-skills) installed (provides core `memory-*` skills this plugin builds on)
-- For the full enrichment pipeline: DeepWiki, Context7, Tavily, and Raindrop MCP servers
-
 ## Installation
 
+### Via slash commands
+
 ```bash
-claude --plugin-dir /path/to/vp-claude
+/plugin marketplace add voxpelli/vp-claude
+/plugin install vp-claude@vp-plugins
 ```
+
+### Manual settings.json
+
+Add to `~/.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "vp-plugins": {
+      "source": { "source": "github", "repo": "voxpelli/vp-claude" }
+    }
+  },
+  "enabledPlugins": {
+    "vp-claude@vp-plugins": true
+  }
+}
+```
+
+## Prerequisites
+
+### Required
+
+**[Basic Memory](https://github.com/basicmachines-co/basic-memory)** MCP server — the knowledge graph backend.
+
+Add to `~/.claude/.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "basic-memory": {
+      "command": "uvx",
+      "args": ["basic-memory", "mcp"]
+    }
+  }
+}
+```
+
+**[basic-memory-skills](https://github.com/basicmachines-co/basic-memory-skills)** — core `memory-*` skills this plugin builds on:
+
+```bash
+/install-skills basicmachines-co/basic-memory-skills
+```
+
+### Required for `/package-intel` enrichment pipeline
+
+The five-source research pipeline needs these additional MCP servers and plugins:
+
+**DeepWiki** — repository documentation and architecture questions. Enable in Claude Code settings or add as an MCP server.
+
+**Context7** — library documentation and code examples:
+
+```bash
+/plugin install context7@claude-plugins-official
+```
+
+**Tavily** — web search for security advisories, CVEs, and recent articles. Requires a [Tavily API key](https://tavily.com).
+
+Add to `~/.claude/.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "tavily": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mcp-server-tavily@latest"],
+      "env": {
+        "TAVILY_API_KEY": "tvly-YOUR_KEY_HERE"
+      }
+    }
+  }
+}
+```
+
+**Raindrop** — searches your bookmarked articles. Requires a [Raindrop API key](https://developer.raindrop.io).
+
+Add to `~/.claude/.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "raindrop": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mcp-server-raindrop@latest"],
+      "env": {
+        "RAINDROP_API_KEY": "YOUR_KEY_HERE"
+      }
+    }
+  }
+}
+```
+
+### Optional
+
+- **`gh` CLI** — enables changelog analysis via GitHub releases in `/package-intel`
 
 ## Plugin structure
 
