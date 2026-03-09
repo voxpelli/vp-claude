@@ -17,6 +17,7 @@ skills/
 agents/
   knowledge-gardener.md              # Read-only graph health auditor
   knowledge-maintainer.md            # All-in-one graph enhancer (writes)
+  session-reflector.md               # On-demand conversation → memory capture
 hooks/
   hooks.json                         # PostToolUse, PreCompact, SessionStart hooks
 ```
@@ -33,7 +34,8 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 ### Agents (2)
 
 - **knowledge-gardener** — Read-only autonomous auditor: inventory, schema validation, orphan detection, relation integrity, stale/duplicate notes, cross-project consistency. **Never writes or modifies notes.**
-- **knowledge-maintainer** — All-in-one write agent that acts on audit findings. Auto-fixes structural issues (missing sections, broken frontmatter, orphan linking). Confirms before content changes (merging duplicates, rewriting prose, archiving). Auto-runs `/package-intel` for Tier 1 undocumented packages (3+ imports). Reactive only — user must explicitly invoke.
+- **knowledge-maintainer** — All-in-one write agent that acts on audit findings. Auto-fixes structural issues (missing sections, broken frontmatter, orphan linking). Confirms before content changes (merging duplicates, rewriting prose, archiving). Auto-runs `/package-intel` for Tier 1 undocumented packages (3+ imports). `delete_note` intentionally excluded — use `move_note` to `archive/`. Reactive only — user must explicitly invoke.
+- **session-reflector** — On-demand reflection agent. Reviews the current conversation, extracts durable insights, shows a preview grouped by target note, waits for approval, then writes. Complements the automatic PreCompact hook with a deliberate, user-gated equivalent.
 
 ### Hooks (3)
 
@@ -77,4 +79,4 @@ Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Prompt-based hooks are pre
 
 ### Relationship to upstream memory-* skills
 
-The `basicmachines-co/basic-memory-skills` package provides 9 core `memory-*` skills (notes, schema, tasks, lifecycle, etc.) installed separately via skill-lock. This plugin depends on those conventions but does not bundle or duplicate them. `package-intel` specializes the generic `memory-research` pattern for npm packages.
+The `basicmachines-co/basic-memory-skills` package provides 9 core `memory-*` skills (notes, schema, tasks, lifecycle, etc.) installed via `npx skills add basicmachines-co/basic-memory-skills` ([skills.sh](https://skills.sh)). This plugin depends on those conventions but does not bundle or duplicate them. `package-intel` specializes the generic `memory-research` pattern for npm packages.
