@@ -254,6 +254,19 @@ agents/
 hooks/
   hooks.json                           PostToolUse, PreCompact, SessionStart
   session-start.sh                     Graph context injection script
+schemas/
+  npm_package.md                       npm package schema (npm_package type)
+  crate_package.md                     Rust crate schema (crate_package type)
+  go_module.md                         Go module schema (go_module type)
+  composer_package.md                  PHP Composer schema (composer_package type)
+  pypi_package.md                      Python PyPI schema (pypi_package type)
+  ruby_gem.md                          Ruby gem schema (ruby_gem type)
+  brew_formula.md                      Homebrew formula schema (brew_formula type)
+  brew_cask.md                         Homebrew cask schema (brew_cask type)
+  github_action.md                     GitHub Action schema (github_action type)
+  docker_image.md                      Docker image schema (docker_image type)
+  vscode_extension.md                  VSCode extension schema (vscode_extension type)
+  engineering.md                       Engineering knowledge schema (engineering type)
 ```
 
 ## How it fits together
