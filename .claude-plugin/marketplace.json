@@ -8,8 +8,8 @@
     {
       "name": "vp-knowledge",
       "source": "./",
-      "description": "npm package research, knowledge gap analysis, graph maintenance agents, and quality hooks for Basic Memory",
-      "version": "0.4.0"
+      "description": "Multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), knowledge gap analysis, graph maintenance agents, and quality hooks for Basic Memory",
+      "version": "0.5.0"
     },
     {
       "name": "vp-beads",
