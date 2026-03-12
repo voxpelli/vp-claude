@@ -79,6 +79,11 @@ list_directory(dir_name="go", depth=2)
 list_directory(dir_name="composer", depth=1)
 list_directory(dir_name="pypi", depth=1)
 list_directory(dir_name="gems", depth=1)
+list_directory(dir_name="brew", depth=1)
+list_directory(dir_name="casks", depth=1)
+list_directory(dir_name="actions", depth=1)
+list_directory(dir_name="docker", depth=1)
+list_directory(dir_name="vscode", depth=1)
 list_directory(dir_name="schema", depth=1)
 ```
 
@@ -92,6 +97,11 @@ schema_validate(note_type="go_module")
 schema_validate(note_type="composer_package")
 schema_validate(note_type="pypi_package")
 schema_validate(note_type="ruby_gem")
+schema_validate(note_type="brew_formula")
+schema_validate(note_type="brew_cask")
+schema_validate(note_type="github_action")
+schema_validate(note_type="docker_image")
+schema_validate(note_type="vscode_extension")
 schema_validate(note_type="engineering")
 ```
 
@@ -137,7 +147,7 @@ are semi-orphans — worth flagging but lower priority.
 
 ### 4. Relation integrity
 
-Search for wiki-links across all package ecosystems. Run in parallel:
+Search for wiki-links across all package and tool ecosystems. Run in parallel:
 ```
 search_notes(search_type="text", query="[[npm:", page_size=20)
 search_notes(search_type="text", query="[[crate:", page_size=20)
@@ -145,6 +155,11 @@ search_notes(search_type="text", query="[[go:", page_size=20)
 search_notes(search_type="text", query="[[composer:", page_size=20)
 search_notes(search_type="text", query="[[pypi:", page_size=20)
 search_notes(search_type="text", query="[[gem:", page_size=20)
+search_notes(search_type="text", query="[[brew:", page_size=20)
+search_notes(search_type="text", query="[[cask:", page_size=20)
+search_notes(search_type="text", query="[[action:", page_size=20)
+search_notes(search_type="text", query="[[docker:", page_size=20)
+search_notes(search_type="text", query="[[vscode:", page_size=20)
 ```
 
 For each unique wiki-link found (e.g., `[[crate:serde]]`), check if a
@@ -160,9 +175,15 @@ Ecosystem → directory mapping:
 - `[[composer:*]]` → `composer/`
 - `[[pypi:*]]` → `pypi/`
 - `[[gem:*]]` → `gems/`
+- `[[brew:*]]` → `brew/`
+- `[[cask:*]]` → `casks/`
+- `[[action:*]]` → `actions/`
+- `[[docker:*]]` → `docker/`
+- `[[vscode:*]]` → `vscode/`
 
 Report frequently-referenced but undocumented packages as candidates for
 `/package-intel` with the appropriate prefix (e.g., `/package-intel crate:serde`).
+Report undocumented tools as candidates for `/tool-intel` (e.g., `/tool-intel brew:ripgrep`).
 
 ### 5. Stale note detection
 

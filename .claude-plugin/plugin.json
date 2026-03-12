@@ -1,12 +1,12 @@
 {
   "name": "vp-knowledge",
-  "version": "0.5.0",
-  "description": "Basic Memory power tools: multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), knowledge gap analysis, graph maintenance, and automated quality hooks.",
+  "version": "0.6.0",
+  "description": "Basic Memory power tools: multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), developer tool research (Homebrew, GitHub Actions, Docker, VSCode), knowledge gap analysis, graph maintenance, and automated quality hooks.",
   "author": {
     "name": "Pelle Wessman",
     "url": "https://github.com/voxpelli"
   },
   "repository": "https://github.com/voxpelli/vp-claude",
   "license": "MIT",
-  "keywords": ["basic-memory", "knowledge-graph", "npm", "research", "crates", "pypi", "go-modules", "composer", "rubygems", "multi-ecosystem"]
+  "keywords": ["basic-memory", "knowledge-graph", "npm", "research", "crates", "pypi", "go-modules", "composer", "rubygems", "multi-ecosystem", "homebrew", "github-actions", "docker", "vscode", "tool-intel"]
 }

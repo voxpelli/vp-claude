@@ -1,6 +1,6 @@
 # vp-knowledge
 
-A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https://github.com/basicmachines-co/basic-memory) into an actively maintained knowledge graph. Research packages from six ecosystems using five sources at once, find documentation gaps in your projects, and let autonomous agents audit and improve your notes — all without leaving your terminal.
+A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https://github.com/basicmachines-co/basic-memory) into an actively maintained knowledge graph. Research packages from six ecosystems and tools from five dev-environment categories using parallel enrichment, find documentation gaps in your projects, and let autonomous agents audit and improve your notes — all without leaving your terminal.
 
 ## What it does
 
@@ -34,9 +34,37 @@ Queries five sources in parallel and synthesizes a structured note. Supports six
 
 Plus changelog analysis via GitHub releases. The result is an ecosystem-prefixed note (`npm:*`, `crate:*`, `pypi:*`, etc.) with observations, relations, and release highlights — ready to query later.
 
+### `/tool-intel <prefix>:<name>` — Research any dev tool
+
+Queries four sources in parallel and synthesizes a structured note. Supports five tool categories:
+
+| Form | Category | Example |
+|------|----------|---------|
+| `brew:<name>` | Homebrew formula | `brew:ripgrep` |
+| `cask:<name>` | Homebrew cask | `cask:warp` |
+| `action:<owner>/<repo>` | GitHub Action | `action:actions/checkout` |
+| `docker:<image>` | Docker Hub image | `docker:node` |
+| `vscode:<publisher>.<ext>` | VSCode extension | `vscode:esbenp.prettier-vscode` |
+
+```
+/tool-intel brew:ripgrep
+/tool-intel action:actions/checkout
+/tool-intel docker:node
+/tool-intel vscode:esbenp.prettier-vscode
+```
+
+| Source | What it finds |
+|--------|--------------|
+| Basic Memory | Existing notes, cross-references |
+| DeepWiki | Architecture, design patterns (actions and docker only) |
+| Tavily | Security advisories, CVEs, supply-chain risks, gotchas |
+| Raindrop | Your bookmarked articles about the tool |
+
+Plus version/changelog data (GitHub releases for actions, Docker Hub tags for images, API versions for brew/vscode). The result is a prefixed note (`brew:*`, `action:*`, etc.) with type-specific sections — `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for Docker, `## Common Usage` for formulae — plus observations and relations.
+
 ### `/knowledge-gaps` — Find undocumented dependencies
 
-Scans your project's manifest files (`package.json`, `Cargo.toml`, `go.mod`, `composer.json`, `pyproject.toml`, `Gemfile`), checks which packages have Basic Memory notes, and tiers the gaps by how heavily you use each package:
+Scans your project's manifest files for both code dependencies and dev tooling, checks which have Basic Memory notes, and reports the gaps:
 
 ```
 ## Knowledge Gap Report — my-project
@@ -70,7 +98,11 @@ Scans your project's manifest files (`package.json`, `Cargo.toml`, `go.mod`, `co
 - Undocumented Tier 1: 8 packages
 ```
 
-Offers to run `/package-intel` (with the right ecosystem prefix) for the top undocumented packages across all ecosystems.
+**Package manifests scanned:** `package.json`, `Cargo.toml`, `go.mod`, `composer.json`, `pyproject.toml`, `Gemfile` — tiered by import frequency (3+ imports = Tier 1, must document).
+
+**Tool manifests scanned:** `Brewfile` (formulae, casks, vscode entries), `.github/workflows/*.yml` (actions), `Dockerfile`/`*.dockerfile` (docker images), `.vscode/extensions.json` (vscode extensions) — all manifest entries count equally, no tiering.
+
+Offers to run `/package-intel` (with the right ecosystem prefix) for top undocumented packages and `/tool-intel` for undocumented tools.
 
 ### Knowledge Gardener — Read-only graph auditor
 
@@ -92,6 +124,7 @@ Acts on audit findings with tiered autonomy:
 | Link orphan notes to related notes | Auto-fix |
 | Fix frontmatter type to match schema | Auto-fix |
 | Run `/package-intel` for Tier 1 undocumented packages | Auto-fix |
+| Run `/tool-intel` for undocumented tools from manifests | Auto-fix |
 | Merge duplicate notes | Asks first |
 | Archive abandoned notes (move to `archive/`) | Asks first |
 | Rewrite note prose | Asks first |
@@ -154,9 +187,9 @@ claude mcp add basic-memory -- basic-memory mcp
 npx skills add basicmachines-co/basic-memory-skills
 ```
 
-### Required for `/package-intel` enrichment pipeline
+### Required for enrichment pipelines
 
-The five-source research pipeline needs these additional MCP servers and plugins:
+The `/package-intel` five-source pipeline and `/tool-intel` four-source pipeline need these additional MCP servers and plugins. Context7 is used by `/package-intel` only; DeepWiki and Tavily are used by both.
 
 **[DeepWiki](https://docs.devin.ai/work-with-devin/deepwiki-mcp)** — repository documentation and architecture questions:
 
@@ -200,8 +233,20 @@ skills/
     references/ecosystem-composer.md   Packagist API + note template
     references/ecosystem-pypi.md       PyPI API + note template
     references/ecosystem-gems.md       RubyGems API + note template
+  tool-intel/
+    SKILL.md                           Four-source research workflow
+    references/ecosystem-brew.md       formulae.brew.sh API
+    references/ecosystem-cask.md       formulae.brew.sh/cask API
+    references/ecosystem-action.md     action.yml extraction + permissions
+    references/ecosystem-docker.md     Docker Hub API + tag strategy
+    references/ecosystem-vscode.md     Open VSX API + VS Marketplace fallback
+    references/note-template-brew.md   brew_formula note template
+    references/note-template-cask.md   brew_cask note template
+    references/note-template-action.md github_action note template
+    references/note-template-docker.md docker_image note template
+    references/note-template-vscode.md vscode_extension note template
   knowledge-gaps/
-    SKILL.md                           Dependency coverage analysis
+    SKILL.md                           Package + tool coverage analysis
 agents/
   knowledge-gardener.md                Read-only graph auditor
   knowledge-maintainer.md              Read-write graph enhancer
@@ -217,12 +262,15 @@ hooks/
  User says            Triggers              Output
  ─────────────────    ───────────────────    ──────────────────────────
  /package-intel X  -> package-intel skill -> <ecosystem>:X note in Basic Memory
+ /tool-intel X     -> tool-intel skill    -> <type>:X note in Basic Memory
  /knowledge-gaps   -> knowledge-gaps skill-> gap report + offers /package-intel
+                                             and /tool-intel for undocumented tools
  "audit graph"     -> knowledge-gardener  -> health report (read-only)
  "fix the graph"   -> knowledge-maintainer-> structural fixes + confirmations
                       ├── audits graph inline (lightweight)
                       ├── auto-fixes structure
-                      ├── auto-runs /package-intel for Tier 1 gaps
+                      ├── auto-runs /package-intel for Tier 1 package gaps
+                      ├── auto-runs /tool-intel for undocumented tool manifests
                       └── asks before content changes
 
  [any BM write]    -> PostToolUse hook    -> schema validation feedback
@@ -233,7 +281,7 @@ hooks/
 
 ## Relationship to upstream
 
-This plugin depends on but does not duplicate the 9 core `memory-*` skills from [`basicmachines-co/basic-memory-skills`](https://github.com/basicmachines-co/basic-memory-skills) (notes, schema, tasks, lifecycle, reflect, etc.). It adds multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), project-level gap analysis, and autonomous graph maintenance on top of those foundations.
+This plugin depends on but does not duplicate the 9 core `memory-*` skills from [`basicmachines-co/basic-memory-skills`](https://github.com/basicmachines-co/basic-memory-skills) (notes, schema, tasks, lifecycle, reflect, etc.). It adds multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), developer tool research (Homebrew, GitHub Actions, Docker, VSCode), project-level gap analysis, and autonomous graph maintenance on top of those foundations.
 
 ## Possible future additions
 

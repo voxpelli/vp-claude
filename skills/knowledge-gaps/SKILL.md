@@ -1,6 +1,6 @@
 ---
 name: knowledge-gaps
-description: "This skill should be used when the user asks about 'knowledge gaps', 'package coverage', 'which packages need notes', 'undocumented dependencies', 'dependency audit', or 'missing documentation'. Cross-references project dependencies against Basic Memory notes to find undocumented packages, tiered by import frequency. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, and Ruby gems."
+description: "This skill should be used when the user asks about 'knowledge gaps', 'package coverage', 'which packages need notes', 'undocumented dependencies', 'dependency audit', 'missing documentation', 'tool coverage', 'undocumented tools', or 'brew/action/docker/vscode coverage'. Cross-references project dependencies and tool manifests against Basic Memory notes to find undocumented packages and tools. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, Ruby gems, Homebrew formulae/casks, GitHub Actions, Docker images, and VSCode extensions."
 user-invocable: true
 allowed-tools:
   - Read
@@ -204,4 +204,133 @@ run `/package-intel` with the appropriate prefixed invocation:
 - pypi: `/package-intel pypi:requests`
 - gem: `/package-intel gem:rails`
 
-Present them ranked by import count across all ecosystems combined.
+For undocumented tools from Steps 6–9, offer `/tool-intel` invocations:
+
+- brew: `/tool-intel brew:ripgrep`
+- cask: `/tool-intel cask:warp`
+- action: `/tool-intel action:actions/checkout`
+- docker: `/tool-intel docker:node`
+- vscode: `/tool-intel vscode:esbenp.prettier-vscode`
+
+Present packages ranked by import count, then tools grouped by type.
+
+---
+
+### 6. Detect tool manifests
+
+Glob for tool manifest files in the current working directory:
+
+```
+Glob(pattern="Brewfile")
+Glob(pattern=".github/workflows/*.yml")
+Glob(pattern=".github/workflows/*.yaml")
+Glob(pattern="Dockerfile")
+Glob(pattern="*.dockerfile")
+Glob(pattern="Dockerfile.*")
+Glob(pattern=".vscode/extensions.json")
+```
+
+Announce which manifests are found. If none are found, skip Steps 7–9 and
+note "No tool manifests detected" in the report.
+
+### 7. Parse tool manifests
+
+For each detected manifest, read and extract tool identifiers:
+
+**Brewfile:**
+Read the file and extract entries by line pattern:
+- `brew "<name>"` or `brew '<name>'` → `brew:<name>`
+- `cask "<name>"` or `cask '<name>'` → `cask:<name>`
+- `vscode "<publisher>.<ext>"` or `vscode '<publisher>.<ext>'` → `vscode:<publisher>.<ext>`
+
+Skip comment lines (`#`) and other directive types (`tap`, `mas`, `whalebrew`).
+
+**`.github/workflows/*.yml` / `*.yaml`:**
+Read each workflow file. Grep for `uses:` lines:
+```
+Grep(pattern="uses:\\s+[^./]", glob=".github/workflows/*.{yml,yaml}", output_mode="content")
+```
+
+From each match, extract the action reference:
+- `uses: actions/checkout@v4` → `action:actions/checkout`
+- `uses: docker://alpine:3.18` → skip (docker:// protocol, not an action)
+- `uses: ./.github/actions/my-action` → skip (local action, `./` prefix)
+
+Strip `@version` suffix. Deduplicate across all workflow files.
+
+**`Dockerfile` / `*.dockerfile` / `Dockerfile.*`:**
+Read each Dockerfile. Extract `FROM` lines:
+```
+Grep(pattern="^FROM\\s+", glob="{Dockerfile,*.dockerfile,Dockerfile.*}", output_mode="content")
+```
+
+From each match, extract the image identifier:
+- `FROM node:22-alpine` → `docker:node` (strip `:tag`)
+- `FROM node:22-alpine AS builder` → `docker:node` (strip `AS alias` and tag)
+- `FROM gcr.io/distroless/node` → skip (non-Docker-Hub registry)
+- `FROM ghcr.io/owner/image` → skip (non-Docker-Hub registry)
+- `FROM quay.io/org/image` → skip (non-Docker-Hub registry)
+
+Skip registries with a `.` or `/` prefix that indicates non-Docker-Hub. Strip
+version tags (`:tag`) and AS aliases. Deduplicate across files.
+
+**`.vscode/extensions.json`:**
+Read the file and extract the `recommendations` array. Each entry is a
+`vscode:<publisher>.<extension-id>` identifier. Example:
+```json
+{ "recommendations": ["esbenp.prettier-vscode", "dbaeumer.vscode-eslint"] }
+```
+→ `vscode:esbenp.prettier-vscode`, `vscode:dbaeumer.vscode-eslint`
+
+### 8. Check Basic Memory coverage for tools
+
+For each tool type with detected entries, get all documented tools in one call:
+
+```
+list_directory(dir_name="brew", depth=1)
+list_directory(dir_name="casks", depth=1)
+list_directory(dir_name="actions", depth=1)
+list_directory(dir_name="docker", depth=1)
+list_directory(dir_name="vscode", depth=1)
+```
+
+Only query directories for tool types that had manifest entries detected.
+Cross-reference against the parsed identifiers to classify each tool:
+- **Documented** — a `<prefix>:<name>` note exists
+- **Undocumented** — no dedicated note
+
+### 9. Add tools section to gap report
+
+Append a tools section to the gap report after the package sections:
+
+```
+---
+
+## Tool Coverage Report
+
+### Homebrew Formulae: X/Y documented
+| Tool | Status |
+|------|--------|
+| brew:ripgrep | ✓ documented |
+| brew:jq | ✗ undocumented |
+
+### Homebrew Casks: X/Y documented
+...
+
+### GitHub Actions: X/Y documented
+...
+
+### Docker Images: X/Y documented
+...
+
+### VSCode Extensions: X/Y documented
+...
+
+### Tool Summary
+- Total tools across all types: N
+- Documented: M (Z%)
+- Undocumented: P
+```
+
+No import-count tiering for tools — all manifest entries are equally "used".
+Group by type, show documented vs undocumented count per type.

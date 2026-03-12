@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A Claude Code plugin (`vp-knowledge`) containing user-owned skills, agents, and hooks that build on [Basic Memory](https://github.com/basicmachines-co/basic-memory) (running as an MCP server). These complement the upstream `basicmachines-co/basic-memory-skills` (which provides core `memory-*` skills) with higher-level workflows for npm package research, knowledge graph maintenance, and automated quality checks.
+A Claude Code plugin (`vp-knowledge`) containing user-owned skills, agents, and hooks that build on [Basic Memory](https://github.com/basicmachines-co/basic-memory) (running as an MCP server). These complement the upstream `basicmachines-co/basic-memory-skills` (which provides core `memory-*` skills) with higher-level workflows for package and developer-tool research, knowledge graph maintenance, and automated quality checks.
 
 ## Plugin Layout
 
@@ -12,8 +12,9 @@ A Claude Code plugin (`vp-knowledge`) containing user-owned skills, agents, and 
 .claude-plugin/
   plugin.json                        # Plugin manifest
 skills/
-  package-intel/SKILL.md             # Five-source npm package research pipeline
-  knowledge-gaps/SKILL.md            # Cross-reference deps vs BM coverage
+  package-intel/SKILL.md             # Five-source multi-ecosystem package research
+  tool-intel/SKILL.md                # Four-source dev-tool research (brew/action/docker/vscode)
+  knowledge-gaps/SKILL.md            # Cross-reference deps + tool manifests vs BM coverage
 agents/
   knowledge-gardener.md              # Read-only graph health auditor
   knowledge-maintainer.md            # All-in-one graph enhancer (writes)
@@ -26,15 +27,16 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 
 ## Components
 
-### Skills (2)
+### Skills (3)
 
-- **package-intel** — Researches an npm package via five sources (Basic Memory, DeepWiki, Context7, Tavily, Raindrop) and writes/updates a structured `npm:*` note. User-invocable as `/package-intel <pkg>`.
-- **knowledge-gaps** — Parses `package.json` dependencies, checks which have `npm:*` notes in Basic Memory, tiers undocumented packages by import frequency. User-invocable as `/knowledge-gaps`.
+- **package-intel** — Researches a package via five sources (Basic Memory, DeepWiki, Context7, Tavily, Raindrop) and writes/updates a structured prefixed note. Supports npm, Rust crates, Go modules, PHP Composer, Python PyPI, and Ruby gems. User-invocable as `/package-intel <pkg>`.
+- **tool-intel** — Researches a developer environment or CI/CD tool via four sources (Basic Memory, DeepWiki for actions/docker, Tavily, Raindrop) and writes/updates a structured prefixed note. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), and VSCode extensions (`vscode:`). User-invocable as `/tool-intel <prefix>:<name>`.
+- **knowledge-gaps** — Parses code manifest files (`package.json`, `Cargo.toml`, etc.) and tool manifests (`Brewfile`, `.github/workflows/*.yml`, `Dockerfile`, `.vscode/extensions.json`), checks BM coverage, tiers package gaps by import frequency, lists all undocumented tools. User-invocable as `/knowledge-gaps`.
 
 ### Agents (2)
 
 - **knowledge-gardener** — Read-only autonomous auditor: inventory, schema validation, orphan detection, relation integrity, stale/duplicate notes, cross-project consistency. **Never writes or modifies notes.**
-- **knowledge-maintainer** — All-in-one write agent that acts on audit findings. Auto-fixes structural issues (missing sections, broken frontmatter, orphan linking). Confirms before content changes (merging duplicates, rewriting prose, archiving). Auto-runs `/package-intel` for Tier 1 undocumented packages (3+ imports). `delete_note` intentionally excluded — use `move_note` to `archive/`. Reactive only — user must explicitly invoke.
+- **knowledge-maintainer** — All-in-one write agent that acts on audit findings. Auto-fixes structural issues (missing sections, broken frontmatter, orphan linking). Confirms before content changes (merging duplicates, rewriting prose, archiving). Auto-runs `/package-intel` for Tier 1 undocumented packages (3+ imports) and `/tool-intel` for undocumented tools from detected manifests. `delete_note` intentionally excluded — use `move_note` to `archive/`. Reactive only — user must explicitly invoke.
 - **session-reflector** — On-demand reflection agent. Reviews the current conversation, extracts durable insights, shows a preview grouped by target note, waits for approval, then writes. Complements the automatic PreCompact hook with a deliberate, user-gated equivalent.
 
 ### Hooks (3)
@@ -50,10 +52,10 @@ Skills and agents reference tools from multiple MCP servers. When editing, use e
 | Server | Prefix | Used by |
 |--------|--------|---------|
 | Basic Memory | `mcp__basic-memory__*` | All components |
-| DeepWiki | `mcp__deepwiki__*` | package-intel |
-| Context7 | `mcp__plugin_context7_context7__*` | package-intel |
-| Tavily | `mcp__tavily__*` | package-intel |
-| Raindrop | `mcp__raindrop__*` | package-intel |
+| DeepWiki | `mcp__deepwiki__*` | package-intel, tool-intel |
+| Context7 | `mcp__plugin_context7_context7__*` | package-intel only |
+| Tavily | `mcp__tavily__*` | package-intel, tool-intel |
+| Raindrop | `mcp__raindrop__*` | package-intel, tool-intel |
 
 ## Conventions
 
@@ -76,6 +78,20 @@ Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Prompt-based hooks are pre
 - Type: `npm_package` (snake_case — Basic Memory enforces snake_case for all type fields)
 - Three enrichment layers: frontmatter metadata, `## Observations` with `[category]` tags, `## Relations` with `[[wiki-links]]`
 - Use `edit_note` with `find_replace` for updates — `append` with `section` goes to end of file, not end of section
+
+### Note structure conventions (for tool-intel output)
+
+| Prefix | Directory | Type | Title example |
+|--------|-----------|------|---------------|
+| `brew:` | `brew/` | `brew_formula` | `brew:ripgrep` |
+| `cask:` | `casks/` | `brew_cask` | `cask:warp` |
+| `action:` | `actions/` | `github_action` | `action:actions/checkout` |
+| `docker:` | `docker/` | `docker_image` | `docker:node` |
+| `vscode:` | `vscode/` | `vscode_extension` | `vscode:esbenp.prettier-vscode` |
+
+- Same three enrichment layers as package-intel: frontmatter, `## Observations`, `## Relations`
+- Type-specific content section replaces `## Key APIs`: `## Common Usage` for brew/cask, `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for docker, `## Features` + `## Configuration` for vscode
+- Context7 is skipped for all tool types (npm-biased, not useful for tooling)
 
 ### Relationship to upstream memory-* skills
 

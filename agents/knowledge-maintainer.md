@@ -98,6 +98,11 @@ schema_validate(note_type="go_module")
 schema_validate(note_type="composer_package")
 schema_validate(note_type="pypi_package")
 schema_validate(note_type="ruby_gem")
+schema_validate(note_type="brew_formula")
+schema_validate(note_type="brew_cask")
+schema_validate(note_type="github_action")
+schema_validate(note_type="docker_image")
+schema_validate(note_type="vscode_extension")
 recent_activity(timeframe="90d", output_format="json")
 ```
 
@@ -172,7 +177,24 @@ If the user's project has undocumented Tier 1 packages:
    Skill(skill: "package-intel", args: "fastify")  # npm (no prefix)
    ```
 
-4. Report what was created, grouped by ecosystem.
+4. **Detect tool manifests** — check for tool manifest files using the
+   `Glob` tool:
+   - `Brewfile` → brew formulae, casks, and vscode extensions
+   - `.github/workflows/*.yml` / `.github/workflows/*.yaml` → GitHub Actions
+   - `Dockerfile`, `*.dockerfile`, `Dockerfile.*` → Docker images
+   - `.vscode/extensions.json` → VSCode extensions
+
+5. For undocumented tools from detected manifests, invoke the `tool-intel`
+   skill via the Skill tool with the appropriate prefix:
+   ```
+   Skill(skill: "tool-intel", args: "brew:ripgrep")
+   Skill(skill: "tool-intel", args: "cask:warp")
+   Skill(skill: "tool-intel", args: "action:actions/checkout")
+   Skill(skill: "tool-intel", args: "docker:node")
+   Skill(skill: "tool-intel", args: "vscode:esbenp.prettier-vscode")
+   ```
+
+6. Report what was created, grouped by ecosystem and tool type.
 
 ### 4. Present confirmation items
 
