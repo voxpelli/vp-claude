@@ -45,6 +45,34 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 - **PreCompact** — Auto-reflects conversation insights into Basic Memory before context compaction.
 - **SessionStart** — Injects a brief knowledge graph status summary (note count, last audit, top gaps).
 
+## Schemas
+
+The `schemas/` directory in the plugin root is the version-controlled source of truth for all Basic Memory note schemas. It contains twelve files mirroring the schema notes in BM:
+
+**Package types:**
+- `schemas/npm_package.md` — npm package notes (`npm_package` type)
+- `schemas/crate_package.md` — Rust crate notes (`crate_package` type)
+- `schemas/go_module.md` — Go module notes (`go_module` type)
+- `schemas/composer_package.md` — PHP Composer package notes (`composer_package` type)
+- `schemas/pypi_package.md` — Python PyPI package notes (`pypi_package` type)
+- `schemas/ruby_gem.md` — Ruby gem notes (`ruby_gem` type)
+
+**Tool types:**
+- `schemas/brew_formula.md` — Homebrew formula notes (`brew_formula` type)
+- `schemas/brew_cask.md` — Homebrew cask notes (`brew_cask` type)
+- `schemas/github_action.md` — GitHub Actions notes (`github_action` type)
+- `schemas/docker_image.md` — Docker image notes (`docker_image` type)
+- `schemas/vscode_extension.md` — VSCode extension notes (`vscode_extension` type)
+
+**Knowledge types:**
+- `schemas/engineering.md` — engineering knowledge notes (`engineering` type)
+
+**First-install seeding:** On a fresh Basic Memory instance, call `write_note` for each schema file (or simply run `/package-intel` / `/tool-intel` on any package — they auto-write their schema on first use, which will conform the note).
+
+**Automatic validation:** The PostToolUse hook fires `mcp__basic-memory__schema_validate` after every `write_note`/`edit_note` call, surfacing any schema errors as a systemMessage without blocking the write.
+
+**Keeping in sync:** When editing a schema (fixing drift, adding fields), update both the Basic Memory note via `edit_note` and the corresponding file in `schemas/` in the same PR.
+
 ## MCP Tool Dependencies
 
 Skills and agents reference tools from multiple MCP servers. When editing, use exact tool names:
