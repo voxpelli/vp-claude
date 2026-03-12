@@ -1,6 +1,3 @@
 .DS_Store
-*.swp
-*.swo
-*~
 .claude/*.local.*
 node_modules/
