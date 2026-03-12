@@ -70,10 +70,15 @@ Use `list_directory` for a lightweight directory scan:
 list_directory(dir_name="/", depth=2)
 ```
 
-Count total notes, group by directory. For deeper subdirectories:
+Count total notes, group by directory. For deeper subdirectories and ecosystem-specific directories:
 ```
 list_directory(dir_name="engineering", depth=2)
 list_directory(dir_name="npm", depth=1)
+list_directory(dir_name="crates", depth=1)
+list_directory(dir_name="go", depth=2)
+list_directory(dir_name="composer", depth=1)
+list_directory(dir_name="pypi", depth=1)
+list_directory(dir_name="gems", depth=1)
 list_directory(dir_name="schema", depth=1)
 ```
 
@@ -82,12 +87,18 @@ list_directory(dir_name="schema", depth=1)
 Run `schema_validate` for each note type that has a schema:
 ```
 schema_validate(note_type="npm_package")
+schema_validate(note_type="crate_package")
+schema_validate(note_type="go_module")
+schema_validate(note_type="composer_package")
+schema_validate(note_type="pypi_package")
+schema_validate(note_type="ruby_gem")
 schema_validate(note_type="engineering")
 ```
 
 Also run `schema_infer` to check field frequencies:
 ```
 schema_infer(note_type="npm_package")
+schema_infer(note_type="crate_package")
 schema_infer(note_type="engineering")
 ```
 
@@ -126,15 +137,32 @@ are semi-orphans — worth flagging but lower priority.
 
 ### 4. Relation integrity
 
-Use `search_notes(search_type="text", query="[[npm:", page_size=20)` to find
-notes with npm wiki-links. For each unique `[[npm:pkg]]`, check if a
-corresponding note exists via:
+Search for wiki-links across all package ecosystems. Run in parallel:
 ```
-list_directory(dir_name="npm", file_name_glob="*<pkg-slug>*")
+search_notes(search_type="text", query="[[npm:", page_size=20)
+search_notes(search_type="text", query="[[crate:", page_size=20)
+search_notes(search_type="text", query="[[go:", page_size=20)
+search_notes(search_type="text", query="[[composer:", page_size=20)
+search_notes(search_type="text", query="[[pypi:", page_size=20)
+search_notes(search_type="text", query="[[gem:", page_size=20)
 ```
 
+For each unique wiki-link found (e.g., `[[crate:serde]]`), check if a
+corresponding note exists in the ecosystem's BM directory:
+```
+list_directory(dir_name="<ecosystem-dir>", file_name_glob="*<pkg-slug>*")
+```
+
+Ecosystem → directory mapping:
+- `[[npm:*]]` → `npm/`
+- `[[crate:*]]` → `crates/`
+- `[[go:*]]` → `go/`
+- `[[composer:*]]` → `composer/`
+- `[[pypi:*]]` → `pypi/`
+- `[[gem:*]]` → `gems/`
+
 Report frequently-referenced but undocumented packages as candidates for
-`/package-intel`.
+`/package-intel` with the appropriate prefix (e.g., `/package-intel crate:serde`).
 
 ### 5. Stale note detection
 

@@ -93,6 +93,11 @@ run a lightweight audit:
 ```
 list_directory(dir_name="/", depth=2)
 schema_validate(note_type="npm_package")
+schema_validate(note_type="crate_package")
+schema_validate(note_type="go_module")
+schema_validate(note_type="composer_package")
+schema_validate(note_type="pypi_package")
+schema_validate(note_type="ruby_gem")
 recent_activity(timeframe="90d", output_format="json")
 ```
 
@@ -144,11 +149,30 @@ line of the section instead.
 
 If the user's project has undocumented Tier 1 packages:
 
-1. Run the knowledge-gaps analysis (parse `package.json`, check BM coverage,
-   count imports)
-2. For packages with 3+ imports and no `npm:*` note, invoke the `package-intel`
-   skill via the Skill tool
-3. Report what was created
+1. **Detect project ecosystems** — check which manifest files exist using the
+   `Glob` tool (not Bash):
+   - `package.json` → npm
+   - `Cargo.toml` → crate
+   - `go.mod` → go
+   - `composer.json` → composer
+   - `pyproject.toml` or `requirements.txt` → pypi
+   - `Gemfile` → gem
+
+2. Run the knowledge-gaps analysis for each detected ecosystem: parse the
+   manifest, check BM coverage, count imports.
+
+3. For packages with 3+ imports and no dedicated note, invoke the
+   `package-intel` skill via the Skill tool with the appropriate prefix:
+   ```
+   Skill(skill: "package-intel", args: "crate:serde")
+   Skill(skill: "package-intel", args: "pypi:requests")
+   Skill(skill: "package-intel", args: "go:github.com/gin-gonic/gin")
+   Skill(skill: "package-intel", args: "composer:laravel/framework")
+   Skill(skill: "package-intel", args: "gem:rails")
+   Skill(skill: "package-intel", args: "fastify")  # npm (no prefix)
+   ```
+
+4. Report what was created, grouped by ecosystem.
 
 ### 4. Present confirmation items
 
@@ -214,7 +238,8 @@ Same principles as the knowledge-gardener:
   genuinely distinct, ask rather than merge.
 - **Preserve information**: Never delete content without confirmation. When
   merging, ensure no observations or relations are lost.
-- **One note per package**: The `npm:*` namespace expects one note per npm
-  package. If duplicates exist, merge into the one with richer content.
+- **One note per package**: Each ecosystem namespace (`npm:*`, `crate:*`,
+  `go:*`, `composer:*`, `pypi:*`, `gem:*`) expects one note per package.
+  If duplicates exist, merge into the one with richer content.
 - **Link liberally**: When adding relations, err on the side of more links.
   A well-connected graph is more valuable than a sparse one.
