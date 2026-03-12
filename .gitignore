@@ -2,5 +2,5 @@
 *.swp
 *.swo
 *~
-.claude/*.local.md
+.claude/*.local.*
 node_modules/

@@ -1,5 +1,4 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "vp-plugins",
   "description": "Knowledge graph management and sprint workflow automation for Claude Code",
   "owner": {
