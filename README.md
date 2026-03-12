@@ -1,15 +1,27 @@
 # vp-knowledge
 
-A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https://github.com/basicmachines-co/basic-memory) into an actively maintained knowledge graph. Research npm packages from five sources at once, find documentation gaps in your projects, and let autonomous agents audit and improve your notes — all without leaving your terminal.
+A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https://github.com/basicmachines-co/basic-memory) into an actively maintained knowledge graph. Research packages from six ecosystems using five sources at once, find documentation gaps in your projects, and let autonomous agents audit and improve your notes — all without leaving your terminal.
 
 ## What it does
 
-### `/package-intel <pkg>` — Research any npm package
+### `/package-intel <pkg>` — Research any package
 
-Queries five sources in parallel and synthesizes a structured note:
+Queries five sources in parallel and synthesizes a structured note. Supports six ecosystems:
+
+| Form | Ecosystem | Example |
+|------|-----------|---------|
+| `<name>` (no prefix) | npm (default) | `fastify` |
+| `npm:<name>` | npm | `npm:@fastify/postgres` |
+| `crate:<name>` | Rust / crates.io | `crate:serde` |
+| `go:<module/path>` | Go modules | `go:github.com/gin-gonic/gin` |
+| `composer:<vendor>/<pkg>` | PHP / Packagist | `composer:laravel/framework` |
+| `pypi:<name>` | Python / PyPI | `pypi:requests` |
+| `gem:<name>` | Ruby / RubyGems | `gem:rails` |
 
 ```
 /package-intel @fastify/postgres
+/package-intel crate:serde
+/package-intel pypi:requests
 ```
 
 | Source | What it finds |
@@ -17,31 +29,48 @@ Queries five sources in parallel and synthesizes a structured note:
 | Basic Memory | Existing notes, cross-references, usage patterns |
 | DeepWiki | Architecture, design patterns, key APIs |
 | Context7 | API reference, code examples |
-| Tavily | Security advisories, recent CVEs |
+| Tavily | Security advisories, recent CVEs (RUSTSEC, PyPA, RubySec, etc.) |
 | Raindrop | Your bookmarked articles about the package |
 
-Plus changelog analysis via GitHub releases. The result is a `npm:*` note with observations, relations, and release highlights — ready to query later.
+Plus changelog analysis via GitHub releases. The result is an ecosystem-prefixed note (`npm:*`, `crate:*`, `pypi:*`, etc.) with observations, relations, and release highlights — ready to query later.
 
 ### `/knowledge-gaps` — Find undocumented dependencies
 
-Scans your `package.json`, checks which packages have Basic Memory notes, and tiers the gaps by how heavily you use each package:
+Scans your project's manifest files (`package.json`, `Cargo.toml`, `go.mod`, `composer.json`, `pyproject.toml`, `Gemfile`), checks which packages have Basic Memory notes, and tiers the gaps by how heavily you use each package:
 
 ```
 ## Knowledge Gap Report — my-project
 
-### Coverage: 12/47 packages documented (25%)
+### npm Coverage: 12/47 packages documented (25%)
 
-### Tier 1 — Must Document (3+ imports)
+#### Tier 1 — Must Document (3+ imports)
 | Package | Import Count | Domain               |
 |---------|--------------|----------------------|
 | fastify | 12           | engineering/fastify/ |
 | pg      | 8            | engineering/         |
 
-### Tier 2 — Should Document (1-2 imports)
+#### Tier 2 — Should Document (1-2 imports)
 ...
+
+---
+
+### crates Coverage: 3/18 packages documented (17%)
+
+#### Tier 1 — Must Document (3+ imports)
+| Package | Import Count | Domain   |
+|---------|--------------|----------|
+| serde   | 28           | crates/  |
+...
+
+---
+
+### Overall Summary
+- Total packages across all ecosystems: 65
+- Documented: 15 (23%)
+- Undocumented Tier 1: 8 packages
 ```
 
-Offers to run `/package-intel` for the top undocumented packages.
+Offers to run `/package-intel` (with the right ecosystem prefix) for the top undocumented packages across all ecosystems.
 
 ### Knowledge Gardener — Read-only graph auditor
 
@@ -165,7 +194,12 @@ claude mcp add --transport http raindrop https://api.raindrop.io/rest/v2/ai/mcp
 skills/
   package-intel/
     SKILL.md                           Five-source research workflow
-    references/note-template.md        Note template for npm:* notes
+    references/ecosystem-npm.md        npm registry API + note template
+    references/ecosystem-crates.md     crates.io API + note template
+    references/ecosystem-go.md         Go module proxy + note template
+    references/ecosystem-composer.md   Packagist API + note template
+    references/ecosystem-pypi.md       PyPI API + note template
+    references/ecosystem-gems.md       RubyGems API + note template
   knowledge-gaps/
     SKILL.md                           Dependency coverage analysis
 agents/
@@ -182,7 +216,7 @@ hooks/
 ```
  User says            Triggers              Output
  ─────────────────    ───────────────────    ──────────────────────────
- /package-intel X  -> package-intel skill -> npm:X note in Basic Memory
+ /package-intel X  -> package-intel skill -> <ecosystem>:X note in Basic Memory
  /knowledge-gaps   -> knowledge-gaps skill-> gap report + offers /package-intel
  "audit graph"     -> knowledge-gardener  -> health report (read-only)
  "fix the graph"   -> knowledge-maintainer-> structural fixes + confirmations
@@ -199,7 +233,7 @@ hooks/
 
 ## Relationship to upstream
 
-This plugin depends on but does not duplicate the 9 core `memory-*` skills from [`basicmachines-co/basic-memory-skills`](https://github.com/basicmachines-co/basic-memory-skills) (notes, schema, tasks, lifecycle, reflect, etc.). It adds npm-ecosystem-specific research, project-level gap analysis, and autonomous graph maintenance on top of those foundations.
+This plugin depends on but does not duplicate the 9 core `memory-*` skills from [`basicmachines-co/basic-memory-skills`](https://github.com/basicmachines-co/basic-memory-skills) (notes, schema, tasks, lifecycle, reflect, etc.). It adds multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), project-level gap analysis, and autonomous graph maintenance on top of those foundations.
 
 ## Possible future additions
 
