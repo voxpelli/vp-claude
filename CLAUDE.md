@@ -127,6 +127,18 @@ Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Prompt-based hooks are pre
 - Type-specific content section replaces `## Key APIs`: `## Common Usage` for brew/cask, `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for docker, `## Features` + `## Configuration` for vscode
 - Context7 is skipped for all tool types (npm-biased, not useful for tooling)
 
+## Releasing
+
+After bumping the version in `plugin.json` and `CHANGELOG.md`, also update the
+`vp-knowledge` entry in `.claude-plugin/marketplace.json` in this same repo
+(both live here — no cross-repo sync needed for vp-knowledge itself).
+
+If vp-beads has also released and bumped its marketplace entry here, confirm the
+`vp-beads` version in `marketplace.json` is current before tagging.
+
+Installed plugin caches lag: after a release, users must reinstall to pick up
+the new version (`/plugin install vp-knowledge@vp-plugins`).
+
 ### Relationship to vp-beads
 
 `vp-knowledge` and `vp-beads` are complementary plugins — both installable

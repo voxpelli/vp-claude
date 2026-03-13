@@ -17,6 +17,27 @@ Analyze the current project's dependencies against Basic Memory coverage to
 identify packages that should be documented but aren't. Supports npm, Rust
 crates, Go modules, PHP Composer, PyPI, and RubyGems.
 
+## Edge Cases
+
+- **No manifest files found** — if none of the Step 0 globs match, report
+  "No package manifest files detected" and skip Steps 1–5. Still proceed to
+  Steps 6–9 to check for tool manifests.
+- **No tool manifests found** — if Steps 6 finds nothing, report "No tool
+  manifests detected" and skip Steps 7–9. Still run Step 10 for dead wiki-links.
+- **Ecosystem directory missing in BM** — if `list_directory` returns nothing
+  for `npm/`, `crates/`, etc., treat coverage as 0 documented for that
+  ecosystem. Do not error.
+- **Empty manifest** — if `package.json` has no `dependencies` or
+  `devDependencies`, or `Cargo.toml` has no `[dependencies]` tables, report
+  "No dependencies found in <manifest>" and skip that ecosystem.
+- **Brewfile with only comments or taps** — if no `brew "..."`, `cask "..."`,
+  or `vscode "..."` lines exist after filtering, report "No tools found in
+  Brewfile".
+- **Workflow file with no `uses:` lines** — if a `.github/workflows/*.yml`
+  file exists but has no `uses:` lines matching the pattern, skip it silently.
+- **RETRO-*.md not committed** — retro files are gitignored; `find` still
+  detects them locally. This is expected behavior.
+
 ## Workflow
 
 ### 0. Detect project ecosystems
