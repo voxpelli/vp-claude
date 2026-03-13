@@ -72,6 +72,17 @@ note to append to:
 search_notes(query="<topic keywords>", page_size=5)
 ```
 
+Once you have one or two candidate notes, check their immediate graph context
+before committing. This surfaces what's already captured nearby and prevents
+proposing observations that duplicate content in a linked note:
+
+```
+build_context(url="<candidate-note-title>", depth=1, max_related=5)
+```
+
+If a neighbor is a better fit for the insight (e.g., the insight belongs to a
+more specific linked note), prefer the neighbor over the original candidate.
+
 If multiple notes are plausible targets, pick the most specific one. If no
 existing note fits, flag it as a new note candidate (title it generically
 enough to be reusable across projects).

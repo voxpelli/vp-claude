@@ -143,7 +143,25 @@ find_bookmarks(search="<name>")
 - `brew:`/`cask:`: Extract version from the formulae.brew.sh API response (already fetched in Step 2)
 - `vscode:`: Extract version from Open VSX API response (already fetched in Step 2)
 
-### Step 4: Synthesize into note
+### Step 4: Curate and synthesize
+
+**Graph curation — before writing, check how this tool is referenced in the
+knowledge graph:**
+
+If the tool note already exists (found in Step 1), use its title as the seed:
+```
+build_context(url="<prefix>:<name>", depth=1, max_related=10)
+```
+
+If the note doesn't exist yet, fall back to a text search:
+```
+search_notes(query="<tool-name>", search_type="text", page_size=5)
+```
+
+Use the results to:
+- Identify related notes that should receive a back-link in `## Relations`
+- Avoid duplicating observations already captured in a linked note
+- Discover which engineering patterns or package notes this tool connects to
 
 See `references/note-template-<ecosystem>.md` for the full template. Key
 conventions per tool type:

@@ -126,7 +126,13 @@ Categorize findings into auto-fixable vs needs-confirmation.
 
 Work through auto-fixable items in priority order:
 
-**Missing sections:** Read the note, identify what's missing, add it:
+**Missing sections:** Read the note first to identify what's actually missing —
+never append blindly, as the sections may already exist:
+```
+read_note(identifier="note-title", include_frontmatter=true, output_format="json")
+```
+
+Then append only the sections confirmed absent:
 ```
 edit_note(
   identifier="note-title",
@@ -134,6 +140,8 @@ edit_note(
   content="\n## Observations\n\n## Relations\n"
 )
 ```
+
+If only one section is missing, omit the other from `content`.
 
 **Broken frontmatter:** Fix type values to match schema conventions:
 ```

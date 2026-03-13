@@ -334,3 +334,55 @@ Append a tools section to the gap report after the package sections:
 
 No import-count tiering for tools — all manifest entries are equally "used".
 Group by type, show documented vs undocumented count per type.
+
+---
+
+### 10. Detect dead wiki-links
+
+Check the graph for wiki-links that reference non-existent notes. These are
+packages or tools that existing notes already mention but that have no dedicated
+note yet — organic documentation debt surfaced by the graph itself.
+
+Only run queries for ecosystems already detected in Steps 0–9 (skip `[[crate:`
+if no Cargo.toml was found and no `crates/` directory was queried):
+
+```
+search_notes(query="[[npm:", search_type="text", page_size=20)
+search_notes(query="[[crate:", search_type="text", page_size=20)
+search_notes(query="[[go:", search_type="text", page_size=20)
+search_notes(query="[[composer:", search_type="text", page_size=20)
+search_notes(query="[[pypi:", search_type="text", page_size=20)
+search_notes(query="[[gem:", search_type="text", page_size=20)
+search_notes(query="[[brew:", search_type="text", page_size=20)
+search_notes(query="[[action:", search_type="text", page_size=20)
+search_notes(query="[[docker:", search_type="text", page_size=20)
+search_notes(query="[[vscode:", search_type="text", page_size=20)
+```
+
+(`search_type="text"` is correct here — `[[prefix:` is structural syntax, not
+semantic content; exact text match is more precise than hybrid/vector.)
+
+From the results, extract all `[[prefix:name]]` references. Cross-reference
+against the `list_directory` results already collected in Steps 2 and 8 to
+identify which targets don't have a corresponding note.
+
+Add dead-link findings to the gap report under each ecosystem section:
+
+```
+#### Referenced but not documented (dead wiki-links)
+| Link | Referenced in |
+|------|--------------|
+| [[npm:some-pkg]] | npm:fastify, engineering/patterns/http |
+```
+
+Deduplicate: if a dead-linked package already appears in Tier 1/2/3 from
+manifest parsing, add "(also wiki-linked)" annotation rather than listing it
+twice.
+
+Add dead-link counts to the Overall Summary:
+```
+- Dead wiki-links: Q (across R unique notes)
+```
+
+When offering enrichment in Step 5, include dead-link targets in the ranked
+list, annotated with "(wiki-linked in N notes)" to show organic graph momentum.

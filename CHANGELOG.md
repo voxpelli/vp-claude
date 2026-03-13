@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0][] - 2026-03-13
+
+### Added
+
+- **`read_note` guard before missing-sections append in `knowledge-maintainer`**
+  — the "Missing sections" fix example previously omitted the required
+  `read_note` step, risking blind append of duplicate section headers.
+  Now explicitly reads first, appends only what's confirmed absent.
+- **`build_context` activated in `session-reflector` Step 2** — after
+  `search_notes` identifies candidate notes, the agent now traverses each
+  candidate's immediate graph neighborhood (`depth=1`) before committing,
+  surfacing better targets and preventing duplicate observations.
+- **Graph curation step in `tool-intel` Step 4** — mirrors the curation
+  pattern already present in `package-intel`: check how the tool is
+  referenced in the knowledge graph before writing, to populate `## Relations`
+  back-links and avoid duplicating linked-note observations.
+- **Step 10 "Detect dead wiki-links" in `knowledge-gaps`** — searches
+  existing notes for `[[prefix:name]]` wiki-links that point to non-existent
+  notes, cross-references against `list_directory` results already collected,
+  and adds a "Referenced but not documented" section to the gap report.
+  Uses `search_type="text"` (exact match) for structural `[[` syntax.
+
 ## [0.8.0][] - 2026-03-13
 
 ### Added
@@ -141,6 +163,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.9.0]: https://github.com/voxpelli/vp-claude/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/voxpelli/vp-claude/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/voxpelli/vp-claude/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/voxpelli/vp-claude/compare/v0.6.0...v0.7.0
