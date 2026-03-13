@@ -157,3 +157,16 @@ Use the same categories as the PreCompact hook for consistency:
   paths. Basic Memory is a cross-project knowledge graph
 - **One-liner observations** — each `[category]` line should be self-contained
   and understandable without the conversation context
+
+## vp-beads Integration
+
+In projects using vp-beads, the session-reflector and vp-beads workflows
+are complementary:
+
+- **Upstream friction** — if research or debugging surfaces a bug or
+  limitation in a package or tool, log it via `/upstream-tracker` in addition
+  to (or instead of) capturing a `[gotcha]` in Basic Memory.
+- **Capture ↔ synthesis** — use session-reflector for in-sprint discoveries;
+  at sprint-close, vp-beads' `/retrospective` synthesises those captured notes
+  into the sprint record. Session-reflector is for durable cross-project
+  insights; retrospective is for sprint-scoped synthesis.

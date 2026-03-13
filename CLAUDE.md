@@ -85,6 +85,12 @@ Skills and agents reference tools from multiple MCP servers. When editing, use e
 | Tavily | `mcp__tavily__*` | package-intel, tool-intel |
 | Raindrop | `mcp__raindrop__*` | package-intel, tool-intel |
 
+## Validation
+
+`npm run check` — runs `check:plugin` (validate-plugin.mjs) + `check:md` (remark) + `check:shell` (shellcheck).
+Shell scripts are validated with `shellcheck` (linting) and `shfmt -d`
+(format verification). Requires `brew install shfmt` if not already present.
+
 ## Conventions
 
 ### Skill frontmatter
@@ -120,6 +126,20 @@ Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Prompt-based hooks are pre
 - Same three core enrichment layers as package-intel (frontmatter, `## Observations`, `## Relations`) plus a type-specific content section per tool type
 - Type-specific content section replaces `## Key APIs`: `## Common Usage` for brew/cask, `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for docker, `## Features` + `## Configuration` for vscode
 - Context7 is skipped for all tool types (npm-biased, not useful for tooling)
+
+### Relationship to vp-beads
+
+`vp-knowledge` and `vp-beads` are complementary plugins — both installable
+via the `vp-plugins` marketplace at `voxpelli/vp-claude`.
+
+- **Research feeds tracking** — `/package-intel` and `/tool-intel` output
+  feeds vp-beads' `/upstream-tracker`. Friction or bugs discovered during
+  research can be logged as upstream issues with matching prefix notation
+  (`brew:<name>`, `action:<owner>/<repo>`, etc.).
+- **Capture ↔ synthesis** — `session-reflector` captures in-sprint
+  discoveries into Basic Memory; at sprint-close, vp-beads' `/retrospective`
+  synthesises those notes into the sprint record. Mental model: session-
+  reflector for in-sprint capture, retrospective for end-of-sprint synthesis.
 
 ### Relationship to upstream memory-* skills
 
