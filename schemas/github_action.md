@@ -10,6 +10,7 @@ schema:
   outputs?(array): string, outputs the action produces and what they contain
   permission?(array): string, required GITHUB_TOKEN permissions (e.g. contents: read)
   gotcha?(array): string, common pitfalls, version pinning, supply-chain considerations
+  security?(array): string, known CVEs, supply-chain incidents, and security advisories
   feature?(array): string, notable capabilities worth knowing
   relates_to?(array): Note, related actions or engineering notes
 settings:
@@ -43,6 +44,7 @@ Preferred relation labels for GitHub Action notes:
 - [purpose] Schema for GitHub Actions notes in the actions/ directory
 - [convention] `inputs` and `outputs` map to the `## Inputs & Outputs` section tool-intel writes
 - [convention] `permission` maps to the `## Permissions` section in tool-intel output
+- [convention] `security` captures CVEs and supply-chain advisories; distinguish from `gotcha` (usage pitfalls)
 
 ## Relations
 

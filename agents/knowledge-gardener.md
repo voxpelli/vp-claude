@@ -39,6 +39,7 @@ tools:
   - mcp__basic-memory__schema_validate
   - mcp__basic-memory__list_directory
   - mcp__basic-memory__view_note
+  - mcp__basic-memory__schema_diff
 ---
 
 You are an autonomous agent that maintains the health of a Basic Memory
@@ -109,8 +110,20 @@ Also run `schema_infer` to check field frequencies:
 ```
 schema_infer(note_type="npm_package")
 schema_infer(note_type="crate_package")
+schema_infer(note_type="brew_formula")
 schema_infer(note_type="engineering")
 ```
+
+Also run `schema_diff` on high-volume types to detect field drift:
+```
+schema_diff(note_type="npm_package")
+schema_diff(note_type="crate_package")
+schema_diff(note_type="brew_formula")
+schema_diff(note_type="brew_cask")
+schema_diff(note_type="engineering")
+```
+
+Drift findings (fields in notes but absent from schema, or schema fields fallen out of use) are candidates for schema evolution — report them in the output but do not treat them as validation failures.
 
 For each note, verify it has all three enrichment layers:
 - **Frontmatter `packages`** — at least one package listed (skip meta/process notes)

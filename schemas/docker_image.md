@@ -9,6 +9,7 @@ schema:
   tags?: string, tag strategy — key variant tags (alpine, slim, version pinning)
   config?: string, key environment variables, mount points, and exposed ports
   gotcha?(array): string, common pitfalls, size/security, pinning vs latest
+  security?(array): string, known CVEs, base image vulnerabilities, and security advisories
   feature?(array): string, notable capabilities or base layer choices
   relates_to?(array): Note, related images or engineering notes
 settings:
@@ -42,6 +43,7 @@ Preferred relation labels for Docker image notes:
 - [purpose] Schema for Docker image notes in the docker/ directory
 - [convention] `tags` maps to the `## Tags` section tool-intel writes
 - [convention] Always note whether the image has an official Docker Hub presence vs third-party registry
+- [convention] `security` captures CVEs and image vulnerabilities; distinguish from `gotcha` (usage pitfalls)
 
 ## Relations
 

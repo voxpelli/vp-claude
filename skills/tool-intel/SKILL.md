@@ -156,11 +156,11 @@ conventions per tool type:
 | `docker` | `docker:<image>` | `docker/` | `docker_image` |
 | `vscode` | `vscode:<publisher>.<ext>` | `vscode/` | `vscode_extension` |
 
-All notes use three enrichment layers:
+All tool notes share three core enrichment layers plus a type-specific content section:
 - **Frontmatter** with `packages` array, `type`, and `tags`
-- **Type-specific content section** (see templates — differs by tool type)
 - **`## Observations`** with `[category]` tagged items
 - **`## Relations`** with `[[wiki-links]]`
+- **Type-specific content section** (differs by type — e.g. `## Common Usage` for brew, `## Inputs & Outputs` for actions; see templates)
 
 ### Step 5: Write or update the note
 

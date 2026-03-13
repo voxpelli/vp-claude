@@ -53,6 +53,7 @@ tools:
   - mcp__basic-memory__recent_activity
   - mcp__basic-memory__schema_infer
   - mcp__basic-memory__schema_validate
+  - mcp__basic-memory__schema_diff
   - mcp__basic-memory__list_directory
   - mcp__basic-memory__view_note
 ---
@@ -103,8 +104,19 @@ schema_validate(note_type="brew_cask")
 schema_validate(note_type="github_action")
 schema_validate(note_type="docker_image")
 schema_validate(note_type="vscode_extension")
+schema_validate(note_type="engineering")
+schema_diff(note_type="npm_package")
+schema_diff(note_type="crate_package")
+schema_diff(note_type="brew_formula")
+schema_diff(note_type="brew_cask")
+schema_diff(note_type="engineering")
 recent_activity(timeframe="90d", output_format="json")
 ```
+
+Run `schema_validate` to catch notes that violate their schema (broken/missing required
+fields). Run `schema_diff` on the high-volume types to catch drift — fields used in notes
+but absent from the schema, or schema fields that have fallen out of use. Drift findings
+are candidates for schema evolution, not note fixes.
 
 Categorize findings into auto-fixable vs needs-confirmation.
 
@@ -251,6 +263,9 @@ Same principles as the knowledge-gardener:
   structured access
 - Use `build_context(max_related=10)` to limit traversal
 - Batch related edits on the same note into minimal `edit_note` calls
+- Use `search_notes(query="…", entity_types=["observation"])` to search observations
+  directly across notes without pulling full note bodies — more precise than full-text
+  search when you know the category (e.g. `search_notes("[gotcha] fastify", entity_types=["observation"])`)
 - Examples in this file use bare pseudo-code — invoke them as MCP tool calls, never as scripts
 
 ## Guidelines

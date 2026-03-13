@@ -117,7 +117,7 @@ Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Prompt-based hooks are pre
 | `docker:` | `docker/` | `docker_image` | `docker:node` |
 | `vscode:` | `vscode/` | `vscode_extension` | `vscode:esbenp.prettier-vscode` |
 
-- Same three enrichment layers as package-intel: frontmatter, `## Observations`, `## Relations`
+- Same three core enrichment layers as package-intel (frontmatter, `## Observations`, `## Relations`) plus a type-specific content section per tool type
 - Type-specific content section replaces `## Key APIs`: `## Common Usage` for brew/cask, `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for docker, `## Features` + `## Configuration` for vscode
 - Context7 is skipped for all tool types (npm-biased, not useful for tooling)
 
