@@ -28,7 +28,7 @@ assistant: \"I'll use the knowledge-gardener agent to generate a health report.\
 General health check — gardener produces the report, maintainer would act on it.
 </commentary>
 </example>"
-model: inherit
+model: sonnet
 color: cyan
 tools:
   - mcp__basic-memory__search_notes

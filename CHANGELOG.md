@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.1][] - 2026-03-14
+
+### Changed
+
+- **`knowledge-gardener` model set to `sonnet`** — read-only agent with high
+  tool volume (50-100+ calls) now pinned to sonnet for consistent audit quality
+  regardless of session model. Zero write risk makes this safe — worst case is a
+  less thorough report, never data corruption. Matches the pattern used by
+  official Claude Code plugins (`code-explorer`, `code-architect`). The other
+  two agents (`knowledge-maintainer`, `session-reflector`) remain at `inherit`.
+
 ## [0.10.0][] - 2026-03-13
 
 ### Added
@@ -181,6 +192,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.10.1]: https://github.com/voxpelli/vp-claude/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/voxpelli/vp-claude/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/voxpelli/vp-claude/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/voxpelli/vp-claude/compare/v0.7.1...v0.8.0
