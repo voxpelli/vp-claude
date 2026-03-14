@@ -64,6 +64,8 @@ skill covers tooling only.
 
 ### Step 1: Check for existing note
 
+<!-- This pattern is mirrored in package-intel — update both when changing -->
+
 Fast existence check first (no content loaded):
 ```
 list_directory(dir_name="<ecosystem-dir>", file_name_glob="*<sanitized-name>*")
@@ -181,6 +183,8 @@ All tool notes share three core enrichment layers plus a type-specific content s
 - **Type-specific content section** (differs by type — e.g. `## Common Usage` for brew, `## Inputs & Outputs` for actions; see templates)
 
 ### Step 5: Write or update the note
+
+<!-- This pattern is mirrored in package-intel — update both when changing -->
 
 **New tool:** Use `write_note` with the full template. Set
 `note_type="<tool-type>"` (e.g., `note_type="github_action"`).

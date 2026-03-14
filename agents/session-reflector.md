@@ -29,7 +29,7 @@ Any deliberate memory-capture request maps to the session-reflector.
 </commentary>
 </example>"
 model: inherit
-color: purple
+color: magenta
 tools:
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__read_note

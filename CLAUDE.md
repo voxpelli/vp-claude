@@ -33,7 +33,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 - **tool-intel** — Researches a developer environment or CI/CD tool via four sources (Basic Memory, DeepWiki for actions/docker, Tavily, Raindrop) and writes/updates a structured prefixed note. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), and VSCode extensions (`vscode:`). User-invocable as `/tool-intel <prefix>:<name>`.
 - **knowledge-gaps** — Parses code manifest files (`package.json`, `Cargo.toml`, etc.) and tool manifests (`Brewfile`, `.github/workflows/*.yml`, `Dockerfile`, `.vscode/extensions.json`), checks BM coverage, tiers package gaps by import frequency, lists all undocumented tools. User-invocable as `/knowledge-gaps`.
 
-### Agents (2)
+### Agents (3)
 
 - **knowledge-gardener** — Read-only autonomous auditor: inventory, schema validation, orphan detection, relation integrity, stale/duplicate notes, cross-project consistency. **Never writes or modifies notes.**
 - **knowledge-maintainer** — All-in-one write agent that acts on audit findings. Auto-fixes structural issues (missing sections, broken frontmatter, orphan linking). Confirms before content changes (merging duplicates, rewriting prose, archiving). Auto-runs `/package-intel` for Tier 1 undocumented packages (3+ imports) and `/tool-intel` for undocumented tools from detected manifests. `delete_note` intentionally excluded — use `move_note` to `archive/`. Reactive only — user must explicitly invoke.
@@ -103,7 +103,7 @@ Required fields: `name`, `description`, `model`, `color`, `tools`. The `tools` f
 
 ### Hook conventions
 
-Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Prompt-based hooks are preferred for complex logic. All hooks are defined in `hooks/hooks.json`.
+Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Command hooks with `additionalContext` are preferred for lifecycle events (PreCompact, SessionStart) that need to inject instructions into the main session. Prompt hooks are used for PostToolUse/PostToolUseFailure where a separate evaluation is appropriate. All hooks are defined in `hooks/hooks.json`.
 
 ### Note structure conventions (for package-intel output)
 

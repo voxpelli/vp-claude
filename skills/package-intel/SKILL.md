@@ -76,6 +76,8 @@ One argument: the package identifier with an optional ecosystem prefix.
 
 ### Step 1: Check for existing note
 
+<!-- This pattern is mirrored in tool-intel — update both when changing -->
+
 Fast existence check first (no content loaded):
 ```
 list_directory(dir_name="<ecosystem-dir>", file_name_glob="*<sanitized-pkg-name>*")
@@ -189,6 +191,8 @@ All notes use three enrichment layers:
 - **`## Relations`** with `[[wiki-links]]`
 
 ### Step 5: Write or update the note
+
+<!-- This pattern is mirrored in tool-intel — update both when changing -->
 
 **New package:** Use `write_note` with the full template. Set
 `note_type="<ecosystem-type>"` (e.g., `note_type="crate_package"`).
