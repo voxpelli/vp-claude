@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0][] - 2026-03-14
+
+### Added
+
+- **PostToolUseFailure hook** — classifies Basic Memory write/edit failures
+  into five categories (server unavailable, invalid argument, note not found,
+  permission error, unknown) and surfaces actionable recovery guidance as a
+  systemMessage. Short timeout (10s) — classification only, no retry.
+- **Validator: agent color and model checks** — validates against the allowed
+  sets (`blue`/`cyan`/`green`/`yellow`/`magenta`/`red` for colors;
+  `inherit`/`sonnet`/`opus`/`haiku` for models).
+- **Validator: tool-reference audit** — cross-checks `mcp__*__*` patterns in
+  skill/agent prose against their declared `allowed-tools`/`tools` frontmatter,
+  catching references that would be silently blocked at runtime.
+- **Validator: expanded hook type allowlist** — now accepts `agent` and `http`
+  in addition to `prompt` and `command` (future-proofing).
+
+### Changed
+
+- **PreCompact hook converted from prompt to command** — the previous
+  `type: "prompt"` hook was non-conforming (PreCompact only supports command
+  hooks per official docs) and prompt hooks spawn a separate Haiku instance
+  with no MCP tool access, making the reflection instructions unreachable.
+  Now emits `additionalContext` JSON via a shell script, injecting reflection
+  instructions into the main Claude session which has full MCP access.
+  Timeout drops from 30s to 5s (static JSON output).
+
+### Fixed
+
+- **`session-reflector` color** — `purple` → `magenta` (purple not in the
+  valid agent color set).
+- **CLAUDE.md agent count** — "Agents (2)" → "Agents (3)", wrong since
+  session-reflector was added in v0.3.0.
+- **Removed duplicate `note-template.md`** — identical to
+  `note-template-npm.md` and unreferenced by any skill.
+- **Cross-reference comments** added between `package-intel` and `tool-intel`
+  at Steps 1 and 5 (shared existence-check and write/update patterns).
+
 ## [0.10.1][] - 2026-03-14
 
 ### Changed
@@ -192,6 +230,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.11.0]: https://github.com/voxpelli/vp-claude/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/voxpelli/vp-claude/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/voxpelli/vp-claude/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/voxpelli/vp-claude/compare/v0.8.0...v0.9.0
