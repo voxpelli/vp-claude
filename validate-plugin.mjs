@@ -48,6 +48,12 @@ function extractFrontmatter (content) {
   }
 }
 
+const VALID_HOOK_TYPES = new Set(['prompt', 'command', 'agent', 'http'])
+
+const VALID_AGENT_COLORS = new Set(['blue', 'cyan', 'green', 'yellow', 'magenta', 'red'])
+
+const VALID_AGENT_MODELS = new Set(['inherit', 'sonnet', 'opus', 'haiku'])
+
 const KNOWN_MCP_PREFIXES = [
   'mcp__basic-memory__',
   'mcp__deepwiki__',
@@ -64,6 +70,29 @@ function validateMcpPrefixes (file, tools) {
   for (const tool of tools) {
     if (tool.startsWith('mcp__') && !KNOWN_MCP_PREFIXES.some((p) => tool.startsWith(p))) {
       error(file, `Unknown MCP prefix in tool: ${tool}`)
+    }
+  }
+}
+
+/**
+ * Audit tool references in prose against declared tools list.
+ * @param {string} file
+ * @param {string} content
+ * @param {string[]} declaredTools
+ * @param {string} fieldName
+ */
+function auditToolReferences (file, content, declaredTools, fieldName) {
+  // Strip YAML frontmatter to avoid matching the allowlist itself
+  const prose = content.replace(/^---\n[\s\S]*?\n---/, '')
+  const toolSet = new Set(declaredTools)
+  // Match mcp__<server>__<tool> patterns in prose
+  const refs = prose.matchAll(/mcp__[a-zA-Z0-9_-]+__[a-zA-Z0-9_-]+/g)
+  const seen = new Set()
+  for (const match of refs) {
+    const tool = match[0]
+    if (!seen.has(tool) && !toolSet.has(tool)) {
+      seen.add(tool)
+      error(file, `Tool "${tool}" referenced in prose but missing from ${fieldName}`)
     }
   }
 }
@@ -133,8 +162,8 @@ if (existsSync(hooksPath)) {
           }
           for (const hook of e.hooks) {
             const hk = /** @type {Record<string, unknown>} */ (hook)
-            if (hk.type !== 'prompt' && hk.type !== 'command') {
-              error(hooksPath, `hooks.${event}: hook type must be "prompt" or "command", got "${String(hk.type)}"`)
+            if (!VALID_HOOK_TYPES.has(hk.type)) {
+              error(hooksPath, `hooks.${event}: hook type must be one of ${[...VALID_HOOK_TYPES].join(', ')}, got "${String(hk.type)}"`)
             }
             if (typeof hk.timeout !== 'number') {
               error(hooksPath, `hooks.${event}: hook missing "timeout" (number)`)
@@ -181,6 +210,7 @@ for (const file of skillFiles) {
   }
   if (Array.isArray(fm['allowed-tools'])) {
     validateMcpPrefixes(file, /** @type {string[]} */ (fm['allowed-tools']))
+    auditToolReferences(file, content, /** @type {string[]} */ (fm['allowed-tools']), 'allowed-tools')
   }
 }
 
@@ -211,6 +241,13 @@ if (existsSync(agentsDir)) {
     }
     if (Array.isArray(fm.tools)) {
       validateMcpPrefixes(file, /** @type {string[]} */ (fm.tools))
+      auditToolReferences(file, content, /** @type {string[]} */ (fm.tools), 'tools')
+    }
+    if ('color' in fm && !VALID_AGENT_COLORS.has(fm.color)) {
+      error(file, `Invalid agent color "${String(fm.color)}", must be one of: ${[...VALID_AGENT_COLORS].join(', ')}`)
+    }
+    if ('model' in fm && !VALID_AGENT_MODELS.has(fm.model)) {
+      error(file, `Invalid agent model "${String(fm.model)}", must be one of: ${[...VALID_AGENT_MODELS].join(', ')}`)
     }
 
     // Gardener read-only invariant
