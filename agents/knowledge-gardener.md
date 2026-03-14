@@ -104,6 +104,11 @@ schema_validate(note_type="github_action")
 schema_validate(note_type="docker_image")
 schema_validate(note_type="vscode_extension")
 schema_validate(note_type="engineering")
+schema_validate(note_type="standard")
+schema_validate(note_type="concept")
+schema_validate(note_type="milestone")
+schema_validate(note_type="service")
+schema_validate(note_type="person")
 ```
 
 Also run `schema_infer` to check field frequencies:
@@ -112,6 +117,10 @@ schema_infer(note_type="npm_package")
 schema_infer(note_type="crate_package")
 schema_infer(note_type="brew_formula")
 schema_infer(note_type="engineering")
+schema_infer(note_type="standard")
+schema_infer(note_type="concept")
+schema_infer(note_type="milestone")
+schema_infer(note_type="service")
 ```
 
 Also run `schema_diff` on high-volume types to detect field drift:
@@ -121,6 +130,10 @@ schema_diff(note_type="crate_package")
 schema_diff(note_type="brew_formula")
 schema_diff(note_type="brew_cask")
 schema_diff(note_type="engineering")
+schema_diff(note_type="standard")
+schema_diff(note_type="concept")
+schema_diff(note_type="milestone")
+schema_diff(note_type="service")
 ```
 
 Drift findings (fields in notes but absent from schema, or schema fields fallen out of use) are candidates for schema evolution — report them in the output but do not treat them as validation failures.

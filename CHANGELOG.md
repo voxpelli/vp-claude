@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0][] - 2026-03-14
+
+### Added
+
+- **5 new knowledge schemas** — `standard`, `concept`, `milestone`, `service`,
+  `person` types for documenting protocols, movements, historical events,
+  products, and key figures. Each schema added to `schemas/` and synced to BM.
+- **Domain standard detection in `/knowledge-gaps`** (Steps 11–13) — searches
+  BM for `type: standard` notes, greps the codebase for mentions, classifies
+  by reference count (key/referenced/undocumented), and appends a Domain
+  Standard Coverage section to the gap report. Skips ubiquitous standards
+  (HTTP, HTML, JSON, etc.).
+- **Schema validation for new types in agents** — `knowledge-gardener` and
+  `knowledge-maintainer` now run `schema_validate`, `schema_infer`, and
+  `schema_diff` for the 5 new types.
+- **CLAUDE.md updated** — schema count from twelve to seventeen, new types
+  listed under Knowledge types.
+
+### Fixed
+
+- **Schema quality issues across all 5 new schemas:**
+  - Converted multi-value observation fields to arrays (`limitation`,
+    `innovation`, `design`, `pattern`, `trend`, `gap`, `risk`, `lesson`,
+    `failure`, `anti-pattern`, `precedent`, `insight`)
+  - `milestone`: renamed `validation` → `proven` (collided with
+    `settings.validation`); dropped `cautionary` and `competitive-gap`
+    (12→10 observation fields)
+  - `concept`: removed domain-specific fields `ux`, `accessibility`,
+    `display_for`
+  - `person`: `source` now required (matches other 4 schemas)
+- **`UPSTREAM-claude-code.md`** — escaped `[degraded]` bracket to fix
+  pre-existing remark warning.
+
 ## [0.11.0][] - 2026-03-14
 
 ### Added
@@ -230,6 +263,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.12.0]: https://github.com/voxpelli/vp-claude/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/voxpelli/vp-claude/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/voxpelli/vp-claude/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/voxpelli/vp-claude/compare/v0.9.0...v0.10.0

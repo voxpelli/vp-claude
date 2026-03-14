@@ -11,7 +11,6 @@ schema:
   gotcha?(array): string, common pitfalls, non-obvious behaviour, conflicts
   feature?(array): string, notable capabilities worth knowing beyond basic usage
   relates_to?(array): Note, related formula, cask, or engineering notes
-  depends_on?(array): Note, runtime or build dependencies
 settings:
   validation: warn
 ---
@@ -41,7 +40,6 @@ Preferred relation labels for brew formula notes (use consistently):
 - `Layer 1 alias in [[dotfiles:modern-cli-stack]]` — transparent replacement
 - `Layer 2 nudge in [[dotfiles:modern-cli-stack]]` — hint-only (not alias)
 - `relates to [[brew:x]]` — related formula, cask, or engineering notes
-- `depends on [[brew:x]]` — runtime or build dependency
 
 ## Observations
 

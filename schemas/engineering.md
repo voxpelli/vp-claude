@@ -16,6 +16,8 @@ schema:
   solution?(array): string, proven solutions to known problems
   tip?(array): string, practical tips and shortcuts
   constraint?(array): string, hard constraints that must be honored
+  lesson?(array): string, lessons learned from real-world experience
+  anti-pattern?(array): string, approaches to avoid and why
   root-cause?(array): string, root cause analysis of issues
   relates_to(array): Note, related knowledge notes
   depends_on?(array): Note, package dependencies relevant to topic
