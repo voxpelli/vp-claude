@@ -15,7 +15,7 @@
       "name": "vp-beads",
       "source": { "source": "github", "repo": "voxpelli/claude-beads" },
       "description": "Sprint workflow automation: retrospectives, upstream vendor tracking, and vendor sync for projects using beads and Basic Memory",
-      "version": "0.5.0"
+      "version": "0.5.1"
     }
   ]
 }
