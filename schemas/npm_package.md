@@ -10,6 +10,8 @@ schema:
   convention?(array): string, important usage conventions
   benefit?(array): string, advantages and strengths over alternatives
   limitation?(array): string, constraints and known weaknesses
+  security?(array): string, CVE status, supply-chain considerations, and advisories
+  api?(array): string, key API surface — method signatures, options, return shapes
   relates_to?(array): Note, related knowledge notes
   depends_on?(array): Note, upstream package dependencies
 settings:

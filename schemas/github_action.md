@@ -11,6 +11,8 @@ schema:
   permission?(array): string, required GITHUB_TOKEN permissions (e.g. contents: read)
   gotcha?(array): string, common pitfalls, version pinning, supply-chain considerations
   security?(array): string, known CVEs, supply-chain incidents, and security advisories
+  version?(array): string, version pinning and update guidance
+  usage?(array): string, common workflow patterns and invocation examples
   feature?(array): string, notable capabilities worth knowing
   relates_to?(array): Note, related actions or engineering notes
 settings:

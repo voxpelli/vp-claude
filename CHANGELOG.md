@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.1][] - 2026-03-15
+
+### Changed
+
+- **Schema evolution — 3 schemas updated based on drift analysis:**
+  - `github_action`: added `version?(array)` (89% usage) and `usage?(array)`
+    (78% usage) — both were widely used but not in the schema
+  - `npm_package`: added `security?(array)` (25% usage) and synced
+    `api?(array)` from BM — aligns schema with how package-intel actually
+    writes notes
+  - `standard`: added `trend?(array)` (38%), `pattern?(array)` (25%),
+    `complements?` (25%), and `lesson_for?` (25%) — all emerged organically
+    in IndieWeb standard notes
+
 ## [0.12.0][] - 2026-03-14
 
 ### Added
@@ -263,6 +277,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.12.1]: https://github.com/voxpelli/vp-claude/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/voxpelli/vp-claude/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/voxpelli/vp-claude/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/voxpelli/vp-claude/compare/v0.10.0...v0.10.1

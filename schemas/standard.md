@@ -12,9 +12,13 @@ schema:
   limitation?(array): string, known limitations
   security?: string, security considerations
   evolution?: string, how it evolved
+  trend?(array): string, current adoption and ecosystem trends
+  pattern?(array): string, recurring implementation patterns
   innovation?(array): string, key innovations
   relates_to?(array): Note, related knowledge notes
   extends?: Note, protocol this extends
+  complements?: Note, complementary standard or protocol
+  lesson_for?: Note, what this standard teaches lessons about
   extended_by?(array): Note, protocols that extend this
   succeeded?: Note, protocol this replaced
   used_by?(array): Note, services and tools using this protocol
