@@ -120,9 +120,25 @@ Required fields: `name`, `description`, `model`, `color`, `tools`. The `tools` f
 
 All plugin content (schemas, skills, agents) must be **domain-generic** — no hardcoded directory paths, domain-specific examples, or topic-specific trigger phrases. Schema conventions should say "organized by domain" rather than prescribing specific directories. Examples in schemas should use broadly recognizable names (e.g. `HTTP/2`, `Vercel`) not niche domain terms.
 
+### Tool list hygiene
+
+Every tool in `allowed-tools` (skills) or `tools` (agents) must be called in the workflow prose. Phantom tools (listed but never used) accumulate silently — run a periodic tool reference audit across all components. When creating a skill/agent pair that shares a workflow, keep tool lists identical and remove tools the agent doesn't need (e.g., `Bash` for git operations the agent can't perform).
+
+### Output template conventions
+
+Every section in an output template (skill synthesize step or agent output step) must have a corresponding workflow step that loads data for it. Sections without a data source produce empty or hallucinated content. Treat output templates as contracts: every field needs a provider.
+
 ### Hook conventions
 
 Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Command hooks with `additionalContext` are preferred for lifecycle events (PreCompact, SessionStart) that need to inject instructions into the main session. Prompt hooks are used for PostToolUse/PostToolUseFailure where a separate evaluation is appropriate. All hooks are defined in `hooks/hooks.json`.
+
+### Hook additionalContext pattern
+
+SessionStart/PreCompact `additionalContext` should suggest existing skills (e.g., "suggest running `/knowledge-prime`") rather than duplicating skill workflow steps inline. Keeps hooks lightweight (~1 sentence) and avoids drift between hook instructions and skill definitions.
+
+### Three-level invocation pattern
+
+Features that benefit from progressive disclosure can be offered at three levels: (1) SessionStart hook hint (passive, ~1 sentence `additionalContext`), (2) on-demand skill (user-invocable, full workflow), (3) autonomous agent (same workflow, runs as subagent). Not all features need all three levels — use the primer/reflector pair as the reference implementation.
 
 ### Note structure conventions (for package-intel output)
 
@@ -154,6 +170,8 @@ Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Command hooks with `additi
 ## Releasing
 
 After bumping the version in `plugin.json` and `CHANGELOG.md`, also update the
+README.md (component counts, skill/agent descriptions, plugin structure tree,
+"How it fits together" diagram) and the
 `vp-knowledge` entry in `.claude-plugin/marketplace.json` in this same repo
 (both live here — no cross-repo sync needed for vp-knowledge itself).
 
