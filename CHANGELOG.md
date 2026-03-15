@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0][] - 2026-03-15
+
+### Changed
+
+- **CI workflow** — added `permissions: contents: read` (principle of least
+  privilege) and bumped `actions/checkout` v4 → v5. Aligns with vp-beads
+  v0.6.2 CI patterns.
+- **PostToolUseFailure matcher expanded** — now covers `schema_validate`,
+  `schema_diff`, and `schema_infer` in addition to `write_note`/`edit_note`.
+  Schema tools can fail during trend-review sprints and benefit from the same
+  five-category error classification and recovery guidance.
+- **Script naming: `check:shell` → `check:sh`** — standardizes npm script
+  name to match vp-beads convention.
+
 ## [0.13.1][] - 2026-03-15
 
 ### Fixed
@@ -330,6 +344,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.14.0]: https://github.com/voxpelli/vp-claude/compare/v0.13.1...v0.14.0
 [0.13.1]: https://github.com/voxpelli/vp-claude/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/voxpelli/vp-claude/compare/v0.12.1...v0.13.0
 [0.12.1]: https://github.com/voxpelli/vp-claude/compare/v0.12.0...v0.12.1
