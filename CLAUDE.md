@@ -78,6 +78,8 @@ The `schemas/` directory in the plugin root is the version-controlled source of 
 
 **Keeping in sync:** When editing a schema (fixing drift, adding fields), update both the Basic Memory note via `edit_note` and the corresponding file in `schemas/` in the same PR.
 
+**Schema evolution workflow:** Run `schema_diff` to find fields used in notes but absent from schema (and vice versa). Fields above 25% usage are candidates for addition; fields at 0% across 10+ notes are candidates for removal. Additive changes (new optional fields) don't need a version bump. Always validate after updating: `schema_validate(note_type="<type>")`.
+
 ## MCP Tool Dependencies
 
 Skills and agents reference tools from multiple MCP servers. When editing, use exact tool names:
@@ -106,12 +108,17 @@ Required fields: `name`, `description`, `user-invocable`, `allowed-tools`. The `
 
 Required fields: `name`, `description`, `model`, `color`, `tools`. The `tools` field is a YAML list of allowed tool names. The knowledge-gardener must remain read-only — never add `write_note`, `edit_note`, or `delete_note` to its tools list. The knowledge-maintainer has write access but must confirm before content-level changes.
 
+### Content conventions
+
+All plugin content (schemas, skills, agents) must be **domain-generic** — no hardcoded directory paths, domain-specific examples, or topic-specific trigger phrases. Schema conventions should say "organized by domain" rather than prescribing specific directories. Examples in schemas should use broadly recognizable names (e.g. `HTTP/2`, `Vercel`) not niche domain terms.
+
 ### Hook conventions
 
 Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Command hooks with `additionalContext` are preferred for lifecycle events (PreCompact, SessionStart) that need to inject instructions into the main session. Prompt hooks are used for PostToolUse/PostToolUseFailure where a separate evaluation is appropriate. All hooks are defined in `hooks/hooks.json`.
 
 ### Note structure conventions (for package-intel output)
 
+- Schema note identifiers use the permalink form (e.g. `main/schema/npm_package`), not the title — check with `read_note` before editing
 - Title: `npm:<package-name>` (resolves `[[npm:pkg]]` wiki-links)
 - Directory: `npm/`
 - Type: `npm_package` (snake_case — Basic Memory enforces snake_case for all type fields)
@@ -157,6 +164,10 @@ via the `vp-plugins` marketplace at `voxpelli/vp-claude`.
   discoveries into Basic Memory; at sprint-close, vp-beads' `/retrospective`
   synthesises those notes into the sprint record. Mental model: session-
   reflector for in-sprint capture, retrospective for end-of-sprint synthesis.
+
+### Parallel agent orchestration
+
+Up to 10 background `/package-intel` + `/tool-intel` agents can run safely in parallel — notes are file-disjoint across ecosystems. The gardener→maintainer two-pass workflow (audit first, fix second) is the recommended approach for graph maintenance.
 
 ### Relationship to upstream memory-* skills
 
