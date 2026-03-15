@@ -1,6 +1,6 @@
 ---
 name: schema-evolve
-description: "This skill should be used when the user asks about 'schema drift', 'schema evolution', 'evolve schema', 'schema sync', 'sync schemas', 'update schema fields', 'schema field frequency', 'missing schema fields', 'unused schema fields', 'schema proposal', 'schema cardinality'. Detects drift between Basic Memory schema definitions and actual note usage, proposes field additions/removals based on frequency analysis, and dual-syncs BM notes + local schema files after approval."
+description: "This skill should be used when the user asks about 'schema drift', 'schema evolution', 'evolve schema', 'schema sync', 'sync schemas', 'update schema fields', 'schema field frequency', 'missing schema fields', 'unused schema fields', 'schema proposal', 'schema cardinality', 'check schema', 'schema audit', 'schema changes'. Detects drift between Basic Memory schema definitions and actual note usage, proposes field additions/removals based on frequency analysis, and dual-syncs BM notes + local schema files after approval."
 user-invocable: true
 allowed-tools:
   - Read
@@ -39,8 +39,9 @@ schema files and ask the user to pick one.
 ## Edge Cases
 
 - **No schema found** — if `schema_diff` returns `schema_found: false`, report
-  "No schema registered in Basic Memory for type `<note_type>`" and suggest
-  seeding it from the local schema file. Stop.
+  "No schema registered in Basic Memory for type `<note_type>`." Direct the
+  user to run `/package-intel` or `/tool-intel` first (they auto-seed schemas
+  on first use), or to use `/memory-schema` to create the schema manually. Stop.
 - **No drift detected** — if `schema_diff` returns empty `new_fields`,
   `dropped_fields`, and `cardinality_changes`, report "Schema is in sync —
   no changes needed." Stop.
@@ -49,6 +50,9 @@ schema files and ask the user to pick one.
 - **Small sample** — if `schema_infer` reports fewer than 5 notes, warn that
   frequency data may be unreliable. Still present the proposal but flag it.
 - **User rejects proposal** — do not write anything. Report "No changes made."
+- **Pre-existing divergence** — if the BM schema note and local `schemas/`
+  file differ before evolution begins (detected in Step 4), present the
+  divergence first and ask the user to reconcile before proceeding.
 
 ## Workflow
 
@@ -108,6 +112,10 @@ Read(file_path="<plugin-root>/schemas/<note_type>.md")
 
 Note: BM schema note identifiers use the `main/schema/<type>` permalink form
 with underscores matching the entity name (e.g., `main/schema/npm_package`).
+
+Compare the `schema:` blocks of both sources. If they differ (pre-existing
+divergence), present the differences and ask the user to reconcile before
+proceeding with evolution. Do not compound existing drift.
 
 ### Step 5: Present proposal
 
@@ -179,8 +187,11 @@ schema_validate(note_type="<note_type>", output_format="json")
 ```
 
 - **All pass** — report success with count
-- **Some fail** — list failures (pre-existing issues, not caused by evolution)
-- **Schema invalid** — revert and retry
+- **Some fail** — list failures. These are typically pre-existing issues
+  exposed by the schema change, not caused by it. Present as "notes to fix"
+- **Schema invalid** — report the validation error to the user. Do not
+  auto-revert. The user can manually fix the schema or undo via
+  `git checkout schemas/<type>.md` for the local file
 
 ### Step 9: Report results
 
