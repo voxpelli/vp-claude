@@ -6,6 +6,11 @@ cat <<'EOF'
 {"systemMessage": "Knowledge graph context: Use `mcp__basic-memory__list_directory(dir_name=\"/\", depth=1)` and `mcp__basic-memory__recent_activity(timeframe=\"7d\")` early in the session if the user's task involves the knowledge graph or packages. The /package-intel and /knowledge-gaps skills are available for multi-ecosystem package research (npm, Rust crates, Go modules, PHP Composer, Python PyPI, Ruby gems). Use prefixed invocations: /package-intel crate:serde, /package-intel pypi:requests, /package-intel go:github.com/gin-gonic/gin, /package-intel composer:vendor/pkg, /package-intel gem:rails. No prefix defaults to npm. The /tool-intel skill researches developer environment and CI/CD tooling: brew:<name> (Homebrew formulae), cask:<name> (Homebrew casks), action:<owner>/<repo> (GitHub Actions), docker:<image> (Docker images), vscode:<publisher>.<ext> (VSCode extensions). Use /knowledge-gaps to audit both package and tool manifest coverage. Use /schema-evolve <type> to detect schema drift, propose frequency-driven field changes, and dual-sync BM notes with local schema files."}
 EOF
 
+# Knowledge priming: suggest /knowledge-prime when task involves dependencies
+cat <<'EOF'
+{"additionalContext": "At session start, if the task involves understanding project dependencies, tools, or the knowledge graph, suggest running /knowledge-prime to load a context brief with documented packages, coverage gaps, and key gotchas. For comprehensive gap analysis, suggest /knowledge-gaps. For schema drift detection, suggest /schema-evolve."}
+EOF
+
 # Graph-audit cycle reminder: emit only on every 4th sprint (silent otherwise)
 count=$(find . -maxdepth 1 -name "RETRO-*.md" 2>/dev/null | wc -l | tr -d ' ')
 

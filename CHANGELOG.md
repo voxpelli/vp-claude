@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0][] - 2026-03-15
+
+### Added
+
+- **`/knowledge-prime` skill** — on-demand project context priming from Basic
+  Memory. Detects the project stack (package.json, Cargo.toml, Brewfile, etc.),
+  cross-references dependencies against BM notes, scores relevance using a
+  three-pass algorithm (dep match → graph expansion → beads/git boost), loads
+  critical observations (`[gotcha]`, `[breaking]`, `[limitation]`), and produces
+  a concise context brief. Supports `--deep` flag for extended output (2000-token
+  budget, top 12 notes, additional observation categories).
+- **`knowledge-primer` agent** — autonomous read-only agent for project context
+  priming. Same workflow as the skill but runs as a subagent. Pinned to `sonnet`
+  (read-only, matches gardener). The "before work" counterpart to
+  `session-reflector` (which captures knowledge "after work").
+- **Tag alignment in `knowledge-gardener`** (Step 0 + Step 8) — loads the Tag
+  Vocabulary Standard at audit start, then audits tags across all note types:
+  non-canonical form detection, retired tag detection, missing required per-type
+  ecosystem tags, out-of-vocabulary tags, and tag count checks (3–7 range).
+- **Tag auto-fix in `knowledge-maintainer`** (Step 2b) — three auto-fix
+  sub-steps: normalize canonical forms (deterministic 1:1 renames), remove
+  type-echo and retired tags, add missing required ecosystem tags. All
+  deterministic and low-risk — applied without confirmation.
+- **SessionStart hook enhanced** — now emits `additionalContext` suggesting
+  `/knowledge-prime` for project context priming when the task involves
+  dependencies or tools. Also suggests `/knowledge-gaps` and `/schema-evolve`
+  for deeper analysis.
+
+### Changed
+
+- **CLAUDE.md documentation refresh** — skills count from 4 to 5, agents count
+  from 3 to 4, plugin layout diagram updated, new component descriptions added
+  for knowledge-prime and knowledge-primer.
+- **`plugin.json` description** — now mentions project context priming and tag
+  alignment.
+- **`marketplace.json` description** — now mentions project context priming.
+
 ## [0.14.1][] - 2026-03-15
 
 ### Changed
@@ -354,6 +391,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.15.0]: https://github.com/voxpelli/vp-claude/compare/v0.14.1...v0.15.0
 [0.14.1]: https://github.com/voxpelli/vp-claude/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/voxpelli/vp-claude/compare/v0.13.1...v0.14.0
 [0.13.1]: https://github.com/voxpelli/vp-claude/compare/v0.13.0...v0.13.1

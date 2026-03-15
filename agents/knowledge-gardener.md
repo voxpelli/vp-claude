@@ -65,6 +65,25 @@ Prefer lightweight tools over expensive searches:
 
 Run each check and compile results into a structured report.
 
+### 0. Load tag vocabulary
+
+Load the Tag Vocabulary Standard so canonical forms, retirement list, and
+per-type required tags are available for step 8:
+```
+read_note(identifier="main/engineering/governance/tag-vocabulary-standard-controlled-tags-for-the-knowledge-graph")
+```
+
+Extract and hold in context:
+- **Canonical forms table** — disputed-concept resolutions (e.g., `nodejs` not `node-js`)
+- **Retirement list** — tags that duplicate `type:` field, directory path, or self-reference
+- **Controlled vocabulary** — approved tags grouped by category
+- **Per-type required tags** — `brew` for brew\_formula, `cask` for brew\_cask,
+  `github-actions` for github\_action, `docker` for docker\_image,
+  `vscode` for vscode\_extension
+
+If the note does not exist or cannot be read, skip step 8 entirely and note
+the missing standard in the report's Info section.
+
 ### 1. Inventory
 
 Use `list_directory` for a lightweight directory scan:
@@ -257,9 +276,62 @@ leaked into the cross-project knowledge base:
 - Database table names (unless discussing PostgreSQL patterns generically)
 - Project-specific config keys or environment variables
 
+### 8. Tag alignment
+
+Using the Tag Vocabulary Standard loaded in step 0, audit tags across all
+note types. Sample up to 20 notes per high-volume directory and all notes
+in low-volume directories.
+
+**8a. Collect tags from sampled notes:**
+For each sampled note from the step 1 inventory, call:
+```
+read_note(identifier="<permalink>", include_frontmatter=true, output_format="json")
+```
+
+Extract the `tags` array from frontmatter. Build a frequency map of all tags
+observed across the sample.
+
+**8b. Non-canonical tag detection:**
+Compare every observed tag against the canonical forms table. Flag tags that
+match a "Replaces" entry (e.g., `node-js` → should be `nodejs`,
+`ci` → should be `ci-cd`, `homebrew` → should be `brew`).
+
+**8c. Retired tag detection:**
+Flag tags that appear in the retirement list:
+- Type-echo tags (`concept` on concept-type notes, `standard` on
+  standard-type notes, `service` on service-type notes)
+- Self-referential product names (a package's own name as a tag on its note)
+- Person names used as tags instead of `## Relations` wiki-links
+- `legacy` or `archived` (should be frontmatter `status:` field)
+
+**8d. Missing required per-type tags:**
+For tool-type notes, verify the required ecosystem tag is present:
+```
+search_notes(search_type="permalink", query="brew/", page_size=20)
+search_notes(search_type="permalink", query="casks/", page_size=20)
+search_notes(search_type="permalink", query="actions/", page_size=20)
+search_notes(search_type="permalink", query="docker/", page_size=20)
+search_notes(search_type="permalink", query="vscode/", page_size=20)
+```
+
+For each note returned, read frontmatter and check:
+- brew\_formula notes must have `brew` tag
+- brew\_cask notes must have `cask` tag
+- github\_action notes must have `github-actions` tag
+- docker\_image notes must have `docker` tag
+- vscode\_extension notes must have `vscode` tag
+
+**8e. Out-of-vocabulary tags:**
+Flag tags not present in the controlled vocabulary that appear on 2+ notes.
+Single-use tags on a single note are lower priority but still worth noting.
+
+**8f. Tag count check:**
+Flag notes with fewer than 3 or more than 7 tags (the standard's recommended
+range).
+
 ## Output Format
 
-```markdown
+````markdown
 ## Knowledge Graph Health Report
 
 ### Summary
@@ -275,17 +347,27 @@ leaked into the cross-project knowledge base:
 - [note-title] — orphan note (zero incoming + outgoing links)
 - [note-title] — stale (not updated in 90+ days)
 - [note-title] — potential duplicate of [other-note]
+- [note-title] — non-canonical tag `node-js` (should be `nodejs`)
+- [note-title] — retired type-echo tag `concept` duplicates type: field
+- [note-title] — missing required ecosystem tag `brew` (brew_formula type)
+- [note-title] — 9 tags exceeds 3-7 recommended range
 
 ### Info (maintenance suggestions)
 - [[npm:pkg]] referenced 3 times but has no dedicated note
 - [note-title] contains project-specific path: lib/routes/foo.js
+- Tag `custom-tag` appears on 3 notes but is not in controlled vocabulary
 
 ### Graph Statistics
 - Total relations: N
 - Unresolved [[npm:*]] links: N
 - Average observations per note: N
 - Notes with all 3 layers: N/M (X%)
-```
+- Unique tags observed: N
+- Tags in controlled vocabulary: N/M (X%)
+- Non-canonical tags found: N
+- Retired tags found: N
+- Notes missing required type tags: N
+````
 
 ## Guidelines
 

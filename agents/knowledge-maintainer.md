@@ -181,7 +181,53 @@ target.
 Log all category renames in the summary: "brew:ripgrep: \[install\] → \[usage\]
 (1 observation)".
 
-#### 2b. Fix other structural issues
+#### 2b. Fix tag alignment
+
+Using the Tag Vocabulary Standard (load via `read_note` if not already in
+context from a gardener report):
+```
+read_note(identifier="main/engineering/governance/tag-vocabulary-standard-controlled-tags-for-the-knowledge-graph")
+```
+
+**2b.1 Normalize canonical forms (auto-fix):**
+Deterministic 1:1 renames — apply without confirmation:
+```
+edit_note(
+  identifier="note-title",
+  operation="find_replace",
+  find_text="node-js",
+  content="nodejs"
+)
+```
+
+Common renames: `node-js`→`nodejs`, `ci`→`ci-cd`, `linter`→`linting`,
+`homebrew`→`brew`, `plugins`→`plugin`, `standards`→`standard`.
+
+**2b.2 Remove type-echo and retired tags (auto-fix):**
+Tags that duplicate the note's `type:` field or appear in the retirement
+list can be removed without confirmation:
+- `concept` tag on concept-type notes
+- `standard` tag on standard-type notes
+- `service` tag on service-type notes
+- Self-referential product names (e.g., `vite` tag on `npm:vite` note)
+- `legacy`/`archived` tags (should be `status:` frontmatter)
+
+Person names used as tags should be converted to `## Relations` wiki-links
+instead — present these in Step 4 for confirmation since the conversion
+requires content judgment.
+
+**2b.3 Add missing required ecosystem tags (auto-fix):**
+For tool-type notes missing their required ecosystem tag:
+- brew\_formula notes → add `brew` tag
+- brew\_cask notes → add `cask` tag
+- github\_action notes → add `github-actions` tag
+- docker\_image notes → add `docker` tag
+- vscode\_extension notes → add `vscode` tag
+
+Log all tag changes in the summary: "brew:ripgrep: added missing `brew` tag",
+"npm:fastify: `node-js` → `nodejs`".
+
+#### 2c. Fix other structural issues
 
 **Missing sections:** Read the note first to identify what's actually missing —
 never append blindly, as the sections may already exist:

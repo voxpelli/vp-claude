@@ -15,10 +15,12 @@ skills/
   package-intel/SKILL.md             # Five-source multi-ecosystem package research
   tool-intel/SKILL.md                # Four-source dev-tool research (brew/action/docker/vscode)
   knowledge-gaps/SKILL.md            # Cross-reference deps + tool manifests vs BM coverage
+  knowledge-prime/SKILL.md           # On-demand project context priming from BM
   schema-evolve/SKILL.md             # Frequency-driven schema drift detection and dual-sync
 agents/
-  knowledge-gardener.md              # Read-only graph health auditor
-  knowledge-maintainer.md            # All-in-one graph enhancer (writes)
+  knowledge-gardener.md              # Read-only graph health auditor (incl. tag alignment)
+  knowledge-maintainer.md            # All-in-one graph enhancer (writes, incl. tag fixes)
+  knowledge-primer.md                # Autonomous project context priming
   session-reflector.md               # On-demand conversation → memory capture
 hooks/
   hooks.json                         # PostToolUse, PostToolUseFailure, PreCompact, SessionStart
@@ -28,24 +30,26 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 
 ## Components
 
-### Skills (4)
+### Skills (5)
 
 - **package-intel** — Researches a package via five sources (Basic Memory, DeepWiki, Context7, Tavily, Raindrop) and writes/updates a structured prefixed note. Supports npm, Rust crates, Go modules, PHP Composer, Python PyPI, and Ruby gems. User-invocable as `/package-intel <pkg>`.
 - **tool-intel** — Researches a developer environment or CI/CD tool via four sources (Basic Memory, DeepWiki for actions/docker, Tavily, Raindrop) and writes/updates a structured prefixed note. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), and VSCode extensions (`vscode:`). User-invocable as `/tool-intel <prefix>:<name>`.
 - **knowledge-gaps** — Parses code manifest files (`package.json`, `Cargo.toml`, etc.) and tool manifests (`Brewfile`, `.github/workflows/*.yml`, `Dockerfile`, `.vscode/extensions.json`), checks BM coverage, tiers package gaps by import frequency, lists all undocumented tools. User-invocable as `/knowledge-gaps`.
+- **knowledge-prime** — Surfaces project-relevant Basic Memory knowledge on demand. Detects the project stack, cross-references deps against BM notes, scores relevance, loads critical observations (`[gotcha]`, `[breaking]`, `[limitation]`), and produces a concise context brief. Supports `--deep` for extended output. User-invocable as `/knowledge-prime`.
 - **schema-evolve** — Detects drift between BM schema definitions and actual note usage via `schema_diff`/`schema_infer`, proposes frequency-driven field additions/removals, and dual-syncs BM notes + local `schemas/` files after approval. User-invocable as `/schema-evolve <type>`.
 
-### Agents (3)
+### Agents (4)
 
-- **knowledge-gardener** — Read-only autonomous auditor: inventory, schema validation, orphan detection, relation integrity, stale/duplicate notes, cross-project consistency. **Never writes or modifies notes.**
-- **knowledge-maintainer** — All-in-one write agent that acts on audit findings. Auto-fixes structural issues (missing sections, broken frontmatter, orphan linking). Confirms before content changes (merging duplicates, rewriting prose, archiving). Auto-runs `/package-intel` for Tier 1 undocumented packages (3+ imports) and `/tool-intel` for undocumented tools from detected manifests. `delete_note` intentionally excluded — use `move_note` to `archive/`. Reactive only — user must explicitly invoke.
+- **knowledge-gardener** — Read-only autonomous auditor: inventory, schema validation, orphan detection, relation integrity, stale/duplicate notes, cross-project consistency, tag alignment (step 8). **Never writes or modifies notes.**
+- **knowledge-maintainer** — All-in-one write agent that acts on audit findings. Auto-fixes structural issues (missing sections, broken frontmatter, orphan linking, tag alignment). Confirms before content changes (merging duplicates, rewriting prose, archiving). Auto-runs `/package-intel` for Tier 1 undocumented packages (3+ imports) and `/tool-intel` for undocumented tools from detected manifests. `delete_note` intentionally excluded — use `move_note` to `archive/`. Reactive only — user must explicitly invoke.
+- **knowledge-primer** — Autonomous read-only agent that surfaces project-relevant BM knowledge before work begins. Scans project manifests, cross-references deps against BM, scores relevance, and produces a context brief with key gotchas and coverage gaps. The "before work" counterpart to session-reflector.
 - **session-reflector** — On-demand reflection agent. Reviews the current conversation, extracts durable insights, shows a preview grouped by target note, waits for approval, then writes. Complements the automatic PreCompact hook with a deliberate, user-gated equivalent.
 
 ### Hooks (5)
 
 - **PostToolUse** (`write_note`/`edit_note` matcher) — Validates notes against their BM schema after any write.
 - **PostToolUse** (`Edit`/`Write` matcher) — Auto-formats shell scripts with `shfmt` and reminds to sync BM when editing schema files.
-- **PostToolUseFailure** (`write_note`/`edit_note` matcher) — Classifies BM write failures into five categories with actionable recovery guidance.
+- **PostToolUseFailure** (`write_note`/`edit_note`/`schema_validate`/`schema_diff`/`schema_infer` matcher) — Classifies BM write and schema tool failures into five categories with actionable recovery guidance.
 - **PreCompact** — Auto-reflects conversation insights into Basic Memory before context compaction.
 - **SessionStart** — Injects a brief knowledge graph status summary (note count, last audit, top gaps).
 
