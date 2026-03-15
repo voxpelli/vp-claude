@@ -149,7 +149,7 @@ notes use non-schema category tags. Normalize them to schema-conformant tags.
 | `\[tip\]`, `\[hint\]` | `\[usage\]` | all |
 | `\[warning\]`, `\[caveat\]`, `\[pitfall\]` | `\[gotcha\]` | all |
 | `\[performance\]`, `\[speed\]` | `\[feature\]` | all |
-| `\[config\]`, `\[configuration\]` | `\[config\]` | brew\_formula, brew\_cask |
+| `\[configuration\]` | `\[config\]` | brew\_formula, brew\_cask |
 | `\[dependency\]`, `\[deps\]` | `\[feature\]` | all |
 | `\[alternative\]`, `\[comparison\]` | `\[feature\]` | all |
 
