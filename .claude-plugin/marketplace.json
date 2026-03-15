@@ -9,7 +9,7 @@
       "name": "vp-knowledge",
       "source": "./",
       "description": "Multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), developer tool research (Homebrew, GitHub Actions, Docker, VSCode), knowledge gap analysis, graph maintenance agents, and quality hooks for Basic Memory",
-      "version": "0.13.0"
+      "version": "0.13.1"
     },
     {
       "name": "vp-beads",

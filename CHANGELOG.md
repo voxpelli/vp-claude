@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.1][] - 2026-03-15
+
+### Fixed
+
+- **`schema-evolve` skill reviewer fixes** — clarified "No schema found" edge
+  case (directs to `/package-intel` or `/memory-schema` instead of ambiguous
+  "suggest seeding"), added pre-existing divergence edge case (compare BM and
+  local before evolving), replaced "revert and retry" with explicit error
+  reporting strategy, added trigger phrases (`check schema`, `schema audit`,
+  `schema changes`).
+- **knowledge-gardener** — added `Glob` to tools list (step 4b needs it for
+  `UPSTREAM-*.md` file detection).
+- **knowledge-maintainer** — removed `\[config\]`→`\[config\]` no-op row from
+  observation normalization table.
+- **`post-file-edit.sh`** — added early exit guard with comment when
+  `PLUGIN_ROOT` is unset, removed redundant inline guards.
+- **CI workflow** — added `shfmt` installation step (`shellcheck` is
+  pre-installed on ubuntu-latest but `shfmt` is not). Mirrors vp-beads CI.
+
+### Changed
+
+- **`plugin.json` description** — now mentions schema evolution.
+- **vp-beads marketplace** — bumped to v0.6.2.
+- **Adopted vp-beads v0.6.0 patterns:**
+  - Annotation-not-deletion for resolved observations in knowledge-maintainer
+  - Optional structured metadata on observations (`Ownership:`, `Since:`)
+  - Cross-plugin friction awareness in knowledge-gardener step 4b
+
 ## [0.13.0][] - 2026-03-15
 
 ### Added
@@ -302,6 +330,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.13.1]: https://github.com/voxpelli/vp-claude/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/voxpelli/vp-claude/compare/v0.12.1...v0.13.0
 [0.12.1]: https://github.com/voxpelli/vp-claude/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/voxpelli/vp-claude/compare/v0.11.0...v0.12.0
