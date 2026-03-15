@@ -12,9 +12,12 @@ schema:
   gap?(array): string, identified gaps
   note?: string, additional context
   risk?(array): string, risks or concerns
+  principle?: string, guiding principles
+  opportunity?(array): string, opportunities identified
   part_of?: Note, parent movement or category
-  relates_to?(array): Note, related concepts or notes
-  complements?: Note, complementary concept
+  enables?: Note, concept this enables
+  implements?: Note, concept this implements
+  depends_on?: Note, concept this depends on
   contrasts_with?: Note, contrasting approach
   includes?(array): Note, sub-concepts or components
 settings:
@@ -39,8 +42,9 @@ and relationships to other ideas and projects.
 
 Preferred relation labels for concept notes (use consistently):
 - `part_of [[Movement]]` — parent movement or category
-- `relates_to [[Concept]]` — related concepts
-- `complements [[Concept]]` — complementary idea
+- `enables [[Concept]]` — concept this enables
+- `implements [[Concept]]` — concept this implements
+- `depends_on [[Concept]]` — concept this depends on
 - `contrasts_with [[Concept]]` — contrasting approach
 - `includes [[Component]]` — sub-concepts or components
 

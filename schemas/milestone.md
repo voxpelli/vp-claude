@@ -9,12 +9,9 @@ schema:
   lesson?(array): string, lessons learned
   pattern?(array): string, recurring patterns
   evolution?: string, how things evolved
-  failure?(array): string, what failed and why
   turning-point?: string, pivotal moments
   era?: string, time period characterization
-  anti-pattern?(array): string, approaches to avoid
   precedent?(array): string, historical precedents
-  proven?: string, validated approaches
   note?: string, additional context
   part_of?: Note, parent era or movement
   preceded?(array): Note, what this led to

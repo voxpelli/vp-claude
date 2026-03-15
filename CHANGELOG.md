@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.1][] - 2026-03-15
+
+### Changed
+
+- **`concept` schema evolved** — added `principle`, `opportunity` (observations)
+  and `enables`, `implements`, `depends_on` (relations) based on 33% usage
+  across 6 notes. Removed unused `relates_to` and `complements` (0% usage).
+- **`milestone` schema pruned** — removed 3 dead fields at 0% usage: `failure`,
+  `anti-pattern`, `proven`.
+
 ## [0.14.0][] - 2026-03-15
 
 ### Changed
@@ -344,6 +354,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.14.1]: https://github.com/voxpelli/vp-claude/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/voxpelli/vp-claude/compare/v0.13.1...v0.14.0
 [0.13.1]: https://github.com/voxpelli/vp-claude/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/voxpelli/vp-claude/compare/v0.12.1...v0.13.0
