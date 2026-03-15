@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0][] - 2026-03-15
+
+### Added
+
+- **`/schema-evolve <type>` skill** — frequency-driven schema drift detection
+  and evolution. Runs `schema_diff` + `schema_infer`, proposes field additions
+  (>25% usage), removals (0% usage), and cardinality fixes. Dual-syncs both
+  the BM schema note and local `schemas/` file after approval. Includes a
+  watch list (10-24% usage) for emerging fields.
+- **PostToolUse `Edit|Write` hook** — combined `command` hook that auto-formats
+  shell scripts with `shfmt -w` after edits to `hooks/*.sh`, and emits a
+  `systemMessage` reminder to sync BM when editing `schemas/*.md` files.
+  Silently skips if `shfmt` is not installed.
+- **Observation category normalization in knowledge-maintainer** (step 2a) —
+  two-tier mapping: deterministic auto-fixes for unambiguous tag renames
+  (`[install]`→`[usage]`, `[mechanism]`→`[purpose]`, etc.) and confirmation-
+  gated mapping for ambiguous tags. Schema-type-aware — checks the note's
+  schema before mapping to avoid false corrections.
+
+### Changed
+
+- **CLAUDE.md documentation refresh** — hooks count corrected from 3 to 5
+  (adds PostToolUseFailure and Edit/Write hooks), skills count from 3 to 4,
+  plugin layout diagram updated.
+
 ## [0.12.1][] - 2026-03-15
 
 ### Changed
@@ -277,6 +302,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.13.0]: https://github.com/voxpelli/vp-claude/compare/v0.12.1...v0.13.0
 [0.12.1]: https://github.com/voxpelli/vp-claude/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/voxpelli/vp-claude/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/voxpelli/vp-claude/compare/v0.10.1...v0.11.0

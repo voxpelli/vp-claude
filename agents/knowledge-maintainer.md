@@ -133,7 +133,55 @@ Categorize findings into auto-fixable vs needs-confirmation.
 
 > All tool call examples below are MCP tool invocations — call them directly, do not write or execute scripts.
 
-Work through auto-fixable items in priority order:
+Work through auto-fixable items in priority order.
+
+#### 2a. Normalize observation categories
+
+If `schema_diff` reported `new_fields` where `source == "observation"`, some
+notes use non-schema category tags. Normalize them to schema-conformant tags.
+
+**Tier 1 — Auto-fix (deterministic 1:1 rewrites):**
+
+| Non-schema tag | Schema target | Applies to |
+|---|---|---|
+| `\[install\]`, `\[installation\]` | `\[usage\]` | brew\_formula, brew\_cask |
+| `\[mechanism\]`, `\[how-it-works\]`, `\[internals\]` | `\[purpose\]` | all |
+| `\[tip\]`, `\[hint\]` | `\[usage\]` | all |
+| `\[warning\]`, `\[caveat\]`, `\[pitfall\]` | `\[gotcha\]` | all |
+| `\[performance\]`, `\[speed\]` | `\[feature\]` | all |
+| `\[config\]`, `\[configuration\]` | `\[config\]` | brew\_formula, brew\_cask |
+| `\[dependency\]`, `\[deps\]` | `\[feature\]` | all |
+| `\[alternative\]`, `\[comparison\]` | `\[feature\]` | all |
+
+**Important:** The mapping is **schema-type-aware**. Before renaming, check if
+the non-schema tag happens to match a field in the note's actual schema (e.g.,
+`[limitation]` is valid on `engineering` notes but drift on `brew_formula`).
+Read the schema for the note's type first:
+```
+read_note(identifier="main/schema/<note_type>", include_frontmatter=true)
+```
+
+Apply Tier 1 renames via `edit_note`:
+```
+edit_note(
+  identifier="note-title",
+  operation="find_replace",
+  find_text="- [install]",
+  content="- [usage]"
+)
+```
+
+**Tier 2 — Confirm before applying (ambiguous mappings):**
+
+Tags like `[security]`, `[note]`, `[info]`, `[example]` could map to multiple
+schema categories depending on content. Present these grouped in step 4
+(confirmation items) with the observation text so the user can pick the right
+target.
+
+Log all category renames in the summary: "brew:ripgrep: \[install\] → \[usage\]
+(1 observation)".
+
+#### 2b. Fix other structural issues
 
 **Missing sections:** Read the note first to identify what's actually missing —
 never append blindly, as the sections may already exist:

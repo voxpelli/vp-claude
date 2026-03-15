@@ -1,5 +1,5 @@
 {
-  "description": "Basic Memory quality hooks: schema validation after writes, auto-reflect before compaction, graph summary at session start.",
+  "description": "Basic Memory quality hooks: schema validation after writes, file edit quality checks, auto-reflect before compaction, graph summary at session start.",
   "hooks": {
     "PostToolUse": [
       {
@@ -9,6 +9,16 @@
             "type": "prompt",
             "prompt": "A Basic Memory note was just written or edited. Extract the note identifier from the tool result (use the `permalink` field). If the permalink contains '/schema/' (e.g. 'main/schema/brew-cask'), this is a schema definition note — skip validation entirely and do nothing. Otherwise, call `mcp__basic-memory__schema_validate` with that identifier. If validation reports errors or missing required fields, surface them as a systemMessage. If the note type has no schema, or validation passes, do nothing.",
             "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/post-file-edit.sh ${CLAUDE_PLUGIN_ROOT}",
+            "timeout": 10
           }
         ]
       }

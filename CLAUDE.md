@@ -15,23 +15,25 @@ skills/
   package-intel/SKILL.md             # Five-source multi-ecosystem package research
   tool-intel/SKILL.md                # Four-source dev-tool research (brew/action/docker/vscode)
   knowledge-gaps/SKILL.md            # Cross-reference deps + tool manifests vs BM coverage
+  schema-evolve/SKILL.md             # Frequency-driven schema drift detection and dual-sync
 agents/
   knowledge-gardener.md              # Read-only graph health auditor
   knowledge-maintainer.md            # All-in-one graph enhancer (writes)
   session-reflector.md               # On-demand conversation → memory capture
 hooks/
-  hooks.json                         # PostToolUse, PreCompact, SessionStart hooks
+  hooks.json                         # PostToolUse, PostToolUseFailure, PreCompact, SessionStart
 ```
 
 No runtime code — pure markdown + JSON. No build step, no dependencies.
 
 ## Components
 
-### Skills (3)
+### Skills (4)
 
 - **package-intel** — Researches a package via five sources (Basic Memory, DeepWiki, Context7, Tavily, Raindrop) and writes/updates a structured prefixed note. Supports npm, Rust crates, Go modules, PHP Composer, Python PyPI, and Ruby gems. User-invocable as `/package-intel <pkg>`.
 - **tool-intel** — Researches a developer environment or CI/CD tool via four sources (Basic Memory, DeepWiki for actions/docker, Tavily, Raindrop) and writes/updates a structured prefixed note. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), and VSCode extensions (`vscode:`). User-invocable as `/tool-intel <prefix>:<name>`.
 - **knowledge-gaps** — Parses code manifest files (`package.json`, `Cargo.toml`, etc.) and tool manifests (`Brewfile`, `.github/workflows/*.yml`, `Dockerfile`, `.vscode/extensions.json`), checks BM coverage, tiers package gaps by import frequency, lists all undocumented tools. User-invocable as `/knowledge-gaps`.
+- **schema-evolve** — Detects drift between BM schema definitions and actual note usage via `schema_diff`/`schema_infer`, proposes frequency-driven field additions/removals, and dual-syncs BM notes + local `schemas/` files after approval. User-invocable as `/schema-evolve <type>`.
 
 ### Agents (3)
 
@@ -39,9 +41,11 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 - **knowledge-maintainer** — All-in-one write agent that acts on audit findings. Auto-fixes structural issues (missing sections, broken frontmatter, orphan linking). Confirms before content changes (merging duplicates, rewriting prose, archiving). Auto-runs `/package-intel` for Tier 1 undocumented packages (3+ imports) and `/tool-intel` for undocumented tools from detected manifests. `delete_note` intentionally excluded — use `move_note` to `archive/`. Reactive only — user must explicitly invoke.
 - **session-reflector** — On-demand reflection agent. Reviews the current conversation, extracts durable insights, shows a preview grouped by target note, waits for approval, then writes. Complements the automatic PreCompact hook with a deliberate, user-gated equivalent.
 
-### Hooks (3)
+### Hooks (5)
 
 - **PostToolUse** (`write_note`/`edit_note` matcher) — Validates notes against their BM schema after any write.
+- **PostToolUse** (`Edit`/`Write` matcher) — Auto-formats shell scripts with `shfmt` and reminds to sync BM when editing schema files.
+- **PostToolUseFailure** (`write_note`/`edit_note` matcher) — Classifies BM write failures into five categories with actionable recovery guidance.
 - **PreCompact** — Auto-reflects conversation insights into Basic Memory before context compaction.
 - **SessionStart** — Injects a brief knowledge graph status summary (note count, last audit, top gaps).
 
@@ -76,7 +80,7 @@ The `schemas/` directory in the plugin root is the version-controlled source of 
 
 **Automatic validation:** The PostToolUse hook fires `mcp__basic-memory__schema_validate` after every `write_note`/`edit_note` call, surfacing any schema errors as a systemMessage without blocking the write.
 
-**Keeping in sync:** When editing a schema (fixing drift, adding fields), update both the Basic Memory note via `edit_note` and the corresponding file in `schemas/` in the same PR.
+**Keeping in sync:** When editing a schema (fixing drift, adding fields), update both the Basic Memory note via `edit_note` and the corresponding file in `schemas/` in the same PR. Use `/schema-evolve <type>` to automate this — it detects drift, proposes changes, and dual-syncs both targets. The PostToolUse `Edit|Write` hook will also remind you to sync when editing schema files manually.
 
 **Schema evolution workflow:** Run `schema_diff` to find fields used in notes but absent from schema (and vice versa). Fields above 25% usage are candidates for addition; fields at 0% across 10+ notes are candidates for removal. Additive changes (new optional fields) don't need a version bump. Always validate after updating: `schema_validate(note_type="<type>")`.
 
