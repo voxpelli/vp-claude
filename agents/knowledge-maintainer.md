@@ -291,8 +291,23 @@ For items requiring confirmation, present them grouped:
 ### Content rewrites
 3. **npm:express** — observations are vague. Proposed improvements: [...]
 
+### Observation removals
+4. **npm:got** — `[gotcha] redirect loop on HTTP/2` fixed in v14.0.0.
+   Recommend: annotate as resolved, move to `### Resolved` subsection.
+
 Approve all, or specify numbers to approve individually.
 ```
+
+**Annotation-not-deletion rule:** When a user asks to remove an observation
+(e.g., a `[gotcha]` fixed in a new version), prefer annotating over deleting:
+
+1. Append `_(Resolved in vX.Y.Z, YYYY-MM-DD)_` to the observation text
+2. Move to a `### Resolved` subsection under `## Observations`
+3. Only fully delete if the user explicitly confirms deletion
+
+**Why:** Cross-project safety. One project may have updated to the fix;
+others may still be on the old version. The annotation preserves the
+knowledge while signaling it's been addressed.
 
 ### 5. Apply confirmed changes
 

@@ -211,6 +211,25 @@ Report frequently-referenced but undocumented packages as candidates for
 `/package-intel` with the appropriate prefix (e.g., `/package-intel crate:serde`).
 Report undocumented tools as candidates for `/tool-intel` (e.g., `/tool-intel brew:ripgrep`).
 
+### 4b. Cross-plugin friction awareness
+
+If the current project has `UPSTREAM-*.md` files (vp-beads convention), check
+whether any documented BM packages also have open upstream friction:
+
+```
+Glob(pattern="UPSTREAM-*.md")
+```
+
+For each UPSTREAM file found, extract the package name from the filename
+(e.g., `UPSTREAM-fastify.md` → `npm:fastify`). Cross-reference against
+the wiki-links found in step 4 to surface connections:
+
+- "npm:fastify has a BM note AND 2 open upstream items in this project"
+- "brew:ripgrep is documented in BM but has no local UPSTREAM tracking"
+
+This is informational only — report in the Info section. It bridges
+vp-knowledge graph health with vp-beads sprint workflow.
+
 ### 5. Stale note detection
 
 Use `recent_activity(timeframe="90d", output_format="json")` to find recently

@@ -128,6 +128,10 @@ Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Command hooks with `additi
 - Type: `npm_package` (snake_case — Basic Memory enforces snake_case for all type fields)
 - Three enrichment layers: frontmatter metadata, `## Observations` with `[category]` tags, `## Relations` with `[[wiki-links]]`
 - Use `edit_note` with `find_replace` for updates — `append` with `section` goes to end of file, not end of section
+- Optional structured metadata on observations (following vp-beads convention):
+  - `Ownership: upstream|us|shared` — distinguishes package bugs from integration choices
+  - `Since: vX.Y.Z` — version where the observation was first relevant
+  - These fields are backward-compatible — existing observations without them remain valid
 
 ### Note structure conventions (for tool-intel output)
 
