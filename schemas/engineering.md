@@ -19,7 +19,9 @@ schema:
   lesson?(array): string, lessons learned from real-world experience
   anti-pattern?(array): string, approaches to avoid and why
   root-cause?(array): string, root cause analysis of issues
+  decision?(array): string, architectural and design decisions with rationale
   relates_to(array): Note, related knowledge notes
+  extends?(array): Note, parent notes this note specializes or builds upon
   depends_on?(array): Note, package dependencies relevant to topic
 settings:
   validation: warn
