@@ -87,6 +87,11 @@ If multiple notes are plausible targets, pick the most specific one. If no
 existing note fits, flag it as a new note candidate (title it generically
 enough to be reusable across projects).
 
+Before proposing a new observation, check whether any 1-hop neighbor of the
+target note already contains a similar observation. Use the `build_context`
+result from above — if a neighbor already captures the same insight, skip the
+observation or note "Already captured in \[\[neighbor-note\]\]" in the preview.
+
 ### 3. Preview
 
 Show the user a grouped preview before writing anything:
@@ -130,7 +135,15 @@ end of file, not end of section.
 **New note** — use `write_note` with full structure (frontmatter + `## Observations`
 + `## Relations`). Keep title generic enough to reuse across projects.
 
-### 5. Report
+### 5. Relation-count check
+
+After writing, check each target note's outgoing relation count via
+`read_note(output_format="json")`. If a note has fewer than 3 outgoing
+relations but more than 5 observations, also check incoming links via
+`build_context(depth=1)`. Flag sparse notes to the user: "Note X has N
+observations but only M outgoing relations — consider adding links."
+
+### 6. Report
 
 Summarize what was written:
 

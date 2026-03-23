@@ -329,6 +329,19 @@ Single-use tags on a single note are lower priority but still worth noting.
 Flag notes with fewer than 3 or more than 7 tags (the standard's recommended
 range).
 
+### 9. Scope alignment and observation density
+
+**9a. Scope alignment:** For notes with broad titles (e.g., containing
+"Patterns", "Architecture", or covering multiple tool types), check whether
+the note's actual content matches its title scope. Flag notes where the title
+promises broader coverage than the content delivers (e.g., a note titled
+"Tool Enrichment Patterns" that only covers brew).
+
+**9b. Observation density:** Flag engineering notes with more than 20
+observations in a single flat `## Observations` section as candidates for
+subsection splitting (grouping into `### Category Name` subsections under
+Observations). Also flag notes with >20 flat observations in other note types.
+
 ## Output Format
 
 ````markdown
@@ -351,6 +364,8 @@ range).
 - [note-title] — retired type-echo tag `concept` duplicates type: field
 - [note-title] — missing required ecosystem tag `brew` (brew_formula type)
 - [note-title] — 9 tags exceeds 3-7 recommended range
+- [note-title] — title scope mismatch: title covers "Patterns" but content only addresses brew
+- [note-title] — 25 flat observations, candidate for subsection splitting
 
 ### Info (maintenance suggestions)
 - [[npm:pkg]] referenced 3 times but has no dedicated note
