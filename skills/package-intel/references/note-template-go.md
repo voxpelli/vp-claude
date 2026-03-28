@@ -7,6 +7,10 @@ Use this template when creating new `go:*` notes with `write_note`. Place in the
 will be stored as a nested path in the `go/` directory. Use path-based wiki-links
 for safety (see Relations section below).
 
+**No wiki-links in observations.** Never use `[[Target]]` in `## Observations`
+lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
+`## Relations` only.
+
 ````markdown
 ---
 title: go:<module/path>

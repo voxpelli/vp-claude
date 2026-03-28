@@ -3,6 +3,10 @@
 Use this template when creating new `crate:*` notes with `write_note`. Place in
 the `crates/` directory so it resolves `[[crate:*]]` wiki-links automatically.
 
+**No wiki-links in observations.** Never use `[[Target]]` in `## Observations`
+lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
+`## Relations` only.
+
 ````markdown
 ---
 title: crate:<name>

@@ -11,7 +11,6 @@ allowed-tools:
   - mcp__basic-memory__schema_validate
   - mcp__basic-memory__read_note
   - mcp__basic-memory__edit_note
-  - mcp__basic-memory__list_directory
 ---
 
 # Schema Evolution

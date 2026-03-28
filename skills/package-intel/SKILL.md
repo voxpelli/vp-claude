@@ -190,6 +190,11 @@ All notes use three enrichment layers:
 - **`## Observations`** with `[category]` tagged items
 - **`## Relations`** with `[[wiki-links]]`
 
+**No wiki-links in observations.** Never use `[[Target]]` syntax in observation
+lines. BM's parser treats any `[[` as a relation boundary — the text before it
+becomes the `relation_type` field (max 200 chars), causing validation failures.
+Put all wiki-links in `## Relations` only.
+
 ### Step 5: Write or update the note
 
 <!-- This pattern is mirrored in tool-intel — update both when changing -->

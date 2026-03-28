@@ -3,6 +3,10 @@
 Use this template when creating new `composer:*` notes with `write_note`. Place
 in the `composer/` directory so it resolves `[[composer:*]]` wiki-links.
 
+**No wiki-links in observations.** Never use `[[Target]]` in `## Observations`
+lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
+`## Relations` only.
+
 ````markdown
 ---
 title: composer:<vendor>/<package>

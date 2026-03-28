@@ -1,6 +1,6 @@
 ---
 name: tool-intel
-description: "This skill should be used when the user asks to 'research a homebrew formula', 'brew intel', 'what does [brew-tool] do', 'research a cask', 'research a GitHub Action', 'action intel', 'what does [action] do', 'research a docker image', 'docker intel', 'research a VSCode extension', 'vscode intel', 'add tool to knowledge graph', 'enrich [tool]'. Researches a developer environment or CI/CD tool using four-source enrichment (DeepWiki, Tavily, Raindrop, changelog) and creates/updates a structured Basic Memory note. Supports Homebrew formulae (brew:), Homebrew casks (cask:), GitHub Actions (action:), Docker images (docker:), and VSCode extensions (vscode:)."
+description: "This skill should be used when the user asks to 'research a homebrew formula', 'brew intel', 'what does [brew-tool] do', 'research a cask', 'cask intel', 'what does [cask] do', 'research a GitHub Action', 'action intel', 'what does [action] do', 'research a docker image', 'docker intel', 'what does [docker image] do', 'research a VSCode extension', 'vscode intel', 'what does [extension] do', 'add tool to knowledge graph', 'enrich [tool]'. Researches a developer environment or CI/CD tool using four-source enrichment (DeepWiki, Tavily, Raindrop, changelog) and creates/updates a structured Basic Memory note. Supports Homebrew formulae (brew:), Homebrew casks (cask:), GitHub Actions (action:), Docker images (docker:), and VSCode extensions (vscode:)."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -181,6 +181,11 @@ All tool notes share three core enrichment layers plus a type-specific content s
 - **`## Observations`** with `[category]` tagged items
 - **`## Relations`** with `[[wiki-links]]`
 - **Type-specific content section** (differs by type — e.g. `## Common Usage` for brew, `## Inputs & Outputs` for actions; see templates)
+
+**No wiki-links in observations.** Never use `[[Target]]` syntax in observation
+lines. BM's parser treats any `[[` as a relation boundary — the text before it
+becomes the `relation_type` field (max 200 chars), causing validation failures.
+Put all wiki-links in `## Relations` only.
 
 ### Step 5: Write or update the note
 

@@ -6,9 +6,9 @@
         "matcher": "mcp__basic-memory__write_note|mcp__basic-memory__edit_note",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "A Basic Memory note was just written or edited. Extract the note identifier from the tool result (use the `permalink` field). If the permalink contains '/schema/' (e.g. 'main/schema/brew-cask'), this is a schema definition note — skip validation entirely and do nothing. Otherwise, call `mcp__basic-memory__schema_validate` with that identifier. If validation reports errors or missing required fields, surface them as a systemMessage. If the note type has no schema, or validation passes, do nothing.",
-            "timeout": 15
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/post-bm-write-validate.sh",
+            "timeout": 10
           }
         ]
       },
@@ -28,8 +28,8 @@
         "matcher": "mcp__basic-memory__write_note|mcp__basic-memory__edit_note|mcp__basic-memory__schema_validate|mcp__basic-memory__schema_diff|mcp__basic-memory__schema_infer",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "A Basic Memory write or edit tool just failed. Classify the failure and return actionable recovery context as a systemMessage:\n\n1. **Server unavailable** (connection refused, timeout) — suggest checking if the Basic Memory MCP server is running\n2. **Invalid argument** (missing required field, malformed identifier) — identify which field is wrong and show the correct format\n3. **Note not found** (edit_note on a non-existent note) — suggest using write_note instead, or check the identifier spelling\n4. **Permission error** — suggest checking MCP server configuration\n5. **Unknown error** — surface the raw error message\n\nReturn a brief, actionable message. Do not retry the operation.",
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/post-bm-failure-classify.sh",
             "timeout": 10
           }
         ]

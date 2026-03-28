@@ -47,9 +47,9 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 
 ### Hooks (5)
 
-- **PostToolUse** (`write_note`/`edit_note` matcher) — Validates notes against their BM schema after any write.
+- **PostToolUse** (`write_note`/`edit_note` matcher) — Command hook that emits `additionalContext` instructing the main session to call `schema_validate` on the written note. Skips schema definition notes (`/schema/` permalinks).
 - **PostToolUse** (`Edit`/`Write` matcher) — Auto-formats shell scripts with `shfmt` and reminds to sync BM when editing schema files.
-- **PostToolUseFailure** (`write_note`/`edit_note`/`schema_validate`/`schema_diff`/`schema_infer` matcher) — Classifies BM write and schema tool failures into five categories with actionable recovery guidance.
+- **PostToolUseFailure** (`write_note`/`edit_note`/`schema_validate`/`schema_diff`/`schema_infer` matcher) — Command hook that pattern-matches BM tool errors into five categories (server-unavailable, note-not-found, invalid-argument, permission-error, unknown) and emits `additionalContext` with recovery guidance.
 - **PreCompact** — Auto-reflects conversation insights into Basic Memory before context compaction.
 - **SessionStart** — Injects a brief knowledge graph status summary (note count, last audit, top gaps).
 
@@ -82,7 +82,7 @@ The `schemas/` directory in the plugin root is the version-controlled source of 
 
 **First-install seeding:** On a fresh Basic Memory instance, call `write_note` for each schema file (or simply run `/package-intel` / `/tool-intel` on any package — they auto-write their schema on first use, which will conform the note).
 
-**Automatic validation:** The PostToolUse hook fires `mcp__basic-memory__schema_validate` after every `write_note`/`edit_note` call, surfacing any schema errors as a systemMessage without blocking the write.
+**Automatic validation:** The PostToolUse command hook emits `additionalContext` after every `write_note`/`edit_note` call, instructing the main session to call `schema_validate`. Schema errors are surfaced inline without blocking the write.
 
 **Keeping in sync:** When editing a schema (fixing drift, adding fields), update both the Basic Memory note via `edit_note` and the corresponding file in `schemas/` in the same PR. Use `/schema-evolve <type>` to automate this — it detects drift, proposes changes, and dual-syncs both targets. The PostToolUse `Edit|Write` hook will also remind you to sync when editing schema files manually.
 
@@ -130,7 +130,7 @@ Every section in an output template (skill synthesize step or agent output step)
 
 ### Hook conventions
 
-Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Command hooks with `additionalContext` are preferred for lifecycle events (PreCompact, SessionStart) that need to inject instructions into the main session. Prompt hooks are used for PostToolUse/PostToolUseFailure where a separate evaluation is appropriate. All hooks are defined in `hooks/hooks.json`.
+Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Command hooks with `additionalContext` are used for all event types — prompt hooks spawn Haiku without MCP access, so they cannot call MCP tools (see RETRO-02 for the PreCompact precedent). All hooks are defined in `hooks/hooks.json`.
 
 ### Hook additionalContext pattern
 

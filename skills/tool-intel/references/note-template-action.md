@@ -4,6 +4,10 @@ Use this template when creating new `action:*` notes with `write_note`. Place
 in the `actions/` directory so it resolves `[[action:*]]` wiki-links
 automatically.
 
+**No wiki-links in observations.** Never use `[[Target]]` in `## Observations`
+lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
+`## Relations` only.
+
 ````markdown
 ---
 title: action:<owner>/<repo>

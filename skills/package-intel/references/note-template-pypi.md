@@ -3,6 +3,10 @@
 Use this template when creating new `pypi:*` notes with `write_note`. Place in
 the `pypi/` directory so it resolves `[[pypi:*]]` wiki-links automatically.
 
+**No wiki-links in observations.** Never use `[[Target]]` in `## Observations`
+lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
+`## Relations` only.
+
 ````markdown
 ---
 title: pypi:<name>

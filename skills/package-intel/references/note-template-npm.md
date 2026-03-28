@@ -3,6 +3,10 @@
 Use this template when creating new `npm:*` notes with `write_note`. Place in the
 `npm/` directory so it resolves `[[npm:*]]` wiki-links automatically.
 
+**No wiki-links in observations.** Never use `[[Target]]` in `## Observations`
+lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
+`## Relations` only.
+
 ```markdown
 ---
 title: npm:<package-name>

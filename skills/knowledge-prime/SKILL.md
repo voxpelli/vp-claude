@@ -102,9 +102,10 @@ build_context(url="memory://npm/<pkg>", depth=1, max_related=5)
 ```
 Related notes that appear get score 2 (transitive relevance).
 
-**Pass 3 — Beads/git boost (score: 1):**
-If the project has `.beads/` or recent git commits mentioning specific
-packages, those notes get +1 boost.
+**Pass 3 — Beads/activity boost (score: 1):**
+If the project has `.beads/` (check via `Glob(pattern=".beads")`) or
+`recent_activity` (fetched in Step 5 below, but peek ahead if needed) shows
+notes updated in the last 7 days, those notes get +1 boost.
 
 Sort all scored notes descending. Take top 6 (or top 12 with `--deep`).
 
@@ -154,7 +155,7 @@ Produce a structured context brief:
 - 3 notes updated in last 7 days: npm:fastify, npm:pino, brew:ripgrep
 
 ### Gaps worth filling
-- Top undocumented dep: `npm:undici` (used in 12 imports)
+- Top undocumented dep: `npm:undici`
 - Run `/knowledge-gaps` for full coverage analysis
 - Run `/package-intel undici` to document the top gap
 ````
@@ -162,7 +163,7 @@ Produce a structured context brief:
 ### 7. Suggest next steps
 
 Based on the brief:
-- If undocumented Tier 1 deps exist (3+ imports): suggest
+- If undocumented deps exist in the detected stack: suggest
   `/package-intel <pkg>` for the top one
 - If no manifest files found: suggest running in a project directory
 - If knowledge graph is empty for all detected ecosystems: suggest
