@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.1][] - 2026-03-28
+
+### Fixed
+
+- **session-start.sh multi-object stdout** — the hook emitted 2-3 separate
+  JSON objects but Claude Code reads only the first. The `additionalContext`
+  (priming suggestion) and audit reminder have been silently dropped since
+  v0.15.0. Now merges all content into a single `additionalContext` field
+  using `jq -n`.
+- **JSON fallback chain in post-bm-failure-classify.sh** — dropped `.tool_result`
+  from error extraction (captures MCP response body, not error text).
+- **knowledge-gaps Step 5 forward-reference** — tool-intel enrichment offers
+  referenced Steps 6-9 output before those steps ran. Moved tool offers to
+  Step 9 where the data is available.
+- **knowledge-gaps Domain column** — removed from Step 4 template (no data
+  provider existed).
+- **knowledge-primer agent drift** — synced with knowledge-prime skill: added
+  `--deep` flag, edge cases, Step 7 (suggest next steps), clarified
+  `recent_activity` fetch timing.
+
+### Changed
+
+- **knowledge-gaps Steps 11-13 extracted** to `references/standard-detection.md`
+  for structural consistency with package-intel and tool-intel reference
+  patterns.
+- **CLAUDE.md hook conventions** — documented single-JSON-object stdout rule,
+  CWD assumption (project root), and PreCompact as intentional exception to
+  the skill-reference pattern.
+
+### Removed
+
+- **Phantom `Glob` from tool-intel** — was `list_directory`'s `file_name_glob`
+  parameter, not the Claude `Glob` tool.
+
 ## [0.16.0][] - 2026-03-28
 
 ### Changed
@@ -421,6 +455,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.16.1]: https://github.com/voxpelli/vp-claude/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/voxpelli/vp-claude/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/voxpelli/vp-claude/compare/v0.14.1...v0.15.0
 [0.14.1]: https://github.com/voxpelli/vp-claude/compare/v0.14.0...v0.14.1
