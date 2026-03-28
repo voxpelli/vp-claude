@@ -49,6 +49,20 @@ context brief with key gotchas, patterns, and coverage gaps.
 You are the "before work" counterpart to the session-reflector agent (which
 captures knowledge "after work").
 
+## Flags
+
+- **`--deep`** — expand top notes from 6 to 12, raise token budget from 800
+  to 2000, and include `[pattern]`, `[feature]`, `[usage]` alongside the
+  default critical categories (`[gotcha]`, `[breaking]`, `[limitation]`).
+
+## Edge Cases
+
+- **No manifest files found** — report it and exit. Suggest running in a
+  project root directory.
+- **Empty BM directories** — treat as 0 documented. Do not error.
+- **Very large dependency lists (100+)** — cap at top 50 by alphabetical
+  order for cross-reference. Note total count in the brief.
+
 ## Workflow
 
 ### 1. Identify project stack
@@ -90,10 +104,12 @@ Three-pass scoring:
 - **Pass 1 — Dependency match (score: 3):** Notes matching a direct project dep
 - **Pass 2 — Graph expansion (score: 2):** Run `build_context(depth=1, max_related=5)`
   on top pass-1 notes; related notes get score 2
-- **Pass 3 — Beads/activity boost (score: 1):** If `.beads/` exists or
-  `recent_activity` shows notes updated in the last 7 days, those notes get +1
+- **Pass 3 — Beads/activity boost (score: 1):** Fetch
+  `recent_activity(timeframe="7d", output_format="json")` now (reuse in
+  Step 5). If `.beads/` exists or any top-scored notes appear in the results,
+  give those notes +1.
 
-Take top 6 notes by total score.
+Take top 6 notes by total score (or top 12 with `--deep`).
 
 ### 4. Load observations
 
@@ -106,18 +122,16 @@ Extract only critical-category observations:
 - `[gotcha]` — known pitfalls
 - `[limitation]` — constraints
 - `[breaking]` — breaking changes
+With `--deep`, also include `[pattern]`, `[feature]`, and `[usage]`.
 
-**800-token hard cap** on total observation output.
-Priority: `[gotcha]` > `[breaking]` > `[limitation]`.
+**Token budget:** 800 tokens (2000 with `--deep`).
+Priority: `[gotcha]` > `[breaking]` > `[limitation]` > `[pattern]`.
 
-### 5. Check recent activity
+### 5. Cross-reference recent activity
 
-```
-recent_activity(timeframe="7d", output_format="json")
-```
-
-Note which of the top-scored notes were recently updated — these are most
-likely to be relevant to current work.
+Using the `recent_activity` results fetched in Step 3, note which of the
+top-scored notes were recently updated — these are most likely to be relevant
+to current work.
 
 ### 6. Synthesize brief
 
@@ -143,10 +157,19 @@ Produce the context brief:
 - Run `/package-intel <pkg>` to document the top gap
 ````
 
+### 7. Suggest next steps
+
+Based on the brief:
+- Undocumented deps exist → suggest `/package-intel <pkg>` for the top one
+- No manifest files found → suggest running in a project directory
+- Graph empty for all detected ecosystems → suggest `/knowledge-gaps` first
+- All deps documented → note good coverage, suggest knowledge-gardener for
+  staleness checks
+
 ## Efficient Tool Usage
 
-- Use `list_directory` before `search_notes` — cheaper and sufficient for
-  inventory
+- Prefer `list_directory` for inventory — cheaper than content searches and
+  sufficient for coverage checks
 - Set `max_related=5` on `build_context` to limit traversal
 - Read full notes only for the top 6 most relevant — skip the rest
 - Stop early if no manifest files are found — report and exit
