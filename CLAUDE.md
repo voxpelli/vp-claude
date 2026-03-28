@@ -51,7 +51,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 - **PostToolUse** (`Edit`/`Write` matcher) — Auto-formats shell scripts with `shfmt` and reminds to sync BM when editing schema files.
 - **PostToolUseFailure** (`write_note`/`edit_note`/`schema_validate`/`schema_diff`/`schema_infer` matcher) — Command hook that pattern-matches BM tool errors into five categories (server-unavailable, note-not-found, invalid-argument, permission-error, unknown) and emits `additionalContext` with recovery guidance.
 - **PreCompact** — Auto-reflects conversation insights into Basic Memory before context compaction.
-- **SessionStart** — Emits general knowledge graph guidance, suggests `/knowledge-prime` for project context, and reminds about graph-audit cycles on every 4th sprint.
+- **SessionStart** — Emits a single `additionalContext` JSON object with knowledge graph guidance, skill suggestions (`/knowledge-prime`, `/knowledge-gaps`, `/schema-evolve`), and conditional graph-audit cycle reminders on every 4th sprint.
 
 ## Schemas
 
@@ -130,11 +130,11 @@ Every section in an output template (skill synthesize step or agent output step)
 
 ### Hook conventions
 
-Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Command hooks with `additionalContext` are used for all event types — prompt hooks spawn Haiku without MCP access, so they cannot call MCP tools (see RETRO-02 for the PreCompact precedent). All hooks are defined in `hooks/hooks.json`.
+Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Command hooks with `additionalContext` are used for all event types — prompt hooks spawn Haiku without MCP access, so they cannot call MCP tools (see RETRO-02 for the PreCompact precedent). All hooks are defined in `hooks/hooks.json`. Hook scripts assume CWD = project root (consistent with vp-beads convention). Each hook must emit exactly one JSON object on stdout — Claude Code reads only the first object and silently drops the rest.
 
 ### Hook additionalContext pattern
 
-SessionStart/PreCompact `additionalContext` should suggest existing skills (e.g., "suggest running `/knowledge-prime`") rather than duplicating skill workflow steps inline. Keeps hooks lightweight (~1 sentence) and avoids drift between hook instructions and skill definitions.
+SessionStart/PreCompact `additionalContext` should suggest existing skills (e.g., "suggest running `/knowledge-prime`") rather than duplicating skill workflow steps inline. Keeps hooks lightweight (~1 sentence) and avoids drift between hook instructions and skill definitions. PreCompact is an intentional exception — it operates under context-ceiling pressure where skill indirection is not acceptable.
 
 ### Three-level invocation pattern
 
