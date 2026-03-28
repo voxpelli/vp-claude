@@ -5,7 +5,7 @@ set -euo pipefail
 # about schema sync. Receives hook input JSON on stdin.
 
 INPUT=$(cat)
-FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null || true)
 
 if [[ -z "$FILE_PATH" ]]; then
 	exit 0

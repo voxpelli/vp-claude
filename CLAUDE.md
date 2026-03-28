@@ -51,7 +51,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 - **PostToolUse** (`Edit`/`Write` matcher) — Auto-formats shell scripts with `shfmt` and reminds to sync BM when editing schema files.
 - **PostToolUseFailure** (`write_note`/`edit_note`/`schema_validate`/`schema_diff`/`schema_infer` matcher) — Command hook that pattern-matches BM tool errors into five categories (server-unavailable, note-not-found, invalid-argument, permission-error, unknown) and emits `additionalContext` with recovery guidance.
 - **PreCompact** — Auto-reflects conversation insights into Basic Memory before context compaction.
-- **SessionStart** — Injects a brief knowledge graph status summary (note count, last audit, top gaps).
+- **SessionStart** — Emits general knowledge graph guidance, suggests `/knowledge-prime` for project context, and reminds about graph-audit cycles on every 4th sprint.
 
 ## Schemas
 

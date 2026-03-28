@@ -38,7 +38,6 @@ tools:
   - mcp__basic-memory__schema_infer
   - mcp__basic-memory__schema_validate
   - mcp__basic-memory__list_directory
-  - mcp__basic-memory__view_note
   - Glob
   - mcp__basic-memory__schema_diff
 ---

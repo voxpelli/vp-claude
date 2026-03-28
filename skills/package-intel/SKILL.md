@@ -5,7 +5,6 @@ user-invocable: true
 allowed-tools:
   - Bash
   - Read
-  - Glob
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__read_note
   - mcp__basic-memory__write_note
@@ -18,7 +17,6 @@ allowed-tools:
   - mcp__tavily__tavily_search
   - mcp__tavily__tavily_extract
   - mcp__raindrop__find_bookmarks
-  - mcp__raindrop__fetch_bookmark_content
 ---
 
 # Package Intelligence
@@ -104,8 +102,8 @@ Append new observations rather than overwriting.
 
 ### Step 2: Resolve repository
 
-Delegate to the ecosystem reference file for this step:
-`references/ecosystem-<ecosystem>.md`
+Read the ecosystem reference file for registry-specific instructions:
+`${CLAUDE_PLUGIN_ROOT}/skills/package-intel/references/ecosystem-<ecosystem>.md`
 
 Each reference file explains the registry API, required headers, and how to
 extract `owner/repo` for use in the DeepWiki and changelog steps.
@@ -173,7 +171,10 @@ The goal is a short, high-signal list — not a changelog mirror.
 
 ### Step 4: Synthesize into note
 
-See `references/note-template-<ecosystem>.md` for the full template. Key
+Read the note template for the target ecosystem:
+`${CLAUDE_PLUGIN_ROOT}/skills/package-intel/references/note-template-<ecosystem>.md`
+
+Key
 conventions per ecosystem:
 
 | Ecosystem | Title format | Directory | Type |

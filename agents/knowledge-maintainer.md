@@ -51,11 +51,9 @@ tools:
   - mcp__basic-memory__move_note
   - mcp__basic-memory__build_context
   - mcp__basic-memory__recent_activity
-  - mcp__basic-memory__schema_infer
   - mcp__basic-memory__schema_validate
   - mcp__basic-memory__schema_diff
   - mcp__basic-memory__list_directory
-  - mcp__basic-memory__view_note
 ---
 
 You are an autonomous agent that actively maintains and enhances a Basic Memory

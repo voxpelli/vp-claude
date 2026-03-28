@@ -16,7 +16,6 @@ allowed-tools:
   - mcp__tavily__tavily_search
   - mcp__tavily__tavily_extract
   - mcp__raindrop__find_bookmarks
-  - mcp__raindrop__fetch_bookmark_content
 ---
 
 # Tool Intelligence
