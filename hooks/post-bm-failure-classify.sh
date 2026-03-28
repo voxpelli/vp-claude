@@ -8,7 +8,7 @@ set -euo pipefail
 INPUT=$(cat)
 
 # Error text may live in different fields depending on the failure type
-ERROR=$(echo "$INPUT" | jq -r '.error // .tool_error // .tool_result // empty' 2>/dev/null || true)
+ERROR=$(echo "$INPUT" | jq -r '.error // .tool_error // empty' 2>/dev/null || true)
 
 if [[ -z "$ERROR" ]]; then
 	exit 0

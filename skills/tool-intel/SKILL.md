@@ -5,7 +5,6 @@ user-invocable: true
 allowed-tools:
   - Bash
   - Read
-  - Glob
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__read_note
   - mcp__basic-memory__write_note
