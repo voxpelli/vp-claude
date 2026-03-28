@@ -42,7 +42,7 @@ Key settings (add to `settings.json`):
 
 - [requires] Companion CLI tool needed: `<tool-name>` (install via `brew install <tool>` or `npm install -g <pkg>`)
 - [performance] CPU/memory impact, activation events, startup overhead
-- [conflict] Conflicts with: [[vscode:<other>]] — reason
+- [conflict] Conflicts with: vscode:<other> — reason
 - [pattern] How this extension is typically configured in a project
 
 ## Relations

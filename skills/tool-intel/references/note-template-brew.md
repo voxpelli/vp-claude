@@ -32,7 +32,7 @@ Homepage: [<project-homepage>](<url>) | v<version> | <license>
 
 - [pattern] How this tool is typically used in development workflows
 - [gotcha] Surprising behavior, common mistakes (e.g., keg-only, PATH conflicts)
-- [conflict] Conflicts with: [[brew:<other>]] — reason for conflict
+- [conflict] Conflicts with: brew:<other> — reason for conflict
 - [compatibility] macOS version requirements or architecture notes
 - [convention] Important shell setup or post-install steps from `caveats`
 

@@ -8,7 +8,7 @@ set -euo pipefail
 INPUT=$(cat)
 
 # Error text may live in different fields depending on the failure type
-ERROR=$(echo "$INPUT" | jq -r '.tool_error // .error // .tool_result // empty' 2>/dev/null || true)
+ERROR=$(echo "$INPUT" | jq -r '.error // .tool_error // .tool_result // empty' 2>/dev/null || true)
 
 if [[ -z "$ERROR" ]]; then
 	exit 0
@@ -23,10 +23,8 @@ elif echo "$ERROR" | grep -qi "invalid\|missing.*field\|malformed\|validation er
 elif echo "$ERROR" | grep -qi "permission\|denied\|forbidden"; then
 	MSG="[permission-error] Access was denied. Check Basic Memory MCP server configuration."
 else
-	TRUNCATED="${ERROR:0:200}"
-	MSG="[unknown-error] Basic Memory tool failed: ${TRUNCATED}"
+	MSG="[unknown-error] Basic Memory tool failed: ${ERROR:0:200}"
 fi
 
-cat <<EOF
-{"additionalContext": "${MSG} Do not retry automatically."}
-EOF
+jq -n --arg msg "$MSG" \
+	'{additionalContext: ($msg + " Do not retry automatically.")}'

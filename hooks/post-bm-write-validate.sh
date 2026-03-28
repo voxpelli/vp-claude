@@ -7,12 +7,12 @@ set -euo pipefail
 
 INPUT=$(cat)
 
-# tool_result may be an object with a permalink field, or a JSON-encoded string
-PERMALINK=$(echo "$INPUT" | jq -r '.tool_result.permalink // empty' 2>/dev/null || true)
+# Try tool_response first (per docs), fall back to tool_result for robustness
+PERMALINK=$(echo "$INPUT" | jq -r '.tool_response.permalink // .tool_result.permalink // empty' 2>/dev/null || true)
 
 if [[ -z "$PERMALINK" ]]; then
 	# Try parsing tool_result as a JSON string (double-encoded)
-	RAW=$(echo "$INPUT" | jq -r '.tool_result // empty' 2>/dev/null || true)
+	RAW=$(echo "$INPUT" | jq -r '.tool_response // .tool_result // empty' 2>/dev/null || true)
 	if [[ -n "$RAW" ]]; then
 		PERMALINK=$(echo "$RAW" | jq -r '.permalink // empty' 2>/dev/null || true)
 	fi
@@ -28,6 +28,5 @@ if [[ "$PERMALINK" == */schema/* ]]; then
 	exit 0
 fi
 
-cat <<EOF
-{"additionalContext": "A note was just written/edited (permalink: ${PERMALINK}). Call mcp__basic-memory__schema_validate with that identifier. If validation reports errors, surface them. If the note type has no schema or validation passes, do nothing."}
-EOF
+jq -n --arg p "$PERMALINK" \
+	'{additionalContext: ("A note was just written/edited (permalink: " + $p + "). Call mcp__basic-memory__schema_validate with that identifier. If validation reports errors, surface them. If the note type has no schema or validation passes, do nothing.")}'

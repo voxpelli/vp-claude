@@ -90,8 +90,8 @@ Three-pass scoring:
 - **Pass 1 — Dependency match (score: 3):** Notes matching a direct project dep
 - **Pass 2 — Graph expansion (score: 2):** Run `build_context(depth=1, max_related=5)`
   on top pass-1 notes; related notes get score 2
-- **Pass 3 — Beads/git boost (score: 1):** If `.beads/` exists or recent git
-  commits mention packages, those notes get +1
+- **Pass 3 — Beads/activity boost (score: 1):** If `.beads/` exists or
+  `recent_activity` shows notes updated in the last 7 days, those notes get +1
 
 Take top 6 notes by total score.
 

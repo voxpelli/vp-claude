@@ -103,9 +103,13 @@ build_context(url="memory://npm/<pkg>", depth=1, max_related=5)
 Related notes that appear get score 2 (transitive relevance).
 
 **Pass 3 — Beads/activity boost (score: 1):**
+Fetch recent activity now (needed for scoring before sorting):
+```
+recent_activity(timeframe="7d", output_format="json")
+```
 If the project has `.beads/` (check via `Glob(pattern=".beads")`) or
-`recent_activity` (fetched in Step 5 below, but peek ahead if needed) shows
-notes updated in the last 7 days, those notes get +1 boost.
+`recent_activity` shows notes updated in the last 7 days, those notes get
++1 boost.
 
 Sort all scored notes descending. Take top 6 (or top 12 with `--deep`).
 
@@ -127,14 +131,11 @@ With `--deep`, also include `[pattern]`, `[feature]`, and `[usage]` categories.
 exceed the budget, prioritize `[gotcha]` > `[breaking]` > `[limitation]` >
 `[pattern]`.
 
-### 5. Check recent activity
+### 5. Cross-reference recent activity
 
-```
-recent_activity(timeframe="7d", output_format="json")
-```
-
-Note which of the top-scored notes were recently updated — these are most
-likely to be relevant to current work. Include in the brief output.
+Using the `recent_activity` results fetched in Step 3, note which of the
+top-scored notes were recently updated — these are most likely to be relevant
+to current work. Include in the brief output.
 
 ### 6. Synthesize brief
 
