@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0][] - 2026-03-28
+
+### Changed
+
+- **PostToolUse validation hook converted from prompt to command** — prompt hooks
+  spawn Haiku without MCP access, making the `schema_validate` call silently
+  non-functional since creation (same bug class as PreCompact v0.1–v0.10,
+  documented in RETRO-02). Now emits `additionalContext` so the main session
+  calls `schema_validate` with full MCP access.
+- **PostToolUseFailure hook converted from prompt to command** — pattern-matches
+  BM tool errors into five categories (server-unavailable, note-not-found,
+  invalid-argument, permission-error, unknown) and emits `additionalContext`
+  with recovery guidance. Eliminates misleading "hook stopped continuation"
+  framework labels.
+- **Wiki-link-in-observations warning** added to all 11 note templates and both
+  research skill SKILL.md files. BM's parser treats `[[` as a relation boundary
+  — text before it becomes `relation_type` (max 200 chars), causing validation
+  failures.
+- **tool-intel description** — added missing trigger phrases for cask, docker,
+  and vscode query patterns.
+- **knowledge-prime Step 3** — removed git/Bash dependency (Bash not in
+  allowed-tools); now uses `recent_activity` for the boost pass.
+- **CLAUDE.md hook conventions** — updated to reflect command-only hook pattern
+  and document prompt hook MCP limitation.
+
+### Removed
+
+- **`list_directory` from schema-evolve allowed-tools** — phantom tool, never
+  called in the workflow.
+
 ## [0.15.0][] - 2026-03-15
 
 ### Added
@@ -391,6 +421,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.16.0]: https://github.com/voxpelli/vp-claude/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/voxpelli/vp-claude/compare/v0.14.1...v0.15.0
 [0.14.1]: https://github.com/voxpelli/vp-claude/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/voxpelli/vp-claude/compare/v0.13.1...v0.14.0
