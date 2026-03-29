@@ -88,7 +88,7 @@ the missing standard in the report's Info section.
 
 Run the `bm` CLI to get aggregate graph stats before the full audit:
 ```
-Bash("bm project info --json")
+bm project info --json
 ```
 
 Extract and hold in context:
@@ -355,8 +355,8 @@ read_note(identifier="<permalink>", include_frontmatter=true, output_format="jso
 
 Extract from the JSON response:
 - `frontmatter.tags` array — build a frequency map of all tags for steps 8b–8f
-- `observations` array length — record per note for the Step 9b density check
-  (accumulate in context keyed by permalink so 9b can reference without re-reading)
+- `observations` array length — record per-note observation counts for use in
+  Step 9b
 
 **8b. Non-canonical tag detection:**
 Compare every observed tag against the canonical forms table. Flag tags that

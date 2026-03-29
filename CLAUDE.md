@@ -106,6 +106,20 @@ Skills and agents reference tools from multiple MCP servers. When editing, use e
 Shell scripts are validated with `shellcheck` (linting) and `shfmt -d`
 (format verification). Requires `brew install shfmt` if not already present.
 
+## Scripts
+
+The `scripts/` directory contains CLI-first audit utilities used by the
+knowledge-gardener agent. All scripts use `bm tool` CLI commands where possible
+and direct file access only for regex operations the CLI cannot express.
+
+| Script | Purpose | Used by |
+|--------|---------|---------|
+| `audit-scope-leak.sh <bm-root>` | Detect project-specific content (paths, env vars) in cross-project notes | gardener Step 7b |
+
+Scripts output NDJSON (one JSON object per line), use `set -euo pipefail`,
+and pass shellcheck + shfmt. The `check:sh` npm script validates both
+`hooks/*.sh` and `scripts/*.sh`.
+
 ## Conventions
 
 ### Skill frontmatter

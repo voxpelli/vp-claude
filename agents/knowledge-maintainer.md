@@ -271,6 +271,29 @@ edit_note(
 file, not end of section. Use `operation="find_replace"` targeting the last
 line of the section instead.
 
+#### 2d. Strip wiki-links from observations
+
+`[[wiki-links]]` in observation lines break BM's relation parser — text before
+`[[` becomes `relation_type` (max 200 chars). Search all ecosystems:
+
+```
+search_notes(query="[[npm:", entity_types=["observation"])
+search_notes(query="[[brew:", entity_types=["observation"])
+search_notes(query="[[cask:", entity_types=["observation"])
+search_notes(query="[[action:", entity_types=["observation"])
+search_notes(query="[[docker:", entity_types=["observation"])
+search_notes(query="[[vscode:", entity_types=["observation"])
+search_notes(query="[[go:", entity_types=["observation"])
+search_notes(query="[[composer:", entity_types=["observation"])
+search_notes(query="[[pypi:", entity_types=["observation"])
+search_notes(query="[[gem:", entity_types=["observation"])
+```
+
+For each hit, read the parent note and apply two `edit_note` calls: (1) strip
+`[[...]]` from the observation line replacing with plain text, (2) add the
+reference as `relates_to [[prefix:name]]` in `## Relations` if not already
+present. This is a structural auto-fix — no confirmation needed.
+
 ### 3. Enrich undocumented packages
 
 If the user's project has undocumented Tier 1 packages:
