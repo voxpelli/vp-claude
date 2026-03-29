@@ -20,7 +20,7 @@ if [[ -z "$PLUGIN_ROOT" ]]; then
 fi
 
 # Auto-format shell scripts under hooks/
-if [[ "$FILE_PATH" == "${PLUGIN_ROOT}/hooks/"*.sh ]]; then
+if [[ "$FILE_PATH" == "${PLUGIN_ROOT}/hooks/"*.sh ]] || [[ "$FILE_PATH" == "${PLUGIN_ROOT}/scripts/"*.sh ]]; then
 	if command -v shfmt >/dev/null 2>&1; then
 		shfmt -w "$FILE_PATH" 2>/dev/null || true
 	fi

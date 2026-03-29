@@ -38,6 +38,7 @@ tools:
   - mcp__basic-memory__schema_infer
   - mcp__basic-memory__schema_validate
   - mcp__basic-memory__list_directory
+  - Bash
   - Glob
   - mcp__basic-memory__schema_diff
 ---
@@ -82,6 +83,22 @@ Extract and hold in context:
 
 If the note does not exist or cannot be read, skip step 8 entirely and note
 the missing standard in the report's Info section.
+
+### 0.5. Graph stats snapshot
+
+Run the `bm` CLI to get aggregate graph stats before the full audit:
+```
+Bash("bm project info --json")
+```
+
+Extract and hold in context:
+- **`isolated_entities`** — count of zero-link notes; gates Step 3 (skip Pass 1 if 0)
+- **`note_types`** — dict of type counts; cross-check against Step 1 inventory
+- **`total_relations`** — report in Graph Statistics output
+- **`observation_categories`** — category frequency for Step 9b density context
+
+If `bm` is not on PATH (command fails), skip this step silently and proceed
+with MCP-only approach. Do not abort the audit.
 
 ### 1. Inventory
 
@@ -166,6 +183,11 @@ Flag notes missing any layer.
 
 ### 3. Orphan detection
 
+**Gate:** If Step 0.5 ran and `isolated_entities == 0`, skip Pass 1 entirely —
+the graph has no zero-link notes. Record "0 orphans (confirmed via stats snapshot)"
+in the report. If `isolated_entities > 0`, use the count to bound Pass 1 — stop
+after collecting that many zero-outgoing candidates.
+
 **Pass 1 — Identify zero-outgoing notes:**
 For each note from the step 1 inventory, call:
 ```
@@ -249,6 +271,32 @@ the wiki-links found in step 4 to surface connections:
 This is informational only — report in the Info section. It bridges
 vp-knowledge graph health with vp-beads sprint workflow.
 
+### 4c. Wiki-link-in-observations detection
+
+Observation lines must never contain `[[wiki-links]]` — BM parses `[[` as a
+relation boundary, making text before it the `relation_type`. Search for each
+ecosystem prefix in the observation entity type:
+
+```
+search_notes(query="[[npm:", entity_types=["observation"], page_size=100)
+search_notes(query="[[brew:", entity_types=["observation"], page_size=100)
+search_notes(query="[[crate:", entity_types=["observation"], page_size=100)
+search_notes(query="[[action:", entity_types=["observation"], page_size=100)
+search_notes(query="[[docker:", entity_types=["observation"], page_size=100)
+search_notes(query="[[vscode:", entity_types=["observation"], page_size=100)
+search_notes(query="[[go:", entity_types=["observation"], page_size=100)
+search_notes(query="[[composer:", entity_types=["observation"], page_size=100)
+search_notes(query="[[pypi:", entity_types=["observation"], page_size=100)
+search_notes(query="[[gem:", entity_types=["observation"], page_size=100)
+```
+
+Every result is a violation — the observation content contains a `[[prefix:`
+pattern. Report each under **Critical findings** with the offending note and
+observation text. The fix is to move the wiki-link to `## Relations`.
+
+Note: bare `[[` does not match in FTS (tokenizer issue) — prefix-specific
+queries are required. Paginate if `has_more=true`.
+
 ### 5. Stale note detection
 
 Use `recent_activity(timeframe="90d", output_format="json")` to find recently
@@ -269,11 +317,28 @@ Look for notes with:
 
 ### 7. Cross-project consistency
 
-Scan note content for red flags that indicate project-specific information
-leaked into the cross-project knowledge base:
-- Absolute file paths (e.g., `lib/routes/settings.js`)
-- Database table names (unless discussing PostgreSQL patterns generically)
-- Project-specific config keys or environment variables
+Scan note content for project-specific information leaked into the cross-project
+knowledge base.
+
+**7a. Probe (MCP search):** Search for known high-signal leak patterns:
+```
+search_notes(search_type="text", query="/Users/", page_size=10)
+search_notes(search_type="text", query="/home/", page_size=10)
+search_notes(search_type="text", query="localhost:", page_size=10)
+```
+
+**7b. Scan (Bash script):** Run the regex audit for patterns MCP cannot express:
+```
+Bash("bash scripts/audit-scope-leak.sh ~/basic-memory")
+```
+The script emits NDJSON — one object per finding with fields `file`, `line`,
+`pattern`, and `text`. Patterns: `relative-path` (3+ segment file paths),
+`absolute-path` (`/Users/`, `/home/`), `project-env-var` (long ALL_CAPS env
+vars). Schema notes are excluded automatically.
+
+**Triage:** This check has a high false-positive rate. Review each finding —
+paths in code examples or generic documentation are expected. Report only
+confirmed leaks as Info items. Notes with multiple confirmed leaks are Warning.
 
 ### 8. Tag alignment
 
@@ -287,8 +352,10 @@ For each sampled note from the step 1 inventory, call:
 read_note(identifier="<permalink>", include_frontmatter=true, output_format="json")
 ```
 
-Extract the `tags` array from frontmatter. Build a frequency map of all tags
-observed across the sample.
+Extract from the JSON response:
+- `frontmatter.tags` array — build a frequency map of all tags for steps 8b–8f
+- `observations` array length — record per note for the Step 9b density check
+  (accumulate in context keyed by permalink so 9b can reference without re-reading)
 
 **8b. Non-canonical tag detection:**
 Compare every observed tag against the canonical forms table. Flag tags that
@@ -336,10 +403,11 @@ the note's actual content matches its title scope. Flag notes where the title
 promises broader coverage than the content delivers (e.g., a note titled
 "Tool Enrichment Patterns" that only covers brew).
 
-**9b. Observation density:** Flag engineering notes with more than 20
-observations in a single flat `## Observations` section as candidates for
-subsection splitting (grouping into `### Category Name` subsections under
-Observations). Also flag notes with >20 flat observations in other note types.
+**9b. Observation density:** Using the per-note observation counts accumulated
+in step 8a, flag any note where the count exceeds 20 as a candidate for
+subsection splitting (`### Category Name` subsections under `## Observations`).
+For notes not read in step 8a, check with `read_note(output_format="json")` and
+count the observations array length. Report the count alongside the title.
 
 ## Output Format
 

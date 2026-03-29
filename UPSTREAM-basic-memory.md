@@ -43,3 +43,60 @@ structural wiki-link prefixes. This forces exact text match and eliminates
 false positives.
 **Status:** Open — workaround trivial, but the default hybrid behavior is surprising
 when querying for non-semantic strings.
+
+---
+
+### `edit_note` re-parse triggers validation errors from unrelated notes
+
+**Discovered:** 2026-03-29 (v0.16.0 era)
+**Impact:** High — editing `npm:@voxpelli/eslint-config` via `edit_note(find_replace)`
+failed with a `relation_type` MaxLen(200) error originating from `Config Loading
+Patterns in Node.js` — a completely different note. That note had >200 chars of text
+before a `[[wiki-link]]` in prose. `edit_note` does raw string replacement then
+re-parses the ENTIRE note, calling `update_entity_relations` which surfaces validation
+errors from related entities — not the edited note's own content.
+**Workaround:** Fix the offending note first (shorten text before `[[` to under 200
+chars), then retry the edit. The validation error identifies the problematic
+`relation_type` text in its `input_value` field, which can be grepped across BM files
+to find the source note.
+**Status:** Open — workaround in place, but the blast radius of edit_note validation
+is surprising. Expected: errors from the edited note only.
+
+---
+
+### FTS tokenizer doesn't match bare `[[` in observation search
+
+**Discovered:** 2026-03-29 (v0.16.0 era)
+**Impact:** Medium — `search_notes(query="[[", entity_types=["observation"])` returns 0
+results, but `search_notes(query="[[npm:", entity_types=["observation"])` returns 3+
+results. The FTS tokenizer strips or mishandles bare `[[` and needs prefix context to
+match.
+**Workaround:** Search per-prefix (`[[npm:`, `[[brew:`, `[[action:`, etc.) — requires
+~10 calls instead of 1. Functional but verbose.
+**Status:** Open — workaround functional.
+
+---
+
+### `list_directory` has no `bm tool` CLI wrapper
+
+**Discovered:** 2026-03-29 (v0.16.0 era)
+**Impact:** Medium — all MCP tools except `list_directory` have `bm tool` CLI wrappers
+(e.g. `bm tool search-notes`, `bm tool read-note`). The missing wrapper blocks shell
+script automation that needs directory enumeration.
+**Workaround:** Use `bm tool search-notes --entity-type entity` with `--type` filters,
+though this has different semantics and pagination behavior.
+**Status:** Open — feature request.
+
+---
+
+### Observation search does not filter by parent note type
+
+**Discovered:** 2026-03-29 (v0.16.0 era)
+**Impact:** Medium — `search_notes(entity_types=["observation"], note_types=["brew_formula"])`
+returns empty results. The `note_types` filter does not propagate to observations; it
+only applies to entity-level results. To audit observations for a specific note type,
+you must enumerate entities first, then search observations within each.
+**Workaround:** Two-pass approach: enumerate entities of the target type, then search
+observations per-entity or search all observations and filter by `entity_id` in the
+result set.
+**Status:** Open — feature request.

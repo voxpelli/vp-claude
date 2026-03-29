@@ -5,7 +5,7 @@
     "check": "npm run check:plugin && npm run check:md && npm run check:sh",
     "check:plugin": "node validate-plugin.mjs",
     "check:md": "remark . --quiet --frail",
-    "check:sh": "shellcheck hooks/*.sh && shfmt -d hooks/*.sh"
+    "check:sh": "shellcheck hooks/*.sh scripts/*.sh && shfmt -d hooks/*.sh scripts/*.sh"
   },
   "devDependencies": {
     "js-yaml": "^4.1.0",
