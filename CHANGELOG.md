@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0][] - 2026-03-29
+
+### Added
+
+- **Knowledge-gardener audit improvements** — Step 0.5 (`bm project info main
+  --json`) for aggregate graph stats snapshot that gates Step 3 orphan
+  detection. Step 4c for wiki-link-in-observations detection via
+  `search_notes(entity_types=["observation"])` per ecosystem prefix. Step 7
+  probe+scan split for scope-leak detection.
+- **`scripts/audit-scope-leak.sh`** — CLI-first audit script for regex-based
+  detection of project-specific content in cross-project BM notes. Three
+  passes: relative paths, absolute paths, project-specific env vars.
+- **Knowledge-maintainer Step 2d** — wiki-link-in-observations detection and
+  auto-fix (strip `[[...]]` from observations, add to Relations).
+- **`scripts/check-hooks.mjs`** — 16 integration tests verifying every hook
+  emits exactly ONE valid JSON object on stdout. Catches the multi-object bug
+  class that went undetected for 3 releases.
+- **`validate-plugin.mjs` prompt-hook warning** — warns when hooks use
+  `type: "prompt"` (silently non-functional for MCP calls per RETRO-02).
+
+### Changed
+
+- **Gardener Step 8a** extended to accumulate observation counts alongside
+  tags (zero extra MCP cost). Step 9b uses accumulated counts.
+- **CLAUDE.md** — added Scripts section documenting CLI-first audit utilities.
+- **`check:sh`** extended to cover `scripts/*.sh`.
+
+### Fixed
+
+- **Gardener Step 0.5** — corrected to `bm project info main --json` (requires
+  project name argument).
+- **`audit-scope-leak.sh`** — replaced `eval echo` with safe tilde expansion,
+  fixed IFS colon split, added jq dependency check, added missing `[[cask:`
+  prefix to wiki-link detection.
+
 ## [0.16.1][] - 2026-03-28
 
 ### Fixed
@@ -455,6 +490,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.17.0]: https://github.com/voxpelli/vp-claude/compare/v0.16.1...v0.17.0
 [0.16.1]: https://github.com/voxpelli/vp-claude/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/voxpelli/vp-claude/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/voxpelli/vp-claude/compare/v0.14.1...v0.15.0
