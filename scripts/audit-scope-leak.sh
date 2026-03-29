@@ -23,7 +23,7 @@ fi
 
 # emit_finding FILE LINENO PATTERN TEXT
 emit_finding() {
-	jq -n \
+	jq -cn \
 		--arg file "$1" \
 		--argjson line "$2" \
 		--arg pattern "$3" \
