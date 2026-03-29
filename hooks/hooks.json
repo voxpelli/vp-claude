@@ -1,6 +1,18 @@
 {
-  "description": "Basic Memory quality hooks: schema validation after writes, file edit quality checks, auto-reflect before compaction, graph summary at session start.",
+  "description": "Basic Memory quality hooks: schema validation after writes, file edit quality checks, auto-reflect before compaction, graph summary at session start, Python-script prevention.",
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/pre-bash-no-python.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "mcp__basic-memory__write_note|mcp__basic-memory__edit_note",

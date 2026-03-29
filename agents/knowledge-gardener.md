@@ -106,10 +106,13 @@ Extract and hold in context:
 If `bm` is not on PATH (command fails), skip this step silently and proceed
 with MCP-only approach. Do not abort the audit.
 
-To extract specific fields, use jq via Bash:
+Use the audit-helpers script or direct jq:
+```
+Bash("bash scripts/audit-helpers.sh bm-stats")
+```
+Or target individual fields:
 ```
 Bash("bm project info main --json | jq '.statistics.isolated_entities'")
-Bash("bm project info main --json | jq '.statistics.note_types'")
 ```
 Do NOT write Python scripts to parse the output.
 
@@ -187,6 +190,11 @@ schema_diff(note_type="service")
 
 Drift findings (fields in notes but absent from schema, or schema fields fallen out of use) are candidates for schema evolution — report them in the output but do not treat them as validation failures.
 
+**Processing results (do not script):** After each `schema_validate` call, read
+the `error_count` and `warning_count` fields directly from the response. Tally
+totals as you go. If warnings exist, scan the `warnings` array in context and
+list up to 5. Do not batch results for later processing.
+
 For each note, verify it has all three enrichment layers:
 - **Frontmatter `packages`** — at least one package listed (skip meta/process notes)
 - **`## Observations`** section with `[category]` tagged items
@@ -206,6 +214,8 @@ For each note from the step 1 inventory, call:
 ```
 read_note(identifier="<permalink>", include_frontmatter=false, output_format="json")
 ```
+The JSON response has a `relations` array. If empty or absent, the note has
+zero outgoing links. Check this field directly — do not script.
 
 Check the structured `relations` field in the JSON response. Notes with an empty
 or missing `relations` array have zero outgoing links. Collect these as candidates.
@@ -320,6 +330,11 @@ identify notes NOT updated in 90+ days. Flag these for review.
 Note: `recent_activity` may paginate on large graphs. Paginate until `has_more=false`
 before cross-referencing with the step 1 inventory.
 
+**Processing (do not script):** The response has a `results` array with
+`permalink` fields. Collect the set of active permalinks mentally, then compare
+against the Step 1 inventory. Notes not in the recent set are stale. Reason
+through the comparison directly — do not write a set-difference script.
+
 ### 6. Duplicate detection
 
 Look for notes with:
@@ -346,10 +361,10 @@ search_notes(search_type="text", query="localhost:", page_size=10)
 Bash("bash scripts/audit-scope-leak.sh ~/basic-memory")
 ```
 The script emits compact NDJSON (one JSON object per line) with fields `file`,
-`line`, `pattern`, and `text`. Process with jq:
+`line`, `pattern`, and `text`. Use the audit-helpers script for pre-built processing:
 ```
-Bash("bash scripts/audit-scope-leak.sh ~/basic-memory | jq -s 'group_by(.pattern) | map({pattern: .[0].pattern, count: length})'")
-Bash("bash scripts/audit-scope-leak.sh ~/basic-memory | jq -s '[.[] | select(.pattern==\"absolute-path\")] | length'")
+Bash("bash scripts/audit-helpers.sh scope-leak-summary ~/basic-memory")
+Bash("bash scripts/audit-helpers.sh scope-leak-detail ~/basic-memory absolute-path")
 ```
 Do NOT write Python to parse the output. Patterns: `relative-path` (3+ segment
 file paths), `absolute-path` (`/Users/`, `/home/`), `project-env-var` (long
@@ -375,6 +390,11 @@ Extract from the JSON response:
 - `frontmatter.tags` array — build a frequency map of all tags for steps 8b–8f
 - `observations` array length — record per-note observation counts for use in
   Step 9b
+
+**Tag frequency (do not script):** As you read each note, add its tags to a
+running tally in your reasoning. Do not accumulate all tags into a batch for
+later processing — tally incrementally as each note is read. After all notes,
+the frequency map is already built in your working context.
 
 **8b. Non-canonical tag detection:**
 Compare every observed tag against the canonical forms table. Flag tags that
