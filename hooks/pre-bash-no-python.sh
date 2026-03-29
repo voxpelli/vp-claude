@@ -12,8 +12,10 @@ if [[ -z "$CMD" ]]; then
 	exit 0
 fi
 
-# Block commands that invoke Python or Node.js as the primary executable.
-if echo "$CMD" | grep -qE '^\s*python[0-9.]*\s|^\s*node\s+-[ec]\s'; then
+# Block commands that invoke Python or Node.js anywhere in the pipeline.
+# Matches: python3, python3.12, /usr/bin/python3, env python3, bash -c "python3",
+# echo ... | python3, cmd ; python3, cmd && python3
+if echo "$CMD" | grep -qiwE 'python[0-9.]*|node'; then
 	jq -cn '{
     "decision": "block",
     "reason": "Python/Node scripts are blocked. Use jq via Bash for JSON processing, or reason about MCP results directly in context. Example: bm project info main --json | jq .statistics.isolated_entities"

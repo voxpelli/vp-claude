@@ -283,9 +283,72 @@ test('jq command → allowed (silent)', () => {
   return { ok: true }
 })
 
+test('bash -c "python3 ..." → blocked (bypass vector)', () => {
+  const { stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+    JSON.stringify({ tool_input: { command: 'bash -c "python3 -c \'import json\'"' } }))
+  const { count, objects } = parseJsonObjects(stdout)
+  if (count !== 1) return { ok: false, reason: `expected block, got ${count}` }
+  if (/** @type {Record<string,unknown>} */ (objects[0]).decision !== 'block') return { ok: false, reason: 'expected block' }
+  return { ok: true }
+})
+
+test('env python3 → blocked (bypass vector)', () => {
+  const { stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+    JSON.stringify({ tool_input: { command: 'env python3 -c "print(1)"' } }))
+  const { count, objects } = parseJsonObjects(stdout)
+  if (count !== 1) return { ok: false, reason: `expected block, got ${count}` }
+  if (/** @type {Record<string,unknown>} */ (objects[0]).decision !== 'block') return { ok: false, reason: 'expected block' }
+  return { ok: true }
+})
+
+test('/usr/bin/python3 → blocked (absolute path)', () => {
+  const { stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+    JSON.stringify({ tool_input: { command: '/usr/bin/python3 script.py' } }))
+  const { count, objects } = parseJsonObjects(stdout)
+  if (count !== 1) return { ok: false, reason: `expected block, got ${count}` }
+  if (/** @type {Record<string,unknown>} */ (objects[0]).decision !== 'block') return { ok: false, reason: 'expected block' }
+  return { ok: true }
+})
+
+test('echo ... | python3 → blocked (pipe)', () => {
+  const { stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+    JSON.stringify({ tool_input: { command: 'echo "import json" | python3' } }))
+  const { count, objects } = parseJsonObjects(stdout)
+  if (count !== 1) return { ok: false, reason: `expected block, got ${count}` }
+  if (/** @type {Record<string,unknown>} */ (objects[0]).decision !== 'block') return { ok: false, reason: 'expected block' }
+  return { ok: true }
+})
+
+test('node -e → blocked', () => {
+  const { stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+    JSON.stringify({ tool_input: { command: 'node -e "console.log(JSON.parse(...))"' } }))
+  const { count, objects } = parseJsonObjects(stdout)
+  if (count !== 1) return { ok: false, reason: `expected block, got ${count}` }
+  if (/** @type {Record<string,unknown>} */ (objects[0]).decision !== 'block') return { ok: false, reason: 'expected block' }
+  return { ok: true }
+})
+
+test('jq command → allowed (silent)', () => {
+  const { stdout, status } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+    JSON.stringify({ tool_input: { command: 'bm project info main --json | jq .statistics' } }))
+  if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
+  const { count } = parseJsonObjects(stdout)
+  if (count !== 0) return { ok: false, reason: `expected silent, got ${count}` }
+  return { ok: true }
+})
+
 test('bash script → allowed (silent)', () => {
   const { stdout, status } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
     JSON.stringify({ tool_input: { command: 'bash scripts/audit-helpers.sh bm-stats' } }))
+  if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
+  const { count } = parseJsonObjects(stdout)
+  if (count !== 0) return { ok: false, reason: `expected silent, got ${count}` }
+  return { ok: true }
+})
+
+test('no command field → silent', () => {
+  const { stdout, status } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+    JSON.stringify({ tool_input: {} }))
   if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
   const { count } = parseJsonObjects(stdout)
   if (count !== 0) return { ok: false, reason: `expected silent, got ${count}` }
