@@ -8,6 +8,8 @@ const ROOT = new URL('.', import.meta.url).pathname.replace(/\/$/, '')
 
 /** @type {string[]} */
 const errors = []
+/** @type {string[]} */
+const warnings = []
 
 /**
  * @param {string} file
@@ -15,6 +17,14 @@ const errors = []
  */
 function error (file, message) {
   errors.push(`${relative(ROOT, file)}: ${message}`)
+}
+
+/**
+ * @param {string} file
+ * @param {string} message
+ */
+function warn (file, message) {
+  warnings.push(`${relative(ROOT, file)}: ${message}`)
 }
 
 /**
@@ -165,6 +175,9 @@ if (existsSync(hooksPath)) {
             if (!VALID_HOOK_TYPES.has(hk.type)) {
               error(hooksPath, `hooks.${event}: hook type must be one of ${[...VALID_HOOK_TYPES].join(', ')}, got "${String(hk.type)}"`)
             }
+            if (hk.type === 'prompt') {
+              warn(hooksPath, `hooks.${event}: type "prompt" hooks spawn Haiku without MCP access — consider "command" with additionalContext instead (see RETRO-02)`)
+            }
             if (typeof hk.timeout !== 'number') {
               error(hooksPath, `hooks.${event}: hook missing "timeout" (number)`)
             }
@@ -263,6 +276,14 @@ if (existsSync(agentsDir)) {
 }
 
 // --- Report ---
+
+if (warnings.length > 0) {
+  console.warn('Plugin validation warnings:\n')
+  for (const w of warnings) {
+    console.warn(`  ⚠ ${w}`)
+  }
+  console.warn('')
+}
 
 if (errors.length > 0) {
   console.error('Plugin validation failed:\n')

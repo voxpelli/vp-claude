@@ -88,7 +88,7 @@ the missing standard in the report's Info section.
 
 Run the `bm` CLI to get aggregate graph stats before the full audit:
 ```
-bm project info --json
+bm project info main --json
 ```
 
 Extract and hold in context:
