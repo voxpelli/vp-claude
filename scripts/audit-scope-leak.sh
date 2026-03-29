@@ -6,10 +6,15 @@ set -euo pipefail
 # Output: NDJSON {"file","line","pattern","text"} — one object per finding.
 # Usage: audit-scope-leak.sh <bm-root>
 
+command -v jq >/dev/null 2>&1 || {
+	echo "Error: jq is required" >&2
+	exit 1
+}
+
 BM_ROOT="${1:?Usage: audit-scope-leak.sh <bm-root>}"
 
-# Resolve tilde if present (bash 3.2 doesn't expand ~ in variables)
-BM_ROOT=$(eval echo "$BM_ROOT")
+# Safe tilde expansion without eval (no injection risk)
+BM_ROOT="${BM_ROOT/#\~/$HOME}"
 
 if [[ ! -d "$BM_ROOT" ]]; then
 	echo "Error: directory does not exist: $BM_ROOT" >&2
@@ -26,16 +31,16 @@ emit_finding() {
 		'{file:$file, line:$line, pattern:$pattern, text:$text}'
 }
 
-# exclude lines that are markdown links, code fence markers, or inside schema/
-should_skip() {
-	local file="$1" text="$2"
-	# Skip schema definition notes
-	case "$file" in */schema/*) return 0 ;; esac
-	# Skip markdown link targets: [text](https://...)
-	case "$text" in *'](http'*) return 0 ;; esac
-	# Skip code fence markers
-	case "$text" in '```'*) return 0 ;; esac
-	return 1
+# Process grep output into NDJSON findings
+process_findings() {
+	local pattern="$1"
+	while IFS= read -r grepline; do
+		filepath="${grepline%%:*}"
+		rest="${grepline#*:}"
+		lineno="${rest%%:*}"
+		linetext="${rest#*:}"
+		emit_finding "${filepath#"$BM_ROOT"/}" "$lineno" "$pattern" "$linetext"
+	done || true
 }
 
 # Known-good env vars to exclude from Pass 3
@@ -43,28 +48,19 @@ KNOWN_GOOD="NODE_ENV|GITHUB_TOKEN|GITHUB_ACTIONS|ANTHROPIC_API_KEY|CLAUDE_PLUGIN
 
 # Pass 1: Relative paths with 3+ segments and a file extension
 grep -rn -E '[a-z][a-z0-9_-]+/[a-z][a-z0-9_-]+/[a-z][a-z0-9_.-]+\.[a-z]{2,4}' \
-	--include='*.md' "$BM_ROOT" 2>/dev/null |
-	while IFS=: read -r filepath lineno linetext; do
-		rel="${filepath#"$BM_ROOT"/}"
-		if should_skip "$rel" "$linetext"; then continue; fi
-		emit_finding "$rel" "$lineno" "relative-path" "$linetext"
-	done || true
+	--include='*.md' --exclude-dir=schema "$BM_ROOT" 2>/dev/null |
+	grep -v -E ']\(https?://|^```' |
+	process_findings "relative-path"
 
 # Pass 2: Absolute paths
 grep -rn -e '/Users/' -e '/home/' -e '/var/www' -e '/srv/' \
-	--include='*.md' "$BM_ROOT" 2>/dev/null |
-	while IFS=: read -r filepath lineno linetext; do
-		rel="${filepath#"$BM_ROOT"/}"
-		if should_skip "$rel" "$linetext"; then continue; fi
-		emit_finding "$rel" "$lineno" "absolute-path" "$linetext"
-	done || true
+	--include='*.md' --exclude-dir=schema "$BM_ROOT" 2>/dev/null |
+	grep -v -E ']\(https?://|^```' |
+	process_findings "absolute-path"
 
 # Pass 3: Project-specific env vars (long ALL_CAPS, not in known-good list)
-grep -rn -E '[^a-z][A-Z][A-Z0-9_]{7,}' \
-	--include='*.md' "$BM_ROOT" 2>/dev/null |
+grep -rn -E '(^|[^a-zA-Z])[A-Z][A-Z0-9_]{7,}' \
+	--include='*.md' --exclude-dir=schema "$BM_ROOT" 2>/dev/null |
 	grep -v -E "$KNOWN_GOOD" |
-	while IFS=: read -r filepath lineno linetext; do
-		rel="${filepath#"$BM_ROOT"/}"
-		if should_skip "$rel" "$linetext"; then continue; fi
-		emit_finding "$rel" "$lineno" "project-env-var" "$linetext"
-	done || true
+	grep -v -E ']\(https?://|^```' |
+	process_findings "project-env-var"
