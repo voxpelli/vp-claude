@@ -270,7 +270,7 @@ claude mcp add --transport http raindrop https://api.raindrop.io/rest/v2/ai/mcp
 **[Readwise](https://readwise.io/mcp)** — searches your reading highlights and saved articles from Readwise and Reader. Requires a [Readwise](https://readwise.io) account:
 
 ```bash
-claude mcp add --transport http readwise https://readwise.io/api/mcp
+claude mcp add --transport http readwise https://mcp2.readwise.io/mcp
 ```
 
 ### Optional
