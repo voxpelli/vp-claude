@@ -8,7 +8,7 @@ classify, and report domain standard dependencies.
 Search BM for all notes with `type: standard`:
 
 ```
-search_notes(search_type="text", query="type: standard", page_size=50)
+search_notes(note_types=["standard"], page_size=50)
 ```
 
 If no standard notes exist in BM, report "No domain standards documented in
@@ -24,7 +24,7 @@ directly).
 For each non-skipped standard, grep the codebase for mentions (case-insensitive):
 
 ```
-Grep(pattern="<standard-name>", glob="**/*.{js,ts,md,json}", output_mode="count", -i=true)
+Grep(pattern="\\b<standard-name>\\b", glob="**/*.{js,ts,md,json,rs,go,php,py,rb}", output_mode="count", -i=true)
 ```
 
 ### 12. Classify standard dependencies

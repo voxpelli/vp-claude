@@ -301,17 +301,17 @@ relation boundary, making text before it the `relation_type`. Search for each
 ecosystem prefix in the observation entity type:
 
 ```
-search_notes(query="[[npm:", entity_types=["observation"], page_size=100)
-search_notes(query="[[brew:", entity_types=["observation"], page_size=100)
-search_notes(query="[[crate:", entity_types=["observation"], page_size=100)
-search_notes(query="[[action:", entity_types=["observation"], page_size=100)
-search_notes(query="[[docker:", entity_types=["observation"], page_size=100)
-search_notes(query="[[cask:", entity_types=["observation"], page_size=100)
-search_notes(query="[[vscode:", entity_types=["observation"], page_size=100)
-search_notes(query="[[go:", entity_types=["observation"], page_size=100)
-search_notes(query="[[composer:", entity_types=["observation"], page_size=100)
-search_notes(query="[[pypi:", entity_types=["observation"], page_size=100)
-search_notes(query="[[gem:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[npm:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[brew:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[crate:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[action:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[docker:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[cask:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[vscode:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[go:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[composer:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[pypi:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[gem:", entity_types=["observation"], page_size=100)
 ```
 
 Every result is a violation — the observation content contains a `[[prefix:`

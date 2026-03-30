@@ -41,7 +41,6 @@ model: inherit
 color: green
 tools:
   - Read
-  - Grep
   - Glob
   - Skill
   - mcp__basic-memory__search_notes
@@ -282,16 +281,16 @@ line of the section instead.
 `[[` becomes `relation_type` (max 200 chars). Search all ecosystems:
 
 ```
-search_notes(query="[[npm:", entity_types=["observation"])
-search_notes(query="[[brew:", entity_types=["observation"])
-search_notes(query="[[cask:", entity_types=["observation"])
-search_notes(query="[[action:", entity_types=["observation"])
-search_notes(query="[[docker:", entity_types=["observation"])
-search_notes(query="[[vscode:", entity_types=["observation"])
-search_notes(query="[[go:", entity_types=["observation"])
-search_notes(query="[[composer:", entity_types=["observation"])
-search_notes(query="[[pypi:", entity_types=["observation"])
-search_notes(query="[[gem:", entity_types=["observation"])
+search_notes(search_type="text", query="[[npm:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[brew:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[cask:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[action:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[docker:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[vscode:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[go:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[composer:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[pypi:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[gem:", entity_types=["observation"], page_size=100)
 ```
 
 For each hit, read the parent note and apply two `edit_note` calls: (1) strip
@@ -303,14 +302,14 @@ present. This is a structural auto-fix — no confirmation needed.
 
 If the user's project has undocumented Tier 1 packages:
 
-1. **Detect project ecosystems** — check which manifest files exist using the
-   `Glob` tool (not Bash):
-   - `package.json` → npm
-   - `Cargo.toml` → crate
-   - `go.mod` → go
-   - `composer.json` → composer
-   - `pyproject.toml` or `requirements.txt` → pypi
-   - `Gemfile` → gem
+1. **Detect project ecosystems** — use `Read` for root manifests (not `Glob`,
+   which recurses into `node_modules/`):
+   - `Read("./package.json")` succeeds → npm
+   - `Read("./Cargo.toml")` succeeds → crate
+   - `Read("./go.mod")` succeeds → go
+   - `Read("./composer.json")` succeeds → composer
+   - `Read("./pyproject.toml")` or `Read("./requirements.txt")` → pypi
+   - `Read("./Gemfile")` succeeds → gem
 
 2. Run the knowledge-gaps analysis for each detected ecosystem: parse the
    manifest, check BM coverage, count imports.
@@ -326,12 +325,11 @@ If the user's project has undocumented Tier 1 packages:
    Skill(skill: "package-intel", args: "fastify")  # npm (no prefix)
    ```
 
-4. **Detect tool manifests** — check for tool manifest files using the
-   `Glob` tool:
-   - `Brewfile` → brew formulae, casks, and vscode extensions
-   - `.github/workflows/*.yml` / `.github/workflows/*.yaml` → GitHub Actions
-   - `Dockerfile`, `*.dockerfile`, `Dockerfile.*` → Docker images
-   - `.vscode/extensions.json` → VSCode extensions
+4. **Detect tool manifests** — check for tool manifest files:
+   - `Read("./Brewfile")` → brew formulae, casks, and vscode extensions
+   - `Glob(pattern=".github/workflows/*.yml")` / `Glob(pattern=".github/workflows/*.yaml")` → GitHub Actions
+   - `Read("./Dockerfile")`, `Glob(pattern="*.dockerfile")`, `Glob(pattern="Dockerfile.*")` → Docker images
+   - `Read("./.vscode/extensions.json")` → VSCode extensions
 
 5. For undocumented tools from detected manifests, invoke the `tool-intel`
    skill via the Skill tool with the appropriate prefix:

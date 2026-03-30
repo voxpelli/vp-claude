@@ -67,7 +67,7 @@ captures knowledge "after work").
 
 ### 1. Identify project stack
 
-Detect manifest files in the current working directory using `Glob`:
+Detect manifest files using `Read` for known root paths (not `Glob`, which recurses into `node_modules/`). Use `Glob` only for wildcard paths like `.github/workflows/*.yml`:
 
 | Manifest file | Ecosystem | BM directory |
 |---------------|-----------|--------------|

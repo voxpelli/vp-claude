@@ -39,8 +39,10 @@ reliably detected this way.
 queries adds noise. The `[[` prefix is structural syntax, not semantic content, so
 vector similarity is the wrong retrieval method.
 **Workaround:** Explicitly pass `search_type="text"` for any query containing
-structural wiki-link prefixes. This forces exact text match and eliminates
-false positives.
+structural wiki-link prefixes. This forces FTS5 full-text search instead of
+vector/semantic. Works for `[[prefix:` queries because the prefix token is
+distinctive, but does NOT do literal substring matching — FTS5 still tokenizes
+on punctuation (colons, slashes, brackets are token boundaries).
 **Status:** Open — workaround trivial, but the default hybrid behavior is surprising
 when querying for non-semantic strings.
 
@@ -100,3 +102,46 @@ you must enumerate entities first, then search observations within each.
 observations per-entity or search all observations and filter by `entity_id` in the
 result set.
 **Status:** Open — feature request.
+
+---
+
+### `entity_types=["relation"]` enables direct relation-index search
+
+**Discovered:** 2026-03-30 (v0.18.1, knowledge-gaps Step 10 rewrite)
+**Impact:** High — the relation index stores parsed wiki-link relations with
+`from_entity` and `to_entity` fields. When `to_entity` is absent/None, the
+relation is unresolved (dead wiki-link). This is the correct primitive for
+dead-link detection — far more reliable than FTS5 text search for `[[prefix:`
+syntax.
+**Key details:**
+- Relation titles are indexed as `"source → target"` — both names searchable
+- `to_entity` absent = unresolved (DB `to_id` is NULL)
+- Searches find both incoming and outgoing relations for an entity name
+- Default `entity_types` is `["entity"]` — must explicitly set `["relation"]`
+**Used by:** knowledge-gaps Step 10 (dead wiki-links), Step 14a (hub gaps)
+**Status:** Documented — stable API, not a workaround.
+
+---
+
+### Use `note_types=["<type>"]` instead of FTS5 for type filtering
+
+**Discovered:** 2026-03-30 (standard-detection.md bug)
+**Impact:** High — `search_notes(query="type: standard", search_type="text")`
+does NOT find notes by frontmatter type. FTS5 tokenizes the colon, matching
+any note containing both words "type" and "standard" in any context.
+**Correct approach:** `search_notes(note_types=["standard"])` — uses the
+dedicated metadata filter that checks the frontmatter `type` field directly.
+**Status:** Documented — the parameter existed all along, was just not used.
+
+---
+
+### `bm project info` exposes `most_connected_entities` and `total_unresolved_relations`
+
+**Discovered:** 2026-03-30 (DeepWiki research for concept gap detection)
+**Impact:** Medium — `bm project info main --json` returns:
+- `statistics.total_unresolved_relations` — count of dead wiki-links (quick gate)
+- `statistics.most_connected_entities` — top 10 entities by outgoing relation
+  count, with `title`, `permalink`, `relation_count`. Free hub-node detection
+  without graph traversal.
+**Used by:** knowledge-gaps Step 10 (quick-exit gate), Step 14a (seed selection)
+**Status:** Documented — stable CLI output.

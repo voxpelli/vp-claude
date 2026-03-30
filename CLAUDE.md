@@ -148,6 +148,24 @@ last relation line. Only add links where the relationship is genuine — don't
 link notes that mention the same word in an unrelated context. This turns
 one-way references into bidirectional graph edges.
 
+### Basic Memory search patterns
+
+When querying Basic Memory via `search_notes`, choose the right approach:
+
+- **Find notes by type** — use `note_types=["standard"]`, NOT
+  `search_type="text"` with `query="type: standard"` (FTS5 tokenizes the
+  colon, matching false positives)
+- **Find dead wiki-links** — use `entity_types=["relation"]` and check
+  `to_entity` absence, NOT `search_type="text"` with `query="[[prefix:"`
+  (FTS5 strips brackets)
+- **Find wiki-links in observations** — use `search_type="text"` with
+  `entity_types=["observation"]` and prefix-specific queries like
+  `query="[[npm:"` (bare `[[` alone doesn't match)
+- **Find relations involving an entity** — use `entity_types=["relation"]`
+  with `query="<entity-title>"` (relation titles index both source and target)
+- **Semantic topic search** — omit `search_type` (default hybrid) for natural
+  language queries about concepts, topics, or package names
+
 ### Output template conventions
 
 Every section in an output template (skill synthesize step or agent output step) must have a corresponding workflow step that loads data for it. Sections without a data source produce empty or hallucinated content. Treat output templates as contracts: every field needs a provider.

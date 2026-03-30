@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.2][] - 2026-03-30
+
+### Fixed
+
+- **standard-detection.md** — replaced broken FTS5 query `search_notes(query=
+  "type: standard")` with proper `note_types=["standard"]` filter. Added word
+  boundaries (`\b`) to grep patterns and broadened file glob to include Rust,
+  Go, PHP, Python, Ruby extensions.
+- **knowledge-gardener Step 4c** — added missing `search_type="text"` to all
+  wiki-link-in-observations queries (inconsistent with Step 4).
+- **knowledge-maintainer Step 2d** — added missing `search_type="text"` and
+  `page_size=100` to all wiki-link-in-observations queries.
+- **knowledge-maintainer Step 3** — replaced Glob with Read for root manifest
+  detection (same node_modules recursion bug fixed in knowledge-gaps v0.18.1).
+  Removed phantom `Grep` from tool list.
+- **knowledge-prime and knowledge-primer** — replaced Glob with Read for root
+  manifest detection.
+
+### Added
+
+- **UPSTREAM-basic-memory.md** — three new entries documenting
+  `entity_types=["relation"]` for relation-index search, `note_types` filter
+  for type queries, and `most_connected_entities`/`total_unresolved_relations`
+  in project stats. Corrected "exact text match" claim to "FTS5 tokenized
+  search".
+- **CLAUDE.md** — new "Basic Memory search patterns" convention section
+  codifying correct query approaches to prevent FTS5 assumption bugs.
+
 ## [0.18.1][] - 2026-03-30
 
 ### Fixed
@@ -553,6 +581,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.18.2]: https://github.com/voxpelli/vp-claude/compare/v0.18.1...v0.18.2
 [0.18.1]: https://github.com/voxpelli/vp-claude/compare/v0.18.0...v0.18.1
 [0.18.0]: https://github.com/voxpelli/vp-claude/compare/v0.17.1...v0.18.0
 [0.17.1]: https://github.com/voxpelli/vp-claude/compare/v0.17.0...v0.17.1

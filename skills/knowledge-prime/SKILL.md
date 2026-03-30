@@ -53,7 +53,7 @@ Detect manifest files in the current working directory:
 | `Dockerfile` | Docker | `docker/` | `docker:` |
 | `.vscode/extensions.json` | VSCode | `vscode/` | `vscode:` |
 
-Use `Glob` to check for each manifest. For detected package manifests, use
+Use `Read` to check for root-level manifest files — do not use `Glob`, which recurses into `node_modules/` and similar directories. Use `Glob` only for wildcard paths like `.github/workflows/*.yml`. For detected package manifests, use
 `Read` to extract dependency names:
 - `package.json` → `dependencies` + `devDependencies` keys
 - `Cargo.toml` → `[dependencies]` + `[dev-dependencies]` tables
