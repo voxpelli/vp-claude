@@ -1,6 +1,6 @@
 ---
 name: package-intel
-description: "This skill should be used when the user asks to 'research package', 'package intel', 'what does [npm-pkg] do', 'add package to knowledge graph', 'enrich [pkg]', when adding depends_on [[npm:*]] relations, 'research crate', 'what does [crate] do', 'crate intel', 'rust package', 'pypi package', 'python package', 'go module', 'golang package', 'composer package', 'php package', 'ruby gem', 'gem intel'. Researches a package using five-source enrichment (DeepWiki, Context7, Tavily, Raindrop, changelog) and creates/updates a structured Basic Memory note. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, and Ruby gems."
+description: "This skill should be used when the user asks to 'research package', 'package intel', 'what does [npm-pkg] do', 'add package to knowledge graph', 'enrich [pkg]', when adding depends_on [[npm:*]] relations, 'research crate', 'what does [crate] do', 'crate intel', 'rust package', 'pypi package', 'python package', 'go module', 'golang package', 'composer package', 'php package', 'ruby gem', 'gem intel'. Researches a package using six-source enrichment (DeepWiki, Context7, Tavily, Raindrop, Readwise, changelog) and creates/updates a structured Basic Memory note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, and Ruby gems."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -17,13 +17,16 @@ allowed-tools:
   - mcp__tavily__tavily_search
   - mcp__tavily__tavily_extract
   - mcp__raindrop__find_bookmarks
+  - mcp__raindrop__fetch_bookmark_content
+  - mcp__readwise__readwise_search_highlights
+  - mcp__readwise__reader_search_documents
 ---
 
 # Package Intelligence
 
-Research a package and synthesize a structured Basic Memory note using five
-enrichment sources. Supports npm, Rust crates, Go modules, PHP Composer
-packages, Python PyPI packages, and Ruby gems.
+Research a package and synthesize a structured Basic Memory note using six
+enrichment sources, then cross-link existing notes. Supports npm, Rust crates,
+Go modules, PHP Composer packages, Python PyPI packages, and Ruby gems.
 
 ## Arguments
 
@@ -93,7 +96,7 @@ read_note(identifier="<prefix>:<package-name>", include_frontmatter=true, output
 - Focus DeepWiki/Context7 on what's changed since the last update
 - Still run the changelog step — version history moves fast
 
-If the note is stale (>60 days) or missing, run the full five-source pipeline.
+If the note is stale (>60 days) or missing, run the full six-source pipeline.
 
 Note any previous `[gotcha]` or `[limitation]` observations — these should guide
 which sources to prioritize and what edge cases to look for in new research.
@@ -108,7 +111,12 @@ Read the ecosystem reference file for registry-specific instructions:
 Each reference file explains the registry API, required headers, and how to
 extract `owner/repo` for use in the DeepWiki and changelog steps.
 
-### Step 3: Five-source enrichment (run in parallel)
+### Step 3: Six-source enrichment (run in parallel)
+
+**Multi-query strategy:** For DeepWiki and Context7, ask 2-3 targeted questions
+rather than one broad query. Example angles: API design, gotchas/pitfalls,
+configuration. Varied queries yield richer results than a single comprehensive
+question.
 
 Launch these research queries simultaneously:
 
@@ -144,6 +152,14 @@ Adjust the search term for each ecosystem's advisory format:
 find_bookmarks(search="<package-name>")
 ```
 
+If bookmarks are found, fetch content from the top 2-3 most relevant results
+(judge relevance by title and tags matching the package):
+```
+fetch_bookmark_content(bookmark_id=<id>)
+```
+
+These are articles the user deliberately saved — high relevance signal.
+
 **e) Changelog — version history and breaking changes:**
 ```bash
 # GitHub releases first (structured, usually has migration notes)
@@ -156,6 +172,20 @@ If `gh` is not installed or `gh release list` returns nothing, fall back to:
 ```
 tavily_extract(urls=["https://github.com/owner/repo/blob/main/CHANGELOG.md"], query="breaking changes migration")
 ```
+
+**f) Readwise — curated personal insights:**
+```
+readwise_search_highlights(vector_search_term="<package-name>")
+reader_search_documents(query="<package-name> <ecosystem>")
+```
+
+Highlights contain expert-selected passages from the user's reading (books,
+articles, documentation). These have high signal-to-noise ratio and may surface
+insights not found in any other source. Reader documents may contain in-depth
+articles about the package.
+
+If results found, extract patterns, gotchas, and best practices for observations.
+If both return empty, note "source f: no Readwise content found" and proceed.
 
 **Curate aggressively** — only track changes relevant to the user's projects.
 Judge relevance from two sources:
@@ -214,4 +244,31 @@ Report to the user:
 - Ecosystem detected and note location (directory/title)
 - Key findings from each source (1 line each)
 - Any security concerns
-- Suggested related notes to link
+- Cross-links added (from Step 7)
+
+### Step 7: Cross-link existing notes
+
+After writing the note, search for existing notes that reference this package
+in their body text or observations but lack a wiki-link back to it:
+
+```
+search_notes(query="<package-name>", search_type="text", page_size=10)
+```
+
+For each result (excluding the note just written):
+1. Read its `## Relations` section
+2. If the package is mentioned in body/observations but not linked in Relations,
+   add a link via `edit_note` with `find_replace`:
+
+```
+edit_note(
+  identifier="<existing-note-title>",
+  operation="find_replace",
+  find_text="- <last_relation_type> [[<Last Existing Relation>]]",
+  content="- <last_relation_type> [[<Last Existing Relation>]]\n- relates_to [[<prefix>:<package-name>]]"
+)
+```
+
+Only add links where the relationship is genuine — don't link notes that
+mention the same word in an unrelated context. Skip this step for updates to
+existing packages where cross-links likely already exist.

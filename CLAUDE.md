@@ -32,9 +32,9 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 
 ### Skills (5)
 
-- **package-intel** — Researches a package via five sources (Basic Memory, DeepWiki, Context7, Tavily, Raindrop) and writes/updates a structured prefixed note. Supports npm, Rust crates, Go modules, PHP Composer, Python PyPI, and Ruby gems. User-invocable as `/package-intel <pkg>`.
-- **tool-intel** — Researches a developer environment or CI/CD tool via four sources (Basic Memory, DeepWiki for actions/docker, Tavily, Raindrop) and writes/updates a structured prefixed note. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), and VSCode extensions (`vscode:`). User-invocable as `/tool-intel <prefix>:<name>`.
-- **knowledge-gaps** — Parses code manifest files (`package.json`, `Cargo.toml`, etc.) and tool manifests (`Brewfile`, `.github/workflows/*.yml`, `Dockerfile`, `.vscode/extensions.json`), checks BM coverage, tiers package gaps by import frequency, lists all undocumented tools. User-invocable as `/knowledge-gaps`.
+- **package-intel** — Researches a package via six sources (Basic Memory, DeepWiki, Context7, Tavily, Raindrop, Readwise) and writes/updates a structured prefixed note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer, Python PyPI, and Ruby gems. User-invocable as `/package-intel <pkg>`.
+- **tool-intel** — Researches a developer environment or CI/CD tool via five sources (Basic Memory, DeepWiki for actions/docker, Tavily, Raindrop, Readwise) and writes/updates a structured prefixed note with post-write cross-linking. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), and VSCode extensions (`vscode:`). User-invocable as `/tool-intel <prefix>:<name>`.
+- **knowledge-gaps** — Parses code manifest files (`package.json`, `Cargo.toml`, etc.) and tool manifests (`Brewfile`, `.github/workflows/*.yml`, `Dockerfile`, `.vscode/extensions.json`), checks BM coverage, tiers package gaps by import frequency, lists all undocumented tools, and detects concept-level hub gaps via graph analysis and Readwise reading signals. User-invocable as `/knowledge-gaps`.
 - **knowledge-prime** — Surfaces project-relevant Basic Memory knowledge on demand. Detects the project stack, cross-references deps against BM notes, scores relevance, loads critical observations (`[gotcha]`, `[breaking]`, `[limitation]`), and produces a concise context brief. Supports `--deep` for extended output. User-invocable as `/knowledge-prime`.
 - **schema-evolve** — Detects drift between BM schema definitions and actual note usage via `schema_diff`/`schema_infer`, proposes frequency-driven field additions/removals, and dual-syncs BM notes + local `schemas/` files after approval. User-invocable as `/schema-evolve <type>`.
 
@@ -99,6 +99,7 @@ Skills and agents reference tools from multiple MCP servers. When editing, use e
 | Context7 | `mcp__plugin_context7_context7__*` | package-intel only |
 | Tavily | `mcp__tavily__*` | package-intel, tool-intel |
 | Raindrop | `mcp__raindrop__*` | package-intel, tool-intel |
+| Readwise | `mcp__readwise__*` | package-intel, tool-intel, knowledge-gaps |
 
 ## Validation
 
@@ -137,6 +138,15 @@ All plugin content (schemas, skills, agents) must be **domain-generic** — no h
 ### Tool list hygiene
 
 Every tool in `allowed-tools` (skills) or `tools` (agents) must be called in the workflow prose. Phantom tools (listed but never used) accumulate silently — run a periodic tool reference audit across all components. When creating a skill/agent pair that shares a workflow, keep tool lists identical and remove tools the agent doesn't need (e.g., `Bash` for git operations the agent can't perform).
+
+### Cross-linking convention (for intel skill output)
+
+After writing or updating a note, search for existing notes that reference the
+topic in their body text but lack a wiki-link in `## Relations`. Add
+`relates_to [[prefix:name]]` via `edit_note` with `find_replace` targeting the
+last relation line. Only add links where the relationship is genuine — don't
+link notes that mention the same word in an unrelated context. This turns
+one-way references into bidirectional graph edges.
 
 ### Output template conventions
 

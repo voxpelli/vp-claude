@@ -70,6 +70,7 @@ const KNOWN_MCP_PREFIXES = [
   'mcp__plugin_context7_context7__',
   'mcp__tavily__',
   'mcp__raindrop__',
+  'mcp__readwise__',
 ]
 
 /**

@@ -6,7 +6,7 @@ A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https:/
 
 ### `/package-intel <pkg>` — Research any package
 
-Queries five sources in parallel and synthesizes a structured note. Supports six ecosystems:
+Queries six sources in parallel, synthesizes a structured note, and cross-links existing notes. Supports six ecosystems:
 
 | Form | Ecosystem | Example |
 |------|-----------|---------|
@@ -27,16 +27,17 @@ Queries five sources in parallel and synthesizes a structured note. Supports six
 | Source | What it finds |
 |--------|--------------|
 | Basic Memory | Existing notes, cross-references, usage patterns |
-| DeepWiki | Architecture, design patterns, key APIs |
+| DeepWiki | Architecture, design patterns, key APIs (2-3 targeted questions) |
 | Context7 | API reference, code examples |
 | Tavily | Security advisories, recent CVEs (RUSTSEC, PyPA, RubySec, etc.) |
-| Raindrop | Your bookmarked articles about the package |
+| Raindrop | Your bookmarked articles (with full content extraction) |
+| Readwise | Your highlights and saved articles about the package |
 
-Plus changelog analysis via GitHub releases. The result is an ecosystem-prefixed note (`npm:*`, `crate:*`, `pypi:*`, etc.) with observations, relations, and release highlights — ready to query later.
+Plus changelog analysis via GitHub releases. After writing, searches for existing notes that reference the package and adds bidirectional cross-links. The result is an ecosystem-prefixed note (`npm:*`, `crate:*`, `pypi:*`, etc.) with observations, relations, and release highlights — connected into the graph from day one.
 
 ### `/tool-intel <prefix>:<name>` — Research any dev tool
 
-Queries four sources in parallel and synthesizes a structured note. Supports five tool categories:
+Queries five sources in parallel, synthesizes a structured note, and cross-links existing notes. Supports five tool categories:
 
 | Form | Category | Example |
 |------|----------|---------|
@@ -58,9 +59,10 @@ Queries four sources in parallel and synthesizes a structured note. Supports fiv
 | Basic Memory | Existing notes, cross-references |
 | DeepWiki | Architecture, design patterns (actions and docker only) |
 | Tavily | Security advisories, CVEs, supply-chain risks, gotchas |
-| Raindrop | Your bookmarked articles about the tool |
+| Raindrop | Your bookmarked articles (with full content extraction) |
+| Readwise | Your highlights and saved articles about the tool |
 
-Plus version/changelog data (GitHub releases for actions, Docker Hub tags for images, API versions for brew/vscode). The result is a prefixed note (`brew:*`, `action:*`, etc.) with type-specific sections — `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for Docker, `## Common Usage` for formulae — plus observations and relations.
+Plus version/changelog data (GitHub releases for actions, Docker Hub tags for images, API versions for brew/vscode). After writing, searches for existing notes that reference the tool and adds bidirectional cross-links. The result is a prefixed note (`brew:*`, `action:*`, etc.) with type-specific sections — `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for Docker, `## Common Usage` for formulae — plus observations and relations.
 
 ### `/knowledge-gaps` — Find undocumented dependencies
 
@@ -102,7 +104,7 @@ Scans your project's manifest files for both code dependencies and dev tooling, 
 
 **Tool manifests scanned:** `Brewfile` (formulae, casks, vscode entries), `.github/workflows/*.yml` (actions), `Dockerfile`/`*.dockerfile` (docker images), `.vscode/extensions.json` (vscode extensions) — all manifest entries count equally, no tiering.
 
-Offers to run `/package-intel` (with the right ecosystem prefix) for top undocumented packages and `/tool-intel` for undocumented tools.
+Also detects **concept-level hub gaps** — topics referenced by 3+ notes but with no dedicated note — and **reading-signal gaps** from Readwise highlights. Offers to run `/package-intel` (with the right ecosystem prefix) for top undocumented packages and `/tool-intel` for undocumented tools.
 
 ### `/knowledge-prime` — Surface project-relevant knowledge
 
@@ -238,7 +240,7 @@ npx skills add basicmachines-co/basic-memory-skills
 
 ### Required for enrichment pipelines
 
-The `/package-intel` five-source pipeline and `/tool-intel` four-source pipeline need these additional MCP servers and plugins. Context7 is used by `/package-intel` only; DeepWiki and Tavily are used by both.
+The `/package-intel` six-source pipeline and `/tool-intel` five-source pipeline need these additional MCP servers and plugins. Context7 is used by `/package-intel` only; DeepWiki and Tavily are used by both; Readwise is used by both plus `/knowledge-gaps`.
 
 **[DeepWiki](https://docs.devin.ai/work-with-devin/deepwiki-mcp)** — repository documentation and architecture questions:
 
@@ -265,6 +267,12 @@ claude mcp add --transport http tavily https://mcp.tavily.com/mcp \
 claude mcp add --transport http raindrop https://api.raindrop.io/rest/v2/ai/mcp
 ```
 
+**[Readwise](https://readwise.io/mcp)** — searches your reading highlights and saved articles from Readwise and Reader. Requires a [Readwise](https://readwise.io) account:
+
+```bash
+claude mcp add --transport http readwise https://readwise.io/api/mcp
+```
+
 ### Optional
 
 - **[`gh` CLI](https://cli.github.com)** — enables changelog analysis via GitHub releases in `/package-intel`
@@ -275,7 +283,7 @@ claude mcp add --transport http raindrop https://api.raindrop.io/rest/v2/ai/mcp
 .claude-plugin/plugin.json             Plugin manifest
 skills/
   package-intel/
-    SKILL.md                           Five-source research workflow
+    SKILL.md                           Six-source research workflow
     references/ecosystem-npm.md        npm registry API + note template
     references/ecosystem-crates.md     crates.io API + note template
     references/ecosystem-go.md         Go module proxy + note template
@@ -283,7 +291,7 @@ skills/
     references/ecosystem-pypi.md       PyPI API + note template
     references/ecosystem-gems.md       RubyGems API + note template
   tool-intel/
-    SKILL.md                           Four-source research workflow
+    SKILL.md                           Five-source research workflow
     references/ecosystem-brew.md       formulae.brew.sh API
     references/ecosystem-cask.md       formulae.brew.sh/cask API
     references/ecosystem-action.md     action.yml extraction + permissions
@@ -295,7 +303,7 @@ skills/
     references/note-template-docker.md docker_image note template
     references/note-template-vscode.md vscode_extension note template
   knowledge-gaps/
-    SKILL.md                           Package + tool coverage analysis
+    SKILL.md                           Package + tool + concept coverage analysis
   knowledge-prime/
     SKILL.md                           Project context priming from BM
   schema-evolve/
@@ -336,10 +344,10 @@ schemas/
 ```
  User says            Triggers              Output
  ─────────────────    ───────────────────    ──────────────────────────
- /package-intel X  -> package-intel skill -> <ecosystem>:X note in Basic Memory
- /tool-intel X     -> tool-intel skill    -> <type>:X note in Basic Memory
- /knowledge-gaps   -> knowledge-gaps skill-> gap report + offers /package-intel
-                                             and /tool-intel for undocumented items
+ /package-intel X  -> package-intel skill -> <ecosystem>:X note + cross-links
+ /tool-intel X     -> tool-intel skill    -> <type>:X note + cross-links
+ /knowledge-gaps   -> knowledge-gaps skill-> gap report (packages, tools, concepts)
+                                             + offers /package-intel, /tool-intel
  /knowledge-prime  -> knowledge-prime     -> context brief with gotchas + gaps
  /schema-evolve X  -> schema-evolve skill -> field proposals + dual-sync
  "audit graph"     -> knowledge-gardener  -> health report (read-only, incl. tags)

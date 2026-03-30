@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.0][] - 2026-03-30
+
+### Added
+
+- **Readwise as enrichment source** — `package-intel` gains Readwise as a 6th
+  source (now six-source enrichment); `tool-intel` gains it as a 5th source
+  (now five-source enrichment). Both use `readwise_search_highlights` and
+  `reader_search_documents` to surface the user's curated reading highlights —
+  expert-selected passages with high signal-to-noise ratio.
+- **Post-write cross-linking** (Step 7) — both `package-intel` and `tool-intel`
+  now search Basic Memory for existing notes that reference the newly written
+  package/tool and add bidirectional `relates_to` wiki-links via `edit_note`.
+  Turns one-way references into connected graph edges.
+- **Raindrop content fetching** — both intel skills now use
+  `fetch_bookmark_content` on the top 2-3 most relevant Raindrop bookmarks,
+  extracting full article content instead of just titles and tags.
+- **Multi-query research guidance** — `package-intel` Step 3 now advises
+  asking 2-3 targeted questions per source (API design, gotchas, configuration)
+  rather than one broad query.
+- **Concept-level gap detection** — `knowledge-gaps` gains Steps 14-15 that
+  detect hub topics referenced by 3+ notes but with no dedicated concept note
+  (structural gap), and topics with 3+ Readwise highlights but no BM note
+  (interest gap). Combined signals are flagged as highest priority.
+- **Cross-linking convention** added to CLAUDE.md under Conventions.
+- **Readwise** added to MCP Tool Dependencies table in CLAUDE.md.
+
+### Changed
+
+- **knowledge-maintainer** orphan linking enhanced to create bidirectional
+  graph edges — when linking an orphan, also adds `relates_to` links FROM
+  existing notes that reference the orphan back TO it.
+- **`validate-plugin.mjs`** now recognizes `mcp__readwise__` as a known MCP
+  prefix.
+
 ## [0.17.1][] - 2026-03-30
 
 ### Fixed
@@ -500,6 +534,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.18.0]: https://github.com/voxpelli/vp-claude/compare/v0.17.1...v0.18.0
 [0.17.1]: https://github.com/voxpelli/vp-claude/compare/v0.17.0...v0.17.1
 [0.17.0]: https://github.com/voxpelli/vp-claude/compare/v0.16.1...v0.17.0
 [0.16.1]: https://github.com/voxpelli/vp-claude/compare/v0.16.0...v0.16.1

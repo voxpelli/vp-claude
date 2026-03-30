@@ -256,7 +256,12 @@ edit_note(
 
 **Orphan linking:** For each orphan, use `build_context` and `search_notes`
 to find related notes, then add relations using `find_replace` (not `append`
-with `section` — that appends to end of file, not end of section):
+with `section` — that appends to end of file, not end of section).
+
+When linking orphans, also search for notes that REFERENCE the orphan's topic
+in body text but lack a wiki-link in `## Relations`. Add `relates_to` links
+FROM those existing notes TO the orphan, creating bidirectional graph edges.
+This ensures the graph is connected in both directions, not just one-way:
 ```
 edit_note(
   identifier="orphan-note",

@@ -1,6 +1,6 @@
 ---
 name: knowledge-gaps
-description: "This skill should be used when the user asks about 'knowledge gaps', 'package coverage', 'which packages need notes', 'undocumented dependencies', 'dependency audit', 'missing documentation', 'tool coverage', 'undocumented tools', 'brew/action/docker/vscode coverage', 'standard coverage', 'protocol coverage', or 'domain standards'. Cross-references project dependencies, tool manifests, and domain standards against Basic Memory notes to find undocumented packages, tools, and standards. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, Ruby gems, Homebrew formulae/casks, GitHub Actions, Docker images, and VSCode extensions."
+description: "This skill should be used when the user asks about 'knowledge gaps', 'package coverage', 'which packages need notes', 'undocumented dependencies', 'dependency audit', 'missing documentation', 'tool coverage', 'undocumented tools', 'brew/action/docker/vscode coverage', 'standard coverage', 'protocol coverage', 'domain standards', 'concept gaps', or 'missing hub notes'. Cross-references project dependencies, tool manifests, and domain standards against Basic Memory notes to find undocumented packages, tools, standards, and concept-level hub gaps via graph analysis and Readwise reading signals. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, Ruby gems, Homebrew formulae/casks, GitHub Actions, Docker images, and VSCode extensions."
 user-invocable: true
 allowed-tools:
   - Read
@@ -8,6 +8,9 @@ allowed-tools:
   - Glob
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__list_directory
+  - mcp__basic-memory__build_context
+  - mcp__readwise__readwise_search_highlights
+  - mcp__readwise__reader_search_documents
 ---
 
 # Knowledge Gap Detection
@@ -417,3 +420,75 @@ Read the standard detection reference file for Steps 11–13:
 
 This covers detecting domain standards in Basic Memory, classifying them by
 codebase reference count, and adding a standards section to the gap report.
+
+---
+
+### 14. Detect concept-level gaps
+
+Concept hubs are topics referenced across multiple package/tool notes that
+deserve their own dedicated note (type: `engineering`, `standard`, or
+`concept`). These are structural gaps invisible to package/tool-level auditing.
+
+**14a. Mine the graph for implicit hubs:**
+
+Search for wiki-link targets that appear in 3+ notes but resolve to no
+existing note. Query common cross-reference patterns:
+
+```
+search_notes(query="relates_to [[", search_type="text", page_size=50)
+search_notes(query="depends_on [[", search_type="text", page_size=50)
+```
+
+From the results, extract all `[[Target]]` wiki-link targets. Count how many
+distinct notes reference each target. Targets referenced by 3+ notes that have
+no corresponding BM note are **hub gap candidates**.
+
+Also check `build_context` on high-connectivity notes (the most-linked package
+or tool notes) to discover recurring themes:
+```
+build_context(url="<most-linked-note>", depth=2, max_related=20)
+```
+
+**14b. Mine Readwise for concept signals:**
+
+```
+reader_search_documents(query="best practices patterns architecture")
+readwise_search_highlights(vector_search_term="design pattern architecture standard")
+```
+
+Look for recurring themes across the user's reading that map to concepts
+already referenced in the knowledge graph but not yet documented. This surfaces
+what the user has been studying — strong signal for what deserves a concept note.
+
+**14c. Classify concept gaps:**
+
+- **Hub gap** (referenced by 3+ notes, no dedicated note): structural gap
+- **Reading-signal gap** (3+ Readwise highlights on a topic, no BM note): interest gap
+- **Combined** (both graph references and reading signal): highest priority
+
+### 15. Add concept gaps to report
+
+Append after the Domain Standard Coverage section:
+
+```
+## Concept Coverage
+
+### Hub Gaps (referenced by 3+ notes, no dedicated note)
+| Concept | Referenced by | Priority |
+|---------|--------------|----------|
+| <target> | <N> notes | hub |
+
+### Reading-Signal Gaps (3+ Readwise highlights, no BM note)
+| Concept | Highlights | Priority |
+|---------|-----------|----------|
+| <topic> | <N> | interest |
+
+### Concept Summary
+- Hub gaps: N
+- Reading-signal gaps: M
+- Combined (highest priority): P
+```
+
+For top concept gaps, suggest creating concept notes manually or via the
+session-reflector agent, since concept notes require more editorial judgment
+than package/tool notes.

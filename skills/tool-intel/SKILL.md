@@ -1,6 +1,6 @@
 ---
 name: tool-intel
-description: "This skill should be used when the user asks to 'research a homebrew formula', 'brew intel', 'what does [brew-tool] do', 'research a cask', 'cask intel', 'what does [cask] do', 'research a GitHub Action', 'action intel', 'what does [action] do', 'research a docker image', 'docker intel', 'what does [docker image] do', 'research a VSCode extension', 'vscode intel', 'what does [extension] do', 'add tool to knowledge graph', 'enrich [tool]'. Researches a developer environment or CI/CD tool using four-source enrichment (DeepWiki, Tavily, Raindrop, changelog) and creates/updates a structured Basic Memory note. Supports Homebrew formulae (brew:), Homebrew casks (cask:), GitHub Actions (action:), Docker images (docker:), and VSCode extensions (vscode:)."
+description: "This skill should be used when the user asks to 'research a homebrew formula', 'brew intel', 'what does [brew-tool] do', 'research a cask', 'cask intel', 'what does [cask] do', 'research a GitHub Action', 'action intel', 'what does [action] do', 'research a docker image', 'docker intel', 'what does [docker image] do', 'research a VSCode extension', 'vscode intel', 'what does [extension] do', 'add tool to knowledge graph', 'enrich [tool]'. Researches a developer environment or CI/CD tool using five-source enrichment (DeepWiki, Tavily, Raindrop, Readwise, changelog) and creates/updates a structured Basic Memory note with post-write cross-linking. Supports Homebrew formulae (brew:), Homebrew casks (cask:), GitHub Actions (action:), Docker images (docker:), and VSCode extensions (vscode:)."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -15,13 +15,17 @@ allowed-tools:
   - mcp__tavily__tavily_search
   - mcp__tavily__tavily_extract
   - mcp__raindrop__find_bookmarks
+  - mcp__raindrop__fetch_bookmark_content
+  - mcp__readwise__readwise_search_highlights
+  - mcp__readwise__reader_search_documents
 ---
 
 # Tool Intelligence
 
 Research a developer environment or CI/CD tool and synthesize a structured
-Basic Memory note using four enrichment sources. Supports Homebrew formulae,
-Homebrew casks, GitHub Actions, Docker images, and VSCode extensions.
+Basic Memory note using five enrichment sources, then cross-link existing notes.
+Supports Homebrew formulae, Homebrew casks, GitHub Actions, Docker images, and
+VSCode extensions.
 
 ## Arguments
 
@@ -80,7 +84,7 @@ read_note(identifier="<prefix>:<name>", include_frontmatter=true, output_format=
 - Skip Raindrop search (bookmarks don't change frequently)
 - Focus on what's changed since the last update
 
-If the note is stale (>60 days) or missing, run the full four-source pipeline.
+If the note is stale (>60 days) or missing, run the full five-source pipeline.
 
 Note any previous `[gotcha]` or `[security]` observations — these should guide
 which sources to prioritize.
@@ -96,7 +100,7 @@ Each reference file explains the registry API or extraction method, required
 fields, and how to find the upstream GitHub repository (for DeepWiki and
 changelog steps).
 
-### Step 3: Four-source enrichment
+### Step 3: Five-source enrichment
 
 **Context7 is skipped for all tool types** — it is npm-biased and has no
 useful coverage of Homebrew, Actions, Docker, or VSCode ecosystems.
@@ -135,6 +139,24 @@ Fall back to `action.yaml` if `action.yml` returns nothing.
 ```
 find_bookmarks(search="<name>")
 ```
+
+If bookmarks are found, fetch content from the top 2-3 most relevant results
+(judge relevance by title and tags matching the tool):
+```
+fetch_bookmark_content(bookmark_id=<id>)
+```
+
+These are articles the user deliberately saved — high relevance signal.
+
+**e) Readwise — curated personal insights:**
+```
+readwise_search_highlights(vector_search_term="<tool-name>")
+reader_search_documents(query="<tool-name> <tool-type>")
+```
+
+Highlights contain expert-selected passages from the user's reading. If results
+found, extract patterns, gotchas, and best practices for observations. If both
+return empty, note "source e: no Readwise content found" and proceed.
 
 **d) Changelog / versions:**
 
@@ -203,4 +225,30 @@ Report to the user:
 - Ecosystem detected and note location (directory/title)
 - Key findings from each source (1 line each)
 - Any security or supply-chain concerns
-- Suggested related notes to link
+- Cross-links added (from Step 7)
+
+### Step 7: Cross-link existing notes
+
+After writing the note, search for existing notes that reference this tool
+in their body text or observations but lack a wiki-link back to it:
+
+```
+search_notes(query="<tool-name>", search_type="text", page_size=10)
+```
+
+For each result (excluding the note just written):
+1. Read its `## Relations` section
+2. If the tool is mentioned in body/observations but not linked in Relations,
+   add a link via `edit_note` with `find_replace`:
+
+```
+edit_note(
+  identifier="<existing-note-title>",
+  operation="find_replace",
+  find_text="- <last_relation_type> [[<Last Existing Relation>]]",
+  content="- <last_relation_type> [[<Last Existing Relation>]]\n- relates_to [[<prefix>:<tool-name>]]"
+)
+```
+
+Only add links where the relationship is genuine. Skip this step for updates to
+existing tools where cross-links likely already exist.
