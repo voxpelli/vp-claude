@@ -22,8 +22,8 @@ settings:
 
 Schema for npm package entity notes in the `npm/` directory.
 
-Each note documents a single npm package with five-source enrichment
-(DeepWiki, Context7, Tavily, Raindrop, Changelog).
+Each note documents a single npm package with six-source enrichment
+(DeepWiki, Context7, Tavily, Raindrop, Readwise, Changelog).
 
 ## Required Sections
 

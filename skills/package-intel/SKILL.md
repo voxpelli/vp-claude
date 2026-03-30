@@ -204,8 +204,7 @@ The goal is a short, high-signal list — not a changelog mirror.
 Read the note template for the target ecosystem:
 `${CLAUDE_PLUGIN_ROOT}/skills/package-intel/references/note-template-<ecosystem>.md`
 
-Key
-conventions per ecosystem:
+Key conventions per ecosystem:
 
 | Ecosystem | Title format | Directory | Type |
 |-----------|-------------|-----------|------|

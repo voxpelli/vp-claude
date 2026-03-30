@@ -12,8 +12,8 @@ A Claude Code plugin (`vp-knowledge`) containing user-owned skills, agents, and 
 .claude-plugin/
   plugin.json                        # Plugin manifest
 skills/
-  package-intel/SKILL.md             # Five-source multi-ecosystem package research
-  tool-intel/SKILL.md                # Four-source dev-tool research (brew/action/docker/vscode)
+  package-intel/SKILL.md             # Six-source multi-ecosystem package research
+  tool-intel/SKILL.md                # Five-source dev-tool research (brew/action/docker/vscode)
   knowledge-gaps/SKILL.md            # Cross-reference deps + tool manifests vs BM coverage
   knowledge-prime/SKILL.md           # On-demand project context priming from BM
   schema-evolve/SKILL.md             # Frequency-driven schema drift detection and dual-sync
@@ -23,7 +23,7 @@ agents/
   knowledge-primer.md                # Autonomous project context priming
   session-reflector.md               # On-demand conversation → memory capture
 hooks/
-  hooks.json                         # PostToolUse, PostToolUseFailure, PreCompact, SessionStart
+  hooks.json                         # PreToolUse, PostToolUse, PostToolUseFailure, PreCompact, SessionStart
 ```
 
 No runtime code — pure markdown + JSON. No build step, no dependencies.
@@ -45,13 +45,14 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 - **knowledge-primer** — Autonomous read-only agent that surfaces project-relevant BM knowledge before work begins. Scans project manifests, cross-references deps against BM, scores relevance, and produces a context brief with key gotchas and coverage gaps. The "before work" counterpart to session-reflector.
 - **session-reflector** — On-demand reflection agent. Reviews the current conversation, extracts durable insights, shows a preview grouped by target note, waits for approval, then writes. Complements the automatic PreCompact hook with a deliberate, user-gated equivalent.
 
-### Hooks (5)
+### Hooks (6)
 
 - **PostToolUse** (`write_note`/`edit_note` matcher) — Command hook that emits `additionalContext` instructing the main session to call `schema_validate` on the written note. Skips schema definition notes (`/schema/` permalinks).
 - **PostToolUse** (`Edit`/`Write` matcher) — Auto-formats shell scripts with `shfmt` and reminds to sync BM when editing schema files.
 - **PostToolUseFailure** (`write_note`/`edit_note`/`schema_validate`/`schema_diff`/`schema_infer` matcher) — Command hook that pattern-matches BM tool errors into five categories (server-unavailable, note-not-found, invalid-argument, permission-error, unknown) and emits `additionalContext` with recovery guidance.
 - **PreCompact** — Auto-reflects conversation insights into Basic Memory before context compaction.
 - **SessionStart** — Emits a single `additionalContext` JSON object with knowledge graph guidance, skill suggestions (`/knowledge-prime`, `/knowledge-gaps`, `/schema-evolve`), and conditional graph-audit cycle reminders on every 4th sprint.
+- **PreToolUse** (`Bash` matcher) — Blocks Python and Node.js script execution inside the knowledge-gardener agent, enforcing read-only discipline. Main session and other agents are unaffected.
 
 ## Schemas
 
@@ -139,14 +140,14 @@ All plugin content (schemas, skills, agents) must be **domain-generic** — no h
 
 Every tool in `allowed-tools` (skills) or `tools` (agents) must be called in the workflow prose. Phantom tools (listed but never used) accumulate silently — run a periodic tool reference audit across all components. When creating a skill/agent pair that shares a workflow, keep tool lists identical and remove tools the agent doesn't need (e.g., `Bash` for git operations the agent can't perform).
 
-### Cross-linking convention (for intel skill output)
+### Cross-linking convention
 
-After writing or updating a note, search for existing notes that reference the
-topic in their body text but lack a wiki-link in `## Relations`. Add
-`relates_to [[prefix:name]]` via `edit_note` with `find_replace` targeting the
-last relation line. Only add links where the relationship is genuine — don't
-link notes that mention the same word in an unrelated context. This turns
-one-way references into bidirectional graph edges.
+After writing or updating a note (via intel skills or maintainer fixes), search
+for existing notes that reference the topic in their body text but lack a
+wiki-link in `## Relations`. Add `relates_to [[prefix:name]]` via `edit_note`
+with `find_replace` targeting the last relation line. Only add links where the
+relationship is genuine — don't link notes that mention the same word in an
+unrelated context. This turns one-way references into bidirectional graph edges.
 
 ### Basic Memory search patterns
 

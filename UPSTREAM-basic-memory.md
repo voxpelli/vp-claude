@@ -1,6 +1,6 @@
 # Upstream: basic-memory
 
-Friction and limitations discovered while building vp-knowledge on top of Basic Memory.
+Friction, limitations, and capability discoveries found while building vp-knowledge on top of Basic Memory.
 
 ## Open items
 
@@ -113,13 +113,12 @@ result set.
 relation is unresolved (dead wiki-link). This is the correct primitive for
 dead-link detection — far more reliable than FTS5 text search for `[[prefix:`
 syntax.
-**Key details:**
+**Workaround:** Not friction — this is a capability discovery. Key details:
 - Relation titles are indexed as `"source → target"` — both names searchable
 - `to_entity` absent = unresolved (DB `to_id` is NULL)
 - Searches find both incoming and outgoing relations for an entity name
 - Default `entity_types` is `["entity"]` — must explicitly set `["relation"]`
-**Used by:** knowledge-gaps Step 10 (dead wiki-links), Step 14a (hub gaps)
-**Status:** Documented — stable API, not a workaround.
+**Status:** Documented — stable API. Used by knowledge-gaps Steps 10 and 14a.
 
 ---
 
@@ -129,9 +128,10 @@ syntax.
 **Impact:** High — `search_notes(query="type: standard", search_type="text")`
 does NOT find notes by frontmatter type. FTS5 tokenizes the colon, matching
 any note containing both words "type" and "standard" in any context.
-**Correct approach:** `search_notes(note_types=["standard"])` — uses the
-dedicated metadata filter that checks the frontmatter `type` field directly.
-**Status:** Documented — the parameter existed all along, was just not used.
+**Workaround:** Use `search_notes(note_types=["standard"])` — the dedicated
+metadata filter checks the frontmatter `type` field directly. The parameter
+existed all along, was just not used.
+**Status:** Documented — not a bug, but the FTS5 approach silently returns wrong results.
 
 ---
 
@@ -143,5 +143,5 @@ dedicated metadata filter that checks the frontmatter `type` field directly.
 - `statistics.most_connected_entities` — top 10 entities by outgoing relation
   count, with `title`, `permalink`, `relation_count`. Free hub-node detection
   without graph traversal.
-**Used by:** knowledge-gaps Step 10 (quick-exit gate), Step 14a (seed selection)
-**Status:** Documented — stable CLI output.
+**Workaround:** Not friction — this is a capability discovery. No workaround needed.
+**Status:** Documented — stable CLI output. Used by knowledge-gaps Steps 10 and 14a.

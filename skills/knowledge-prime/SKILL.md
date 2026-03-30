@@ -107,7 +107,9 @@ Fetch recent activity now (needed for scoring before sorting):
 ```
 recent_activity(timeframe="7d", output_format="json")
 ```
-If the project has `.beads/` (check via `Glob(pattern=".beads")`) or
+Paginate until `has_more=false` to ensure complete 7-day activity window.
+
+If the project has `.beads/` (check via `Glob(pattern=".beads/*")`) or
 `recent_activity` shows notes updated in the last 7 days, those notes get
 +1 boost.
 

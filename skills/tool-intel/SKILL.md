@@ -148,6 +148,13 @@ fetch_bookmark_content(bookmark_id=<id>)
 
 These are articles the user deliberately saved — high relevance signal.
 
+**d) Changelog / versions:**
+
+- `action:`: Use GitHub releases — `gh release list --repo <owner>/<repo> --limit 10 2>/dev/null`; if empty, `tavily_extract` on the GitHub CHANGELOG.md
+- `docker:`: Use Docker Hub tags API (see `references/ecosystem-docker.md`) for tag strategy overview
+- `brew:`/`cask:`: Extract version from the formulae.brew.sh API response (already fetched in Step 2)
+- `vscode:`: Extract version from Open VSX API response (already fetched in Step 2)
+
 **e) Readwise — curated personal insights:**
 ```
 readwise_search_highlights(vector_search_term="<tool-name>")
@@ -157,13 +164,6 @@ reader_search_documents(query="<tool-name> <tool-type>")
 Highlights contain expert-selected passages from the user's reading. If results
 found, extract patterns, gotchas, and best practices for observations. If both
 return empty, note "source e: no Readwise content found" and proceed.
-
-**d) Changelog / versions:**
-
-- `action:`: Use GitHub releases — `gh release list --repo <owner>/<repo> --limit 10 2>/dev/null`; if empty, `tavily_extract` on the GitHub CHANGELOG.md
-- `docker:`: Use Docker Hub tags API (see `references/ecosystem-docker.md`) for tag strategy overview
-- `brew:`/`cask:`: Extract version from the formulae.brew.sh API response (already fetched in Step 2)
-- `vscode:`: Extract version from Open VSX API response (already fetched in Step 2)
 
 ### Step 4: Curate and synthesize
 
@@ -177,7 +177,7 @@ build_context(url="<prefix>:<name>", depth=1, max_related=10)
 
 If the note doesn't exist yet, fall back to a text search:
 ```
-search_notes(query="<tool-name>", search_type="text", page_size=5)
+search_notes(query="<tool-name>", page_size=5)
 ```
 
 Use the results to:

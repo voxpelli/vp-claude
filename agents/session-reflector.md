@@ -36,7 +36,6 @@ tools:
   - mcp__basic-memory__write_note
   - mcp__basic-memory__edit_note
   - mcp__basic-memory__build_context
-  - mcp__basic-memory__list_directory
 ---
 
 You are an on-demand reflection agent. Your job is to review the current

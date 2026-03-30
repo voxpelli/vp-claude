@@ -188,13 +188,14 @@ Unlike the automatic PreCompact hook (brief, fires under compaction pressure), t
 
 ### Hooks — Automated quality guardrails
 
-Five hooks run automatically in the background:
+Six hooks run automatically in the background:
 
 - **PostToolUse** (BM writes) — After any `write_note` or `edit_note`, validates the note structure against its schema. Catches malformed notes immediately.
 - **PostToolUse** (file edits) — After editing shell scripts, auto-formats with `shfmt`. After editing schema files, reminds to sync Basic Memory.
 - **PostToolUseFailure** — Classifies Basic Memory write and schema tool failures into five categories with actionable recovery guidance.
 - **PreCompact** — Before context compaction, reviews the conversation for decisions, lessons, and gotchas worth saving. Writes them to Basic Memory so insights survive across sessions.
 - **SessionStart** — Injects a knowledge graph status summary and suggests `/knowledge-prime` when the task involves dependencies or tools.
+- **PreToolUse** (gardener Bash) — Blocks Python and Node.js script execution when running as the knowledge-gardener agent, enforcing read-only discipline.
 
 ## Installation
 
@@ -314,8 +315,11 @@ agents/
   knowledge-primer.md                  Autonomous project context priming
   session-reflector.md                 On-demand conversation capture
 hooks/
-  hooks.json                           PostToolUse x2, PostToolUseFailure,
-                                       PreCompact, SessionStart
+  hooks.json                           PreToolUse, PostToolUse x2,
+                                       PostToolUseFailure, PreCompact, SessionStart
+  pre-bash-no-python.sh                Python/Node.js blocker for gardener agent
+  post-bm-write-validate.sh            Schema validation after BM writes
+  post-bm-failure-classify.sh          Error classification for BM failures
   session-start.sh                     Graph context + priming hint script
   precompact.sh                        Reflection instructions script
   post-file-edit.sh                    Shell formatting + schema sync script

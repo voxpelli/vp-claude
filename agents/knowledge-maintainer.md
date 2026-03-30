@@ -291,6 +291,7 @@ search_notes(search_type="text", query="[[go:", entity_types=["observation"], pa
 search_notes(search_type="text", query="[[composer:", entity_types=["observation"], page_size=100)
 search_notes(search_type="text", query="[[pypi:", entity_types=["observation"], page_size=100)
 search_notes(search_type="text", query="[[gem:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[crate:", entity_types=["observation"], page_size=100)
 ```
 
 For each hit, read the parent note and apply two `edit_note` calls: (1) strip

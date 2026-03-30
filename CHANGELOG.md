@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.3][] - 2026-03-31
+
+### Fixed
+
+- **knowledge-maintainer Step 2d** — added missing `[[crate:` prefix to
+  wiki-link-in-observations search (had 10/11 prefixes, gardener had all 11).
+- **session-reflector** — removed phantom `list_directory` from tools list
+  (never called in workflow).
+- **knowledge-prime** — fixed `Glob(pattern=".beads")` which never matches
+  directories; changed to `Glob(pattern=".beads/*")`. Added pagination note
+  for `recent_activity`.
+- **tool-intel Step 4** — removed incorrect `search_type="text"` from
+  fallback name search (should use hybrid, not FTS5).
+- **schemas/npm_package.md** — updated stale "five-source" to "six-source".
+- **Documentation** — fixed hook count from 5 to 6 (PreToolUse was missing),
+  fixed source counts in layout tree (Five→Six, Four→Five), added missing
+  hook scripts to README structure tree.
+
 ## [0.18.2][] - 2026-03-30
 
 ### Fixed
@@ -581,6 +599,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.18.3]: https://github.com/voxpelli/vp-claude/compare/v0.18.2...v0.18.3
 [0.18.2]: https://github.com/voxpelli/vp-claude/compare/v0.18.1...v0.18.2
 [0.18.1]: https://github.com/voxpelli/vp-claude/compare/v0.18.0...v0.18.1
 [0.18.0]: https://github.com/voxpelli/vp-claude/compare/v0.17.1...v0.18.0
