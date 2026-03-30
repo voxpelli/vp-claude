@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.1][] - 2026-03-30
+
+### Fixed
+
+- **REGRESSION: PreToolUse hook blocked all sessions** — the hook blocking
+  script runtimes in Bash was project-global, affecting the main session and
+  all agents. Now scoped to the knowledge-gardener agent only via the
+  `agent_type` field in the hook input JSON. Main session and all other agents
+  are completely unaffected.
+
 ## [0.17.0][] - 2026-03-29
 
 ### Added
@@ -490,6 +500,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.17.1]: https://github.com/voxpelli/vp-claude/compare/v0.17.0...v0.17.1
 [0.17.0]: https://github.com/voxpelli/vp-claude/compare/v0.16.1...v0.17.0
 [0.16.1]: https://github.com/voxpelli/vp-claude/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/voxpelli/vp-claude/compare/v0.15.0...v0.16.0
