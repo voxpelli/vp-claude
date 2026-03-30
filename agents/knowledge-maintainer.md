@@ -370,6 +370,10 @@ For items requiring confirmation, present them grouped:
 Approve all, or specify numbers to approve individually.
 ```
 
+**Concept gap findings** from `/knowledge-gaps` Steps 14-15 require editorial
+judgment — concept notes are not auto-created. Present concept gaps in the
+summary as suggestions for manual follow-up or session-reflector agent usage.
+
 **Annotation-not-deletion rule:** When a user asks to remove an observation
 (e.g., a `[gotcha]` fixed in a new version), prefer annotating over deleting:
 

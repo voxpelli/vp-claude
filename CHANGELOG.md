@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.1][] - 2026-03-30
+
+### Fixed
+
+- **knowledge-gaps Step 0** — replaced `Glob` with `Read` for root manifest
+  detection. Glob recurses into `node_modules/` returning 100+ false matches.
+- **knowledge-gaps Step 10** — replaced broken `search_notes(query="[[npm:",
+  search_type="text")` with relation-index approach using
+  `entity_types=["relation"]`. FTS5 tokenizes brackets, making literal `[[`
+  queries impossible. The new approach queries the relation index directly and
+  checks `to_entity` absence to identify dead wiki-links.
+- **knowledge-gaps Steps 14-15** — extracted to
+  `references/concept-detection.md` (matching Steps 11-13 pattern). Fixed
+  Step 14a to use `most_connected_entities` seeds + relation-index queries
+  instead of broken FTS5 text search. Fixed Step 14b Readwise queries to
+  derive from project stack and hub gap candidates instead of generic phrases.
+- **knowledge-gaps tool list** — added `Bash` for `bm project info` quick-exit
+  gate in Step 10. Added edge cases for Readwise and bm CLI unavailability.
+
 ## [0.18.0][] - 2026-03-30
 
 ### Added
@@ -534,6 +553,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.18.1]: https://github.com/voxpelli/vp-claude/compare/v0.18.0...v0.18.1
 [0.18.0]: https://github.com/voxpelli/vp-claude/compare/v0.17.1...v0.18.0
 [0.17.1]: https://github.com/voxpelli/vp-claude/compare/v0.17.0...v0.17.1
 [0.17.0]: https://github.com/voxpelli/vp-claude/compare/v0.16.1...v0.17.0

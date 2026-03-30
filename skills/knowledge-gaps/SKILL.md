@@ -1,11 +1,12 @@
 ---
 name: knowledge-gaps
-description: "This skill should be used when the user asks about 'knowledge gaps', 'package coverage', 'which packages need notes', 'undocumented dependencies', 'dependency audit', 'missing documentation', 'tool coverage', 'undocumented tools', 'brew/action/docker/vscode coverage', 'standard coverage', 'protocol coverage', 'domain standards', 'concept gaps', or 'missing hub notes'. Cross-references project dependencies, tool manifests, and domain standards against Basic Memory notes to find undocumented packages, tools, standards, and concept-level hub gaps via graph analysis and Readwise reading signals. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, Ruby gems, Homebrew formulae/casks, GitHub Actions, Docker images, and VSCode extensions."
+description: "This skill should be used when the user asks about 'knowledge gaps', 'package coverage', 'which packages need notes', 'undocumented dependencies', 'dependency audit', 'missing documentation', 'tool coverage', 'undocumented tools', 'brew/action/docker/vscode coverage', 'standard coverage', 'protocol coverage', 'domain standards', 'concept gaps', 'missing hub notes', 'undocumented concepts', 'topics without notes', or 'what should have its own note'. Cross-references project dependencies, tool manifests, and domain standards against Basic Memory notes to find undocumented packages, tools, standards, and concept-level hub gaps via relation graph analysis and Readwise reading signals. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, Ruby gems, Homebrew formulae/casks, GitHub Actions, Docker images, and VSCode extensions."
 user-invocable: true
 allowed-tools:
   - Read
   - Grep
   - Glob
+  - Bash
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__list_directory
   - mcp__basic-memory__build_context
@@ -39,6 +40,12 @@ crates, Go modules, PHP Composer, PyPI, and RubyGems.
   file exists but has no `uses:` lines matching the pattern, skip it silently.
 - **RETRO-*.md not committed** — retro files are gitignored; `find` still
   detects them locally. This is expected behavior.
+- **Readwise not available** — if `readwise_search_highlights` or
+  `reader_search_documents` fails or returns no results, skip the reading-
+  signal analysis in Step 14b and report only graph-based hub gaps in Step 15.
+- **`bm` CLI not available** — if the `bm project info` command in Step 10
+  fails, skip the quick-exit gate and proceed directly with the relation
+  index queries.
 
 ## Workflow
 
@@ -60,16 +67,22 @@ A project may have multiple manifest files (e.g., a monorepo with both
 `package.json` and `Cargo.toml`). Process each detected ecosystem separately
 and combine results in the final report.
 
-Use `Glob` to check for manifest presence:
+Check for root-level manifest files using `Read` — do not use `Glob` for
+root manifests, as it recurses into `node_modules/` and similar directories:
+
 ```
-Glob(pattern="package.json")
-Glob(pattern="Cargo.toml")
-Glob(pattern="go.mod")
-Glob(pattern="composer.json")
-Glob(pattern="pyproject.toml")
-Glob(pattern="requirements.txt")
-Glob(pattern="Gemfile")
+Read("./package.json")
+Read("./Cargo.toml")
+Read("./go.mod")
+Read("./composer.json")
+Read("./pyproject.toml")
+Read("./requirements.txt")
+Read("./Gemfile")
 ```
+
+If Read succeeds, the ecosystem is present and the content is already loaded
+for Step 1 (no re-reading needed). If Read returns "file not found", skip
+that ecosystem.
 
 ### 1. Parse dependencies
 
@@ -236,13 +249,13 @@ Present packages ranked by import count.
 Glob for tool manifest files in the current working directory:
 
 ```
-Glob(pattern="Brewfile")
+Read("./Brewfile")
 Glob(pattern=".github/workflows/*.yml")
 Glob(pattern=".github/workflows/*.yaml")
-Glob(pattern="Dockerfile")
+Read("./Dockerfile")
 Glob(pattern="*.dockerfile")
 Glob(pattern="Dockerfile.*")
-Glob(pattern=".vscode/extensions.json")
+Read("./.vscode/extensions.json")
 ```
 
 Announce which manifests are found. If none are found, skip Steps 7–9 and
@@ -362,34 +375,48 @@ For the top undocumented tools, offer `/tool-intel` invocations:
 
 ### 10. Detect dead wiki-links
 
-Check the graph for wiki-links that reference non-existent notes. These are
-packages or tools that existing notes already mention but that have no dedicated
-note yet — organic documentation debt surfaced by the graph itself.
+Check the graph for wiki-links referencing non-existent notes — organic
+documentation debt surfaced by the graph itself.
 
-Only run queries for ecosystems already detected in Steps 0–9 (skip `[[crate:`
-if no Cargo.toml was found and no `crates/` directory was queried):
+**Quick-exit gate:** Check the unresolved count first:
+```
+Bash: bm project info main --json | jq '.statistics.total_unresolved_relations'
+```
+If the count is 0, skip this step. If the CLI is unavailable, proceed with
+the search.
+
+**Query the relation index** for each ecosystem detected in Steps 0–9.
+Use `entity_types=["relation"]` to search the relation index directly —
+this returns relation objects with `from_entity` and `to_entity` fields:
 
 ```
-search_notes(query="[[npm:", search_type="text", page_size=20)
-search_notes(query="[[crate:", search_type="text", page_size=20)
-search_notes(query="[[go:", search_type="text", page_size=20)
-search_notes(query="[[composer:", search_type="text", page_size=20)
-search_notes(query="[[pypi:", search_type="text", page_size=20)
-search_notes(query="[[gem:", search_type="text", page_size=20)
-search_notes(query="[[brew:", search_type="text", page_size=20)
-search_notes(query="[[action:", search_type="text", page_size=20)
-search_notes(query="[[docker:", search_type="text", page_size=20)
-search_notes(query="[[vscode:", search_type="text", page_size=20)
+search_notes(query="npm:", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="crate:", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="go:", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="composer:", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="pypi:", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="gem:", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="brew:", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="action:", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="docker:", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="vscode:", entity_types=["relation"], output_format="json", page_size=50)
 ```
 
-(`search_type="text"` is correct here — `[[prefix:` is structural syntax, not
-semantic content; exact text match is more precise than hybrid/vector.)
+Only query prefixes for ecosystems detected in Steps 0–9.
 
-From the results, extract all `[[prefix:name]]` references. Cross-reference
-against the `list_directory` results already collected in Steps 2 and 8 to
-identify which targets don't have a corresponding note.
+**Identify unresolved relations:** For each result, check whether `to_entity`
+is present in the JSON response. Relations missing `to_entity` are unresolved
+— the wiki-link target has no corresponding note.
 
-Add dead-link findings to the gap report under each ecosystem section:
+Extract the target name from the relation `title` (format:
+`"source → target"`) or `matched_chunk`. Cross-reference against the
+`list_directory` results from Steps 2 and 8 to confirm.
+
+**Deduplicate:** If a dead-linked package already appears in Tier 1/2/3
+from manifest parsing, add "(also wiki-linked)" annotation rather than
+listing it twice.
+
+Add dead-link findings to the gap report:
 
 ```
 #### Referenced but not documented (dead wiki-links)
@@ -398,18 +425,19 @@ Add dead-link findings to the gap report under each ecosystem section:
 | [[npm:some-pkg]] | npm:fastify, engineering/patterns/http |
 ```
 
-Deduplicate: if a dead-linked package already appears in Tier 1/2/3 from
-manifest parsing, add "(also wiki-linked)" annotation rather than listing it
-twice.
-
 Add dead-link counts to the Overall Summary:
 ```
 - Dead wiki-links: Q (across R unique notes)
 ```
 
-When offering enrichment in Steps 5 and 9, include dead-link targets in the
-ranked list, annotated with "(wiki-linked in N notes)" to show organic graph
-momentum.
+When offering enrichment (Steps 5, 9), include dead-link targets annotated
+with "(wiki-linked in N notes)" to show organic graph momentum.
+
+**Limitation:** `page_size=50` per prefix is a sample, not exhaustive — the
+graph may have more unresolved relations than one page returns. This is
+acceptable for a gap detection tool (the gardener handles comprehensive
+auditing). The highest-scored results surface the most commonly referenced
+dead links.
 
 ---
 
@@ -423,72 +451,11 @@ codebase reference count, and adding a standards section to the gap report.
 
 ---
 
-### 14. Detect concept-level gaps
+### 14–15. Concept-level gap detection
 
-Concept hubs are topics referenced across multiple package/tool notes that
-deserve their own dedicated note (type: `engineering`, `standard`, or
-`concept`). These are structural gaps invisible to package/tool-level auditing.
+Read the concept detection reference file for Steps 14–15:
+`${CLAUDE_PLUGIN_ROOT}/skills/knowledge-gaps/references/concept-detection.md`
 
-**14a. Mine the graph for implicit hubs:**
-
-Search for wiki-link targets that appear in 3+ notes but resolve to no
-existing note. Query common cross-reference patterns:
-
-```
-search_notes(query="relates_to [[", search_type="text", page_size=50)
-search_notes(query="depends_on [[", search_type="text", page_size=50)
-```
-
-From the results, extract all `[[Target]]` wiki-link targets. Count how many
-distinct notes reference each target. Targets referenced by 3+ notes that have
-no corresponding BM note are **hub gap candidates**.
-
-Also check `build_context` on high-connectivity notes (the most-linked package
-or tool notes) to discover recurring themes:
-```
-build_context(url="<most-linked-note>", depth=2, max_related=20)
-```
-
-**14b. Mine Readwise for concept signals:**
-
-```
-reader_search_documents(query="best practices patterns architecture")
-readwise_search_highlights(vector_search_term="design pattern architecture standard")
-```
-
-Look for recurring themes across the user's reading that map to concepts
-already referenced in the knowledge graph but not yet documented. This surfaces
-what the user has been studying — strong signal for what deserves a concept note.
-
-**14c. Classify concept gaps:**
-
-- **Hub gap** (referenced by 3+ notes, no dedicated note): structural gap
-- **Reading-signal gap** (3+ Readwise highlights on a topic, no BM note): interest gap
-- **Combined** (both graph references and reading signal): highest priority
-
-### 15. Add concept gaps to report
-
-Append after the Domain Standard Coverage section:
-
-```
-## Concept Coverage
-
-### Hub Gaps (referenced by 3+ notes, no dedicated note)
-| Concept | Referenced by | Priority |
-|---------|--------------|----------|
-| <target> | <N> notes | hub |
-
-### Reading-Signal Gaps (3+ Readwise highlights, no BM note)
-| Concept | Highlights | Priority |
-|---------|-----------|----------|
-| <topic> | <N> | interest |
-
-### Concept Summary
-- Hub gaps: N
-- Reading-signal gaps: M
-- Combined (highest priority): P
-```
-
-For top concept gaps, suggest creating concept notes manually or via the
-session-reflector agent, since concept notes require more editorial judgment
-than package/tool notes.
+This covers mining the relation graph for implicit hub gaps, checking
+Readwise for reading signals, and adding a concept coverage section to
+the gap report.
