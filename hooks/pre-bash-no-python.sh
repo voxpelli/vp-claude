@@ -1,11 +1,19 @@
 #!/bin/bash
 set -euo pipefail
 
-# PreToolUse hook — blocks Python/Node.js script execution in Bash tool calls.
-# The knowledge-gardener must use jq for JSON processing or reason about
-# MCP results directly in context, not generate ad-hoc scripts.
+# PreToolUse hook — blocks Python/Node.js script execution in Bash tool calls
+# ONLY inside the knowledge-gardener agent. The main session and all other
+# agents are unaffected (agent_type is absent outside subagents).
 
 INPUT=$(cat)
+
+# Only enforce inside the knowledge-gardener agent — exit silently for
+# main session (no agent_type) and all other agents.
+AGENT=$(echo "$INPUT" | jq -r '.agent_type // empty' 2>/dev/null || true)
+if [[ "$AGENT" != "knowledge-gardener" ]]; then
+	exit 0
+fi
+
 CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null || true)
 
 if [[ -z "$CMD" ]]; then

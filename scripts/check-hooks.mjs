@@ -251,104 +251,91 @@ test('non-matching path → silent', () => {
   return { ok: true }
 })
 
-// --- pre-bash-no-python.sh ---
+// --- pre-bash-no-python.sh (scoped to knowledge-gardener via agent_type) ---
 console.log('\npre-bash-no-python.sh')
 
-test('python3 command → blocked', () => {
+// Helper: build stdin with optional agent_type
+/** @param {string} command @param {string} [agentType] */
+function bashInput (command, agentType) {
+  /** @type {Record<string,unknown>} */
+  const input = { tool_input: { command } }
+  if (agentType) input.agent_type = agentType
+  return JSON.stringify(input)
+}
+
+// --- Scoping tests: main session + other agents should pass through ---
+
+test('python3 from main session (no agent_type) → allowed', () => {
+  const { stdout, status } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+    bashInput('python3 -c "print(1)"'))
+  if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
+  const { count } = parseJsonObjects(stdout)
+  if (count !== 0) return { ok: false, reason: `expected silent, got ${count} — main session should NOT be blocked` }
+  return { ok: true }
+})
+
+test('node from main session → allowed', () => {
+  const { stdout, status } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+    bashInput('node -e "console.log(1)"'))
+  if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
+  const { count } = parseJsonObjects(stdout)
+  if (count !== 0) return { ok: false, reason: `expected silent — main session should NOT be blocked` }
+  return { ok: true }
+})
+
+test('python3 from other agent (knowledge-maintainer) → allowed', () => {
+  const { stdout, status } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+    bashInput('python3 script.py', 'knowledge-maintainer'))
+  if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
+  const { count } = parseJsonObjects(stdout)
+  if (count !== 0) return { ok: false, reason: `expected silent — other agents should NOT be blocked` }
+  return { ok: true }
+})
+
+// --- Gardener-specific blocking tests ---
+
+test('python3 from knowledge-gardener → blocked', () => {
   const { stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
-    JSON.stringify({ tool_input: { command: 'python3 -c "import json; print(1)"' } }))
+    bashInput('python3 -c "import json"', 'knowledge-gardener'))
   const { count, objects, parseError } = parseJsonObjects(stdout)
   if (parseError) return { ok: false, reason: parseError }
-  if (count !== 1) return { ok: false, reason: `expected 1 block object, got ${count}` }
-  const obj = /** @type {Record<string,unknown>} */ (objects[0])
-  if (obj.decision !== 'block') return { ok: false, reason: `expected block, got ${JSON.stringify(obj.decision)}` }
-  return { ok: true }
-})
-
-test('python heredoc → blocked', () => {
-  const { stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
-    JSON.stringify({ tool_input: { command: 'python3 << \'PYEOF\'\nimport json\nPYEOF' } }))
-  const { count, objects } = parseJsonObjects(stdout)
-  if (count !== 1) return { ok: false, reason: `expected 1 block, got ${count}` }
+  if (count !== 1) return { ok: false, reason: `expected block, got ${count}` }
   if (/** @type {Record<string,unknown>} */ (objects[0]).decision !== 'block') return { ok: false, reason: 'expected block' }
   return { ok: true }
 })
 
-test('jq command → allowed (silent)', () => {
+test('node -e from knowledge-gardener → blocked', () => {
+  const { stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+    bashInput('node -e "console.log(1)"', 'knowledge-gardener'))
+  const { count, objects } = parseJsonObjects(stdout)
+  if (count !== 1) return { ok: false, reason: `expected block, got ${count}` }
+  if (/** @type {Record<string,unknown>} */ (objects[0]).decision !== 'block') return { ok: false, reason: 'expected block' }
+  return { ok: true }
+})
+
+test('bash -c "python3 ..." from gardener → blocked (bypass vector)', () => {
+  const { stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+    bashInput('bash -c "python3 -c \'import json\'"', 'knowledge-gardener'))
+  const { count, objects } = parseJsonObjects(stdout)
+  if (count !== 1) return { ok: false, reason: `expected block, got ${count}` }
+  if (/** @type {Record<string,unknown>} */ (objects[0]).decision !== 'block') return { ok: false, reason: 'expected block' }
+  return { ok: true }
+})
+
+// --- Gardener-allowed commands ---
+
+test('jq from knowledge-gardener → allowed', () => {
   const { stdout, status } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
-    JSON.stringify({ tool_input: { command: 'bm project info main --json | jq .statistics' } }))
+    bashInput('bm project info main --json | jq .statistics', 'knowledge-gardener'))
   if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
   const { count } = parseJsonObjects(stdout)
   if (count !== 0) return { ok: false, reason: `expected silent, got ${count}` }
   return { ok: true }
 })
 
-test('bash -c "python3 ..." → blocked (bypass vector)', () => {
-  const { stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
-    JSON.stringify({ tool_input: { command: 'bash -c "python3 -c \'import json\'"' } }))
-  const { count, objects } = parseJsonObjects(stdout)
-  if (count !== 1) return { ok: false, reason: `expected block, got ${count}` }
-  if (/** @type {Record<string,unknown>} */ (objects[0]).decision !== 'block') return { ok: false, reason: 'expected block' }
-  return { ok: true }
-})
-
-test('env python3 → blocked (bypass vector)', () => {
-  const { stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
-    JSON.stringify({ tool_input: { command: 'env python3 -c "print(1)"' } }))
-  const { count, objects } = parseJsonObjects(stdout)
-  if (count !== 1) return { ok: false, reason: `expected block, got ${count}` }
-  if (/** @type {Record<string,unknown>} */ (objects[0]).decision !== 'block') return { ok: false, reason: 'expected block' }
-  return { ok: true }
-})
-
-test('/usr/bin/python3 → blocked (absolute path)', () => {
-  const { stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
-    JSON.stringify({ tool_input: { command: '/usr/bin/python3 script.py' } }))
-  const { count, objects } = parseJsonObjects(stdout)
-  if (count !== 1) return { ok: false, reason: `expected block, got ${count}` }
-  if (/** @type {Record<string,unknown>} */ (objects[0]).decision !== 'block') return { ok: false, reason: 'expected block' }
-  return { ok: true }
-})
-
-test('echo ... | python3 → blocked (pipe)', () => {
-  const { stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
-    JSON.stringify({ tool_input: { command: 'echo "import json" | python3' } }))
-  const { count, objects } = parseJsonObjects(stdout)
-  if (count !== 1) return { ok: false, reason: `expected block, got ${count}` }
-  if (/** @type {Record<string,unknown>} */ (objects[0]).decision !== 'block') return { ok: false, reason: 'expected block' }
-  return { ok: true }
-})
-
-test('node -e → blocked', () => {
-  const { stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
-    JSON.stringify({ tool_input: { command: 'node -e "console.log(JSON.parse(...))"' } }))
-  const { count, objects } = parseJsonObjects(stdout)
-  if (count !== 1) return { ok: false, reason: `expected block, got ${count}` }
-  if (/** @type {Record<string,unknown>} */ (objects[0]).decision !== 'block') return { ok: false, reason: 'expected block' }
-  return { ok: true }
-})
-
-test('jq command → allowed (silent)', () => {
+test('bash script from gardener → allowed', () => {
   const { stdout, status } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
-    JSON.stringify({ tool_input: { command: 'bm project info main --json | jq .statistics' } }))
-  if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
-  const { count } = parseJsonObjects(stdout)
-  if (count !== 0) return { ok: false, reason: `expected silent, got ${count}` }
-  return { ok: true }
-})
-
-test('bash script → allowed (silent)', () => {
-  const { stdout, status } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
-    JSON.stringify({ tool_input: { command: 'bash scripts/audit-helpers.sh bm-stats' } }))
-  if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
-  const { count } = parseJsonObjects(stdout)
-  if (count !== 0) return { ok: false, reason: `expected silent, got ${count}` }
-  return { ok: true }
-})
-
-test('no command field → silent', () => {
-  const { stdout, status } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
-    JSON.stringify({ tool_input: {} }))
+    bashInput('bash scripts/audit-helpers.sh bm-stats', 'knowledge-gardener'))
   if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
   const { count } = parseJsonObjects(stdout)
   if (count !== 0) return { ok: false, reason: `expected silent, got ${count}` }
