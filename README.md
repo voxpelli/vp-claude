@@ -178,6 +178,14 @@ A read-only agent that surfaces project-relevant knowledge before you start work
 
 Same workflow as `/knowledge-prime` but runs as an autonomous subagent. Pinned to Sonnet for consistent quality regardless of session model. The "before work" counterpart to `/session-reflect` (which captures knowledge "after work").
 
+### `/knowledge-ask <question>` — Ask the knowledge graph
+
+A read-only skill that answers freeform questions by searching Basic Memory, loading relevant notes, traversing 1-hop graph neighbors, and synthesizing a cited answer:
+
+> "What do I know about fastify error handling?" / "What does BM say about IndieWeb?"
+
+Each answer includes a confidence tier (Direct, Partial, or No Coverage) so you know how much the graph actually covers. When coverage is incomplete, suggests `/package-intel`, `/tool-intel`, or `/knowledge-gaps` to fill the gap. Unlike `/knowledge-prime` (which shows project-wide dependency coverage), `/knowledge-ask` answers specific questions about individual topics.
+
 ### `/session-reflect` — On-demand conversation capture
 
 A user-triggered skill that reviews the current conversation and saves insights to Basic Memory with your approval:
@@ -194,7 +202,7 @@ Six hooks run automatically in the background:
 - **PostToolUse** (file edits) — After editing shell scripts, auto-formats with `shfmt`. After editing schema files, reminds to sync Basic Memory.
 - **PostToolUseFailure** — Classifies Basic Memory write and schema tool failures into five categories with actionable recovery guidance.
 - **PreCompact** — Before context compaction, reviews the conversation for decisions, lessons, and gotchas worth saving. Writes them to Basic Memory so insights survive across sessions.
-- **SessionStart** — Injects a knowledge graph status summary and suggests `/knowledge-prime` when the task involves dependencies or tools.
+- **SessionStart** — Injects a knowledge graph status summary and suggests `/knowledge-prime` for project context or `/knowledge-ask` for topic-specific questions.
 - **PreToolUse** (gardener Bash) — Blocks Python and Node.js script execution when running as the knowledge-gardener agent, enforcing read-only discipline.
 
 ## Installation
@@ -311,6 +319,8 @@ skills/
     SKILL.md                           Schema drift detection and dual-sync
   session-reflect/
     SKILL.md                           On-demand conversation → memory capture
+  knowledge-ask/
+    SKILL.md                           Freeform Q&A against the BM knowledge graph
 agents/
   knowledge-gardener.md                Read-only graph auditor (incl. tag alignment)
   knowledge-maintainer.md              Read-write graph enhancer (incl. tag fixes)
@@ -354,6 +364,7 @@ schemas/
  /knowledge-gaps   -> knowledge-gaps skill-> gap report (packages, tools, concepts)
                                              + offers /package-intel, /tool-intel
  /knowledge-prime  -> knowledge-prime     -> context brief with gotchas + gaps
+ /knowledge-ask Q  -> knowledge-ask skill -> cited answer + confidence tier
  /schema-evolve X  -> schema-evolve skill -> field proposals + dual-sync
  "audit graph"     -> knowledge-gardener  -> health report (read-only, incl. tags)
  "fix the graph"   -> knowledge-maintainer-> structural + tag fixes + confirmations

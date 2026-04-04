@@ -21,6 +21,7 @@ skills/
   knowledge-prime/SKILL.md           # On-demand project context priming from BM
   schema-evolve/SKILL.md             # Frequency-driven schema drift detection and dual-sync
   session-reflect/SKILL.md           # On-demand conversation → memory capture
+  knowledge-ask/SKILL.md             # Freeform Q&A against the BM knowledge graph
 agents/
   knowledge-gardener.md              # Read-only graph health auditor (incl. tag alignment)
   knowledge-maintainer.md            # All-in-one graph enhancer (writes, incl. tag fixes)
@@ -33,7 +34,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 
 ## Components
 
-### Skills (6)
+### Skills (7)
 
 - **package-intel** — Researches a package via six sources (Basic Memory, DeepWiki, Context7, Tavily, Raindrop, Readwise) and writes/updates a structured prefixed note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer, Python PyPI, and Ruby gems. User-invocable as `/package-intel <pkg>`.
 - **tool-intel** — Researches a developer environment or CI/CD tool via five sources (Basic Memory, DeepWiki for actions/docker, Tavily, Raindrop, Readwise) and writes/updates a structured prefixed note with post-write cross-linking. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), and VSCode extensions (`vscode:`). User-invocable as `/tool-intel <prefix>:<name>`.
@@ -41,6 +42,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 - **knowledge-prime** — Surfaces project-relevant Basic Memory knowledge on demand. Detects the project stack, cross-references deps against BM notes, scores relevance, loads critical observations (`[gotcha]`, `[breaking]`, `[limitation]`), and produces a concise context brief. Supports `--deep` for extended output. User-invocable as `/knowledge-prime`.
 - **schema-evolve** — Detects drift between BM schema definitions and actual note usage via `schema_diff`/`schema_infer`, proposes frequency-driven field additions/removals, and dual-syncs BM notes + local `schemas/` files after approval. User-invocable as `/schema-evolve <type>`.
 - **session-reflect** — Reviews the current conversation, extracts durable insights, finds target notes in Basic Memory, shows a grouped preview, and writes only what the user approves. The deliberate, user-triggered counterpart to the automatic PreCompact hook. User-invocable as `/session-reflect`.
+- **knowledge-ask** — Answers freeform questions by searching Basic Memory, loading relevant notes, traversing the graph, and synthesizing a cited answer with confidence tiers (Direct/Partial/No Coverage). Read-only — suggests `/package-intel` or `/tool-intel` for coverage gaps. User-invocable as `/knowledge-ask <question>`.
 
 ### Agents (3)
 
@@ -54,7 +56,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 - **PostToolUse** (`Edit`/`Write` matcher) — Auto-formats shell scripts with `shfmt` and reminds to sync BM when editing schema files.
 - **PostToolUseFailure** (`write_note`/`edit_note`/`schema_validate`/`schema_diff`/`schema_infer` matcher) — Command hook that pattern-matches BM tool errors into five categories (server-unavailable, note-not-found, invalid-argument, permission-error, unknown) and emits `additionalContext` with recovery guidance.
 - **PreCompact** — Auto-reflects conversation insights into Basic Memory before context compaction.
-- **SessionStart** — Emits a single `additionalContext` JSON object with knowledge graph guidance, skill suggestions (`/knowledge-prime`, `/knowledge-gaps`, `/schema-evolve`), and conditional graph-audit cycle reminders on every 4th sprint.
+- **SessionStart** — Emits a single `additionalContext` JSON object with knowledge graph guidance, skill suggestions (`/knowledge-prime`, `/knowledge-ask`, `/knowledge-gaps`, `/schema-evolve`), and conditional graph-audit cycle reminders on every 4th sprint.
 - **PreToolUse** (`Bash` matcher) — Blocks Python and Node.js script execution inside the knowledge-gardener agent, enforcing read-only discipline. Main session and other agents are unaffected.
 
 ## Schemas
@@ -171,6 +173,17 @@ When querying Basic Memory via `search_notes`, choose the right approach:
   with `query="<entity-title>"` (relation titles index both source and target)
 - **Semantic topic search** — omit `search_type` (default hybrid) for natural
   language queries about concepts, topics, or package names
+
+### Skill routing
+
+When the user asks about knowledge or packages, choose the right skill:
+
+| Signal | Skill |
+|--------|-------|
+| "prime", "project context", "coverage", "which deps are documented" | `/knowledge-prime` |
+| "what do we know about \[X\]", "recall", "find notes on", topic question | `/knowledge-ask [topic]` |
+| "research \[pkg\]", "document \[pkg\]", needs external sources | `/package-intel [pkg]` |
+| "gaps", "undocumented", "audit coverage" | `/knowledge-gaps` |
 
 ### Output template conventions
 

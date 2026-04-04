@@ -1,6 +1,6 @@
 ---
 name: knowledge-prime
-description: "This skill should be used when the user asks to 'prime context', 'load project knowledge', 'what do we know about this project', 'knowledge brief', 'project context', 'what packages are documented', 'show me what BM knows about this codebase', 'knowledge primer', 'prime session', 'context for this project'. Surfaces project-relevant Basic Memory knowledge at session start or on demand — dependency coverage, key gotchas, engineering context, and gaps."
+description: "This skill should be used when the user asks to 'prime context', 'load project knowledge', 'what do we know about this project', 'knowledge brief', 'project context', 'what packages are documented', 'show coverage for this project', 'dependency coverage report', 'which of our deps have notes', 'knowledge primer', 'prime session', 'context for this project'. Surfaces project-relevant Basic Memory knowledge at session start or on demand — dependency coverage, key gotchas, engineering context, and gaps. NOT for freeform topic questions about individual packages or concepts (use /knowledge-ask for that)."
 user-invocable: true
 allowed-tools:
   - Read

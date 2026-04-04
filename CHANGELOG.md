@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0][] - 2026-04-05
+
+### Added
+
+- **`/knowledge-ask` skill** — freeform Q&A against the Basic Memory knowledge
+  graph. Searches notes, loads candidates, traverses 1-hop neighbors, and
+  synthesizes a cited answer with confidence tiers (Direct/Partial/No Coverage).
+  Read-only — suggests `/package-intel` or `/tool-intel` when coverage is
+  incomplete. User-invocable as `/knowledge-ask <question>`.
+- **Skill routing table** in CLAUDE.md conventions — disambiguates
+  `/knowledge-prime` (project-wide coverage) vs `/knowledge-ask` (topic Q&A)
+  vs `/package-intel` (external research) vs `/knowledge-gaps` (audit).
+
+### Changed
+
+- **`/knowledge-prime` description** — added "NOT for" negative differentiator
+  and coverage-focused trigger phrases; removed overlapping phrase that could
+  route to `/knowledge-ask`.
+- **SessionStart hook** — now suggests `/knowledge-ask` for topic-specific
+  questions alongside existing `/knowledge-prime` hint.
+
 ## [0.19.0][] - 2026-04-04
 
 ### Changed
@@ -644,6 +665,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.20.0]: https://github.com/voxpelli/vp-claude/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/voxpelli/vp-claude/compare/v0.18.3...v0.19.0
 [0.18.3]: https://github.com/voxpelli/vp-claude/compare/v0.18.2...v0.18.3
 [0.18.2]: https://github.com/voxpelli/vp-claude/compare/v0.18.1...v0.18.2
