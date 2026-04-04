@@ -229,15 +229,15 @@ test('no PLUGIN_ROOT arg → silent', () => {
   return { ok: true }
 })
 
-test('schema file → 1 object with systemMessage', () => {
+test('schema file → 1 object with additionalContext', () => {
   const filePath = join(pluginRoot, 'schemas', 'npm_package.md')
   const { stdout } = runHook(join(HOOKS_DIR, 'post-file-edit.sh'),
     JSON.stringify({ tool_input: { file_path: filePath } }), { args: [pluginRoot] })
   const { count, objects, parseError } = parseJsonObjects(stdout)
   if (parseError) return { ok: false, reason: parseError }
   if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count}` }
-  if (!('systemMessage' in /** @type {Record<string,unknown>} */ (objects[0]))) {
-    return { ok: false, reason: 'missing systemMessage' }
+  if (!('additionalContext' in /** @type {Record<string,unknown>} */ (objects[0]))) {
+    return { ok: false, reason: 'missing additionalContext' }
   }
   return { ok: true }
 })

@@ -45,7 +45,6 @@ tools:
   - Skill
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__read_note
-  - mcp__basic-memory__write_note
   - mcp__basic-memory__edit_note
   - mcp__basic-memory__move_note
   - mcp__basic-memory__build_context
@@ -85,44 +84,24 @@ CLI or `memory-lifecycle` skill directly if a note must be deleted.
 
 ### 1. Assess current state
 
-If a gardener report was provided, use it as the starting point. Otherwise,
-run a lightweight audit:
+If a gardener report was provided, use it as the starting point — skip to
+categorizing findings. Otherwise, run a quick triage:
 
-```
-list_directory(dir_name="/", depth=2)
-schema_validate(note_type="npm_package")
-schema_validate(note_type="crate_package")
-schema_validate(note_type="go_module")
-schema_validate(note_type="composer_package")
-schema_validate(note_type="pypi_package")
-schema_validate(note_type="ruby_gem")
-schema_validate(note_type="brew_formula")
-schema_validate(note_type="brew_cask")
-schema_validate(note_type="github_action")
-schema_validate(note_type="docker_image")
-schema_validate(note_type="vscode_extension")
-schema_validate(note_type="engineering")
-schema_validate(note_type="standard")
-schema_validate(note_type="concept")
-schema_validate(note_type="milestone")
-schema_validate(note_type="service")
-schema_validate(note_type="person")
-schema_diff(note_type="npm_package")
-schema_diff(note_type="crate_package")
-schema_diff(note_type="brew_formula")
-schema_diff(note_type="brew_cask")
-schema_diff(note_type="engineering")
-schema_diff(note_type="standard")
-schema_diff(note_type="concept")
-schema_diff(note_type="milestone")
-schema_diff(note_type="service")
-recent_activity(timeframe="90d", output_format="json")
-```
+1. **Inventory** — `list_directory(dir_name="/", depth=2)`
 
-Run `schema_validate` to catch notes that violate their schema (broken/missing required
-fields). Run `schema_diff` on the high-volume types to catch drift — fields used in notes
-but absent from the schema, or schema fields that have fallen out of use. Drift findings
-are candidates for schema evolution, not note fixes.
+2. **Validate all 17 schemas** — `schema_validate` for each note type
+   (npm_package, crate_package, go_module, composer_package, pypi_package,
+   ruby_gem, brew_formula, brew_cask, github_action, docker_image,
+   vscode_extension, engineering, standard, concept, milestone, service,
+   person). This catches notes that violate their schema (broken/missing
+   required fields).
+
+3. **Check drift on high-volume types** — `schema_diff` for npm_package,
+   engineering, standard, brew_formula, and concept. Drift findings (fields
+   used in notes but absent from schema, or vice versa) are candidates for
+   schema evolution, not note fixes.
+
+4. **Review recent changes** — `recent_activity(timeframe="90d", output_format="json")`
 
 Categorize findings into auto-fixable vs needs-confirmation.
 
@@ -371,7 +350,7 @@ Approve all, or specify numbers to approve individually.
 
 **Concept gap findings** from `/knowledge-gaps` Steps 14-15 require editorial
 judgment — concept notes are not auto-created. Present concept gaps in the
-summary as suggestions for manual follow-up or session-reflector agent usage.
+summary as suggestions for manual follow-up or `/session-reflect` skill usage.
 
 **Annotation-not-deletion rule:** When a user asks to remove an observation
 (e.g., a `[gotcha]` fixed in a new version), prefer annotating over deleting:

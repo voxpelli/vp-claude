@@ -89,14 +89,15 @@ If found, read the existing note to understand what's already documented:
 read_note(identifier="<prefix>:<package-name>", include_frontmatter=true, output_format="json")
 ```
 
-**Freshness check:** If the note exists and was updated within the last 60 days
-(check `updated_at` in frontmatter), consider scoping down the research:
-- Skip Tavily security search unless a CVE is suspected
-- Skip Raindrop search (bookmarks don't change frequently)
-- Focus DeepWiki/Context7 on what's changed since the last update
-- Still run the changelog step — version history moves fast
+**Freshness check:** Scope research based on note age (check `updated_at`):
 
-If the note is stale (>60 days) or missing, run the full six-source pipeline.
+| Note age | Sources to run | Sources to skip |
+|----------|---------------|-----------------|
+| Missing or >180 days | All 6 (full pipeline) | None |
+| 60–180 days | All except Raindrop | Raindrop |
+| <60 days | DeepWiki + Context7 + changelog only | Tavily, Raindrop, Readwise |
+
+Always run the changelog step — version history moves fast.
 
 Note any previous `[gotcha]` or `[limitation]` observations — these should guide
 which sources to prioritize and what edge cases to look for in new research.

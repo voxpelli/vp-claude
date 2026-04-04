@@ -24,8 +24,8 @@ fi
 # Matches: python3, python3.12, /usr/bin/python3, env python3, bash -c "python3",
 # echo ... | python3, cmd ; python3, cmd && python3
 if echo "$CMD" | grep -qiwE 'python[0-9.]*|node'; then
-	jq -cn '{
+	jq -n '{
     "decision": "block",
-    "reason": "Python/Node scripts are blocked. Use jq via Bash for JSON processing, or reason about MCP results directly in context. Example: bm project info main --json | jq .statistics.isolated_entities"
+    "reason": "Python/Node scripts are blocked in knowledge-gardener to preserve read-only discipline. Use jq via Bash for JSON processing, or use MCP tool calls directly."
   }'
 fi

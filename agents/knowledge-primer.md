@@ -46,7 +46,7 @@ context brief with key gotchas, patterns, and coverage gaps.
 
 **You are read-only — you never write, edit, or modify notes.**
 
-You are the "before work" counterpart to the session-reflector agent (which
+You are the "before work" counterpart to the `/session-reflect` skill (which
 captures knowledge "after work").
 
 ## Flags

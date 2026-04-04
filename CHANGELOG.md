@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0][] - 2026-04-04
+
+### Changed
+
+- **session-reflector agent → `/session-reflect` skill** — converted from agent
+  to skill so it runs in the main conversation context (agents cannot access the
+  conversation transcript). The skill has the same 6-step workflow (extract →
+  find targets → preview → write → relation check → report) plus a new Edge
+  Cases section and `find_replace` failure fallback. User-invocable as
+  `/session-reflect`.
+- **knowledge-maintainer Step 1** — deduplicated the 40-line audit enumeration
+  (17 `schema_validate` + 9 `schema_diff` calls) into a concise 4-step triage
+  that references the gardener for comprehensive audits.
+- **tool-intel freshness check** — replaced vague "consider scoping down" with
+  a 3-tier decision table (<60 days / 60–180 / >180 days). Applied same fix to
+  package-intel.
+- **tool-intel DeepWiki scoping** — removed blanket vscode skip; DeepWiki now
+  runs for `vscode:` when a public GitHub repo exists (aligning SKILL.md with
+  ecosystem-vscode.md).
+
+### Fixed
+
+- **engineering.md schema** — `relates_to(array)` was missing `?` (required
+  instead of optional), unlike all 16 other schemas. Changed to
+  `relates_to?(array)`.
+- **knowledge-maintainer** — removed phantom `write_note` from tools list
+  (never directly called; new notes delegated to `/package-intel` via `Skill`).
+- **post-file-edit.sh** — changed `systemMessage` to `additionalContext` to
+  match all other hooks.
+- **pre-bash-no-python.sh** — normalized `jq -cn` to `jq -n` for consistency.
+- **tool-intel** — replaced bare `references/` paths with full
+  `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/...` paths (6 locations).
+- **concept.md schema** — added `relates_to?(array)` field and Relation
+  Vocabulary entry.
+- **service.md schema** — added `architecture?(array)` field.
+
+### Added
+
+- **Hook comments** — clarifying comments in `session-start.sh` (mod-4 audit
+  cycle), `post-bm-failure-classify.sh` (heuristic pattern matching),
+  `post-file-edit.sh` (optional shfmt).
+- **CLAUDE.md** — added 2 missing scripts to table (`audit-helpers.sh`,
+  `check-hooks.mjs`), added `check:hooks` to validation description, added
+  `references/` directories to plugin layout tree.
+
 ## [0.18.3][] - 2026-03-31
 
 ### Fixed
@@ -599,6 +644,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.19.0]: https://github.com/voxpelli/vp-claude/compare/v0.18.3...v0.19.0
 [0.18.3]: https://github.com/voxpelli/vp-claude/compare/v0.18.2...v0.18.3
 [0.18.2]: https://github.com/voxpelli/vp-claude/compare/v0.18.1...v0.18.2
 [0.18.1]: https://github.com/voxpelli/vp-claude/compare/v0.18.0...v0.18.1

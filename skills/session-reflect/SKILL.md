@@ -1,36 +1,8 @@
 ---
-name: session-reflector
-description: "Use this agent when the user wants to save insights from the current conversation to Basic Memory. Examples:
-
-<example>
-Context: User wants to capture what was learned
-user: \"Reflect on this session and save what we learned\"
-assistant: \"I'll use the session-reflector agent to extract and save insights to Basic Memory.\"
-<commentary>
-Explicit reflection request — trigger the session-reflector to review the conversation and propose what to capture.
-</commentary>
-</example>
-
-<example>
-Context: User wants to persist a decision
-user: \"Save decisions to Basic Memory\"
-assistant: \"I'll use the session-reflector agent to capture the decisions from this session.\"
-<commentary>
-User wants durable record of decisions — session-reflector extracts and previews before writing.
-</commentary>
-</example>
-
-<example>
-Context: User wants to commit insights
-user: \"Capture insights to memory\" or \"write up what we did\" or \"commit this to memory\"
-assistant: \"I'll use the session-reflector agent to save the session insights.\"
-<commentary>
-Any deliberate memory-capture request maps to the session-reflector.
-</commentary>
-</example>"
-model: inherit
-color: magenta
-tools:
+name: session-reflect
+description: "This skill should be used when the user asks to 'reflect on this session', 'save insights to memory', 'capture what we learned', 'commit this to memory', 'save decisions to Basic Memory', 'write up what we did', 'preserve what we found', 'save insights from this conversation', 'save what was discovered', 'capture session learnings', 'session reflection'. Reviews the current conversation, extracts durable insights (decisions, lessons, gotchas, patterns), previews proposed captures grouped by target note, and writes to Basic Memory after user approval."
+user-invocable: true
+allowed-tools:
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__read_note
   - mcp__basic-memory__write_note
@@ -38,13 +10,32 @@ tools:
   - mcp__basic-memory__build_context
 ---
 
-You are an on-demand reflection agent. Your job is to review the current
-conversation, extract insights worth persisting, find the right existing notes
-to append them to, and get user approval before writing anything.
+# Session Reflect
+
+Review the current conversation, extract insights worth persisting in Basic
+Memory, find the right existing notes, preview proposed captures, and write
+only what the user approves.
 
 This is the deliberate, user-triggered counterpart to the automatic PreCompact
-hook. Unlike the hook (brief, fires under pressure), you can be thorough,
-exercise judgment, and let the user decide what's worth keeping.
+hook. Unlike the hook (brief, fires under context-ceiling pressure), this skill
+can be thorough, exercise judgment, and let the user decide what's worth keeping.
+
+## Edge Cases
+
+- **Empty conversation / no insights** — report "No durable insights found in
+  this conversation" and exit. Do not force captures.
+- **BM unavailable** — report the error and suggest trying again later. The
+  PostToolUseFailure hook covers tool-level errors.
+- **All insights already captured** — if `build_context` 1-hop checks show
+  every candidate is in a neighbor, report "All insights from this session
+  appear to already be captured" with note links.
+- **User declines all** — respect the decline. Report "No observations written"
+  and exit cleanly.
+- **Very long conversation** — cap at 10 candidates in the preview. Note
+  "N additional minor insights omitted — request a second pass if needed."
+- **Target note has no Observations section** — flag to the user that the
+  note needs structural repair. Do not use `operation="append"` with
+  `section="Observations"` (it appends to end of file, not end of section).
 
 ## Workflow
 
@@ -93,9 +84,9 @@ observation or note "Already captured in \[\[neighbor-note\]\]" in the preview.
 
 ### 3. Preview
 
-Show the user a grouped preview before writing anything:
+Show a grouped preview before writing anything:
 
-```markdown
+````markdown
 ## Proposed Memory Captures
 
 ### Appending to: npm:fastify
@@ -105,11 +96,11 @@ Show the user a grouped preview before writing anything:
 ### Appending to: engineering/agents/basic-memory-note-enrichment-package-metadata-pattern
 - [lesson] `edit_note` with `find_replace` is required for mid-section inserts; `append` with `section` goes to end of file
 
-### New note: engineering/agents/session-reflector-patterns
-- [decision] On-demand reflection agents should preview before writing — reduces noise in the knowledge graph
+### New note: engineering/agents/session-reflect-patterns
+- [decision] On-demand reflection should preview before writing — reduces noise in the knowledge graph
 
 Approve all, or specify numbers to apply individually (e.g. "approve 1,3").
-```
+````
 
 Wait for user response before proceeding.
 
@@ -131,6 +122,10 @@ edit_note(
 Do NOT use `operation="append"` with `section="Observations"` — it appends to
 end of file, not end of section.
 
+If `find_replace` fails (no match found), the note may have been edited since
+you last read it. Fall back to `read_note` to fetch current content and retry
+with the actual last observation line.
+
 **New note** — use `write_note` with full structure (frontmatter + `## Observations`
 + `## Relations`). Keep title generic enough to reuse across projects.
 
@@ -146,20 +141,22 @@ observations but only M outgoing relations — consider adding links."
 
 Summarize what was written:
 
-```markdown
+````markdown
 ## Reflection Complete
 
 Saved N observations across M notes:
 - npm:fastify — 2 observations added
 - engineering/agents/... — 1 observation added
-- [new] engineering/agents/session-reflector-patterns — created
+- [new] engineering/agents/session-reflect-patterns — created
 
 Skipped: [anything the user declined and why]
-```
+````
 
 ## Observation Categories
 
-Use the same categories as the PreCompact hook for consistency:
+The core set matches the PreCompact hook (`[decision]`, `[lesson]`, `[gotcha]`,
+`[pattern]`). This skill adds `[limitation]` and `[breaking]` for thoroughness,
+since it operates without time pressure.
 
 | Category | When to use |
 |----------|-------------|
@@ -183,13 +180,13 @@ Use the same categories as the PreCompact hook for consistency:
 
 ## vp-beads Integration
 
-In projects using vp-beads, the session-reflector and vp-beads workflows
-are complementary:
+In projects using vp-beads, `/session-reflect` and vp-beads workflows are
+complementary:
 
 - **Upstream friction** — if research or debugging surfaces a bug or
   limitation in a package or tool, log it via `/upstream-tracker` in addition
   to (or instead of) capturing a `[gotcha]` in Basic Memory.
-- **Capture ↔ synthesis** — use session-reflector for in-sprint discoveries;
+- **Capture ↔ synthesis** — use `/session-reflect` for in-sprint discoveries;
   at sprint-close, vp-beads' `/retrospective` synthesises those captured notes
-  into the sprint record. Session-reflector is for durable cross-project
+  into the sprint record. `/session-reflect` is for durable cross-project
   insights; retrospective is for sprint-scoped synthesis.

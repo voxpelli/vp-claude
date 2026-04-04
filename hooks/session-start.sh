@@ -8,7 +8,9 @@ set -euo pipefail
 # Count RETRO files for the audit-cycle reminder (CWD = project root at SessionStart)
 count=$(find . -maxdepth 1 -name "RETRO-*.md" 2>/dev/null | wc -l | tr -d ' ')
 
-# Build the optional audit-cycle sentence
+# Build the optional audit-cycle sentence.
+# Audit cycle: every 4th sprint (mod 4 == 3 is pre-warning, mod 4 == 0 is audit sprint).
+# Assumes sequential RETRO-N.md naming.
 audit_reminder=""
 if [ "$count" -gt 0 ]; then
 	mod=$((count % 4))

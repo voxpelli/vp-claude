@@ -176,15 +176,15 @@ A read-only agent that surfaces project-relevant knowledge before you start work
 
 > "Prime the knowledge graph for this project" / "What does BM know about my deps?"
 
-Same workflow as `/knowledge-prime` but runs as an autonomous subagent. Pinned to Sonnet for consistent quality regardless of session model. The "before work" counterpart to Session Reflector (which captures knowledge "after work").
+Same workflow as `/knowledge-prime` but runs as an autonomous subagent. Pinned to Sonnet for consistent quality regardless of session model. The "before work" counterpart to `/session-reflect` (which captures knowledge "after work").
 
-### Session Reflector — On-demand conversation capture
+### `/session-reflect` — On-demand conversation capture
 
-A user-triggered agent that reviews the current conversation and saves insights to Basic Memory with your approval:
+A user-triggered skill that reviews the current conversation and saves insights to Basic Memory with your approval:
 
 > "Reflect on this session" / "Save what we learned" / "Commit this to memory"
 
-Unlike the automatic PreCompact hook (brief, fires under compaction pressure), the reflector is deliberate — it extracts candidates, finds the right target notes, shows a grouped preview, and waits before writing anything. Uses the same `[decision]`, `[lesson]`, `[gotcha]`, `[pattern]`, `[limitation]`, `[breaking]` observation vocabulary as PreCompact for consistency.
+Unlike the automatic PreCompact hook (brief, fires under compaction pressure), `/session-reflect` is deliberate — it extracts candidates, finds the right target notes, shows a grouped preview, and waits before writing anything. Uses the same `[decision]`, `[lesson]`, `[gotcha]`, `[pattern]` observation vocabulary as PreCompact, plus `[limitation]` and `[breaking]` for thoroughness.
 
 ### Hooks — Automated quality guardrails
 
@@ -309,11 +309,12 @@ skills/
     SKILL.md                           Project context priming from BM
   schema-evolve/
     SKILL.md                           Schema drift detection and dual-sync
+  session-reflect/
+    SKILL.md                           On-demand conversation → memory capture
 agents/
   knowledge-gardener.md                Read-only graph auditor (incl. tag alignment)
   knowledge-maintainer.md              Read-write graph enhancer (incl. tag fixes)
   knowledge-primer.md                  Autonomous project context priming
-  session-reflector.md                 On-demand conversation capture
 hooks/
   hooks.json                           PreToolUse, PostToolUse x2,
                                        PostToolUseFailure, PreCompact, SessionStart
@@ -368,7 +369,7 @@ schemas/
  [BM tool failure] -> PostToolUseFailure  -> classified error + recovery guidance
  [context compact] -> PreCompact hook     -> insights saved to BM
  [session start]   -> SessionStart hook   -> graph context + priming hint
- "save insights"   -> session-reflector   -> preview + write to BM
+ /session-reflect  -> session-reflect     -> preview + write to BM
 ```
 
 ## Relationship to upstream

@@ -58,11 +58,11 @@ skill covers tooling only.
 
 | Prefix | BM Directory | Note type | Reference file |
 |--------|-------------|-----------|----------------|
-| `brew` | `brew/` | `brew_formula` | `references/ecosystem-brew.md` |
-| `cask` | `casks/` | `brew_cask` | `references/ecosystem-cask.md` |
-| `action` | `actions/` | `github_action` | `references/ecosystem-action.md` |
-| `docker` | `docker/` | `docker_image` | `references/ecosystem-docker.md` |
-| `vscode` | `vscode/` | `vscode_extension` | `references/ecosystem-vscode.md` |
+| `brew` | `brew/` | `brew_formula` | `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-brew.md` |
+| `cask` | `casks/` | `brew_cask` | `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-cask.md` |
+| `action` | `actions/` | `github_action` | `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-action.md` |
+| `docker` | `docker/` | `docker_image` | `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-docker.md` |
+| `vscode` | `vscode/` | `vscode_extension` | `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-vscode.md` |
 
 ### Step 1: Check for existing note
 
@@ -78,13 +78,15 @@ If found, read the existing note to understand what's already documented:
 read_note(identifier="<prefix>:<name>", include_frontmatter=true, output_format="json")
 ```
 
-**Freshness check:** If the note exists and was updated within the last 60 days
-(check `updated_at` in frontmatter), consider scoping down the research:
-- Skip Tavily security search unless a CVE/supply-chain issue is suspected
-- Skip Raindrop search (bookmarks don't change frequently)
-- Focus on what's changed since the last update
+**Freshness check:** Scope research based on note age (check `updated_at`):
 
-If the note is stale (>60 days) or missing, run the full five-source pipeline.
+| Note age | Sources to run | Sources to skip |
+|----------|---------------|-----------------|
+| Missing or >180 days | All 5 (full pipeline) | None |
+| 60–180 days | All except Raindrop | Raindrop |
+| <60 days | DeepWiki + changelog only | Tavily, Raindrop, Readwise |
+
+Always run the changelog step — version history moves fast.
 
 Note any previous `[gotcha]` or `[security]` observations — these should guide
 which sources to prioritize.
@@ -94,7 +96,7 @@ Append new observations rather than overwriting.
 ### Step 2: Fetch registry data
 
 Delegate to the ecosystem reference file for this step:
-`references/ecosystem-<ecosystem>.md`
+`${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-<ecosystem>.md`
 
 Each reference file explains the registry API or extraction method, required
 fields, and how to find the upstream GitHub repository (for DeepWiki and
@@ -110,7 +112,8 @@ Launch research queries — parallelize where possible:
 **a) DeepWiki — architecture and design (action: and docker: only):**
 
 Use DeepWiki for tools that have upstream GitHub repositories with meaningful
-code to analyze. Skip for `brew:`, `cask:`, and `vscode:`.
+code to analyze. Skip for `brew:` and `cask:` (formulae/casks rarely have
+rich repos). Use for `vscode:` when a public GitHub repo exists.
 
 ```
 ask_question(repo="owner/repo", question="What are the key inputs, outputs, design patterns, gotchas, and security considerations?")
@@ -151,7 +154,7 @@ These are articles the user deliberately saved — high relevance signal.
 **d) Changelog / versions:**
 
 - `action:`: Use GitHub releases — `gh release list --repo <owner>/<repo> --limit 10 2>/dev/null`; if empty, `tavily_extract` on the GitHub CHANGELOG.md
-- `docker:`: Use Docker Hub tags API (see `references/ecosystem-docker.md`) for tag strategy overview
+- `docker:`: Use Docker Hub tags API (see `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-docker.md`) for tag strategy overview
 - `brew:`/`cask:`: Extract version from the formulae.brew.sh API response (already fetched in Step 2)
 - `vscode:`: Extract version from Open VSX API response (already fetched in Step 2)
 
@@ -185,7 +188,7 @@ Use the results to:
 - Avoid duplicating observations already captured in a linked note
 - Discover which engineering patterns or package notes this tool connects to
 
-See `references/note-template-<ecosystem>.md` for the full template. Key
+See `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/note-template-<ecosystem>.md` for the full template. Key
 conventions per tool type:
 
 | Prefix | Title format | Directory | Type |

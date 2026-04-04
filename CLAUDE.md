@@ -13,15 +13,18 @@ A Claude Code plugin (`vp-knowledge`) containing user-owned skills, agents, and 
   plugin.json                        # Plugin manifest
 skills/
   package-intel/SKILL.md             # Six-source multi-ecosystem package research
+    references/                      # 12 files: 6 ecosystem + 6 note templates
   tool-intel/SKILL.md                # Five-source dev-tool research (brew/action/docker/vscode)
+    references/                      # 10 files: 5 ecosystem + 5 note templates
   knowledge-gaps/SKILL.md            # Cross-reference deps + tool manifests vs BM coverage
+    references/                      # 2 files: standard-detection, concept-detection
   knowledge-prime/SKILL.md           # On-demand project context priming from BM
   schema-evolve/SKILL.md             # Frequency-driven schema drift detection and dual-sync
+  session-reflect/SKILL.md           # On-demand conversation → memory capture
 agents/
   knowledge-gardener.md              # Read-only graph health auditor (incl. tag alignment)
   knowledge-maintainer.md            # All-in-one graph enhancer (writes, incl. tag fixes)
   knowledge-primer.md                # Autonomous project context priming
-  session-reflector.md               # On-demand conversation → memory capture
 hooks/
   hooks.json                         # PreToolUse, PostToolUse, PostToolUseFailure, PreCompact, SessionStart
 ```
@@ -30,20 +33,20 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 
 ## Components
 
-### Skills (5)
+### Skills (6)
 
 - **package-intel** — Researches a package via six sources (Basic Memory, DeepWiki, Context7, Tavily, Raindrop, Readwise) and writes/updates a structured prefixed note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer, Python PyPI, and Ruby gems. User-invocable as `/package-intel <pkg>`.
 - **tool-intel** — Researches a developer environment or CI/CD tool via five sources (Basic Memory, DeepWiki for actions/docker, Tavily, Raindrop, Readwise) and writes/updates a structured prefixed note with post-write cross-linking. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), and VSCode extensions (`vscode:`). User-invocable as `/tool-intel <prefix>:<name>`.
 - **knowledge-gaps** — Parses code manifest files (`package.json`, `Cargo.toml`, etc.) and tool manifests (`Brewfile`, `.github/workflows/*.yml`, `Dockerfile`, `.vscode/extensions.json`), checks BM coverage, tiers package gaps by import frequency, lists all undocumented tools, and detects concept-level hub gaps via graph analysis and Readwise reading signals. User-invocable as `/knowledge-gaps`.
 - **knowledge-prime** — Surfaces project-relevant Basic Memory knowledge on demand. Detects the project stack, cross-references deps against BM notes, scores relevance, loads critical observations (`[gotcha]`, `[breaking]`, `[limitation]`), and produces a concise context brief. Supports `--deep` for extended output. User-invocable as `/knowledge-prime`.
 - **schema-evolve** — Detects drift between BM schema definitions and actual note usage via `schema_diff`/`schema_infer`, proposes frequency-driven field additions/removals, and dual-syncs BM notes + local `schemas/` files after approval. User-invocable as `/schema-evolve <type>`.
+- **session-reflect** — Reviews the current conversation, extracts durable insights, finds target notes in Basic Memory, shows a grouped preview, and writes only what the user approves. The deliberate, user-triggered counterpart to the automatic PreCompact hook. User-invocable as `/session-reflect`.
 
-### Agents (4)
+### Agents (3)
 
 - **knowledge-gardener** — Read-only autonomous auditor: inventory, schema validation, orphan detection, relation integrity, stale/duplicate notes, cross-project consistency, tag alignment (step 8). **Never writes or modifies notes.**
-- **knowledge-maintainer** — All-in-one write agent that acts on audit findings. Auto-fixes structural issues (missing sections, broken frontmatter, orphan linking, tag alignment). Confirms before content changes (merging duplicates, rewriting prose, archiving). Auto-runs `/package-intel` for Tier 1 undocumented packages (3+ imports) and `/tool-intel` for undocumented tools from detected manifests. `delete_note` intentionally excluded — use `move_note` to `archive/`. Reactive only — user must explicitly invoke.
-- **knowledge-primer** — Autonomous read-only agent that surfaces project-relevant BM knowledge before work begins. Scans project manifests, cross-references deps against BM, scores relevance, and produces a context brief with key gotchas and coverage gaps. The "before work" counterpart to session-reflector.
-- **session-reflector** — On-demand reflection agent. Reviews the current conversation, extracts durable insights, shows a preview grouped by target note, waits for approval, then writes. Complements the automatic PreCompact hook with a deliberate, user-gated equivalent.
+- **knowledge-maintainer** — All-in-one write agent that acts on audit findings. Auto-fixes structural issues (missing sections, broken frontmatter, orphan linking, tag alignment). Confirms before content changes (merging duplicates, rewriting prose, archiving). Auto-runs `/package-intel` for Tier 1 undocumented packages (3+ imports) and `/tool-intel` for undocumented tools from detected manifests. `delete_note` and `write_note` intentionally excluded — use `move_note` to `archive/`, delegate new notes to `/package-intel` or `/tool-intel` via `Skill`. Reactive only — user must explicitly invoke.
+- **knowledge-primer** — Autonomous read-only agent that surfaces project-relevant BM knowledge before work begins. Scans project manifests, cross-references deps against BM, scores relevance, and produces a context brief with key gotchas and coverage gaps. The "before work" counterpart to `/session-reflect`.
 
 ### Hooks (6)
 
@@ -104,7 +107,7 @@ Skills and agents reference tools from multiple MCP servers. When editing, use e
 
 ## Validation
 
-`npm run check` — runs `check:plugin` (validate-plugin.mjs) + `check:md` (remark) + `check:sh` (shellcheck).
+`npm run check` — runs `check:plugin` (validate-plugin.mjs) + `check:md` (remark) + `check:sh` (shellcheck + shfmt) + `check:hooks` (hook integration tests).
 Shell scripts are validated with `shellcheck` (linting) and `shfmt -d`
 (format verification). Requires `brew install shfmt` if not already present.
 
@@ -117,6 +120,8 @@ and direct file access only for regex operations the CLI cannot express.
 | Script | Purpose | Used by |
 |--------|---------|---------|
 | `audit-scope-leak.sh <bm-root>` | Detect project-specific content (paths, env vars) in cross-project notes | gardener Step 7b |
+| `audit-helpers.sh <subcommand>` | Dispatcher: bm-stats, scope-leak-summary, scope-leak-detail | gardener Step 0.5, 7b |
+| `check-hooks.mjs` | Integration tests verifying each hook emits exactly one JSON object | `npm run check:hooks` |
 
 Scripts output NDJSON (one JSON object per line), use `set -euo pipefail`,
 and pass shellcheck + shfmt. The `check:sh` npm script validates both
@@ -181,7 +186,7 @@ SessionStart/PreCompact `additionalContext` should suggest existing skills (e.g.
 
 ### Three-level invocation pattern
 
-Features that benefit from progressive disclosure can be offered at three levels: (1) SessionStart hook hint (passive, ~1 sentence `additionalContext`), (2) on-demand skill (user-invocable, full workflow), (3) autonomous agent (same workflow, runs as subagent). Not all features need all three levels — use the primer/reflector pair as the reference implementation.
+Features that benefit from progressive disclosure can be offered at three levels: (1) SessionStart hook hint (passive, ~1 sentence `additionalContext`), (2) on-demand skill (user-invocable, full workflow), (3) autonomous agent (same workflow, runs as subagent). Not all features need all three levels — use the knowledge-prime/knowledge-primer pair as the reference implementation. `/session-reflect` is skill-only because its source of truth (the conversation transcript) requires main-session context that agents cannot access.
 
 ### Note structure conventions (for package-intel output)
 
@@ -233,10 +238,10 @@ via the `vp-plugins` marketplace at `voxpelli/vp-claude`.
   feeds vp-beads' `/upstream-tracker`. Friction or bugs discovered during
   research can be logged as upstream issues with matching prefix notation
   (`brew:<name>`, `action:<owner>/<repo>`, etc.).
-- **Capture ↔ synthesis** — `session-reflector` captures in-sprint
+- **Capture ↔ synthesis** — `/session-reflect` captures in-sprint
   discoveries into Basic Memory; at sprint-close, vp-beads' `/retrospective`
-  synthesises those notes into the sprint record. Mental model: session-
-  reflector for in-sprint capture, retrospective for end-of-sprint synthesis.
+  synthesises those notes into the sprint record. Mental model:
+  `/session-reflect` for in-sprint capture, retrospective for end-of-sprint synthesis.
 
 ### Parallel agent orchestration
 

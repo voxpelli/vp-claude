@@ -20,6 +20,7 @@ schema:
   depends_on?: Note, concept this depends on
   contrasts_with?: Note, contrasting approach
   includes?(array): Note, sub-concepts or components
+  relates_to?(array): Note, related concepts or notes
 settings:
   validation: warn
 ---
@@ -47,6 +48,7 @@ Preferred relation labels for concept notes (use consistently):
 - `depends_on [[Concept]]` — concept this depends on
 - `contrasts_with [[Concept]]` — contrasting approach
 - `includes [[Component]]` — sub-concepts or components
+- `relates_to [[Concept]]` — related concepts or notes
 
 ## Observations
 

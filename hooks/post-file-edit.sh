@@ -29,5 +29,6 @@ fi
 # Remind to sync BM when editing schema files
 if [[ "$FILE_PATH" == "${PLUGIN_ROOT}/schemas/"*.md ]]; then
 	BASENAME=$(basename "$FILE_PATH" .md)
-	echo "{\"systemMessage\": \"Schema file edited: ${BASENAME}. Remember to also update the corresponding Basic Memory schema note via edit_note (identifier: main/schema/${BASENAME}), or use /schema-evolve for automated dual-sync.\"}"
+	# Remind to dual-sync schema changes (CLAUDE.md convention: schemas/ and BM must stay in sync)
+	echo "{\"additionalContext\": \"Schema file edited: ${BASENAME}. Remember to also update the corresponding Basic Memory schema note via edit_note (identifier: main/schema/${BASENAME}), or use /schema-evolve for automated dual-sync.\"}"
 fi

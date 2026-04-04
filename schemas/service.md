@@ -13,6 +13,7 @@ schema:
   pattern?(array): string, architectural patterns
   note?: string, additional context
   innovation?(array): string, key innovations
+  architecture?(array): string, technical architecture and design decisions
   created_by?: Note, person or org that created it
   implements?(array): Note, protocols or standards it implements
   relates_to?(array): Note, related services or notes

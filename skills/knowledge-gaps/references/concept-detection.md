@@ -101,7 +101,7 @@ Append after the Domain Standard Coverage section:
 ````
 
 For top concept gaps, suggest creating concept notes manually or via the
-session-reflector agent, since concept notes require more editorial judgment
+`/session-reflect` skill, since concept notes require more editorial judgment
 than package/tool notes.
 
 Add concept gap counts to the Overall Summary:

@@ -7,7 +7,7 @@ Friction, limitations, and capability discoveries found while building vp-knowle
 ### `operation="append"` with `section=` appends to end of file, not end of section
 
 **Discovered:** 2026-03-13 (v0.1.0–v0.2.0 era)
-**Impact:** High — affected knowledge-maintainer, session-reflector, and tool-intel. All
+**Impact:** High — affected knowledge-maintainer, session-reflect, and tool-intel. All
 components initially used `operation="append", section="Observations"` expecting it to
 append at the end of the `## Observations` section. Instead it appends to end of file,
 corrupting note structure.

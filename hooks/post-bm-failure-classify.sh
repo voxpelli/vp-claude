@@ -14,6 +14,8 @@ if [[ -z "$ERROR" ]]; then
 	exit 0
 fi
 
+# Heuristic pattern matching against BM error messages. If BM changes error
+# text formatting, these patterns may need adjustment.
 if echo "$ERROR" | grep -qi "connection refused\|timeout\|unavailable\|ECONNREFUSED"; then
 	MSG="[server-unavailable] Basic Memory MCP server is not responding. Check that it is running and retry."
 elif echo "$ERROR" | grep -qi "not found\|does not exist\|no note\|no such"; then
