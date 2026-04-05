@@ -10,13 +10,13 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 
 ````markdown
 ---
-title: action-<owner>/<repo>
+title: action-<owner>-<repo>
 type: github_action
 tags: [<domain>, ci-cd]
 packages: ["<owner>/<repo>"]
 ---
 
-# action-<owner>/<repo>
+# action-<owner>-<repo>
 
 [`<owner>/<repo>`](https://github.com/<owner>/<repo>) — one-line description
 from action.yml `description` field.
@@ -98,6 +98,6 @@ same pattern is used in the crates/go/pypi templates in package-intel.
 
 ### Relations
 
-- Use `[[action-<owner>/<repo>]]` for related or dependent actions
+- Use `[[action-<owner>-<repo>]]` for related or dependent actions
 - Use `[[docker-<image>]]` if the action uses a Docker container runtime
 - Use `[[npm-<pkg>]]` if the action wraps an npm package

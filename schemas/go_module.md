@@ -23,12 +23,12 @@ Schema for Go module notes — one note per module in the `go/` directory.
 
 ## Conventions
 
-- [convention] Title format: `go-<module/path>` (e.g. `go-github.com/spf13/cobra`)
+- [convention] Title format: `go-<module-path>` (e.g. `go-github.com-spf13-cobra`)
 - [convention] Directory: `go/`
 - [convention] Include a Module Details table with Version, Go version floor, License, module path
 - [convention] `compatibility` should state the minimum Go version and full module path
 - [convention] `pattern` entries are the highest-value observations — real API usage, not docs paraphrase
-- [convention] Relations use `[[go-module/path]]` wiki-link format
+- [convention] Relations use `[[go-module-path]]` wiki-link format
 
 ## Relation Vocabulary
 

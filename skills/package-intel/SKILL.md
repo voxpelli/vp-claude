@@ -76,10 +76,11 @@ One argument: the package identifier with an optional ecosystem prefix.
 | `gem` | `gems/` | `ruby_gem` | `references/ecosystem-gems.md` |
 
 **Title convention:** The user command uses a colon delimiter (`npm:fastify`),
-but the BM note title uses a hyphen (`npm-fastify`). This matches the filename
-BM generates via `sanitize_for_filename()` and enables native Obsidian
-wiki-link resolution. Always construct the BM title by replacing the first
-`:` with `-`.
+but the BM note title replaces all `:` and `/` with `-` (preserving `@` and
+`.`). This matches the filename BM generates and enables native Obsidian
+wiki-link resolution. Examples: `npm:fastify` → `npm-fastify`,
+`npm:@fastify/postgres` → `npm-@fastify-postgres`,
+`go:github.com/gin-gonic/gin` → `go-github.com-gin-gonic-gin`.
 
 ### Step 1: Check for existing note
 
@@ -222,8 +223,8 @@ Key conventions per ecosystem:
 |-----------|-------------|-----------|------|
 | npm | `npm-<name>` | `npm/` | `npm_package` |
 | crate | `crate-<name>` | `crates/` | `crate_package` |
-| go | `go-<module/path>` | `go/` | `go_module` |
-| composer | `composer-<vendor>/<pkg>` | `composer/` | `composer_package` |
+| go | `go-<module-path>` | `go/` | `go_module` |
+| composer | `composer-<vendor>-<pkg>` | `composer/` | `composer_package` |
 | pypi | `pypi-<name>` | `pypi/` | `pypi_package` |
 | gem | `gem-<name>` | `gems/` | `ruby_gem` |
 

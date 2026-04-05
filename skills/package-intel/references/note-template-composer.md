@@ -9,13 +9,13 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 
 ````markdown
 ---
-title: composer-<vendor>/<package>
+title: composer-<vendor>-<package>
 type: composer_package
 tags: [<domain>, <subdomain>]
 packages: ["<vendor>/<package>"]
 ---
 
-# composer-<vendor>/<package>
+# composer-<vendor>-<package>
 
 [`<vendor>/<package>`](https://packagist.org/packages/<vendor>/<package>) —
 one-line description.
@@ -63,7 +63,7 @@ GitHub: [owner/repo](https://github.com/owner/repo) | v<version> | <license>
 ## Relations
 
 - relates_to [[<Related Note Title>]]
-- depends_on [[composer-<vendor>/<dependency>]]
+- depends_on [[composer-<vendor>-<dependency>]]
 ````
 
 ## Field Guidelines

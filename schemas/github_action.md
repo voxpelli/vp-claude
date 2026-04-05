@@ -22,13 +22,13 @@ Schema for GitHub Actions notes — one note per action in the `actions/` direct
 
 ## Conventions
 
-- [convention] Title format: `action-<owner>/<repo>` (e.g. `action-actions/checkout`)
+- [convention] Title format: `action-<owner>-<repo>` (e.g. `action-actions-checkout`)
 - [convention] Directory: `actions/`
 - [convention] Include an Action Details table with Version pinned (SHA or tag), marketplace link
 - [convention] `permission` should list all required `permissions:` keys and their values (read/write)
 - [convention] `gotcha` must include version pinning guidance — SHA pinning vs tag pinning tradeoffs
 - [convention] Supply-chain risk level should be noted in `gotcha` for third-party actions
-- [convention] Relations use `[[action-owner/repo]]` wiki-link format
+- [convention] Relations use `[[action-owner-repo]]` wiki-link format
 
 ## Relation Vocabulary
 

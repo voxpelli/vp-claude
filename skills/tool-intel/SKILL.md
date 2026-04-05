@@ -65,10 +65,11 @@ skill covers tooling only.
 | `vscode` | `vscode/` | `vscode_extension` | `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-vscode.md` |
 
 **Title convention:** The user command uses a colon delimiter (`brew:ripgrep`),
-but the BM note title uses a hyphen (`brew-ripgrep`). This matches the filename
-BM generates via `sanitize_for_filename()` and enables native Obsidian
-wiki-link resolution. Always construct the BM title by replacing the first
-`:` with `-`.
+but the BM note title replaces all `:` and `/` with `-` (preserving `@` and
+`.`). This matches the filename BM generates and enables native Obsidian
+wiki-link resolution. Examples: `brew:ripgrep` → `brew-ripgrep`,
+`action:actions/checkout` → `action-actions-checkout`,
+`docker:grafana/grafana` → `docker-grafana-grafana`.
 
 ### Step 1: Check for existing note
 
@@ -201,7 +202,7 @@ conventions per tool type:
 |--------|-------------|-----------|------|
 | `brew` | `brew-<name>` | `brew/` | `brew_formula` |
 | `cask` | `cask-<name>` | `casks/` | `brew_cask` |
-| `action` | `action-<owner>/<repo>` | `actions/` | `github_action` |
+| `action` | `action-<owner>-<repo>` | `actions/` | `github_action` |
 | `docker` | `docker-<image>` | `docker/` | `docker_image` |
 | `vscode` | `vscode-<publisher>.<ext>` | `vscode/` | `vscode_extension` |
 

@@ -1,11 +1,11 @@
 # Go Module Note Template
 
 Use this template when creating new `go-*` notes with `write_note`. Place in the
-`go/` directory. Go module paths contain slashes, so note storage uses subdirectories.
+`go/` directory.
 
-**Important:** Go module paths contain `/` — the path `github.com/gin-gonic/gin`
-will be stored as a nested path in the `go/` directory. Use path-based wiki-links
-for safety (see Relations section below).
+**Important:** Go module paths contain `/` — replace all slashes with hyphens in
+the note title (e.g., `go-github.com-gin-gonic-gin`). Use title-based wiki-links
+(see Field Guidelines below).
 
 **No wiki-links in observations.** Never use `[[Target]]` in `## Observations`
 lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
@@ -13,13 +13,13 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 
 ````markdown
 ---
-title: go-<module/path>
+title: go-<module-path>
 type: go_module
 tags: [<domain>, <subdomain>]
 packages: ["<module-path>"]
 ---
 
-# go-<module/path>
+# go-<module-path>
 
 [`<module-path>`](https://pkg.go.dev/<module-path>) — one-line description.
 
@@ -68,7 +68,7 @@ require (
 ## Relations
 
 - relates_to [[<Related Note Title>]]
-- depends_on [[go/owner/repo/dependency]]
+- depends_on [[go-owner-repo-dependency]]
 ````
 
 ## Field Guidelines
@@ -83,14 +83,10 @@ For major versions, include the suffix: `["github.com/foo/bar/v2"]`.
 
 Must be `go_module` (snake_case).
 
-### Wiki-link forms for Go modules
+### Wiki-link form for Go modules
 
-Go module paths contain `/` which can complicate wiki-link resolution:
-
-- **Path-based** (preferred): `[[go/github.com/gin-gonic/gin]]`
-- **Title-based** (alternative): `[[go-github.com/gin-gonic/gin]]`
-
-Use path-based linking in `## Relations` to avoid ambiguity.
+Use title-based wiki-links with all slashes replaced by hyphens:
+`[[go-github.com-gin-gonic-gin]]`. This matches the note title directly.
 
 ### Major version suffix gotcha
 

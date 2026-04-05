@@ -91,6 +91,6 @@ The same pattern is used in the crates/go/pypi templates in package-intel.
 
 ### Relations
 
-- Use `[[action-<owner>/<repo>]]` for GitHub Actions that use this image
+- Use `[[action-<owner>-<repo>]]` for GitHub Actions that use this image
 - Use `[[docker-<alt>]]` for alternative images in the same category
 - Use `[[brew-<formula>]]` if there's a Homebrew formula for the same tool

@@ -68,7 +68,5 @@ expose download counts. Omit the `[popularity]` observation for Go modules.
 Go module paths contain `/` slashes which can complicate wiki-links. Use the
 path-based wiki-link form instead of the title form:
 
-- **Preferred** (path-based): `[[go/github.com/gin-gonic/gin]]`
-- **Alternative** (title): `[[go-github.com/gin-gonic/gin]]` — valid but complex
-
-Both forms resolve to the same note. Recommend path-based in the note template.
+Use title-based wiki-links: `[[go-github.com-gin-gonic-gin]]`. Slashes in
+module paths become hyphens, matching the filename BM generates on disk.

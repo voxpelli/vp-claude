@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.1][] - 2026-04-06
+
+### Fixed
+
+- **Slash-to-hyphen in prefixed titles** — extends v0.22.0 to also replace
+  slashes with hyphens in 5 ecosystems that use them: action (`action:actions/checkout`
+  → `action-actions-checkout`), npm scoped (`npm:@fastify/postgres` →
+  `npm-@fastify-postgres`), composer, go, and docker community images. The
+  title rule is now: replace all `:` and `/` with `-`; preserve `@` and `.`.
+  Migration script in `TODO-obsidian-migration.md` updated to handle both
+  colons and slashes in a single run.
+
 ## [0.22.0][] - 2026-04-05
 
 ### Breaking
@@ -746,6 +758,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.22.1]: https://github.com/voxpelli/vp-claude/compare/v0.22.0...v0.22.1
 [0.22.0]: https://github.com/voxpelli/vp-claude/compare/v0.21.1...v0.22.0
 [0.21.1]: https://github.com/voxpelli/vp-claude/compare/v0.21.0...v0.21.1
 [0.21.0]: https://github.com/voxpelli/vp-claude/compare/v0.20.0...v0.21.0

@@ -208,13 +208,15 @@ Features that benefit from progressive disclosure can be offered at three levels
 Users type colon-delimited prefixes in commands (`/package-intel npm:fastify`,
 `/tool-intel brew:ripgrep`). The colon is an unambiguous delimiter — even with
 scoped packages like `npm:@scope/pkg`. Skills parse the colon, then construct
-a hyphenated BM title (`npm-fastify`, `brew-ripgrep`) for all storage
-operations. This matches the filename BM already generates via
-`sanitize_for_filename()` and enables native Obsidian wiki-link resolution.
+the BM title by replacing all `:` and `/` with `-` (preserving `@` and `.`).
+This matches the filename BM generates and enables native Obsidian wiki-link
+resolution. Examples: `npm:fastify` → `npm-fastify`,
+`action:actions/checkout` → `action-actions-checkout`,
+`npm:@fastify/postgres` → `npm-@fastify-postgres`.
 
-**Migration (v0.22.0):** Existing vault notes with colon-prefix titles
-(`npm:fastify`) need a one-time rename — see `TODO-obsidian-migration.md`.
-New notes emitted by the plugin use hyphen titles automatically.
+**Migration (v0.22.0+):** Existing vault notes need a one-time rename — see
+`TODO-obsidian-migration.md`. New notes emitted by the plugin use hyphen
+titles automatically.
 
 ### Note structure conventions (for package-intel output)
 
@@ -235,8 +237,8 @@ New notes emitted by the plugin use hyphen titles automatically.
 |--------|-----------|------|---------------|
 | `brew:` | `brew/` | `brew_formula` | `brew-ripgrep` |
 | `cask:` | `casks/` | `brew_cask` | `cask-warp` |
-| `action:` | `actions/` | `github_action` | `action-actions/checkout` |
-| `docker:` | `docker/` | `docker_image` | `docker-node` |
+| `action:` | `actions/` | `github_action` | `action-actions-checkout` |
+| `docker:` | `docker/` | `docker_image` | `docker-node`, `docker-grafana-grafana` |
 | `vscode:` | `vscode/` | `vscode_extension` | `vscode-esbenp.prettier-vscode` |
 
 - Same three core enrichment layers as package-intel (frontmatter, `## Observations`, `## Relations`) plus a type-specific content section per tool type
