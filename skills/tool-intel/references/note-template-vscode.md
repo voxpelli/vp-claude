@@ -1,7 +1,7 @@
 # VSCode Extension Note Template
 
-Use this template when creating new `vscode:*` notes with `write_note`. Place
-in the `vscode/` directory so it resolves `[[vscode:*]]` wiki-links
+Use this template when creating new `vscode-*` notes with `write_note`. Place
+in the `vscode/` directory so it resolves `[[vscode-*]]` wiki-links
 automatically.
 
 **No wiki-links in observations.** Never use `[[Target]]` in `## Observations`
@@ -10,13 +10,13 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 
 ```markdown
 ---
-title: vscode:<publisher>.<extension-id>
+title: vscode-<publisher>.<extension-id>
 type: vscode_extension
 tags: [<domain>, vscode]
 packages: ["<publisher>.<extension-id>"]
 ---
 
-# vscode:<publisher>.<extension-id>
+# vscode-<publisher>.<extension-id>
 
 [`<publisher>.<extension-id>`](https://open-vsx.org/extension/<publisher>/<extension-id>) — one-line description.
 
@@ -42,14 +42,14 @@ Key settings (add to `settings.json`):
 
 - [requires] Companion CLI tool needed: `<tool-name>` (install via `brew install <tool>` or `npm install -g <pkg>`)
 - [performance] CPU/memory impact, activation events, startup overhead
-- [conflict] Conflicts with: vscode:<other> — reason
+- [conflict] Conflicts with: vscode-<other> — reason
 - [pattern] How this extension is typically configured in a project
 
 ## Relations
 
-- requires [[brew:<companion-cli>]]
-- alternative_to [[vscode:<alternative-extension>]]
-- relates_to [[npm:<companion-package>]]
+- requires [[brew-<companion-cli>]]
+- alternative_to [[vscode-<alternative-extension>]]
+- relates_to [[npm-<companion-package>]]
 ```
 
 ## Field Guidelines
@@ -92,6 +92,6 @@ Fall back to VS Marketplace URL when Open VSX doesn't have it:
 
 ### Relations
 
-- Use `[[brew:<formula>]]` for Homebrew-installable companion CLI tools
-- Use `[[npm:<pkg>]]` for npm-installable companion tools
-- Use `[[vscode:<ext>]]` for conflicting or related extensions
+- Use `[[brew-<formula>]]` for Homebrew-installable companion CLI tools
+- Use `[[npm-<pkg>]]` for npm-installable companion tools
+- Use `[[vscode-<ext>]]` for conflicting or related extensions

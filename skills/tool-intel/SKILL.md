@@ -64,6 +64,12 @@ skill covers tooling only.
 | `docker` | `docker/` | `docker_image` | `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-docker.md` |
 | `vscode` | `vscode/` | `vscode_extension` | `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-vscode.md` |
 
+**Title convention:** The user command uses a colon delimiter (`brew:ripgrep`),
+but the BM note title uses a hyphen (`brew-ripgrep`). This matches the filename
+BM generates via `sanitize_for_filename()` and enables native Obsidian
+wiki-link resolution. Always construct the BM title by replacing the first
+`:` with `-`.
+
 ### Step 1: Check for existing note
 
 <!-- This pattern is mirrored in package-intel — update both when changing -->
@@ -75,7 +81,7 @@ list_directory(dir_name="<ecosystem-dir>", file_name_glob="*<sanitized-name>*")
 
 If found, read the existing note to understand what's already documented:
 ```
-read_note(identifier="<prefix>:<name>", include_frontmatter=true, output_format="json")
+read_note(identifier="<prefix>-<name>", include_frontmatter=true, output_format="json")
 ```
 
 **Freshness check:** Scope research based on note age (check `updated_at`):
@@ -175,7 +181,7 @@ knowledge graph:**
 
 If the tool note already exists (found in Step 1), use its title as the seed:
 ```
-build_context(url="<prefix>:<name>", depth=1, max_related=10)
+build_context(url="<prefix>-<name>", depth=1, max_related=10)
 ```
 
 If the note doesn't exist yet, fall back to a text search:
@@ -193,11 +199,11 @@ conventions per tool type:
 
 | Prefix | Title format | Directory | Type |
 |--------|-------------|-----------|------|
-| `brew` | `brew:<name>` | `brew/` | `brew_formula` |
-| `cask` | `cask:<name>` | `casks/` | `brew_cask` |
-| `action` | `action:<owner>/<repo>` | `actions/` | `github_action` |
-| `docker` | `docker:<image>` | `docker/` | `docker_image` |
-| `vscode` | `vscode:<publisher>.<ext>` | `vscode/` | `vscode_extension` |
+| `brew` | `brew-<name>` | `brew/` | `brew_formula` |
+| `cask` | `cask-<name>` | `casks/` | `brew_cask` |
+| `action` | `action-<owner>/<repo>` | `actions/` | `github_action` |
+| `docker` | `docker-<image>` | `docker/` | `docker_image` |
+| `vscode` | `vscode-<publisher>.<ext>` | `vscode/` | `vscode_extension` |
 
 All tool notes share three core enrichment layers plus a type-specific content section:
 - **Frontmatter** with `packages` array, `type`, and `tags`
@@ -249,7 +255,7 @@ edit_note(
   identifier="<existing-note-title>",
   operation="find_replace",
   find_text="- <last_relation_type> [[<Last Existing Relation>]]",
-  content="- <last_relation_type> [[<Last Existing Relation>]]\n- relates_to [[<prefix>:<tool-name>]]"
+  content="- <last_relation_type> [[<Last Existing Relation>]]\n- relates_to [[<prefix>-<tool-name>]]"
 )
 ```
 

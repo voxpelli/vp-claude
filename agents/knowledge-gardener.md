@@ -241,37 +241,37 @@ are semi-orphans — worth flagging but lower priority.
 
 Search for wiki-links across all package and tool ecosystems. Run in parallel:
 ```
-search_notes(search_type="text", query="[[npm:", page_size=20)
-search_notes(search_type="text", query="[[crate:", page_size=20)
-search_notes(search_type="text", query="[[go:", page_size=20)
-search_notes(search_type="text", query="[[composer:", page_size=20)
-search_notes(search_type="text", query="[[pypi:", page_size=20)
-search_notes(search_type="text", query="[[gem:", page_size=20)
-search_notes(search_type="text", query="[[brew:", page_size=20)
-search_notes(search_type="text", query="[[cask:", page_size=20)
-search_notes(search_type="text", query="[[action:", page_size=20)
-search_notes(search_type="text", query="[[docker:", page_size=20)
-search_notes(search_type="text", query="[[vscode:", page_size=20)
+search_notes(search_type="text", query="[[npm-", page_size=20)
+search_notes(search_type="text", query="[[crate-", page_size=20)
+search_notes(search_type="text", query="[[go-", page_size=20)
+search_notes(search_type="text", query="[[composer-", page_size=20)
+search_notes(search_type="text", query="[[pypi-", page_size=20)
+search_notes(search_type="text", query="[[gem-", page_size=20)
+search_notes(search_type="text", query="[[brew-", page_size=20)
+search_notes(search_type="text", query="[[cask-", page_size=20)
+search_notes(search_type="text", query="[[action-", page_size=20)
+search_notes(search_type="text", query="[[docker-", page_size=20)
+search_notes(search_type="text", query="[[vscode-", page_size=20)
 ```
 
-For each unique wiki-link found (e.g., `[[crate:serde]]`), check if a
+For each unique wiki-link found (e.g., `[[crate-serde]]`), check if a
 corresponding note exists in the ecosystem's BM directory:
 ```
 list_directory(dir_name="<ecosystem-dir>", file_name_glob="*<pkg-slug>*")
 ```
 
 Ecosystem → directory mapping:
-- `[[npm:*]]` → `npm/`
-- `[[crate:*]]` → `crates/`
-- `[[go:*]]` → `go/`
-- `[[composer:*]]` → `composer/`
-- `[[pypi:*]]` → `pypi/`
-- `[[gem:*]]` → `gems/`
-- `[[brew:*]]` → `brew/`
-- `[[cask:*]]` → `casks/`
-- `[[action:*]]` → `actions/`
-- `[[docker:*]]` → `docker/`
-- `[[vscode:*]]` → `vscode/`
+- `[[npm-*]]` → `npm/`
+- `[[crate-*]]` → `crates/`
+- `[[go-*]]` → `go/`
+- `[[composer-*]]` → `composer/`
+- `[[pypi-*]]` → `pypi/`
+- `[[gem-*]]` → `gems/`
+- `[[brew-*]]` → `brew/`
+- `[[cask-*]]` → `casks/`
+- `[[action-*]]` → `actions/`
+- `[[docker-*]]` → `docker/`
+- `[[vscode-*]]` → `vscode/`
 
 Report frequently-referenced but undocumented packages as candidates for
 `/package-intel` with the appropriate prefix (e.g., `/package-intel crate:serde`).
@@ -287,11 +287,11 @@ Glob(pattern="UPSTREAM-*.md")
 ```
 
 For each UPSTREAM file found, extract the package name from the filename
-(e.g., `UPSTREAM-fastify.md` → `npm:fastify`). Cross-reference against
+(e.g., `UPSTREAM-fastify.md` → `npm-fastify`). Cross-reference against
 the wiki-links found in step 4 to surface connections:
 
-- "npm:fastify has a BM note AND 2 open upstream items in this project"
-- "brew:ripgrep is documented in BM but has no local UPSTREAM tracking"
+- "npm-fastify has a BM note AND 2 open upstream items in this project"
+- "brew-ripgrep is documented in BM but has no local UPSTREAM tracking"
 
 This is informational only — report in the Info section. It bridges
 vp-knowledge graph health with vp-beads sprint workflow.
@@ -303,20 +303,20 @@ relation boundary, making text before it the `relation_type`. Search for each
 ecosystem prefix in the observation entity type:
 
 ```
-search_notes(search_type="text", query="[[npm:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[brew:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[crate:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[action:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[docker:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[cask:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[vscode:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[go:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[composer:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[pypi:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[gem:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[npm-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[brew-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[crate-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[action-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[docker-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[cask-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[vscode-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[go-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[composer-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[pypi-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[gem-", entity_types=["observation"], page_size=100)
 ```
 
-Every result is a violation — the observation content contains a `[[prefix:`
+Every result is a violation — the observation content contains a `[[prefix-`
 pattern. Report each under **Critical findings** with the offending note and
 observation text. The fix is to move the wiki-link to `## Relations`.
 
@@ -499,13 +499,13 @@ specific offending text. Suggest the maintainer for remediation.
 - [note-title] — fourth-wall violation (severity B): "This topic has zero presence in Raindrop"
 
 ### Info (maintenance suggestions)
-- [[npm:pkg]] referenced 3 times but has no dedicated note
+- [[npm-pkg]] referenced 3 times but has no dedicated note
 - [note-title] contains project-specific path: lib/routes/foo.js
 - Tag `custom-tag` appears on 3 notes but is not in controlled vocabulary
 
 ### Graph Statistics
 - Total relations: N
-- Unresolved [[npm:*]] links: N
+- Unresolved [[npm-*]] links: N
 - Average observations per note: N
 - Notes with all 3 layers: N/M (X%)
 - Unique tags observed: N

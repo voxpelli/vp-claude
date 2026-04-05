@@ -21,25 +21,25 @@ Schema for Homebrew formula notes — one note per formula in the `brew/` direct
 
 ## Conventions
 
-- [convention] Title format: `brew:<formula-name>` (e.g. `brew:ripgrep`)
+- [convention] Title format: `brew-<formula-name>` (e.g. `brew-ripgrep`)
 - [convention] Directory: `brew/`
 - [convention] Include a Formula Details table with Version, Homepage, License, Binary (if different from formula name)
 - [convention] `purpose` should be one sentence — what problem it solves
 - [convention] `usage` should include the binary name when it differs from the formula name (e.g. ripgrep → rg, git-delta → delta, difftastic → difft)
 - [convention] `gotcha` entries are the highest-value observations — prioritise real-world surprises over docs
-- [convention] Relations use `[[brew:name]]`, `[[cask:name]]`, `[[npm:name]]` wiki-link format
+- [convention] Relations use `[[brew-name]]`, `[[cask-name]]`, `[[npm-name]]` wiki-link format
 
 ## Relation Vocabulary
 
 Preferred relation labels for brew formula notes (use consistently):
-- `see also [[brew:x]]` — related tool in the same space
-- `replaces [[brew:x]]` — this formula supersedes another
-- `runtime dep of [[brew:x]]` — this formula is a declared runtime dependency
-- `pairs with [[brew:x]]` — commonly used together
+- `see also [[brew-x]]` — related tool in the same space
+- `replaces [[brew-x]]` — this formula supersedes another
+- `runtime dep of [[brew-x]]` — this formula is a declared runtime dependency
+- `pairs with [[brew-x]]` — commonly used together
 - `configured in [[dotfiles:modern-cli-stack]]` — wired into the dotfiles setup
 - `Layer 1 alias in [[dotfiles:modern-cli-stack]]` — transparent replacement
 - `Layer 2 nudge in [[dotfiles:modern-cli-stack]]` — hint-only (not alias)
-- `relates to [[brew:x]]` — related formula, cask, or engineering notes
+- `relates to [[brew-x]]` — related formula, cask, or engineering notes
 
 ## Observations
 

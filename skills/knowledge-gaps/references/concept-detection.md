@@ -30,7 +30,7 @@ checking whether `to_entity` is present in each result:
 
 Among the unresolved targets:
 
-- **Prefixed targets** (`npm:*`, `brew:*`, etc.) are already covered by
+- **Prefixed targets** (`npm-*`, `brew-*`, etc.) are already covered by
   Step 10's dead wiki-link detection — skip these.
 - **Non-prefixed targets** are concept/engineering/standard candidates.
   Extract the target name from the relation `title` (format:

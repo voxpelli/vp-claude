@@ -170,7 +170,7 @@ When querying Basic Memory via `search_notes`, choose the right approach:
   (FTS5 strips brackets)
 - **Find wiki-links in observations** — use `search_type="text"` with
   `entity_types=["observation"]` and prefix-specific queries like
-  `query="[[npm:"` (bare `[[` alone doesn't match)
+  `query="[[npm-"` (bare `[[` alone doesn't match)
 - **Find relations involving an entity** — use `entity_types=["relation"]`
   with `query="<entity-title>"` (relation titles index both source and target)
 - **Semantic topic search** — omit `search_type` (default hybrid) for natural
@@ -206,7 +206,7 @@ Features that benefit from progressive disclosure can be offered at three levels
 ### Note structure conventions (for package-intel output)
 
 - Schema note identifiers use the permalink form (e.g. `main/schema/npm_package`), not the title — check with `read_note` before editing
-- Title: `npm:<package-name>` (resolves `[[npm:pkg]]` wiki-links)
+- Title: `npm-<package-name>` (resolves `[[npm-pkg]]` wiki-links)
 - Directory: `npm/`
 - Type: `npm_package` (snake_case — Basic Memory enforces snake_case for all type fields)
 - Three enrichment layers: frontmatter metadata, `## Observations` with `[category]` tags, `## Relations` with `[[wiki-links]]`
@@ -220,11 +220,11 @@ Features that benefit from progressive disclosure can be offered at three levels
 
 | Prefix | Directory | Type | Title example |
 |--------|-----------|------|---------------|
-| `brew:` | `brew/` | `brew_formula` | `brew:ripgrep` |
-| `cask:` | `casks/` | `brew_cask` | `cask:warp` |
-| `action:` | `actions/` | `github_action` | `action:actions/checkout` |
-| `docker:` | `docker/` | `docker_image` | `docker:node` |
-| `vscode:` | `vscode/` | `vscode_extension` | `vscode:esbenp.prettier-vscode` |
+| `brew:` | `brew/` | `brew_formula` | `brew-ripgrep` |
+| `cask:` | `casks/` | `brew_cask` | `cask-warp` |
+| `action:` | `actions/` | `github_action` | `action-actions/checkout` |
+| `docker:` | `docker/` | `docker_image` | `docker-node` |
+| `vscode:` | `vscode/` | `vscode_extension` | `vscode-esbenp.prettier-vscode` |
 
 - Same three core enrichment layers as package-intel (frontmatter, `## Observations`, `## Relations`) plus a type-specific content section per tool type
 - Type-specific content section replaces `## Key APIs`: `## Common Usage` for brew/cask, `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for docker, `## Features` + `## Configuration` for vscode

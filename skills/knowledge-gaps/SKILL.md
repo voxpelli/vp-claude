@@ -121,9 +121,9 @@ For each ecosystem, get all documented packages in one lightweight call:
 list_directory(dir_name="<ecosystem-dir>", depth=1)
 ```
 
-This returns all `<prefix>:*` note titles without loading content.
+This returns all `<prefix>-*` note titles without loading content.
 Cross-reference against the dependency list to classify each package:
-- **Documented** — a `<prefix>:<package-name>` note exists
+- **Documented** — a `<prefix>-<package-name>` note exists
 - **Undocumented** — no dedicated note
 
 For undocumented packages that land in Tier 1 (after step 3), check if
@@ -324,7 +324,7 @@ list_directory(dir_name="vscode", depth=1)
 
 Only query directories for tool types that had manifest entries detected.
 Cross-reference against the parsed identifiers to classify each tool:
-- **Documented** — a `<prefix>:<name>` note exists
+- **Documented** — a `<prefix>-<name>` note exists
 - **Undocumented** — no dedicated note
 
 ### 9. Add tools section to gap report
@@ -339,8 +339,8 @@ Append a tools section to the gap report after the package sections:
 ### Homebrew Formulae: X/Y documented
 | Tool | Status |
 |------|--------|
-| brew:ripgrep | ✓ documented |
-| brew:jq | ✗ undocumented |
+| brew-ripgrep | ✓ documented |
+| brew-jq | ✗ undocumented |
 
 ### Homebrew Casks: X/Y documented
 ...
@@ -390,16 +390,16 @@ Use `entity_types=["relation"]` to search the relation index directly —
 this returns relation objects with `from_entity` and `to_entity` fields:
 
 ```
-search_notes(query="npm:", entity_types=["relation"], output_format="json", page_size=50)
-search_notes(query="crate:", entity_types=["relation"], output_format="json", page_size=50)
-search_notes(query="go:", entity_types=["relation"], output_format="json", page_size=50)
-search_notes(query="composer:", entity_types=["relation"], output_format="json", page_size=50)
-search_notes(query="pypi:", entity_types=["relation"], output_format="json", page_size=50)
-search_notes(query="gem:", entity_types=["relation"], output_format="json", page_size=50)
-search_notes(query="brew:", entity_types=["relation"], output_format="json", page_size=50)
-search_notes(query="action:", entity_types=["relation"], output_format="json", page_size=50)
-search_notes(query="docker:", entity_types=["relation"], output_format="json", page_size=50)
-search_notes(query="vscode:", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="npm-", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="crate-", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="go-", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="composer-", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="pypi-", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="gem-", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="brew-", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="action-", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="docker-", entity_types=["relation"], output_format="json", page_size=50)
+search_notes(query="vscode-", entity_types=["relation"], output_format="json", page_size=50)
 ```
 
 Only query prefixes for ecosystems detected in Steps 0–9.
@@ -422,7 +422,7 @@ Add dead-link findings to the gap report:
 #### Referenced but not documented (dead wiki-links)
 | Link | Referenced in |
 |------|--------------|
-| [[npm:some-pkg]] | npm:fastify, engineering/patterns/http |
+| [[npm-some-pkg]] | npm-fastify, engineering/patterns/http |
 ```
 
 Add dead-link counts to the Overall Summary:

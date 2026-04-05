@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.0][] - 2026-04-05
+
+### Breaking
+
+- **Colon-to-hyphen prefix migration for Obsidian compatibility** — note titles
+  and wiki-links now use hyphen delimiters (`npm-fastify`, `[[npm-fastify]]`)
+  instead of colons (`npm:fastify`, `[[npm:fastify]]`). BM's
+  `sanitize_for_filename()` already produces `npm-fastify.md` on disk — this
+  aligns titles with filenames, enabling native Obsidian wiki-link resolution.
+  User command syntax is unchanged (`/package-intel npm:fastify`). Affects all
+  11 ecosystem prefixes: npm, crate, go, composer, pypi, gem, brew, cask,
+  action, docker, vscode. Existing vault notes require a one-time migration —
+  see `TODO-obsidian-migration.md` for a shell script and verification steps.
+
 ## [0.21.1][] - 2026-04-05
 
 ### Added
@@ -732,6 +746,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.22.0]: https://github.com/voxpelli/vp-claude/compare/v0.21.1...v0.22.0
 [0.21.1]: https://github.com/voxpelli/vp-claude/compare/v0.21.0...v0.21.1
 [0.21.0]: https://github.com/voxpelli/vp-claude/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/voxpelli/vp-claude/compare/v0.19.0...v0.20.0

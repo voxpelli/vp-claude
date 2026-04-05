@@ -22,19 +22,19 @@ Schema for Ruby gem notes — one note per gem in the `gems/` directory.
 
 ## Conventions
 
-- [convention] Title format: `gem:<name>` (e.g. `gem:rails`, `gem:sidekiq`)
+- [convention] Title format: `gem-<name>` (e.g. `gem-rails`, `gem-sidekiq`)
 - [convention] Directory: `gems/`
 - [convention] Include a Gem Details table with Version, Ruby version floor, License, RubyGems link
 - [convention] `gotcha` should always note Ruby version requirements and major API breaks between major versions
-- [convention] Relations use `[[gem:name]]` wiki-link format
+- [convention] Relations use `[[gem-name]]` wiki-link format
 
 ## Relation Vocabulary
 
 Preferred relation labels for gem notes:
-- `see also [[gem:x]]` — related gem in the same space
-- `pairs with [[gem:x]]` — commonly used together
-- `depends on [[gem:x]]` — declared gem dependency
-- `alternative to [[gem:x]]` — competes in the same space
+- `see also [[gem-x]]` — related gem in the same space
+- `pairs with [[gem-x]]` — commonly used together
+- `depends on [[gem-x]]` — declared gem dependency
+- `alternative to [[gem-x]]` — competes in the same space
 
 ## Observations
 

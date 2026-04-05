@@ -1,7 +1,7 @@
 # GitHub Action Note Template
 
-Use this template when creating new `action:*` notes with `write_note`. Place
-in the `actions/` directory so it resolves `[[action:*]]` wiki-links
+Use this template when creating new `action-*` notes with `write_note`. Place
+in the `actions/` directory so it resolves `[[action-*]]` wiki-links
 automatically.
 
 **No wiki-links in observations.** Never use `[[Target]]` in `## Observations`
@@ -10,13 +10,13 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 
 ````markdown
 ---
-title: action:<owner>/<repo>
+title: action-<owner>/<repo>
 type: github_action
 tags: [<domain>, ci-cd]
 packages: ["<owner>/<repo>"]
 ---
 
-# action:<owner>/<repo>
+# action-<owner>/<repo>
 
 [`<owner>/<repo>`](https://github.com/<owner>/<repo>) — one-line description
 from action.yml `description` field.
@@ -62,8 +62,8 @@ Secrets accessed: `<SECRET_NAME>` — what it's used for
 
 ## Relations
 
-- relates_to [[action:<related-action>]]
-- relates_to [[docker:<image-it-uses>]]
+- relates_to [[action-<related-action>]]
+- relates_to [[docker-<image-it-uses>]]
 ````
 
 ## Field Guidelines
@@ -98,6 +98,6 @@ same pattern is used in the crates/go/pypi templates in package-intel.
 
 ### Relations
 
-- Use `[[action:<owner>/<repo>]]` for related or dependent actions
-- Use `[[docker:<image>]]` if the action uses a Docker container runtime
-- Use `[[npm:<pkg>]]` if the action wraps an npm package
+- Use `[[action-<owner>/<repo>]]` for related or dependent actions
+- Use `[[docker-<image>]]` if the action uses a Docker container runtime
+- Use `[[npm-<pkg>]]` if the action wraps an npm package

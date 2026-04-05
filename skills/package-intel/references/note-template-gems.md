@@ -1,7 +1,7 @@
 # RubyGems Note Template
 
-Use this template when creating new `gem:*` notes with `write_note`. Place in
-the `gems/` directory so it resolves `[[gem:*]]` wiki-links automatically.
+Use this template when creating new `gem-*` notes with `write_note`. Place in
+the `gems/` directory so it resolves `[[gem-*]]` wiki-links automatically.
 
 **No wiki-links in observations.** Never use `[[Target]]` in `## Observations`
 lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
@@ -9,13 +9,13 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 
 ````markdown
 ---
-title: gem:<name>
+title: gem-<name>
 type: ruby_gem
 tags: [<domain>, <subdomain>]
 packages: ["<gem-name>"]
 ---
 
-# gem:<name>
+# gem-<name>
 
 [`<name>`](https://rubygems.org/gems/<name>) — one-line description.
 
@@ -64,7 +64,7 @@ end
 ## Relations
 
 - relates_to [[<Related Note Title>]]
-- depends_on [[gem:<dependency>]]
+- depends_on [[gem-<dependency>]]
 ````
 
 ## Field Guidelines

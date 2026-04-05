@@ -33,7 +33,7 @@ Queries six sources in parallel, synthesizes a structured note, and cross-links 
 | Raindrop | Your bookmarked articles (with full content extraction) |
 | Readwise | Your highlights and saved articles about the package |
 
-Plus changelog analysis via GitHub releases. After writing, searches for existing notes that reference the package and adds bidirectional cross-links. The result is an ecosystem-prefixed note (`npm:*`, `crate:*`, `pypi:*`, etc.) with observations, relations, and release highlights — connected into the graph from day one.
+Plus changelog analysis via GitHub releases. After writing, searches for existing notes that reference the package and adds bidirectional cross-links. The result is an ecosystem-prefixed note (`npm-*`, `crate-*`, `pypi-*`, etc.) with observations, relations, and release highlights — connected into the graph from day one.
 
 ### `/tool-intel <prefix>:<name>` — Research any dev tool
 
@@ -62,7 +62,7 @@ Queries five sources in parallel, synthesizes a structured note, and cross-links
 | Raindrop | Your bookmarked articles (with full content extraction) |
 | Readwise | Your highlights and saved articles about the tool |
 
-Plus version/changelog data (GitHub releases for actions, Docker Hub tags for images, API versions for brew/vscode). After writing, searches for existing notes that reference the tool and adds bidirectional cross-links. The result is a prefixed note (`brew:*`, `action:*`, etc.) with type-specific sections — `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for Docker, `## Common Usage` for formulae — plus observations and relations.
+Plus version/changelog data (GitHub releases for actions, Docker Hub tags for images, API versions for brew/vscode). After writing, searches for existing notes that reference the tool and adds bidirectional cross-links. The result is a prefixed note (`brew-*`, `action-*`, etc.) with type-specific sections — `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for Docker, `## Common Usage` for formulae — plus observations and relations.
 
 ### `/knowledge-gaps` — Find undocumented dependencies
 
@@ -118,14 +118,14 @@ Scans your project's manifest files, cross-references dependencies against Basic
 - brew: 12 tools (10 documented, 2 undocumented)
 
 ### Key gotchas
-- **npm:fastify** — [gotcha] reply.send() after reply.redirect() causes hang
-- **npm:pino** — [limitation] redaction doesn't work on nested arrays
+- **npm-fastify** — [gotcha] reply.send() after reply.redirect() causes hang
+- **npm-pino** — [limitation] redaction doesn't work on nested arrays
 
 ### Recent activity
-- 3 notes updated in last 7 days: npm:fastify, npm:pino, brew:ripgrep
+- 3 notes updated in last 7 days: npm-fastify, npm-pino, brew-ripgrep
 
 ### Gaps worth filling
-- Top undocumented dep: `npm:undici` (used in 12 imports)
+- Top undocumented dep: `undici` (used in 12 imports)
 - Run `/knowledge-gaps` for full coverage analysis
 ```
 
@@ -361,8 +361,8 @@ schemas/
 ```
  User says            Triggers              Output
  ─────────────────    ───────────────────    ──────────────────────────
- /package-intel X  -> package-intel skill -> <ecosystem>:X note + cross-links
- /tool-intel X     -> tool-intel skill    -> <type>:X note + cross-links
+ /package-intel X  -> package-intel skill -> <ecosystem>-X note + cross-links
+ /tool-intel X     -> tool-intel skill    -> <type>-X note + cross-links
  /knowledge-gaps   -> knowledge-gaps skill-> gap report (packages, tools, concepts)
                                              + offers /package-intel, /tool-intel
  /knowledge-prime  -> knowledge-prime     -> context brief with gotchas + gaps

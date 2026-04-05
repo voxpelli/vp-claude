@@ -23,20 +23,20 @@ Schema for Python PyPI package notes — one note per package in the `pypi/` dir
 
 ## Conventions
 
-- [convention] Title format: `pypi:<name>` (e.g. `pypi:requests`, `pypi:pydantic`)
+- [convention] Title format: `pypi-<name>` (e.g. `pypi-requests`, `pypi-pydantic`)
 - [convention] Directory: `pypi/`
 - [convention] Include a Package Details table with Version, Python version floor, License, PyPI link
 - [convention] `compatibility` should state the minimum Python version and any platform/runtime constraints (CPython only, etc.)
 - [convention] `gotcha` should note Python 2 vs 3 differences where relevant, and major API breaks between versions
-- [convention] Relations use `[[pypi:name]]` wiki-link format
+- [convention] Relations use `[[pypi-name]]` wiki-link format
 
 ## Relation Vocabulary
 
 Preferred relation labels for PyPI package notes:
-- `see also [[pypi:x]]` — related package in the same space
-- `pairs with [[pypi:x]]` — commonly used together
-- `depends on [[pypi:x]]` — declared package dependency
-- `alternative to [[pypi:x]]` — competes in the same space
+- `see also [[pypi-x]]` — related package in the same space
+- `pairs with [[pypi-x]]` — commonly used together
+- `depends on [[pypi-x]]` — declared package dependency
+- `alternative to [[pypi-x]]` — competes in the same space
 
 ## Observations
 

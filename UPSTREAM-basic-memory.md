@@ -135,6 +135,60 @@ existed all along, was just not used.
 
 ---
 
+### Colon-prefixed titles break Obsidian wiki-link resolution
+
+**Discovered:** 2026-04-05
+**Impact:** High — BM docs claim "Every \[\[wiki link\]\] your AI creates is a clickable
+backlink in Obsidian" but `[[npm:fastify]]` is unresolvable because Obsidian forbids
+colons in filenames on all platforms and resolves by filename first. BM stores
+`npm:fastify` as `npm-fastify.md` but wiki-links use the title form. Affects ~38% of
+notes in graphs using colon-prefixed naming conventions (~280+ notes, ~600+ cross-references).
+Severity: degraded · Ownership: upstream · Workaround: partial — can add `aliases`
+frontmatter for Obsidian discoverability, but Obsidian rewrites links to
+`[[npm-fastify|npm:fastify]]` which then degrades BM's own strict title-based resolution.
+
+---
+
+### `character-handling.md` omits colon documentation
+
+**Discovered:** 2026-04-05
+**Impact:** Minor — BM's `docs/character-handling.md` covers hyphens, case, Unicode,
+and slashes but never mentions colons — the most impactful special character for
+Obsidian interoperability. `sanitize_for_filename()` replaces colons with hyphens
+silently via `re.sub(r'[<>:"|?*]', replacement, text)`.
+Severity: minor · Ownership: upstream · Workaround: full — behavior is predictable
+once discovered.
+
+---
+
+### LinkResolver should resolve wiki-links against aliases/metadata
+
+**Discovered:** 2026-04-05
+**Impact:** High — BM's `_resolve_in_project` cascade is: external_id → permalink →
+exact title match → file_path → fuzzy. Adding an alias-based step (querying
+`entity_metadata` for alias matches) between title and file_path would enable
+Obsidian-compatible wiki-links like `[[npm-fastify]]` to resolve when the title is
+`npm:fastify`. The `entity_metadata` JSON column and open `EntityFrontmatter` model
+already support storing custom fields like `aliases`.
+Ownership: upstream · Workaround: none — no way to resolve by alias currently.
+
+---
+
+### Phased Obsidian colon-compatibility fix (Upstream Opportunity)
+
+**Discovered:** 2026-04-05
+**Impact:** High — a 3-phase approach that benefits all BM users with non-filename-safe
+titles: (1) add `aliases` frontmatter to prefixed notes for Obsidian discoverability,
+(2) upstream PR adding alias-based resolution to LinkResolver, (3) gradual wiki-link
+migration from `[[npm:fastify]]` to `[[npm-fastify]]`. Phase 2 is the key upstream
+contribution — it closes the gap between BM's title-based and Obsidian's filename-based
+resolution models.
+Source: vp-claude research session 2026-04-05 · Merge readiness: needs-redesign ·
+Ownership: shared · Workaround: partial — aliases provide Obsidian discoverability
+but don't fix existing body wiki-links.
+
+---
+
 ### `bm project info` exposes `most_connected_entities` and `total_unresolved_relations`
 
 **Discovered:** 2026-03-30 (DeepWiki research for concept gap detection)

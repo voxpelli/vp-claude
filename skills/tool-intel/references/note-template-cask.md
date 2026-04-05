@@ -1,7 +1,7 @@
 # Homebrew Cask Note Template
 
-Use this template when creating new `cask:*` notes with `write_note`. Place in
-the `casks/` directory so it resolves `[[cask:*]]` wiki-links automatically.
+Use this template when creating new `cask-*` notes with `write_note`. Place in
+the `casks/` directory so it resolves `[[cask-*]]` wiki-links automatically.
 
 **No wiki-links in observations.** Never use `[[Target]]` in `## Observations`
 lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
@@ -9,13 +9,13 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 
 ```markdown
 ---
-title: cask:<cask-name>
+title: cask-<cask-name>
 type: brew_cask
 tags: [<domain>, <category>]
 packages: ["<cask-name>"]
 ---
 
-# cask:<cask-name>
+# cask-<cask-name>
 
 [`<cask-name>`](https://formulae.brew.sh/cask/<cask-name>) — one-line
 description from the cask's `desc` field.
@@ -39,8 +39,8 @@ Installs: <app-name>.app to /Applications
 
 ## Relations
 
-- alternative_to [[cask:<alternative>]]
-- relates_to [[brew:<cli-equivalent>]]
+- alternative_to [[cask-<alternative>]]
+- relates_to [[brew-<cli-equivalent>]]
 ```
 
 ## Field Guidelines
@@ -75,5 +75,5 @@ because the app manages updates itself.
 
 ### Relations
 
-- Use `[[brew:<name>]]` for a CLI formula equivalent (e.g., cask:warp → brew:warp might not exist, but cask:docker → brew:docker does)
-- Use `[[cask:<alternative>]]` for competing GUI tools in the same category
+- Use `[[brew-<name>]]` for a CLI formula equivalent (e.g., cask:warp → brew-warp might not exist, but cask:docker → brew-docker does)
+- Use `[[cask-<alternative>]]` for competing GUI tools in the same category

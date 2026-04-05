@@ -1,6 +1,6 @@
 ---
 name: package-intel
-description: "This skill should be used when the user asks to 'research package', 'package intel', 'what does [npm-pkg] do', 'add package to knowledge graph', 'enrich [pkg]', when adding depends_on [[npm:*]] relations, 'research crate', 'what does [crate] do', 'crate intel', 'rust package', 'pypi package', 'python package', 'go module', 'golang package', 'composer package', 'php package', 'ruby gem', 'gem intel'. Researches a package using six-source enrichment (DeepWiki, Context7, Tavily, Raindrop, Readwise, changelog) and creates/updates a structured Basic Memory note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, and Ruby gems."
+description: "This skill should be used when the user asks to 'research package', 'package intel', 'what does [npm-pkg] do', 'add package to knowledge graph', 'enrich [pkg]', when adding depends_on [[npm-*]] relations, 'research crate', 'what does [crate] do', 'crate intel', 'rust package', 'pypi package', 'python package', 'go module', 'golang package', 'composer package', 'php package', 'ruby gem', 'gem intel'. Researches a package using six-source enrichment (DeepWiki, Context7, Tavily, Raindrop, Readwise, changelog) and creates/updates a structured Basic Memory note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, and Ruby gems."
 user-invocable: true
 allowed-tools:
   - Bash
@@ -75,6 +75,12 @@ One argument: the package identifier with an optional ecosystem prefix.
 | `pypi` | `pypi/` | `pypi_package` | `references/ecosystem-pypi.md` |
 | `gem` | `gems/` | `ruby_gem` | `references/ecosystem-gems.md` |
 
+**Title convention:** The user command uses a colon delimiter (`npm:fastify`),
+but the BM note title uses a hyphen (`npm-fastify`). This matches the filename
+BM generates via `sanitize_for_filename()` and enables native Obsidian
+wiki-link resolution. Always construct the BM title by replacing the first
+`:` with `-`.
+
 ### Step 1: Check for existing note
 
 <!-- This pattern is mirrored in tool-intel — update both when changing -->
@@ -86,7 +92,7 @@ list_directory(dir_name="<ecosystem-dir>", file_name_glob="*<sanitized-pkg-name>
 
 If found, read the existing note to understand what's already documented:
 ```
-read_note(identifier="<prefix>:<package-name>", include_frontmatter=true, output_format="json")
+read_note(identifier="<prefix>-<package-name>", include_frontmatter=true, output_format="json")
 ```
 
 **Freshness check:** Scope research based on note age (check `updated_at`):
@@ -214,12 +220,12 @@ Key conventions per ecosystem:
 
 | Ecosystem | Title format | Directory | Type |
 |-----------|-------------|-----------|------|
-| npm | `npm:<name>` | `npm/` | `npm_package` |
-| crate | `crate:<name>` | `crates/` | `crate_package` |
-| go | `go:<module/path>` | `go/` | `go_module` |
-| composer | `composer:<vendor>/<pkg>` | `composer/` | `composer_package` |
-| pypi | `pypi:<name>` | `pypi/` | `pypi_package` |
-| gem | `gem:<name>` | `gems/` | `ruby_gem` |
+| npm | `npm-<name>` | `npm/` | `npm_package` |
+| crate | `crate-<name>` | `crates/` | `crate_package` |
+| go | `go-<module/path>` | `go/` | `go_module` |
+| composer | `composer-<vendor>/<pkg>` | `composer/` | `composer_package` |
+| pypi | `pypi-<name>` | `pypi/` | `pypi_package` |
+| gem | `gem-<name>` | `gems/` | `ruby_gem` |
 
 All notes use three enrichment layers:
 - **Frontmatter** with `packages` array, `type`, and `tags`
@@ -279,7 +285,7 @@ edit_note(
   identifier="<existing-note-title>",
   operation="find_replace",
   find_text="- <last_relation_type> [[<Last Existing Relation>]]",
-  content="- <last_relation_type> [[<Last Existing Relation>]]\n- relates_to [[<prefix>:<package-name>]]"
+  content="- <last_relation_type> [[<Last Existing Relation>]]\n- relates_to [[<prefix>-<package-name>]]"
 )
 ```
 

@@ -23,22 +23,22 @@ Schema for Rust crate notes — one note per crate in the `crates/` directory.
 
 ## Conventions
 
-- [convention] Title format: `crate:<crate-name>` (e.g. `crate:serde`, `crate:anyhow`)
+- [convention] Title format: `crate-<crate-name>` (e.g. `crate-serde`, `crate-anyhow`)
 - [convention] Directory: `crates/`
 - [convention] Include a Crate Details table with Version, MSRV, License, crates.io link
 - [convention] `compatibility` should always state MSRV and whether the project's rust-version satisfies it
 - [convention] `pattern` entries are the highest-value observations — real API usage, not just docs paraphrase
 - [convention] `convention` entries are project-specific — how this project actually uses the crate
 - [convention] `gotcha` entries should note compile errors, surprising trait requirements, and feature flag traps
-- [convention] Relations use `[[crate:name]]` wiki-link format
+- [convention] Relations use `[[crate-name]]` wiki-link format
 
 ## Relation Vocabulary
 
 Preferred relation labels for crate notes:
-- `see also [[crate:x]]` — related crate in the same space
-- `pairs with [[crate:x]]` — commonly used together (e.g. anyhow + thiserror)
-- `depends on [[crate:x]]` — declared dependency
-- `alternative to [[crate:x]]` — competes in the same space
+- `see also [[crate-x]]` — related crate in the same space
+- `pairs with [[crate-x]]` — commonly used together (e.g. anyhow + thiserror)
+- `depends on [[crate-x]]` — declared dependency
+- `alternative to [[crate-x]]` — competes in the same space
 - `application pattern in [[engineering/x]]` — links to a patterns note using this crate
 
 ## Observations

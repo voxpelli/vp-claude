@@ -187,17 +187,17 @@ Produce a structured context brief:
 - brew: 12 tools (10 documented, 2 undocumented)
 
 ### Key gotchas
-- **npm:fastify** — [gotcha] reply.send() after reply.redirect() causes hang
-- **npm:pino** — [limitation] redaction doesn't work on nested arrays
+- **npm-fastify** — [gotcha] reply.send() after reply.redirect() causes hang
+- **npm-pino** — [limitation] redaction doesn't work on nested arrays
 
 ### Other warnings
-- **npm:helmet** — [gotcha] CSP defaults are permissive — tighten for production
+- **npm-helmet** — [gotcha] CSP defaults are permissive — tighten for production
 
 ### Recent activity
-- 3 notes updated in last 7 days: npm:fastify, npm:pino, brew:ripgrep
+- 3 notes updated in last 7 days: npm-fastify, npm-pino, brew-ripgrep
 
 ### Gaps worth filling
-- Top undocumented dep: `npm:undici`
+- Top undocumented dep: `undici`
 - Run `/knowledge-gaps` for full coverage analysis
 - Run `/package-intel undici` to document the top gap
 ````

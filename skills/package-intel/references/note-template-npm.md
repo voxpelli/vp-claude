@@ -1,7 +1,7 @@
 # npm Package Note Template
 
-Use this template when creating new `npm:*` notes with `write_note`. Place in the
-`npm/` directory so it resolves `[[npm:*]]` wiki-links automatically.
+Use this template when creating new `npm-*` notes with `write_note`. Place in the
+`npm/` directory so it resolves `[[npm-*]]` wiki-links automatically.
 
 **No wiki-links in observations.** Never use `[[Target]]` in `## Observations`
 lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
@@ -9,13 +9,13 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 
 ````markdown
 ---
-title: npm:<package-name>
+title: npm-<package-name>
 type: npm_package
 tags: [<domain>, <subdomain>]
 packages: ["<npm-package-name>"]
 ---
 
-# npm:<package-name>
+# npm-<package-name>
 
 [`<pkg>`](https://www.npmjs.com/package/<pkg>) — one-line description from
 npm or README.
@@ -51,7 +51,7 @@ GitHub: [owner/repo](https://github.com/owner/repo) | v<version> | <license>
 ## Relations
 
 - relates_to [[<Related Note Title>]]
-- depends_on [[npm:<dependency>]]
+- depends_on [[npm-<dependency>]]
 ````
 
 ## Field Guidelines

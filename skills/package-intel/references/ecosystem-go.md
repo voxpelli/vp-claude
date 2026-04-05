@@ -69,6 +69,6 @@ Go module paths contain `/` slashes which can complicate wiki-links. Use the
 path-based wiki-link form instead of the title form:
 
 - **Preferred** (path-based): `[[go/github.com/gin-gonic/gin]]`
-- **Alternative** (title): `[[go:github.com/gin-gonic/gin]]` — valid but complex
+- **Alternative** (title): `[[go-github.com/gin-gonic/gin]]` — valid but complex
 
 Both forms resolve to the same note. Recommend path-based in the note template.

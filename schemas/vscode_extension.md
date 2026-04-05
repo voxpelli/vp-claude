@@ -20,20 +20,20 @@ Schema for VSCode extension notes — one note per extension in the `vscode/` di
 
 ## Conventions
 
-- [convention] Title format: `vscode:<publisher>.<ext>` (e.g. `vscode:esbenp.prettier-vscode`)
+- [convention] Title format: `vscode-<publisher>.<ext>` (e.g. `vscode-esbenp.prettier-vscode`)
 - [convention] Directory: `vscode/`
 - [convention] Include an Extension Details table with Version, Publisher, Marketplace link
 - [convention] `config` should cover workspace vs user scope settings and their defaults
 - [convention] `gotcha` should note activation events — extension activating on every file type can hurt startup time
-- [convention] Relations use `[[vscode:publisher.ext]]` wiki-link format
+- [convention] Relations use `[[vscode-publisher.ext]]` wiki-link format
 
 ## Relation Vocabulary
 
 Preferred relation labels for VSCode extension notes:
-- `see also [[vscode:x]]` — related extension in the same space
-- `pairs with [[vscode:x]]` — commonly installed together
-- `conflicts with [[vscode:x]]` — known incompatibility
-- `alternative to [[vscode:x]]` — competes in the same space
+- `see also [[vscode-x]]` — related extension in the same space
+- `pairs with [[vscode-x]]` — commonly installed together
+- `conflicts with [[vscode-x]]` — known incompatibility
+- `alternative to [[vscode-x]]` — competes in the same space
 
 ## Observations
 

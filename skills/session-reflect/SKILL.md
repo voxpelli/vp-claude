@@ -104,7 +104,7 @@ Show a grouped preview before writing anything:
 ````markdown
 ## Proposed Memory Captures
 
-### Appending to: npm:fastify
+### Appending to: npm-fastify
 - [gotcha] The `reply.send()` call does not halt execution — always `return reply.send()` to avoid double-send errors
 - [pattern] Use `fastify.register()` with `prefix` option for route namespacing
 
@@ -160,7 +160,7 @@ Summarize what was written:
 ## Reflection Complete
 
 Saved N observations across M notes:
-- npm:fastify — 2 observations added
+- npm-fastify — 2 observations added
 - engineering/agents/... — 1 observation added
 - [new] engineering/agents/session-reflect-patterns — created
 

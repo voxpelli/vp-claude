@@ -1,7 +1,7 @@
 # Docker Image Note Template
 
-Use this template when creating new `docker:*` notes with `write_note`. Place
-in the `docker/` directory so it resolves `[[docker:*]]` wiki-links
+Use this template when creating new `docker-*` notes with `write_note`. Place
+in the `docker/` directory so it resolves `[[docker-*]]` wiki-links
 automatically.
 
 **No wiki-links in observations.** Never use `[[Target]]` in `## Observations`
@@ -10,13 +10,13 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 
 ````markdown
 ---
-title: docker:<image>
+title: docker-<image>
 type: docker_image
 tags: [<domain>, containers]
 packages: ["<image>"]
 ---
 
-# docker:<image>
+# docker-<image>
 
 [`<image>`](https://hub.docker.com/_/<image>) — one-line description from
 Docker Hub.
@@ -47,12 +47,12 @@ Key included tools: <list any pre-installed tools like bash, curl, etc.>
 - [security] Non-root user recommended: add `USER <name>` in your Dockerfile
 - [size] Alpine variant reduces image size by ~X% but lacks glibc (may break native addons)
 - [gotcha] Surprising behavior or common misconfiguration
-- [pattern] Typical usage in Dockerfile — `FROM docker:<image> AS builder`
+- [pattern] Typical usage in Dockerfile — `FROM docker-<image> AS builder`
 
 ## Relations
 
-- relates_to [[action:<action-that-uses-this-image>]]
-- alternative_to [[docker:<alternative-image>]]
+- relates_to [[action-<action-that-uses-this-image>]]
+- alternative_to [[docker-<alternative-image>]]
 ````
 
 ## Field Guidelines
@@ -91,6 +91,6 @@ The same pattern is used in the crates/go/pypi templates in package-intel.
 
 ### Relations
 
-- Use `[[action:<owner>/<repo>]]` for GitHub Actions that use this image
-- Use `[[docker:<alt>]]` for alternative images in the same category
-- Use `[[brew:<formula>]]` if there's a Homebrew formula for the same tool
+- Use `[[action-<owner>/<repo>]]` for GitHub Actions that use this image
+- Use `[[docker-<alt>]]` for alternative images in the same category
+- Use `[[brew-<formula>]]` if there's a Homebrew formula for the same tool

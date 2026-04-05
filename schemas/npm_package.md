@@ -35,13 +35,13 @@ Each note documents a single npm package with six-source enrichment
 
 ## Frontmatter Conventions
 
-- `title: npm:<package-name>` — resolves `[[npm:pkg]]` wiki-links
+- `title: npm-<package-name>` — resolves `[[npm-pkg]]` wiki-links
 - `packages: ["<npm-package-name>"]` — exactly one package per entity note
 - `tags: [<domain>, <subdomain>]` — broad categorization
 
 ## Observations
 
 - [convention] One package per entity note — cross-package knowledge belongs in engineering/ notes
-- [convention] Title format `npm:<package-name>` enables automatic wiki-link resolution
+- [convention] Title format `npm-<package-name>` enables automatic wiki-link resolution
 - [convention] Release Highlights: change-type first, linked version `([vX.Y.Z](url), date)`
 - [convention] Curate aggressively — only changes relevant to our projects, not a changelog mirror

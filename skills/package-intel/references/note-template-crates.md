@@ -1,7 +1,7 @@
 # Rust Crate Note Template
 
-Use this template when creating new `crate:*` notes with `write_note`. Place in
-the `crates/` directory so it resolves `[[crate:*]]` wiki-links automatically.
+Use this template when creating new `crate-*` notes with `write_note`. Place in
+the `crates/` directory so it resolves `[[crate-*]]` wiki-links automatically.
 
 **No wiki-links in observations.** Never use `[[Target]]` in `## Observations`
 lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
@@ -9,13 +9,13 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 
 ````markdown
 ---
-title: crate:<name>
+title: crate-<name>
 type: crate_package
 tags: [<domain>, <subdomain>]
 packages: ["<crate-name>"]
 ---
 
-# crate:<name>
+# crate-<name>
 
 [`<name>`](https://crates.io/crates/<name>) — one-line description from
 crates.io or README.
@@ -63,7 +63,7 @@ GitHub: [owner/repo](https://github.com/owner/repo) | v<version> | <license>
 ## Relations
 
 - relates_to [[<Related Note Title>]]
-- depends_on [[crate:<dependency>]]
+- depends_on [[crate-<dependency>]]
 ````
 
 ## Field Guidelines

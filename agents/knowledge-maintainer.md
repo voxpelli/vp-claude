@@ -68,7 +68,7 @@ fix them. You are the write-capable counterpart to the read-only gardener.
 - Add `[category]` formatting to unformatted observation lines
 - Fix `type` frontmatter to match the correct schema (e.g., `npm-package` → `npm_package`)
 - Link orphan notes to related notes via `## Relations`
-- Add missing `[[wiki-links]]` where two notes clearly reference each other
+- Add missing `[[wiki-links]]` (hyphen-prefixed, e.g., `[[npm-fastify]]`) where two notes clearly reference each other
 - Run `/package-intel` for Tier 1 undocumented packages (3+ imports in codebase)
 
 **Confirm before applying** (content-level, higher-risk):
@@ -157,7 +157,7 @@ schema categories depending on content. Present these grouped in step 4
 (confirmation items) with the observation text so the user can pick the right
 target.
 
-Log all category renames in the summary: "brew:ripgrep: \[install\] → \[usage\]
+Log all category renames in the summary: "brew-ripgrep: \[install\] → \[usage\]
 (1 observation)".
 
 #### 2b. Fix tag alignment
@@ -188,7 +188,7 @@ list can be removed without confirmation:
 - `concept` tag on concept-type notes
 - `standard` tag on standard-type notes
 - `service` tag on service-type notes
-- Self-referential product names (e.g., `vite` tag on `npm:vite` note)
+- Self-referential product names (e.g., `vite` tag on `npm-vite` note)
 - `legacy`/`archived` tags (should be `status:` frontmatter)
 
 Person names used as tags should be converted to `## Relations` wiki-links
@@ -203,8 +203,8 @@ For tool-type notes missing their required ecosystem tag:
 - docker\_image notes → add `docker` tag
 - vscode\_extension notes → add `vscode` tag
 
-Log all tag changes in the summary: "brew:ripgrep: added missing `brew` tag",
-"npm:fastify: `node-js` → `nodejs`".
+Log all tag changes in the summary: "brew-ripgrep: added missing `brew` tag",
+"npm-fastify: `node-js` → `nodejs`".
 
 #### 2c. Fix other structural issues
 
@@ -248,7 +248,7 @@ edit_note(
   identifier="orphan-note",
   operation="find_replace",
   find_text="- relates_to [[Last Existing Relation]]",
-  content="- relates_to [[Last Existing Relation]]\n- relates_to [[Related Note]]"
+  content="- relates_to [[Last Existing Relation]]\n- relates_to [[Related-Note]]"
 )
 ```
 
@@ -263,22 +263,22 @@ line of the section instead.
 `[[` becomes `relation_type` (max 200 chars). Search all ecosystems:
 
 ```
-search_notes(search_type="text", query="[[npm:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[brew:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[cask:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[action:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[docker:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[vscode:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[go:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[composer:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[pypi:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[gem:", entity_types=["observation"], page_size=100)
-search_notes(search_type="text", query="[[crate:", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[npm-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[brew-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[cask-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[action-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[docker-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[vscode-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[go-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[composer-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[pypi-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[gem-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[crate-", entity_types=["observation"], page_size=100)
 ```
 
 For each hit, read the parent note and apply two `edit_note` calls: (1) strip
 `[[...]]` from the observation line replacing with plain text, (2) add the
-reference as `relates_to [[prefix:name]]` in `## Relations` if not already
+reference as `relates_to [[prefix-name]]` in `## Relations` if not already
 present. This is a structural auto-fix — no confirmation needed.
 
 #### 2e. Note quality check (fourth-wall)
@@ -355,7 +355,7 @@ For items requiring confirmation, present them grouped:
 ## Needs Your Approval
 
 ### Duplicate merges
-1. **npm:lodash** and **npm:lodash-es** — propose merging into single note
+1. **npm-lodash** and **npm-lodash-es** — propose merging into single note
    covering both. [Preview: ...]
 
 ### Notes to archive
@@ -363,10 +363,10 @@ For items requiring confirmation, present them grouped:
    Archive to `archive/`?
 
 ### Content rewrites
-3. **npm:express** — observations are vague. Proposed improvements: [...]
+3. **npm-express** — observations are vague. Proposed improvements: [...]
 
 ### Observation removals
-4. **npm:got** — `[gotcha] redirect loop on HTTP/2` fixed in v14.0.0.
+4. **npm-got** — `[gotcha] redirect loop on HTTP/2` fixed in v14.0.0.
    Recommend: annotate as resolved, move to `### Resolved` subsection.
 
 Approve all, or specify numbers to approve individually.
@@ -405,7 +405,7 @@ Report everything done:
 - Created 2 new npm notes via /package-intel
 
 ### Applied after confirmation (N items)
-- Merged npm:lodash + npm:lodash-es
+- Merged npm-lodash + npm-lodash-es
 - Archived old-api-design
 
 ### Skipped / Deferred
@@ -433,8 +433,8 @@ Same principles as the knowledge-gardener:
   genuinely distinct, ask rather than merge.
 - **Preserve information**: Never delete content without confirmation. When
   merging, ensure no observations or relations are lost.
-- **One note per package**: Each ecosystem namespace (`npm:*`, `crate:*`,
-  `go:*`, `composer:*`, `pypi:*`, `gem:*`) expects one note per package.
+- **One note per package**: Each ecosystem namespace (`npm-*`, `crate-*`,
+  `go-*`, `composer-*`, `pypi-*`, `gem-*`) expects one note per package.
   If duplicates exist, merge into the one with richer content.
 - **Link liberally**: When adding relations, err on the side of more links.
   A well-connected graph is more valuable than a sparse one.

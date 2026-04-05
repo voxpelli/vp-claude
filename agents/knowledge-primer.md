@@ -181,17 +181,17 @@ Produce the context brief:
 - brew: N tools (X documented, Y undocumented)
 
 ### Key gotchas
-- **npm:pkg** — [gotcha] description
-- **npm:pkg** — [limitation] description
+- **npm-pkg** — [gotcha] description
+- **npm-pkg** — [limitation] description
 
 ### Other warnings
-- **prefix:pkg** — [gotcha] description from a non-dependency note
+- **prefix-pkg** — [gotcha] description from a non-dependency note
 
 ### Recent activity
 - N notes updated in last 7 days: list
 
 ### Gaps worth filling
-- Top undocumented dep: `prefix:name` (N imports)
+- Top undocumented dep: `prefix-name` (N imports)
 - Run `/knowledge-gaps` for full coverage analysis
 - Run `/package-intel <pkg>` to document the top gap
 ````

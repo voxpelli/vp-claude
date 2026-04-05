@@ -22,19 +22,19 @@ Schema for PHP Composer package notes — one note per package in the `composer/
 
 ## Conventions
 
-- [convention] Title format: `composer:<vendor>/<pkg>` (e.g. `composer:laravel/framework`)
+- [convention] Title format: `composer-<vendor>/<pkg>` (e.g. `composer-laravel/framework`)
 - [convention] Directory: `composer/`
 - [convention] Include a Package Details table with Version, PHP version floor, License, Packagist link
 - [convention] `gotcha` should always note PHP version requirements and major breaking-change history
-- [convention] Relations use `[[composer:vendor/pkg]]` wiki-link format
+- [convention] Relations use `[[composer-vendor/pkg]]` wiki-link format
 
 ## Relation Vocabulary
 
 Preferred relation labels for Composer package notes:
-- `see also [[composer:x]]` — related package in the same space
-- `pairs with [[composer:x]]` — commonly used together
-- `depends on [[composer:x]]` — declared Composer dependency
-- `alternative to [[composer:x]]` — competes in the same space
+- `see also [[composer-x]]` — related package in the same space
+- `pairs with [[composer-x]]` — commonly used together
+- `depends on [[composer-x]]` — declared Composer dependency
+- `alternative to [[composer-x]]` — competes in the same space
 
 ## Observations
 

@@ -1,7 +1,7 @@
 # PyPI (Python) Package Note Template
 
-Use this template when creating new `pypi:*` notes with `write_note`. Place in
-the `pypi/` directory so it resolves `[[pypi:*]]` wiki-links automatically.
+Use this template when creating new `pypi-*` notes with `write_note`. Place in
+the `pypi/` directory so it resolves `[[pypi-*]]` wiki-links automatically.
 
 **No wiki-links in observations.** Never use `[[Target]]` in `## Observations`
 lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
@@ -9,13 +9,13 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 
 ````markdown
 ---
-title: pypi:<name>
+title: pypi-<name>
 type: pypi_package
 tags: [<domain>, <subdomain>]
 packages: ["<pypi-package-name>"]
 ---
 
-# pypi:<name>
+# pypi-<name>
 
 [`<name>`](https://pypi.org/project/<name>/) — one-line description.
 
@@ -66,7 +66,7 @@ dependencies = [
 ## Relations
 
 - relates_to [[<Related Note Title>]]
-- depends_on [[pypi:<dependency>]]
+- depends_on [[pypi-<dependency>]]
 ````
 
 ## Field Guidelines
