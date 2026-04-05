@@ -34,6 +34,7 @@ tools:
   - Read
   - Glob
   - mcp__basic-memory__read_note
+  - mcp__basic-memory__search_notes
   - mcp__basic-memory__build_context
   - mcp__basic-memory__list_directory
   - mcp__basic-memory__recent_activity
@@ -127,6 +128,41 @@ With `--deep`, also include `[pattern]`, `[feature]`, and `[usage]`.
 **Token budget:** 800 tokens (2000 with `--deep`).
 Priority: `[gotcha]` > `[breaking]` > `[limitation]` > `[pattern]`.
 
+### 4b. Observation sweep (supplementary)
+
+Search for critical observations beyond the top-scored notes:
+
+```
+search_notes(query="gotcha breaking limitation", search_type="text", entity_types=["observation"], page_size=10)
+```
+
+Note: BM's search treats space-separated terms and `OR` identically (hybrid
+search, not strict FTS5 boolean). The query above is equivalent to
+`"gotcha OR breaking OR limitation"` — use the simpler form.
+
+**Post-filter:** Keep only observations whose content starts with `[gotcha]`,
+`[breaking]`, or `[limitation]`. Discard others — the text query matches
+these words anywhere, including prose mentions that are not category tags.
+
+**Deduplication:** Build a set of note titles loaded in Step 4. Discard
+observations from notes already in that set — Step 4 extracted their critical
+observations in full context. Keep only observations from new notes.
+
+**Token budget:** 200 tokens (400 with `--deep`), separate from Step 4's
+800/2000 budget. Prioritize `[gotcha]` > `[breaking]` > `[limitation]`.
+
+**Output:** Swept observations appear in a separate `### Other warnings`
+section in the brief (Step 6), after `### Key gotchas`. Include the parent
+note title as attribution. **Max 3 entries** to protect the "scannable in
+30 seconds" goal. Omit the section entirely if no new observations survive
+filtering.
+
+If `search_notes` fails or returns an error, skip this step and proceed to
+Step 5. Note "Observation sweep skipped (BM search unavailable)" in the
+brief header.
+
+10 results is sufficient — do not paginate even if `has_more` is true.
+
 ### 5. Cross-reference recent activity
 
 Using the `recent_activity` results fetched in Step 3, note which of the
@@ -147,6 +183,9 @@ Produce the context brief:
 ### Key gotchas
 - **npm:pkg** — [gotcha] description
 - **npm:pkg** — [limitation] description
+
+### Other warnings
+- **prefix:pkg** — [gotcha] description from a non-dependency note
 
 ### Recent activity
 - N notes updated in last 7 days: list

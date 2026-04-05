@@ -84,6 +84,21 @@ observation or note "Already captured in \[\[neighbor-note\]\]" in the preview.
 
 ### 3. Preview
 
+Before showing the preview, scan each candidate observation for scope-leak
+signals. Basic Memory is a cross-project knowledge graph — observations must be
+portable across projects. Check for: absolute paths (`/Users/`, `/home/`,
+`/var/www`), multi-segment relative file paths with extensions
+(`lib/routes/settings.js`), ALL_CAPS env vars 8+ characters not in the
+well-known set (`NODE_ENV`, `CI`, `PATH`, `HOME`), and `localhost:` with ports.
+
+Classify each finding:
+- **False positive** (path in a generic code example, well-known env var) →
+  keep as-is, no change needed
+- **Generalizable** → rewrite to use generic descriptions (e.g., "route handler
+  file" instead of `lib/routes/settings.js`)
+- **Not generalizable** → drop the observation and note in the preview
+  ("Dropped: too project-specific")
+
 Show a grouped preview before writing anything:
 
 ````markdown

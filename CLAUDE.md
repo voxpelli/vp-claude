@@ -50,7 +50,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 
 - **knowledge-gardener** — Read-only autonomous auditor: inventory, schema validation, orphan detection, relation integrity, stale/duplicate notes, cross-project consistency, tag alignment (step 8), fourth-wall note quality (step 10). Preloads `vp-note-quality` skill for audit guidance. **Never writes or modifies notes.**
 - **knowledge-maintainer** — All-in-one write agent (`effort: high`, `model: inherit`) that acts on audit findings. Auto-fixes structural issues (missing sections, broken frontmatter, orphan linking, tag alignment, fourth-wall violations). Confirms before content changes (merging duplicates, rewriting prose, archiving). Auto-runs `/package-intel` for Tier 1 undocumented packages (3+ imports) and `/tool-intel` for undocumented tools from detected manifests. Preloads `vp-note-quality` skill. `delete_note` and `write_note` intentionally excluded — use `move_note` to `archive/`, delegate new notes to `/package-intel` or `/tool-intel` via `Skill`. For maximum quality, invoke from an Opus session — `model: inherit` propagates the parent model. Reactive only — user must explicitly invoke.
-- **knowledge-primer** — Autonomous read-only agent that surfaces project-relevant BM knowledge before work begins. Scans project manifests, cross-references deps against BM, scores relevance, and produces a context brief with key gotchas and coverage gaps. The "before work" counterpart to `/session-reflect`.
+- **knowledge-primer** — Autonomous read-only agent that surfaces project-relevant BM knowledge before work begins. Scans project manifests, cross-references deps against BM, scores relevance, produces a context brief with key gotchas, and sweeps graph-wide observations for critical warnings from non-dependency notes. The "before work" counterpart to `/session-reflect`.
 
 ### Hooks (6)
 
@@ -135,7 +135,7 @@ and pass shellcheck + shfmt. The `check:sh` npm script validates both
 
 ### Skill frontmatter
 
-Required fields: `name`, `description`, `user-invocable`, `allowed-tools`. The `description` is a trigger phrase list — write it so Claude picks the right skill when a user says something relevant. The `allowed-tools` list is an allowlist; only include tools the skill actually calls. Skills with `user-invocable: false` are valid for reference/context-injection purposes (e.g., `vp-note-quality`) — they can be preloaded into agents via the `skills` frontmatter field and have `allowed-tools: []` when they contain no workflow steps.
+Required fields: `name`, `description`, `user-invocable`, `allowed-tools`. The `description` is a trigger phrase list — write it so Claude picks the right skill when a user says something relevant. The `allowed-tools` list is an allowlist; only include tools the skill actually calls. Skills with `user-invocable: false` are valid for reference/context-injection purposes (e.g., `vp-note-quality`) — they can be preloaded into agents via the `skills` frontmatter field and have `allowed-tools: []` when they contain no workflow steps. Non-user-invocable skills use the `vp-` prefix followed by a descriptive kebab-case name (e.g., `vp-note-quality`). The `vp-` prefix signals plugin-internal ownership and avoids collision with upstream `memory-*` skills.
 
 ### Agent frontmatter
 
@@ -243,6 +243,22 @@ If vp-beads has also released and bumped its marketplace entry here, confirm the
 
 Installed plugin caches lag: after a release, users must reinstall to pick up
 the new version (`/plugin install vp-knowledge@vp-plugins`).
+
+### Release checklist
+
+Version bump:
+- `plugin.json` — version field
+- `CHANGELOG.md` — new version entry + compare link
+- `marketplace.json` — `vp-knowledge` version field
+- `README.md` — component counts, skill/agent descriptions, structure tree
+- `CLAUDE.md` — Agents/Skills descriptions, component counts
+- `MEMORY.md` — component descriptions, version field
+
+Source count propagation (when adding/removing a research source):
+- `skills/package-intel/SKILL.md` or `skills/tool-intel/SKILL.md` — step prose
+- `CLAUDE.md` — Skills section source count (e.g., "six enrichment sources")
+- `README.md` — skill description
+- `CHANGELOG.md` — note the source change
 
 ### Relationship to vp-beads
 

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.1][] - 2026-04-05
+
+### Added
+
+- **Observation sweep for knowledge-primer** — Step 4b searches for critical
+  `[gotcha]`/`[breaking]`/`[limitation]` observations across the entire graph,
+  not just dependency-matched notes. Results appear in a new "Other warnings"
+  section of the context brief (max 3 entries). Added `search_notes` to both
+  knowledge-primer agent and knowledge-prime skill tool lists.
+- **Scope-leak self-check for session-reflect** — Step 3 now scans candidate
+  observations for project-specific content (absolute paths, env vars,
+  localhost references) before showing the preview. Three-tier classification:
+  false positive (keep), generalizable (rewrite), not generalizable (drop).
+
+### Fixed
+
+- **Naming convention documented** — established `vp-` prefix convention for
+  non-user-invocable skills in CLAUDE.md Skill frontmatter section
+- **Release checklist added** — formal checklist in CLAUDE.md Releasing section
+  covering version bump locations and source count propagation paths
+
 ## [0.21.0][] - 2026-04-05
 
 ### Added
@@ -711,6 +732,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.21.1]: https://github.com/voxpelli/vp-claude/compare/v0.21.0...v0.21.1
 [0.21.0]: https://github.com/voxpelli/vp-claude/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/voxpelli/vp-claude/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/voxpelli/vp-claude/compare/v0.18.3...v0.19.0

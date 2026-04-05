@@ -1,6 +1,6 @@
 {
   "name": "vp-knowledge",
-  "version": "0.21.0",
+  "version": "0.21.1",
   "description": "Basic Memory power tools: multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), developer tool research (Homebrew, GitHub Actions, Docker, VSCode), knowledge gap analysis, project context priming, schema evolution, tag alignment, graph maintenance, and automated quality hooks.",
   "author": {
     "name": "Pelle Wessman",
