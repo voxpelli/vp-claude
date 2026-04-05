@@ -18,27 +18,28 @@ this migration aligns titles with filenames so Obsidian can navigate links.
 cp -r ~/basic-memory ~/basic-memory-backup
 ```
 
-## Step 1: Rename titles and headings
+## Steps 1–2: Rename titles, headings, and wiki-links
+
+Save this as a script and run it, or paste the whole block into your terminal:
 
 ```bash
+bash -c '
 PREFIXES="npm\|crate\|go\|composer\|pypi\|gem\|brew\|cask\|action\|docker\|vscode"
 
 # Rename title: frontmatter
-find ~/basic-memory -name '*.md' -exec sed -i '' \
+find ~/basic-memory -name "*.md" -exec sed -i "" \
   "s/^title: \($PREFIXES\):/title: \1-/" {} +
 
 # Rename H1 headings
-find ~/basic-memory -name '*.md' -exec sed -i '' \
+find ~/basic-memory -name "*.md" -exec sed -i "" \
   "s/^# \($PREFIXES\):/# \1-/" {} +
-```
 
-## Step 2: Rename wiki-links in note bodies
-
-```bash
-PREFIXES="npm\|crate\|go\|composer\|pypi\|gem\|brew\|cask\|action\|docker\|vscode"
-
-find ~/basic-memory -name '*.md' -exec sed -i '' \
+# Rename wiki-links in note bodies
+find ~/basic-memory -name "*.md" -exec sed -i "" \
   "s/\[\[\($PREFIXES\):/[[\1-/g" {} +
+
+echo "Done — renamed titles, headings, and wiki-links"
+'
 ```
 
 ## Step 3: Reindex
@@ -71,14 +72,21 @@ changes from the local `schemas/` files to the BM schema notes:
 
 ## Step 5: Verify
 
+Should return 0 — no colon-prefixed titles remaining:
+
 ```bash
-# Should return 0 results — no colon-prefixed titles remaining
 bm tool search-notes 'npm:' --json 2>/dev/null | jq '[.results[] | select(.title | startswith("npm:"))] | length'
+```
 
-# Should return notes — hyphen-prefixed titles exist
+Should return notes — hyphen-prefixed titles exist:
+
+```bash
 bm tool search-notes 'npm-' --json 2>/dev/null | jq '.results | length'
+```
 
-# Quick spot-check: pick a known note
+Quick spot-check:
+
+```bash
 bm tool read-note npm-fastify
 ```
 
