@@ -203,6 +203,19 @@ SessionStart/PreCompact `additionalContext` should suggest existing skills (e.g.
 
 Features that benefit from progressive disclosure can be offered at three levels: (1) SessionStart hook hint (passive, ~1 sentence `additionalContext`), (2) on-demand skill (user-invocable, full workflow), (3) autonomous agent (same workflow, runs as subagent). Not all features need all three levels — use the knowledge-prime/knowledge-primer pair as the reference implementation. `/session-reflect` is skill-only because its source of truth (the conversation transcript) requires main-session context that agents cannot access.
 
+### Prefix convention: colons in commands, hyphens in titles
+
+Users type colon-delimited prefixes in commands (`/package-intel npm:fastify`,
+`/tool-intel brew:ripgrep`). The colon is an unambiguous delimiter — even with
+scoped packages like `npm:@scope/pkg`. Skills parse the colon, then construct
+a hyphenated BM title (`npm-fastify`, `brew-ripgrep`) for all storage
+operations. This matches the filename BM already generates via
+`sanitize_for_filename()` and enables native Obsidian wiki-link resolution.
+
+**Migration (v0.22.0):** Existing vault notes with colon-prefix titles
+(`npm:fastify`) need a one-time rename — see `TODO-obsidian-migration.md`.
+New notes emitted by the plugin use hyphen titles automatically.
+
 ### Note structure conventions (for package-intel output)
 
 - Schema note identifiers use the permalink form (e.g. `main/schema/npm_package`), not the title — check with `read_note` before editing
@@ -243,6 +256,13 @@ If vp-beads has also released and bumped its marketplace entry here, confirm the
 
 Installed plugin caches lag: after a release, users must reinstall to pick up
 the new version (`/plugin install vp-knowledge@vp-plugins`).
+
+### Versioning
+
+This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
+at major version 0. Under semver 0.x, **minor version bumps signal breaking
+changes** (e.g., 0.22.0 for the colon-to-hyphen prefix migration). Patch
+bumps are non-breaking additions and fixes.
 
 ### Release checklist
 

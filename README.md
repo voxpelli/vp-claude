@@ -2,6 +2,14 @@
 
 A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https://github.com/basicmachines-co/basic-memory) into an actively maintained knowledge graph. Research packages from six ecosystems and tools from five dev-environment categories using parallel enrichment, find documentation gaps in your projects, surface project-relevant knowledge before coding, and let autonomous agents audit and improve your notes — all without leaving your terminal.
 
+## Breaking change in v0.22.0
+
+Note titles and wiki-links now use **hyphen delimiters** (`npm-fastify`,
+`[[npm-fastify]]`) instead of colons (`npm:fastify`, `[[npm:fastify]]`).
+User command syntax is unchanged (`/package-intel npm:fastify`). Existing
+vault notes need a one-time migration — see
+[TODO-obsidian-migration.md](TODO-obsidian-migration.md).
+
 ## What it does
 
 ### `/package-intel <pkg>` — Research any package
