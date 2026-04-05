@@ -24,19 +24,19 @@ Save this as a script and run it, or paste the whole block into your terminal:
 
 ```bash
 bash -c '
-PREFIXES="npm\|crate\|go\|composer\|pypi\|gem\|brew\|cask\|action\|docker\|vscode"
+PREFIXES="npm|crate|go|composer|pypi|gem|brew|cask|action|docker|vscode"
 
 # Rename title: frontmatter
-find ~/basic-memory -name "*.md" -exec sed -i "" \
-  "s/^title: \($PREFIXES\):/title: \1-/" {} +
+find ~/basic-memory -name "*.md" -exec sed -i "" -E \
+  "s/^title: ($PREFIXES):/title: \1-/" {} +
 
 # Rename H1 headings
-find ~/basic-memory -name "*.md" -exec sed -i "" \
-  "s/^# \($PREFIXES\):/# \1-/" {} +
+find ~/basic-memory -name "*.md" -exec sed -i "" -E \
+  "s/^# ($PREFIXES):/# \1-/" {} +
 
 # Rename wiki-links in note bodies
-find ~/basic-memory -name "*.md" -exec sed -i "" \
-  "s/\[\[\($PREFIXES\):/[[\1-/g" {} +
+find ~/basic-memory -name "*.md" -exec sed -i "" -E \
+  "s/\[\[($PREFIXES):/[[\1-/g" {} +
 
 echo "Done — renamed titles, headings, and wiki-links"
 '
@@ -89,6 +89,21 @@ Quick spot-check:
 ```bash
 bm tool read-note npm-fastify
 ```
+
+## Known limitation: slashes in action/composer/go identifiers
+
+Three ecosystems use slashes in their identifiers: `action:actions/checkout`,
+`composer:laravel/framework`, `go:github.com/gin-gonic/gin`. This migration
+replaces the colon but leaves slashes intact — producing titles like
+`action-actions/checkout`. BM resolves these by exact title match (works), but
+Obsidian interprets `/` as a path separator so `[[action-actions/checkout]]`
+won't navigate correctly.
+
+This is a pre-existing limitation — slashes were also broken with the old
+colon convention. The migration fixes the 8 slash-free ecosystems (npm, crate,
+pypi, gem, brew, cask, docker, vscode). A full slash-to-hyphen migration for
+action/composer/go notes would require additional sed passes and is tracked
+separately.
 
 ## Rollback
 
