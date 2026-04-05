@@ -13,6 +13,7 @@ schema:
   perf?(array): string, performance characteristics — startup time, memory footprint, battery impact
   relates_to?(array): Note, related cask, formula, or engineering notes
   depends_on?(array): Note, Homebrew dependencies or required system tools
+  pairs_with?(array): Note, companion apps commonly used together
 settings:
   validation: warn
 ---

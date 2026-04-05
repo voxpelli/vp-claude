@@ -10,6 +10,7 @@ schema:
   gotcha?(array): string, performance impact, conflicts, activation triggers
   feature?(array): string, notable capabilities beyond the basic description
   relates_to?(array): Note, related extensions or engineering notes
+  see_also?(array): Note, related extensions, packages, or tools
 settings:
   validation: warn
 ---

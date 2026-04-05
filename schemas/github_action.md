@@ -6,14 +6,11 @@ entity: github_action
 version: 1
 schema:
   purpose?: string, what the action does and its primary use case
-  inputs?(array): string, key input parameters — name, required/optional, default value
-  outputs?(array): string, outputs the action produces and what they contain
-  permission?(array): string, required GITHUB_TOKEN permissions (e.g. contents: read)
   gotcha?(array): string, common pitfalls, version pinning, supply-chain considerations
   security?(array): string, known CVEs, supply-chain incidents, and security advisories
   version?(array): string, version pinning and update guidance
   usage?(array): string, common workflow patterns and invocation examples
-  feature?(array): string, notable capabilities worth knowing
+  pattern?(array): string, workflow patterns, integration recipes, and best practices
   relates_to?(array): Note, related actions or engineering notes
 settings:
   validation: warn
@@ -44,9 +41,10 @@ Preferred relation labels for GitHub Action notes:
 ## Observations
 
 - [purpose] Schema for GitHub Actions notes in the actions/ directory
-- [convention] `inputs` and `outputs` map to the `## Inputs & Outputs` section tool-intel writes
-- [convention] `permission` maps to the `## Permissions` section in tool-intel output
+- [convention] Input parameters and outputs are documented in the `## Inputs & Outputs` prose section — not as observation tags (fields removed in schema v2 after 0% usage across 19 notes)
+- [convention] Required permissions are documented in the `## Permissions` prose section — not as observation tags (same rationale)
 - [convention] `security` captures CVEs and supply-chain advisories; distinguish from `gotcha` (usage pitfalls)
+- [convention] `pattern` captures workflow integration recipes and best practices — distinct from `usage` (invocation mechanics) and `gotcha` (pitfalls)
 
 ## Relations
 

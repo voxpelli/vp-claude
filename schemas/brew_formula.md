@@ -10,6 +10,7 @@ schema:
   config?: string, configuration file location and key options or env vars
   gotcha?(array): string, common pitfalls, non-obvious behaviour, conflicts
   feature?(array): string, notable capabilities worth knowing beyond basic usage
+  pattern?(array): string, usage patterns, integration recipes, and best practices
   relates_to?(array): Note, related formula, cask, or engineering notes
 settings:
   validation: warn
