@@ -98,6 +98,7 @@ read_note(identifier="<prefix>:<package-name>", include_frontmatter=true, output
 | <60 days | DeepWiki + Context7 + changelog only | Tavily, Raindrop, Readwise |
 
 Always run the changelog step — version history moves fast.
+Always fetch download counts — they change weekly and stale numbers mislead.
 
 Note any previous `[gotcha]` or `[limitation]` observations — these should guide
 which sources to prioritize and what edge cases to look for in new research.
@@ -111,6 +112,10 @@ Read the ecosystem reference file for registry-specific instructions:
 
 Each reference file explains the registry API, required headers, and how to
 extract `owner/repo` for use in the DeepWiki and changelog steps.
+
+If the reference file documents a download stats section, fetch the count now
+(in parallel with or immediately after the repository resolution call) and hold
+it as `popularity_count` for Step 4.
 
 ### Step 3: Six-source enrichment (run in parallel)
 
@@ -221,6 +226,11 @@ All notes use three enrichment layers:
 - **`## Observations`** with `[category]` tagged items
 - **`## Relations`** with `[[wiki-links]]`
 
+If `popularity_count` was obtained in Step 2, add a `[popularity]` observation.
+Include the metric window (weekly vs total) and registry name — e.g.,
+`- [popularity] 2.1M downloads/week (npm, 2026-04)` or
+`- [popularity] 850M total downloads (crates.io, 2026-04)`. Omit for PyPI and Go.
+
 **No wiki-links in observations.** Never use `[[Target]]` syntax in observation
 lines. BM's parser treats any `[[` as a relation boundary — the text before it
 becomes the `relation_type` field (max 200 chars), causing validation failures.
@@ -238,13 +248,17 @@ observations after the last existing `- [category]` line in `## Observations`.
 Do NOT use `operation="append"` with `section="Observations"` — it appends to
 the end of the file, not the end of the section.
 
+When updating an existing note that has a `[popularity]` observation, use
+`find_replace` to replace the old line with the current count rather than
+appending a second popularity line.
+
 ### Step 6: Confirm and summarize
 
 Report to the user:
 - Ecosystem detected and note location (directory/title)
 - Key findings from each source (1 line each)
 - Any security concerns
-- Cross-links added (from Step 7)
+- Cross-links will be added in Step 7
 
 ### Step 7: Cross-link existing notes
 

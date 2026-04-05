@@ -23,7 +23,8 @@ fi
 # Block commands that invoke Python or Node.js anywhere in the pipeline.
 # Matches: python3, python3.12, /usr/bin/python3, env python3, bash -c "python3",
 # echo ... | python3, cmd ; python3, cmd && python3
-if echo "$CMD" | grep -qiwE 'python[0-9.]*|node'; then
+# Does NOT match: node_modules, nodemon (anchored to avoid false positives)
+if echo "$CMD" | grep -qiE '(^|[/; |&"'"'"'])python[0-9.]*($|[; |&"'"'"' ])|(^|[/; |&"'"'"'])node($|[; |&"'"'"' ])'; then
 	jq -n '{
     "decision": "block",
     "reason": "Python/Node scripts are blocked in knowledge-gardener to preserve read-only discipline. Use jq via Bash for JSON processing, or use MCP tool calls directly."

@@ -51,6 +51,7 @@ require (
 - [limitation] What it can't do or where it breaks down
 - [compatibility] Minimum Go version: <go 1.x>; major version suffix: <v2/none>
 - [convention] Important usage conventions
+<!-- No [popularity] — Go has no download metric -->
 
 ## Release Highlights
 

@@ -34,7 +34,10 @@ From `https://rubygems.org/api/v1/gems/<name>.json`:
 | `licenses` | Array of SPDX license strings |
 | `downloads` | All-time download count |
 
-Extract `owner/repo` from `source_code_uri` for DeepWiki calls. If
+Extract `owner/repo` from `source_code_uri` for DeepWiki calls.
+
+Extract `downloads` (all-time integer) for the `[popularity]` observation.
+Format as `XM total downloads (RubyGems, YYYY-MM)`. If
 `source_code_uri` is empty, try `homepage_uri` (often the same).
 
 ## Ruby Version Compatibility

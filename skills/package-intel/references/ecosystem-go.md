@@ -58,6 +58,11 @@ Go modules with breaking changes use a major version suffix: `github.com/foo/bar
 `/v2` suffix is part of the module path and must be included in note title and
 wiki-links.
 
+## Download Stats
+
+Go has no standardized download metric. Neither proxy.golang.org nor pkg.go.dev
+expose download counts. Omit the `[popularity]` observation for Go modules.
+
 ## Wiki-Link Safety for Go Modules
 
 Go module paths contain `/` slashes which can complicate wiki-links. Use the

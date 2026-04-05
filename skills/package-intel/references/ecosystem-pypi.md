@@ -35,7 +35,8 @@ From `https://pypi.org/pypi/<name>/json`:
 | `vulnerabilities` | Array of known security advisories (built-in!) |
 
 **Important:** `info.downloads` is always `-1` — PyPI deprecated download stats.
-Do NOT attempt to show download counts from this API.
+Do NOT attempt to show download counts from this API. Omit the `[popularity]`
+observation entirely for PyPI packages.
 
 ## Built-in Security Data
 

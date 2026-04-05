@@ -48,6 +48,7 @@ dependencies = [
 - [limitation] What it can't do or where it breaks down
 - [compatibility] Python: <>=X.Y>; typed: <yes/partial/no>
 - [convention] Important usage conventions
+<!-- No [popularity] — PyPI deprecated download stats -->
 
 ## Release Highlights
 

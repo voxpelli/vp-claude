@@ -38,7 +38,10 @@ Combines knowledge-gaps detection with auto-running /package-intel for Tier 1 pa
 </commentary>
 </example>"
 model: inherit
+effort: high
 color: green
+skills:
+  - vp-note-quality
 tools:
   - Read
   - Glob
@@ -277,6 +280,27 @@ For each hit, read the parent note and apply two `edit_note` calls: (1) strip
 `[[...]]` from the observation line replacing with plain text, (2) add the
 reference as `relates_to [[prefix:name]]` in `## Relations` if not already
 present. This is a structural auto-fix — no confirmation needed.
+
+#### 2e. Note quality check (fourth-wall)
+
+Apply the rules from the preloaded `vp-note-quality` skill to any notes you
+read or edit during this session. For notes you are about to modify via
+`edit_note`, re-read the content you will write and apply the diagnostic
+question: "Would someone unfamiliar with Basic Memory understand every
+sentence?"
+
+Search for red-flag phrases across subject-domain notes:
+```
+search_notes(search_type="text", query="zero presence in", page_size=20)
+search_notes(search_type="text", query="not yet in Basic Memory", page_size=20)
+search_notes(search_type="text", query="absent from the knowledge graph", page_size=20)
+search_notes(search_type="text", query="most significant gap", page_size=20)
+search_notes(search_type="text", query="no presence in Raindrop", page_size=20)
+```
+
+For each hit in a subject-domain note (not `engineering/agents/*` meta-notes),
+queue a rewrite in Step 4 — fourth-wall rewrites are content-level changes
+requiring user confirmation.
 
 ### 3. Enrich undocumented packages
 

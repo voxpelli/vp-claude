@@ -9,13 +9,13 @@
       "name": "vp-knowledge",
       "source": "./",
       "description": "Multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), developer tool research (Homebrew, GitHub Actions, Docker, VSCode), knowledge gap analysis, project context priming, graph maintenance agents, and quality hooks for Basic Memory",
-      "version": "0.20.0"
+      "version": "0.21.0"
     },
     {
       "name": "vp-beads",
       "source": { "source": "github", "repo": "voxpelli/claude-beads" },
-      "description": "Sprint workflow automation: retrospectives, upstream vendor tracking, cross-project synergy tracking, and vendor sync for projects using beads and Basic Memory",
-      "version": "0.9.2"
+      "description": "Sprint workflow automation: backlog grooming, retrospectives, upstream vendor tracking, cross-project synergy tracking, and vendor sync for projects using beads and Basic Memory",
+      "version": "0.10.0"
     }
   ]
 }

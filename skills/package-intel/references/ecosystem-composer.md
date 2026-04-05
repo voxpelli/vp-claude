@@ -40,6 +40,9 @@ From `https://packagist.org/packages/<vendor>/<package>.json`:
 | `package.downloads.total` | All-time install count |
 | `package.versions` | Map of version → metadata |
 
+Extract `package.downloads.total` (all-time integer) for the `[popularity]`
+observation. Format as `XM total installs (Packagist, YYYY-MM)`.
+
 The `package.versions` map uses Composer version strings including `dev-main`
 and `dev-master`. Find the latest stable version by looking for the highest
 non-`dev-` version key.

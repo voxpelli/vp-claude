@@ -39,6 +39,9 @@ From `https://crates.io/api/v1/crates/<name>`:
 
 Extract `owner/repo` from `crate.repository` for DeepWiki calls.
 
+Extract `crate.downloads` (all-time integer) for the `[popularity]` observation.
+Format as `XM total downloads (crates.io, YYYY-MM)`.
+
 ## Security Advisories
 
 Rust uses RUSTSEC advisory IDs (format: `RUSTSEC-YYYY-NNNN`). For security

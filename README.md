@@ -321,9 +321,11 @@ skills/
     SKILL.md                           On-demand conversation → memory capture
   knowledge-ask/
     SKILL.md                           Freeform Q&A against the BM knowledge graph
+  vp-note-quality/
+    SKILL.md                           Fourth-wall anti-pattern checklist (not user-invocable)
 agents/
-  knowledge-gardener.md                Read-only graph auditor (incl. tag alignment)
-  knowledge-maintainer.md              Read-write graph enhancer (incl. tag fixes)
+  knowledge-gardener.md                Read-only graph auditor (tags + fourth-wall)
+  knowledge-maintainer.md              Read-write graph enhancer (effort: high)
   knowledge-primer.md                  Autonomous project context priming
 hooks/
   hooks.json                           PreToolUse, PostToolUse x2,

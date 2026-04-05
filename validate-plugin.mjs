@@ -64,6 +64,8 @@ const VALID_AGENT_COLORS = new Set(['blue', 'cyan', 'green', 'yellow', 'magenta'
 
 const VALID_AGENT_MODELS = new Set(['inherit', 'sonnet', 'opus', 'haiku'])
 
+const VALID_AGENT_EFFORTS = new Set(['low', 'medium', 'high', 'max'])
+
 const KNOWN_MCP_PREFIXES = [
   'mcp__basic-memory__',
   'mcp__deepwiki__',
@@ -222,6 +224,9 @@ for (const file of skillFiles) {
   if ('allowed-tools' in fm && !Array.isArray(fm['allowed-tools'])) {
     error(file, 'allowed-tools must be an array')
   }
+  if ('user-invocable' in fm && typeof fm['user-invocable'] !== 'boolean') {
+    error(file, `user-invocable must be a boolean, got ${typeof fm['user-invocable']}`)
+  }
   if (Array.isArray(fm['allowed-tools'])) {
     validateMcpPrefixes(file, /** @type {string[]} */ (fm['allowed-tools']))
     auditToolReferences(file, content, /** @type {string[]} */ (fm['allowed-tools']), 'allowed-tools')
@@ -263,6 +268,12 @@ if (existsSync(agentsDir)) {
     if ('model' in fm && !VALID_AGENT_MODELS.has(fm.model)) {
       error(file, `Invalid agent model "${String(fm.model)}", must be one of: ${[...VALID_AGENT_MODELS].join(', ')}`)
     }
+    if ('effort' in fm && !VALID_AGENT_EFFORTS.has(fm.effort)) {
+      error(file, `Invalid agent effort "${String(fm.effort)}", must be one of: ${[...VALID_AGENT_EFFORTS].join(', ')}`)
+    }
+    if ('skills' in fm && !Array.isArray(fm.skills)) {
+      error(file, 'skills must be an array')
+    }
 
     // Gardener read-only invariant
     if (file.endsWith('knowledge-gardener.md') && Array.isArray(fm.tools)) {
@@ -270,6 +281,16 @@ if (existsSync(agentsDir)) {
       for (const tool of /** @type {string[]} */ (fm.tools)) {
         if (forbidden.some((f) => tool.includes(f))) {
           error(file, `Read-only agent must not have write tool: ${tool}`)
+        }
+      }
+    }
+
+    // Validate agent skills references resolve to actual skill files
+    if ('skills' in fm && Array.isArray(fm.skills)) {
+      for (const skillName of /** @type {string[]} */ (fm.skills)) {
+        const skillPath = join(ROOT, 'skills', skillName, 'SKILL.md')
+        if (!existsSync(skillPath)) {
+          error(file, `Phantom skill reference: "${skillName}" — no file at skills/${skillName}/SKILL.md`)
         }
       }
     }

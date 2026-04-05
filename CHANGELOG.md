@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0][] - 2026-04-05
+
+### Added
+
+- **`vp-note-quality` skill** — non-user-invocable reference checklist
+  preventing the fourth-wall anti-pattern (self-referential content in
+  subject-domain notes). Contains 10 quality rules, violation examples, and
+  enforcement guidance. Preloaded into agents via the `skills` frontmatter
+  field — zero-latency context injection at agent startup.
+- **Agent `skills` preloading** — knowledge-maintainer and knowledge-gardener
+  now preload `vp-note-quality` via the native `skills` frontmatter field,
+  injecting the full checklist into agent context at startup.
+- **Maintainer `effort: high`** — the knowledge-maintainer now defaults to
+  high effort for improved note prose quality during writes. Works on both
+  Sonnet 4.6 and Opus 4.6.
+- **`[popularity]` observation category** in package-intel — fetches download
+  statistics from registry APIs (npm weekly, crates.io/Packagist/RubyGems
+  all-time). Omitted for PyPI (deprecated) and Go (no metric). Includes
+  metric-window disambiguation (`downloads/week` vs `total downloads`).
+- **Maintainer Step 2e** — fourth-wall quality check searches for red-flag
+  phrases in edited notes and queues rewrites for user confirmation.
+- **Gardener Step 10** — fourth-wall audit step searches for self-referential
+  content and reports violations with severity classification.
+- **Validator: agent `skills` resolution** — `validate-plugin.mjs` now
+  verifies that skill names referenced in agent `skills` arrays resolve to
+  actual `skills/<name>/SKILL.md` files, preventing phantom skill references.
+
+### Fixed
+
+- **package-intel Step 6/7 ordering** — Step 6 summary no longer references
+  cross-links from Step 7 before it has run.
+- **npm note template fence** — normalized from triple to quadruple backticks
+  for consistency with all other ecosystem templates.
+- **Bash hook false positive** — `pre-bash-no-python.sh` regex no longer
+  matches `node_modules` or `nodemon` as `node` commands. Anchored to match
+  `node` only as a standalone command.
+- **Source counting discrepancy** — CLAUDE.md now matches SKILL.md in listing
+  the six enrichment sources (DeepWiki, Context7, Tavily, Raindrop, Readwise,
+  changelog) instead of counting Basic Memory as a source.
+
+### Changed
+
+- **Marketplace: vp-beads 0.9.2 → 0.10.0** — syncs marketplace entry with the
+  vp-beads hardening release (command hook fix, trigger overlap removal,
+  session-context dead code cleanup).
+
 ## [0.20.0][] - 2026-04-05
 
 ### Added
@@ -665,6 +711,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.21.0]: https://github.com/voxpelli/vp-claude/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/voxpelli/vp-claude/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/voxpelli/vp-claude/compare/v0.18.3...v0.19.0
 [0.18.3]: https://github.com/voxpelli/vp-claude/compare/v0.18.2...v0.18.3

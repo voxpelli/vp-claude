@@ -46,6 +46,7 @@ end
 - [limitation] What it can't do or where it breaks down
 - [compatibility] Ruby: <>=X.Y>; Rails: <X.Y+ / standalone>
 - [convention] Important usage conventions
+- [popularity] XM total downloads (RubyGems, YYYY-MM)
 
 ## Release Highlights
 

@@ -45,6 +45,7 @@ GitHub: [owner/repo](https://github.com/owner/repo) | v<version> | <license>
 - [limitation] What it can't do or where it breaks down
 - [compatibility] MSRV: Rust <version>; edition: <2021/2018>
 - [convention] Important usage conventions
+- [popularity] XM total downloads (crates.io, YYYY-MM)
 
 ## Release Highlights
 

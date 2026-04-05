@@ -45,6 +45,7 @@ GitHub: [owner/repo](https://github.com/owner/repo) | v<version> | <license>
 - [limitation] What it can't do or where it breaks down
 - [compatibility] PHP: <>=X.Y>; framework: <Laravel X / Symfony X / standalone>
 - [convention] Important usage conventions (PSR standards, etc.)
+- [popularity] XM total installs (Packagist, YYYY-MM)
 
 ## Release Highlights
 

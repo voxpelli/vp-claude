@@ -30,6 +30,8 @@ General health check — gardener produces the report, maintainer would act on i
 </example>"
 model: sonnet
 color: cyan
+skills:
+  - vp-note-quality
 tools:
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__read_note
@@ -448,6 +450,28 @@ subsection splitting (`### Category Name` subsections under `## Observations`).
 For notes not read in step 8a, check with `read_note(output_format="json")` and
 count the observations array length. Report the count alongside the title.
 
+### 10. Note quality (fourth-wall check)
+
+Apply the rules from the preloaded `vp-note-quality` skill. Search for red-flag
+phrases that indicate self-referential content in subject-domain notes:
+
+```
+search_notes(search_type="text", query="zero presence in", page_size=20)
+search_notes(search_type="text", query="not yet in Basic Memory", page_size=20)
+search_notes(search_type="text", query="absent from the knowledge graph", page_size=20)
+search_notes(search_type="text", query="most significant gap", page_size=20)
+search_notes(search_type="text", query="no presence in Raindrop", page_size=20)
+```
+
+For each hit, read the note and classify:
+- **Skip** if the note is in `engineering/agents/*` (meta-notes may reference BM)
+- **Classify severity**: (A) section-level break, (B) paragraph-level,
+  (C) observation-level, (D) relation-level
+- Quote the offending sentence in the report
+
+Report fourth-wall violations in the **Warning** section with severity and the
+specific offending text. Suggest the maintainer for remediation.
+
 ## Output Format
 
 ````markdown
@@ -472,6 +496,7 @@ count the observations array length. Report the count alongside the title.
 - [note-title] — 9 tags exceeds 3-7 recommended range
 - [note-title] — title scope mismatch: title covers "Patterns" but content only addresses brew
 - [note-title] — 25 flat observations, candidate for subsection splitting
+- [note-title] — fourth-wall violation (severity B): "This topic has zero presence in Raindrop"
 
 ### Info (maintenance suggestions)
 - [[npm:pkg]] referenced 3 times but has no dedicated note

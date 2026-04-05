@@ -7,7 +7,7 @@ Use this template when creating new `npm:*` notes with `write_note`. Place in th
 lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 `## Relations` only.
 
-```markdown
+````markdown
 ---
 title: npm:<package-name>
 type: npm_package
@@ -34,6 +34,7 @@ GitHub: [owner/repo](https://github.com/owner/repo) | v<version> | <license>
 - [benefit] Why choose this over alternatives
 - [limitation] What it can't do or where it breaks down
 - [convention] Important usage conventions
+- [popularity] XM downloads/week (npm, YYYY-MM)
 
 ## Release Highlights
 
@@ -51,7 +52,7 @@ GitHub: [owner/repo](https://github.com/owner/repo) | v<version> | <license>
 
 - relates_to [[<Related Note Title>]]
 - depends_on [[npm:<dependency>]]
-```
+````
 
 ## Field Guidelines
 
