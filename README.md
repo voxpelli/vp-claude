@@ -331,6 +331,10 @@ skills/
     SKILL.md                           Freeform Q&A against the BM knowledge graph
   vp-note-quality/
     SKILL.md                           Fourth-wall anti-pattern checklist (not user-invocable)
+  tag-sync/
+    SKILL.md                           Raindrop tag vocabulary sync
+  session-bookmarks/
+    SKILL.md                           Session URL bookmarking to Raindrop
 agents/
   knowledge-gardener.md                Read-only graph auditor (tags + fourth-wall)
   knowledge-maintainer.md              Read-write graph enhancer (effort: high)
@@ -379,6 +383,9 @@ schemas/
  /knowledge-prime  -> knowledge-prime     -> context brief with gotchas + gaps
  /knowledge-ask Q  -> knowledge-ask skill -> cited answer + confidence tier
  /schema-evolve X  -> schema-evolve skill -> field proposals + dual-sync
+ /tag-sync [N]     -> tag-sync skill     -> ~/.claude/references/raindrop-tags.md
+ /session-bookmarks-> session-bookmarks  -> AI-bookmarked collection in Raindrop
+ /session-reflect  -> session-reflect    -> BM notes + delegates /session-bookmarks
  "audit graph"     -> knowledge-gardener  -> health report (read-only, incl. tags)
  "fix the graph"   -> knowledge-maintainer-> structural + tag fixes + confirmations
                       ├── audits graph inline (lightweight)

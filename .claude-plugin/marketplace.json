@@ -8,14 +8,20 @@
     {
       "name": "vp-knowledge",
       "source": "./",
-      "description": "Multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), developer tool research (Homebrew, GitHub Actions, Docker, VSCode), knowledge gap analysis, project context priming, graph maintenance agents, and quality hooks for Basic Memory",
-      "version": "0.22.1"
+      "description": "Multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), developer tool research (Homebrew, GitHub Actions, Docker, VSCode), knowledge gap analysis, project context priming, session bookmarking, tag vocabulary sync, graph maintenance agents, and quality hooks for Basic Memory",
+      "version": "0.23.0"
     },
     {
       "name": "vp-beads",
       "source": { "source": "github", "repo": "voxpelli/claude-beads" },
       "description": "Sprint workflow automation: backlog grooming, retrospectives, upstream vendor tracking, cross-project synergy tracking, and vendor sync for projects using beads and Basic Memory",
       "version": "0.10.1"
+    },
+    {
+      "name": "vp-git",
+      "source": { "source": "github", "repo": "voxpelli/claude-git" },
+      "description": "Git workflow safety skills: validation, verification, and repair for rebase, merge, and stacked PR workflows",
+      "version": "0.2.0"
     }
   ]
 }
