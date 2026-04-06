@@ -277,7 +277,7 @@ Next: run `/tag-sync` to refresh vocabulary with cleaned tags.
 
 - **Read-only**: Never modify tags or bookmarks. Only read and report.
 - **Sample, don't exhaust**: For co-occurrence (Step 8), sample top 50 tags
-  with 10 bookmarks each. Do not check all 1,773 tags pairwise.
+  with 10 bookmarks each. Do not check all tags pairwise.
 - **Respect ambiguity**: When unsure if a tag is legacy or useful, classify
   as Info rather than Critical.
 - **Preserve the long tail**: Not all low-count tags are bad. A tag with 3

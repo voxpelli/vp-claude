@@ -159,9 +159,6 @@ ones (`code`) that are more common across results.
 - Sharing tags: any `for:*` prefix (Delicious-era social tags)
 - Swedish personal: `tankar`, `butik`, `nördigt`, `förening`, `sverige`
 
-If `~/.claude/references/raindrop-tags.md` exists, also consult its
-`legacy_avoid` frontmatter list and `overlap_groups` for disambiguation.
-
 **Step D — Fallback**: If fewer than 3 similar bookmarks found in Step A,
 load the vocabulary file via `Read` and match topics against table
 characterizations. This covers novel topics with no exemplars in the library.
