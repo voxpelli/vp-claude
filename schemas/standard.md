@@ -10,7 +10,7 @@ schema:
   design?(array): string, key design decisions
   adoption?: string, adoption level
   limitation?(array): string, known limitations
-  security?: string, security considerations
+  security?(array): string, security considerations
   evolution?: string, how it evolved
   trend?(array): string, current adoption and ecosystem trends
   pattern?(array): string, recurring implementation patterns

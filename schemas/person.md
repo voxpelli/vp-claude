@@ -9,7 +9,7 @@ schema:
   role?: string, what they are known for
   impact?: string, achievements and influence
   insight?(array): string, notable quotes or ideas
-  pattern?: string, working patterns
+  pattern?(array): string, working patterns
   note?: string, additional context
   created?(array): Note, projects or protocols they created
   founded?: Note, organization or movement they founded

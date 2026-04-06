@@ -8,9 +8,10 @@ schema:
   purpose?: string, what the extension does and primary value
   config?: string, key settings and their defaults (workspace vs user scope)
   gotcha?(array): string, performance impact, conflicts, activation triggers
+  convention?(array): string, important usage conventions
+  pattern?(array): string, recurring usage patterns and idioms
   feature?(array): string, notable capabilities beyond the basic description
   relates_to?(array): Note, related extensions or engineering notes
-  see_also?(array): Note, related extensions, packages, or tools
 settings:
   validation: warn
 ---
@@ -31,7 +32,7 @@ Schema for VSCode extension notes — one note per extension in the `vscode/` di
 ## Relation Vocabulary
 
 Preferred relation labels for VSCode extension notes:
-- `see also [[vscode-x]]` — related extension in the same space
+- `relates_to [[vscode-x]]` — related extension in the same space
 - `pairs with [[vscode-x]]` — commonly installed together
 - `conflicts with [[vscode-x]]` — known incompatibility
 - `alternative to [[vscode-x]]` — competes in the same space

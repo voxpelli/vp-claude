@@ -10,7 +10,7 @@ schema:
   feature?(array): string, notable capabilities worth knowing
   gotcha?(array): string, common pitfalls — licensing model, OS requirements, conflicts,
     caveats
-  perf?(array): string, performance characteristics — startup time, memory footprint, battery impact
+  performance?(array): string, performance characteristics — startup time, memory footprint, battery impact
   relates_to?(array): Note, related cask, formula, or engineering notes
   depends_on?(array): Note, Homebrew dependencies or required system tools
   pairs_with?(array): Note, companion apps commonly used together

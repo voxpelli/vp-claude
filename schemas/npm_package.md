@@ -1,7 +1,7 @@
 ---
-title: npm-package
+title: npm_package
 type: schema
-permalink: main/schema/npm-package
+permalink: main/schema/npm_package
 entity: npm_package
 version: 1
 schema:
@@ -12,13 +12,14 @@ schema:
   limitation?(array): string, constraints and known weaknesses
   security?(array): string, CVE status, supply-chain considerations, and advisories
   api?(array): string, key API surface — method signatures, options, return shapes
+  architecture?(array): string, internal design, module structure, and build approach
   relates_to?(array): Note, related knowledge notes
   depends_on?(array): Note, upstream package dependencies
 settings:
   validation: warn
 ---
 
-# npm-package
+# npm_package
 
 Schema for npm package entity notes in the `npm/` directory.
 
