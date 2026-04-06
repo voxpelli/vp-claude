@@ -92,7 +92,7 @@ For each new tag (creation mode: all tags; sync mode: only new arrivals),
 sample 2-3 bookmarks to ground the description:
 
 ```
-mcp__raindrop__find_bookmarks(tags=["<tag-name>"], page_size=3)
+mcp__raindrop__find_bookmarks(has_tags=["<tag-name>"], limit=3, sort="random")
 ```
 
 From bookmark titles and excerpts, write a concise one-line characterization
