@@ -10,6 +10,8 @@ schema:
   impact?: string, achievements and influence
   insight?(array): string, notable quotes or ideas
   pattern?(array): string, working patterns
+  connection?(array): string, cross-person contextual links and biographical connections
+  influence?(array): string, intellectual or technical influence on the field
   note?: string, additional context
   created?(array): Note, projects or protocols they created
   founded?: Note, organization or movement they founded
@@ -17,6 +19,9 @@ schema:
   part_of?: Note, organization or movement they belong to
   works_with?(array): Note, collaborators or related people
   enables?(array): Note, projects or standards they enabled
+  influenced_by?(array): Note, people or movements that shaped their thinking
+  influences?(array): Note, people, projects, or movements they influenced
+  relates_to?(array): Note, related notes
 settings:
   validation: warn
 ---

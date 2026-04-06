@@ -364,6 +364,7 @@ schemas/
   milestone.md                         Milestone/history schema (milestone type)
   service.md                           Service/product schema (service type)
   person.md                            Person schema (person type)
+  project.md                           Project schema (project type)
 ```
 
 ## How it fits together

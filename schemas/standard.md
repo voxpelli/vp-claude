@@ -15,6 +15,8 @@ schema:
   trend?(array): string, current adoption and ecosystem trends
   pattern?(array): string, recurring implementation patterns
   innovation?(array): string, key innovations
+  created_by?: Note, person or organization that authored this standard
+  contrasts_with?: Note, contrasting or competing standard
   relates_to?(array): Note, related knowledge notes
   extends?: Note, protocol this extends
   complements?: Note, complementary standard or protocol

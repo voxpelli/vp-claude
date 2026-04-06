@@ -17,6 +17,7 @@ schema:
   preceded?(array): Note, what this led to
   context_for?: Note, what this provides context for
   lesson_for?: Note, what this teaches lessons about
+  created_by?: Note, person or organization behind this event
   relates_to?(array): Note, related notes
   contrasts_with?(array): Note, contrasting events or analyses
   informs?(array): Note, notes this analysis informs
