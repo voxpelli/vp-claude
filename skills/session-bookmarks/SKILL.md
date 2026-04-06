@@ -174,6 +174,17 @@ Skipped: [anything the user declined]
 Use Raindrop URLs (not original URLs) in the report — per the Raindrop MCP
 server convention, always link to the Raindrop bookmark page.
 
+## Guidelines
+
+- **Preview before writing** — never create bookmarks without user approval.
+- **Be selective** — 1-3 high-quality bookmarks beat a dump of every URL seen.
+- **Rationale matters** — the `note` field on each bookmark explains *why* it
+  was bookmarked, which helps when reviewing AI-bookmarked items later.
+- **Tag consistently** — use the vocabulary file when available. Match existing
+  tags rather than inventing new ones.
+- **Graceful degradation** — if Raindrop is unavailable or the tag vocabulary
+  file is missing, the skill should degrade gracefully, not fail loudly.
+
 ## Integration
 
 - **From `/session-reflect`** — session-reflect auto-delegates to this skill
