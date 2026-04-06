@@ -66,8 +66,10 @@ Scan the conversation for URLs that meet the signal detection criteria above.
 Focus on URLs that appeared in tool results (Tavily, DeepWiki, web fetch) and
 were subsequently discussed or used.
 
-If no candidates are found, exit silently — do not show an empty section or
-a "no bookmarks found" message.
+If no candidates are found:
+- **Delegated from `/session-reflect`** — exit silently (no output).
+- **Standalone invocation** — report "No bookmark-worthy URLs found in this
+  session" and exit.
 
 ### Step 2: Deduplicate against Raindrop
 
@@ -80,9 +82,14 @@ mcp__raindrop__find_bookmarks(search="<domain-name>")
 Search by **domain name** (e.g., `fastify.dev`), not the full URL. This catches
 URL variations (www, https, different paths on the same domain).
 
-If the search returns results, check whether the **exact URL** matches (ignoring
-trailing slashes and fragments). A domain match alone is NOT a duplicate — the
-same domain may have many distinct pages worth bookmarking.
+If the search returns results, check for an **exact URL** match (ignoring
+trailing slashes and fragments) — a domain match alone is not a duplicate.
+If the exact URL exists in ANY Raindrop collection (not just AI-bookmarked),
+skip it — do not create a duplicate.
+
+**Note:** This step skips `find_collections` (Step 1 of the global 4-step
+Raindrop workflow) because collection ID `69372352` is hardcoded — no
+collection discovery is needed.
 
 If all candidates are already bookmarked, exit silently.
 
@@ -149,9 +156,8 @@ mcp__raindrop__update_bookmarks(updates=[{
 }])
 ```
 
-The `ai-bookmarked` tag is **mandatory** on every bookmark. The `create_bookmarks`
-API has no tags parameter — tagging always requires a separate `update_bookmarks`
-call. Multiple tag updates can be batched (up to 100 per call).
+Always include `ai-bookmarked` in the tag list. Batch up to 100 tag updates
+per call.
 
 ### Step 5: Report
 
@@ -167,17 +173,6 @@ Skipped: [anything the user declined]
 
 Use Raindrop URLs (not original URLs) in the report — per the Raindrop MCP
 server convention, always link to the Raindrop bookmark page.
-
-## Guidelines
-
-- **Preview before writing** — never create bookmarks without user approval.
-- **Be selective** — 1-3 high-quality bookmarks beat a dump of every URL seen.
-- **Rationale matters** — the `note` field on each bookmark explains *why* it
-  was bookmarked, which helps when reviewing AI-bookmarked items later.
-- **Tag consistently** — use the vocabulary file when available. Match existing
-  tags rather than inventing new ones.
-- **Graceful degradation** — if Raindrop is unavailable or the tag vocabulary
-  file is missing, the skill should degrade gracefully, not fail loudly.
 
 ## Integration
 

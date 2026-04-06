@@ -35,8 +35,8 @@ The output file at `~/.claude/references/raindrop-tags.md` is consumed by
 - **No bookmarks found for a tag** (characterization step) — infer from tag name
   alone. Flag with `*` in preview: `*auto-inferred from name`.
 - **`~/.claude/references/` directory missing** — create it before writing.
-- **Vocabulary fetched < 24h ago, no explicit args** — warn: "Vocabulary was
-  synced N hours ago. Pass a count or `--reset` to force." Do not re-fetch.
+- **Vocabulary fetched today, no explicit args** — warn: "Vocabulary was
+  already synced today. Pass a count or `--reset` to force." Do not re-fetch.
 - **User declines all changes** — report "No changes made" and exit.
 
 ## Workflow
@@ -57,7 +57,7 @@ Read(file_path="~/.claude/references/raindrop-tags.md")
 
 - **File exists** — enter **sync mode**. Extract `tag_count`, `fetched_at`,
   and existing tag entries (tag name, count, characterization, cluster).
-  Check staleness: if `fetched_at` is within 24 hours and no explicit
+  Check staleness: if `fetched_at` matches today's date and no explicit
   arguments were passed, warn and suggest `--reset` or a count argument.
 - **File missing** (or `--reset`) — enter **creation mode**.
 
@@ -225,11 +225,3 @@ Always include `ai-bookmarked`. Choose 2-5 additional tags per bookmark.
 | `indieweb` | 67 | IndieWeb movement, ownership, POSSE |
 ```
 
-## Naming Conventions
-
-Tags must follow these conventions (enforced by Raindrop and the user's library):
-
-- **Kebab-case only** — `protocol-design`, not `protocol_design` or `ProtocolDesign`
-- **Lowercase** — no uppercase letters
-- **No spaces** — use hyphens for multi-word tags
-- **Single concept** — one idea per tag

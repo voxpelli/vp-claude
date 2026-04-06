@@ -13,6 +13,7 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 title: docker-<image>
 type: docker_image
 url: https://hub.docker.com/_/<image>
+# Community images (org/name): url: https://hub.docker.com/r/<org>/<image>
 tags: [<domain>, containers]
 packages: ["<image>"]
 ---

@@ -195,9 +195,9 @@ since it operates without time pressure.
 
 ## Bookmark Delegation
 
-After completing the report (Step 6), invoke `/session-bookmarks` to check
-for bookmark-worthy URLs discovered during this session. The delegation is
-automatic — if `/session-bookmarks` finds no candidates, it exits silently.
+After completing the report (Step 6), invoke `/session-bookmarks` via the
+Skill tool to check for bookmark-worthy URLs discovered during this session.
+If `/session-bookmarks` finds no candidates, it exits silently.
 
 ## vp-beads Integration
 
