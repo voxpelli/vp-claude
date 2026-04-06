@@ -6,6 +6,7 @@ entity: service
 version: 1
 schema:
   source: string, research provenance
+  category?(enum): [product, platform, tool, library, framework, organization], service classification for filtering
   status?: string, active or deprecated or dead
   risk?(array): string, risks and concerns
   impact?: string, significance and reach
