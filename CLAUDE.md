@@ -63,7 +63,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 
 ## Schemas
 
-The `schemas/` directory in the plugin root is the version-controlled source of truth for all Basic Memory note schemas. It contains seventeen files mirroring the schema notes in BM:
+The `schemas/` directory in the plugin root is the version-controlled source of truth for all Basic Memory note schemas. It contains nineteen files mirroring the schema notes in BM:
 
 **Package types:**
 - `schemas/npm_package.md` — npm package notes (`npm_package` type)
@@ -82,6 +82,8 @@ The `schemas/` directory in the plugin root is the version-controlled source of 
 
 **Knowledge types:**
 - `schemas/engineering.md` — engineering knowledge notes (`engineering` type)
+- `schemas/pattern.md` — cross-domain structural insight notes (`pattern` type)
+- `schemas/reference.md` — lookup document notes (`reference` type)
 - `schemas/standard.md` — protocol and standard notes (`standard` type)
 - `schemas/concept.md` — concept and movement notes (`concept` type)
 - `schemas/milestone.md` — milestone and history notes (`milestone` type)

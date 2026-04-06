@@ -189,6 +189,34 @@ but don't fix existing body wiki-links.
 
 ---
 
+### `edit_note(find_replace)` on schema frontmatter creates duplicate frontmatter
+
+**Discovered:** 2026-04-06
+**Impact:** High — using `edit_note` with `find_replace` to modify a schema note's
+YAML frontmatter caused BM to prepend a `permalink`-only frontmatter block, pushing
+the real schema (with `entity`, `version`, `schema:` block) into the body as content.
+`schema_validate` then reports "No schema found" because it reads the first (empty)
+frontmatter only.
+**Workaround:** Use `write_note` with `overwrite=True` to replace the entire schema
+note cleanly. This avoids the re-parse that generates the duplicate frontmatter.
+**Status:** Open — workaround reliable but requires rewriting the full note.
+
+---
+
+### `search_notes(note_types=[X])` matches directory paths, not just frontmatter type
+
+**Discovered:** 2026-04-06
+**Impact:** Medium — `search_notes(note_types=["engineering"])` returns notes whose
+file path contains "engineering" (e.g. `engineering/history/Agile Manifesto.md` with
+`type: milestone`), not just notes with `type: engineering` in frontmatter. This
+inflates type counts by ~20% for types sharing names with directories.
+**Workaround:** Verify counts via `read_note(include_frontmatter=true)` on individual
+results when precision matters. Never rely on `search_notes` counts alone for type
+audits.
+**Status:** Open — behavior is undocumented.
+
+---
+
 ### `bm project info` exposes `most_connected_entities` and `total_unresolved_relations`
 
 **Discovered:** 2026-03-30 (DeepWiki research for concept gap detection)

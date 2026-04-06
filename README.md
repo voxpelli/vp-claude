@@ -357,6 +357,8 @@ schemas/
   docker_image.md                      Docker image schema (docker_image type)
   vscode_extension.md                  VSCode extension schema (vscode_extension type)
   engineering.md                       Engineering knowledge schema (engineering type)
+  pattern.md                           Cross-domain structural insight schema (pattern type)
+  reference.md                         Lookup document schema (reference type)
   standard.md                          Protocol/standard schema (standard type)
   concept.md                           Concept/movement schema (concept type)
   milestone.md                         Milestone/history schema (milestone type)
