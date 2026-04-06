@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0][] - 2026-04-06
+
+### Added
+
+- **`/tag-sync` skill** (10th skill) — fetches tags from Raindrop via `find_tags`,
+  curates the top N by usage count, auto-characterizes each with a one-line
+  description from sampled bookmarks, groups by cluster (Ecosystem, Architecture,
+  Content Type, Other), and writes/syncs a vocabulary file at
+  `~/.claude/references/raindrop-tags.md`. Follows the vendor-sync pattern from
+  vp-beads. Supports `--reset` for full recreation. User-invocable as
+  `/tag-sync [count|--reset]`.
+- **`/session-bookmarks` skill** (9th skill) — scans the current conversation for
+  1-3 high-signal URLs discovered during research, previews them with proposed
+  tags and rationale, and creates bookmarks in the AI-bookmarked Raindrop
+  collection (ID 69372352) after user approval. Signal heuristics exclude
+  registry index pages, repo root pages, and user-pasted seed URLs. Auto-delegated
+  from `/session-reflect` Step 6, or invocable standalone.
+- **Canonical `url:` frontmatter field** — all 11 package/tool note templates now
+  include a `url:` field pointing to the canonical registry page (npmjs.com,
+  crates.io, formulae.brew.sh, etc.). Metadata-only — not a schema observation
+  field. Docker template documents the `/_/` vs `/r/org/` URL conditional.
+- **`project` schema** (20th schema) — for things you own and build, with ownership
+  boundary test ("you build it → project; you consume it → service"). 9 notes
+  (3 existing + 6 retyped from service).
+- **Person schema +5 fields** — `connection`, `influence`, `influenced_by`,
+  `influences`, `relates_to` relation fields based on 83-note frequency analysis.
+- **Milestone schema +1 field** — `created_by` relation (16% usage).
+- **Standard schema +2 fields** — `created_by` and `contrasts_with` relations.
+- **vp-git 0.2.0 in marketplace** — added `voxpelli/claude-git` to the
+  vp-plugins marketplace.
+
+### Fixed
+
+- **Session-reflect bookmark delegation** — clarified that `/session-bookmarks`
+  is invoked via the Skill tool, not automatically.
+- **Docker template URL** — added comment for community image URL pattern
+  (`/r/org/name` vs `/_/name` for official images).
+
 ## [0.22.1][] - 2026-04-06
 
 ### Fixed
@@ -758,6 +796,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.23.0]: https://github.com/voxpelli/vp-claude/compare/v0.22.1...v0.23.0
 [0.22.1]: https://github.com/voxpelli/vp-claude/compare/v0.22.0...v0.22.1
 [0.22.0]: https://github.com/voxpelli/vp-claude/compare/v0.21.1...v0.22.0
 [0.21.1]: https://github.com/voxpelli/vp-claude/compare/v0.21.0...v0.21.1
