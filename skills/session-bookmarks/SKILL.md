@@ -117,11 +117,20 @@ Each candidate shows:
 - **Tags** — always `ai-bookmarked` + 2-4 domain tags from the tag vocabulary
 - **Rationale** — one line explaining why this URL mattered in the session
 
-**Tag selection:** Load the tag vocabulary from
-`~/.claude/references/raindrop-tags.md` via `Read`. Match tags to the
-bookmark's topic using the characterizations in the vocabulary. If the
-vocabulary file does not exist, fall back to composing 2-3 kebab-case
-domain tags from the content topic.
+**Tag selection — load vocabulary first:**
+
+```
+Read(file_path="~/.claude/references/raindrop-tags.md")
+```
+
+If the file exists, select tags by matching the bookmark's topic against
+the characterizations in each cluster (Ecosystem, Architecture, Content
+Type, Other). Prefer existing vocabulary tags over inventing new ones.
+
+If the file does not exist (e.g., `/tag-sync` has not been run yet), fall
+back to composing 2-3 kebab-case domain tags from the content topic.
+
+Always include `ai-bookmarked` as the first tag regardless of vocabulary.
 
 Wait for user response before proceeding.
 
