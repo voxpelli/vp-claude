@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0][] - 2026-04-06
+
+### Added
+
+- **`raindrop-gardener` agent** (4th agent) — read-only Raindrop tag auditor
+  with 10 audit steps: library dashboard, tag inventory, naming violations,
+  near-duplicate detection, mistagged bookmarks (via `find_mistagged_bookmarks`),
+  orphan tags, legacy tags, co-occurrence analysis, Swedish/English parallels,
+  and taxonomy gaps. Produces structured reports with exact `update_tags`/
+  `delete_tags` tool calls as copy-paste recommendations. Uses 3 novel
+  Raindrop MCP tools: `find_mistagged_bookmarks`, `fetch_current_user`,
+  `fetch_popular_keywords`.
+
+### Changed
+
+- **`/session-bookmarks` hybrid tag selection** — tag selection now uses
+  copy-from-similar as primary signal (searches for similar bookmarks,
+  extracts their tags, counts frequency) with topic-match boosting for
+  specific tags, a legacy tag blocklist (`5`, `4`, `cool`, `web2.0`,
+  `for:*`, Swedish personal tags), vocabulary fallback for novel topics,
+  and selection rules with BAD/GOOD examples. Empirically tested across
+  6 scenarios against the real 13k bookmark library.
+- **Two-pass `url_pattern` dedup** — duplicate checking now uses
+  `url_pattern` for precise wildcard URL matching (Pass 1), falling back
+  to semantic `search` only when no exact match found (Pass 2). GitHub
+  URLs use owner/repo-scoped patterns for precision.
+
 ## [0.23.0][] - 2026-04-06
 
 ### Added
@@ -796,6 +823,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.24.0]: https://github.com/voxpelli/vp-claude/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/voxpelli/vp-claude/compare/v0.22.1...v0.23.0
 [0.22.1]: https://github.com/voxpelli/vp-claude/compare/v0.22.0...v0.22.1
 [0.22.0]: https://github.com/voxpelli/vp-claude/compare/v0.21.1...v0.22.0

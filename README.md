@@ -339,6 +339,7 @@ agents/
   knowledge-gardener.md                Read-only graph auditor (tags + fourth-wall)
   knowledge-maintainer.md              Read-write graph enhancer (effort: high)
   knowledge-primer.md                  Autonomous project context priming
+  raindrop-gardener.md                 Read-only Raindrop tag auditor
 hooks/
   hooks.json                           PreToolUse, PostToolUse x2,
                                        PostToolUseFailure, PreCompact, SessionStart
@@ -394,6 +395,7 @@ schemas/
                       ├── auto-runs /tool-intel for undocumented tool manifests
                       └── asks before content changes
  "prime context"   -> knowledge-primer    -> context brief (autonomous agent)
+ "audit tags"      -> raindrop-gardener   -> tag health report (read-only)
 
  [any BM write]    -> PostToolUse hook    -> schema validation feedback
  [any file edit]   -> PostToolUse hook    -> shfmt + schema sync reminder
