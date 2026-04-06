@@ -12,6 +12,7 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 ---
 title: vscode-<publisher>.<extension-id>
 type: vscode_extension
+url: https://marketplace.visualstudio.com/items?itemName=<publisher>.<extension-id>
 tags: [<domain>, vscode]
 packages: ["<publisher>.<extension-id>"]
 ---

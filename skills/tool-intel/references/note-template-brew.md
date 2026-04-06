@@ -11,6 +11,7 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 ---
 title: brew-<formula-name>
 type: brew_formula
+url: https://formulae.brew.sh/formula/<formula-name>
 tags: [<domain>, <category>]
 packages: ["<formula-name>"]
 ---

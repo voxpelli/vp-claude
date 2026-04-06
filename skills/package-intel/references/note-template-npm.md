@@ -11,6 +11,7 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 ---
 title: npm-<package-name>
 type: npm_package
+url: https://www.npmjs.com/package/<npm-package-name>
 tags: [<domain>, <subdomain>]
 packages: ["<npm-package-name>"]
 ---

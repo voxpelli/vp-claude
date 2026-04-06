@@ -11,6 +11,7 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 ---
 title: composer-<vendor>-<package>
 type: composer_package
+url: https://packagist.org/packages/<vendor>/<package>
 tags: [<domain>, <subdomain>]
 packages: ["<vendor>/<package>"]
 ---

@@ -11,6 +11,7 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 ---
 title: pypi-<name>
 type: pypi_package
+url: https://pypi.org/project/<pypi-package-name>/
 tags: [<domain>, <subdomain>]
 packages: ["<pypi-package-name>"]
 ---

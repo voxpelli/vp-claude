@@ -193,6 +193,12 @@ since it operates without time pressure.
 - **One-liner observations** — each `[category]` line should be self-contained
   and understandable without the conversation context
 
+## Bookmark Delegation
+
+After completing the report (Step 6), invoke `/session-bookmarks` to check
+for bookmark-worthy URLs discovered during this session. The delegation is
+automatic — if `/session-bookmarks` finds no candidates, it exits silently.
+
 ## vp-beads Integration
 
 In projects using vp-beads, `/session-reflect` and vp-beads workflows are

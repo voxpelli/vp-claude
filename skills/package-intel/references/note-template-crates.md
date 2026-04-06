@@ -11,6 +11,7 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 ---
 title: crate-<name>
 type: crate_package
+url: https://crates.io/crates/<crate-name>
 tags: [<domain>, <subdomain>]
 packages: ["<crate-name>"]
 ---

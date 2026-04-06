@@ -11,6 +11,7 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 ---
 title: gem-<name>
 type: ruby_gem
+url: https://rubygems.org/gems/<gem-name>
 tags: [<domain>, <subdomain>]
 packages: ["<gem-name>"]
 ---

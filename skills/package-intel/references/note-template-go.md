@@ -15,6 +15,7 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 ---
 title: go-<module-path>
 type: go_module
+url: https://pkg.go.dev/<module-path>
 tags: [<domain>, <subdomain>]
 packages: ["<module-path>"]
 ---

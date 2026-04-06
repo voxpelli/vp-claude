@@ -12,6 +12,7 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 ---
 title: action-<owner>-<repo>
 type: github_action
+url: https://github.com/<owner>/<repo>
 tags: [<domain>, ci-cd]
 packages: ["<owner>/<repo>"]
 ---

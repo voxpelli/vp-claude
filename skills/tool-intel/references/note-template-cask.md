@@ -11,6 +11,7 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 ---
 title: cask-<cask-name>
 type: brew_cask
+url: https://formulae.brew.sh/cask/<cask-name>
 tags: [<domain>, <category>]
 packages: ["<cask-name>"]
 ---
