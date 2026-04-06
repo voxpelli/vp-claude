@@ -73,17 +73,35 @@ If no candidates are found:
 
 ### Step 2: Deduplicate against Raindrop
 
-For each candidate URL, check if it already exists in any Raindrop collection:
+For each candidate URL, check if it already exists using a two-pass approach:
+
+**Pass 1 — Exact URL match (primary):**
+
+```
+mcp__raindrop__find_bookmarks(url_pattern=["*<url-without-protocol>*"])
+```
+
+Strip protocol (`https://`, `http://`) and `#fragment`. Keep `www` if present.
+Wrap in leading and trailing `*` wildcards.
+
+Example: `https://fastify.dev/docs/Reply/#send` becomes
+`url_pattern=["*fastify.dev/docs/Reply/*"]`.
+
+For `github.com` URLs, include owner/repo in the pattern to avoid matching
+thousands of GitHub bookmarks: `["*github.com/fastify/fastify*"]`.
+
+If any result returned, the URL is already bookmarked — skip this candidate.
+
+**Pass 2 — Domain search (fallback, only if Pass 1 returned 0):**
 
 ```
 mcp__raindrop__find_bookmarks(search="<domain-name>")
 ```
 
-Search by **domain name** (e.g., `fastify.dev`), not the full URL. This catches
-URL variations (www, https, different paths on the same domain).
+Search by domain name. Scan results for same content at a different URL
+(mirrors, CDN republication). A domain match alone is not a duplicate —
+only skip if the content is genuinely the same resource.
 
-If the search returns results, check for an **exact URL** match (ignoring
-trailing slashes and fragments) — a domain match alone is not a duplicate.
 If the exact URL exists in ANY Raindrop collection (not just AI-bookmarked),
 skip it — do not create a duplicate.
 
@@ -114,23 +132,52 @@ Approve all, or specify numbers (e.g. "1").
 Each candidate shows:
 - **Title** — auto-derived from conversation context or the URL itself
 - **URL** — the full URL to bookmark
-- **Tags** — always `ai-bookmarked` + 2-4 domain tags from the tag vocabulary
+- **Tags** — always `ai-bookmarked` + 2-4 domain tags
 - **Rationale** — one line explaining why this URL mattered in the session
 
-**Tag selection — load vocabulary first:**
+**Tag selection — hybrid approach:**
+
+**Step A — Copy-from-similar** (primary signal): Search for bookmarks
+similar to the candidate's topic:
 
 ```
-Read(file_path="~/.claude/references/raindrop-tags.md")
+mcp__raindrop__find_bookmarks(search="<topic keywords from title>", limit=5)
 ```
 
-If the file exists, select tags by matching the bookmark's topic against
-the characterizations in each cluster (Ecosystem, Architecture, Content
-Type, Other). Prefer existing vocabulary tags over inventing new ones.
+Extract tags from the top 3-5 results. Count tag frequency across results.
+Skip results with broken links if visible in response metadata —
+deprioritize tags from dead bookmarks.
 
-If the file does not exist (e.g., `/tag-sync` has not been run yet), fall
-back to composing 2-3 kebab-case domain tags from the content topic.
+**Step B — Topic-match boost**: If a tag name appears as a word in the
+bookmark's title or topic keywords, boost it regardless of frequency.
+This prevents specific tags (e.g., `micropub`) from losing to generic
+ones (`code`) that are more common across results.
 
-Always include `ai-bookmarked` as the first tag regardless of vocabulary.
+**Step C — Filter blocklist**: Remove these tags from candidates:
+- Numeric ratings: `5`, `4`, `3`
+- Legacy status: `cool`, `web2.0`, `imported`, `toread`, `unread`
+- Sharing tags: any `for:*` prefix (Delicious-era social tags)
+- Swedish personal: `tankar`, `butik`, `nördigt`, `förening`, `sverige`
+
+If `~/.claude/references/raindrop-tags.md` exists, also consult its
+`legacy_avoid` frontmatter list and `overlap_groups` for disambiguation.
+
+**Step D — Fallback**: If fewer than 3 similar bookmarks found in Step A,
+load the vocabulary file via `Read` and match topics against table
+characterizations. This covers novel topics with no exemplars in the library.
+
+**Step E — Selection rules**:
+- `ai-bookmarked` is mandatory (always first tag)
+- Pick 2-3 additional tags (max 4 paid slots)
+- Each tag must add DISTINCT information — if A implies B, drop B
+- Prefer the MOST SPECIFIC tag: `nodejs` not `javascript`
+- Two tags from the same cluster is a smell — prefer cross-cluster
+
+**Step F — Examples**:
+BAD:  ai-bookmarked, tools, code, javascript (all generic, same cluster)
+GOOD: ai-bookmarked, nodejs, testing (specific ecosystem + concern)
+BAD:  ai-bookmarked, mac, osx (redundant Apple tags)
+GOOD: ai-bookmarked, osx, cli (platform + what kind of content)
 
 Wait for user response before proceeding.
 
