@@ -167,6 +167,11 @@ with `find_replace` targeting the last relation line. Only add links where the
 relationship is genuine — don't link notes that mention the same word in an
 unrelated context. This turns one-way references into bidirectional graph edges.
 
+Relation verbs must exactly match picoschema field names — `related_to` (wrong
+verb), `relates to` (space not underscore), and `related_to:` (colon suffix)
+all silently create non-matching relations that `schema_validate` flags as
+missing. Always use `relates_to`, `depends_on`, etc. exactly as declared.
+
 ### Basic Memory search patterns
 
 When querying Basic Memory via `search_notes`, choose the right approach:
@@ -234,6 +239,7 @@ titles automatically.
 - Directory: `npm/`
 - Type: `npm_package` (snake_case — Basic Memory enforces snake_case for all type fields)
 - Three enrichment layers: frontmatter metadata, `## Observations` with `[category]` tags, `## Relations` with `[[wiki-links]]`
+- Schema-required fields (like `source` for service) must be `[field]` observations in the note body — YAML frontmatter fields are NOT checked by `schema_validate`
 - Use `edit_note` with `find_replace` for updates — `append` with `section` goes to end of file, not end of section
 - Optional structured metadata on observations (following vp-beads convention):
   - `Ownership: upstream|us|shared` — distinguishes package bugs from integration choices
