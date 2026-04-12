@@ -5,7 +5,7 @@ permalink: main/schema/concept
 entity: concept
 version: 1
 schema:
-  source: string, research provenance
+  source?: string, research provenance
   pattern?(array): string, recurring patterns
   trend?(array): string, current trends
   philosophy?: string, guiding philosophy
@@ -13,7 +13,7 @@ schema:
   note?: string, additional context
   risk?(array): string, risks or concerns
   principle?: string, guiding principles
-  opportunity?(array): string, opportunities identified
+
   part_of?: Note, parent movement or category
   enables?: Note, concept this enables
   implements?: Note, concept this implements
@@ -36,7 +36,7 @@ and relationships to other ideas and projects.
 
 - [convention] Title describes the concept clearly (e.g. `Twelve-Factor App`, `Event Sourcing - CQRS Pattern`)
 - [convention] Directory: organized by domain
-- [convention] `source` is required — research provenance
+- [convention] `source` is optional — recommended for research provenance
 - [convention] Relations use `[[Title]]` wiki-link format
 
 ## Relation Vocabulary

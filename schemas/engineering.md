@@ -10,15 +10,15 @@ schema:
   convention?(array): string, established conventions
   rule?(array): string, mandatory rules and constraints
   distinction?(array): string, important conceptual distinctions
-  benefit?(array): string, advantages of an approach
+
   limitation?(array): string, known constraints
   principle?(array): string, guiding principles
-  solution?(array): string, proven solutions to known problems
+
   tip?(array): string, practical tips and shortcuts
-  constraint?(array): string, hard constraints that must be honored
+
   lesson?(array): string, lessons learned from real-world experience
   anti-pattern?(array): string, approaches to avoid and why
-  root-cause?(array): string, root cause analysis of issues
+
   decision?(array): string, architectural and design decisions with rationale
   relates_to(array): Note, related knowledge notes
   extends?(array): Note, parent notes this note specializes or builds upon

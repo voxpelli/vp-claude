@@ -6,9 +6,9 @@ entity: project
 version: 1
 schema:
   status(enum): [idea, labs, active, maintained, archived], project lifecycle stage
-  owner?: Note, person or entity that owns the project
-  repo?: string, GitHub repository (owner/repo format)
-  domain?: string, production domain if deployed
+  source?: string, research provenance
+  naming?: string, name etymology and branding decisions
+  prior-art?(array): string, competitive landscape and prior work
   architecture?(array): string, technical architecture and design decisions
   feature?(array): string, key features and capabilities
   risk?(array): string, risks and concerns
@@ -16,7 +16,7 @@ schema:
   competitive?(array): string, competitive landscape observations
   testing?(array): string, test strategy and infrastructure
   decision?(array): string, key architectural or product decisions
-  product?: string, product positioning or value proposition
+  product?(array): string, product positioning or value proposition
   synergy?(array): string, integration points with sibling projects
   evidence?(array): string, market evidence or validation signals
   product_of?: Note, person or organization that created it
@@ -25,6 +25,7 @@ schema:
   built_with?(array): Note, key framework or library dependencies
   depends_on?(array): Note, vendor or internal package dependencies
   complements?(array): Note, sibling projects with complementary scope
+  follows_pattern?: Note, architectural pattern this project implements
   relates_to?(array): Note, related notes
 settings:
   validation: warn
@@ -57,6 +58,7 @@ Preferred relation labels for project notes (use consistently):
 - `built_with [[Package]]` — key framework or library dependencies
 - `depends_on [[Package]]` — vendor or internal package dependencies
 - `complements [[Project]]` — sibling projects with complementary scope
+- `follows_pattern [[Pattern]]` — architectural pattern this project implements
 - `relates_to [[Note]]` — related notes
 
 ## Observations

@@ -5,7 +5,7 @@ permalink: main/schema/person
 entity: person
 version: 1
 schema:
-  source: string, research provenance
+  source?: string, research provenance
   role?: string, what they are known for
   impact?: string, achievements and influence
   insight?(array): string, notable quotes or ideas
@@ -19,8 +19,6 @@ schema:
   part_of?: Note, organization or movement they belong to
   works_with?(array): Note, collaborators or related people
   enables?(array): Note, projects or standards they enabled
-  influenced_by?(array): Note, people or movements that shaped their thinking
-  influences?(array): Note, people, projects, or movements they influenced
   relates_to?(array): Note, related notes
 settings:
   validation: warn
@@ -37,7 +35,7 @@ and relationships to projects, protocols, and movements.
 
 - [convention] Title format: `Name - Brief Descriptor` (e.g. `Linus Torvalds - Linux Creator`)
 - [convention] Directory: organized by domain
-- [convention] `source` is required — research provenance; other fields are optional
+- [convention] `source` is optional — recommended for research provenance; other fields are optional
 - [convention] `role` should be a concise phrase describing their primary contribution
 - [convention] Relations use `[[Title]]` wiki-link format
 
@@ -50,6 +48,7 @@ Preferred relation labels for person notes (use consistently):
 - `part_of [[Organization]]` — organization they belong to
 - `works_with [[Person]]` — collaborators
 - `enables [[Project]]` — projects or standards they enabled
+- `relates_to [[Note]]` — related notes
 
 ## Observations
 
@@ -60,3 +59,4 @@ Preferred relation labels for person notes (use consistently):
 
 - see also [[schema/service]] (for projects people created)
 - see also [[schema/standard]] (for protocols people authored)
+- see also [[schema/project]] (for projects people own)
