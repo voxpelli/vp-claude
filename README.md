@@ -208,7 +208,7 @@ Triages unsorted Raindrop bookmarks in interactive batches:
 
 > "Triage unsorted bookmarks" / "Clean up raindrop inbox" / "Sort unsorted"
 
-The first pass deduplicates by normalized URL (stripping tracking params), detects research bursts (temporal clusters of 3+ bookmarks within 30 minutes), clusters by theme, proposes vocabulary-grounded tags, and moves approved bookmarks to AI-triaged. A `--promote` pass classifies AI-triaged items into AI-highlights (high-reuse), AI-archive (low-reuse), or AI-attention (needs human decision) with structured note annotations. Operates within a 5-collection AI-managed namespace — never touches user-curated collections.
+The first pass deduplicates by normalized URL (stripping tracking params), detects research bursts (temporal clusters of 3+ bookmarks within 30 minutes), clusters by theme, proposes vocabulary-grounded tags, and moves approved bookmarks to AI-triaged. A `--promote` pass classifies AI-triaged items into AI-sorted (default), AI-gems (golden), AI-archive (low-reuse), or AI-attention (needs human decision) with structured note annotations. Operates within a 6-collection AI-managed namespace — never touches user-curated collections.
 
 ### Hooks — Automated quality guardrails
 
@@ -345,6 +345,7 @@ skills/
     SKILL.md                           Session URL bookmarking to Raindrop
   raindrop-triage/
     SKILL.md                           Interactive unsorted bookmark triage
+    references/                        Tag selection strategy + promote workflow
 agents/
   knowledge-gardener.md                Read-only graph auditor (tags + fourth-wall)
   knowledge-maintainer.md              Read-write graph enhancer (effort: high)

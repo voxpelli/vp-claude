@@ -58,9 +58,14 @@ Read(file_path="~/.claude/references/raindrop-tags.md")
 
 - **File exists** — enter **sync mode**. Extract `tag_count`, `fetched_at`,
   and existing tag entries (tag name, count, characterization, cluster).
+  Also extract optional config fields from frontmatter: `blocklist`,
+  `context_tags`, `conventions`. **Preserve these unchanged through the
+  sync cycle** — they are user-authored config, not Raindrop-derived data.
   Check staleness: if `fetched_at` matches today's date and no explicit
   arguments were passed, warn and suggest `--reset` or a count argument.
-- **File missing** (or `--reset`) — enter **creation mode**.
+- **File missing** (or `--reset`) — enter **creation mode**. Seed default
+  config fields: `blocklist: ["5", "4", "3", "2", "imported", "toread",
+  "unread", "for:*"]`, `context_tags: []`, `conventions: []`.
 
 ### Step 3: Fetch tags from Raindrop
 
@@ -169,6 +174,10 @@ Write(file_path="~/.claude/references/raindrop-tags.md", content="...")
 Full-file overwrite (not incremental edit). Create `~/.claude/references/`
 directory if it does not exist.
 
+**Reincorporate preserved config fields** into the written file's YAML
+frontmatter. Do not overwrite or strip `blocklist`, `context_tags`, or
+`conventions` — these are user-authored and must survive the sync cycle.
+
 ### Step 9: Report
 
 ````markdown
@@ -194,6 +203,17 @@ tag_count: 75
 fetched_at: 2026-04-06
 mandatory_tags:
   - ai-bookmarked
+blocklist:
+  - "5"
+  - "4"
+  - "3"
+  - "2"
+  - imported
+  - toread
+  - unread
+  - "for:*"
+context_tags: []
+conventions: []
 ---
 
 # Raindrop Tag Vocabulary

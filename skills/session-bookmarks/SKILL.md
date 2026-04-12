@@ -4,6 +4,8 @@ description: "This skill should be used when the user asks to 'bookmark URLs fro
 user-invocable: true
 allowed-tools:
   - Read
+  - mcp__raindrop__find_collections
+  - mcp__raindrop__create_collections
   - mcp__raindrop__find_bookmarks
   - mcp__raindrop__create_bookmarks
   - mcp__raindrop__update_bookmarks
@@ -105,9 +107,20 @@ only skip if the content is genuinely the same resource.
 If the exact URL exists in ANY Raindrop collection (not just AI-bookmarked),
 skip it — do not create a duplicate.
 
-**Note:** This step skips `find_collections` (Step 1 of the global 4-step
-Raindrop workflow) because collection ID `69372352` is hardcoded — no
-collection discovery is needed.
+**Collection discovery:** Before the first `create_bookmarks` call, discover
+the AI-bookmarked collection:
+
+```
+mcp__raindrop__find_collections(search="AI-bookmarked")
+```
+
+If the collection does not exist, create it lazily:
+
+```
+mcp__raindrop__create_collections(collections=[{title: "AI-bookmarked"}])
+```
+
+Cache the collection ID for use in Step 4a.
 
 If all candidates are already bookmarked, exit silently.
 
@@ -153,14 +166,15 @@ bookmark's title or topic keywords, boost it regardless of frequency.
 This prevents specific tags (e.g., `micropub`) from losing to generic
 ones (`code`) that are more common across results.
 
-**Step C — Filter blocklist**: Remove these tags from candidates:
-- Numeric ratings: `5`, `4`, `3`, `2`
-- Import artifacts: `imported`, `toread`, `unread`
-- Sharing tags: any `for:*` prefix (Delicious-era social tags)
+**Step C — Filter blocklist**: Remove any tag listed in the vocabulary file's
+`blocklist` frontmatter field. Support exact matches (case-insensitive) and
+prefix wildcards (entries ending in `*`). If the vocabulary file exists but
+`blocklist` is absent, skip filtering. If the vocabulary file is missing
+entirely, apply a minimal fallback: numeric-only tags (`1`-`9`) and `imported`.
 
 **Step D — Fallback**: If fewer than 3 similar bookmarks found in Step A,
-load the vocabulary file via `Read` and match topics against table
-characterizations. This covers novel topics with no exemplars in the library.
+match topics against the vocabulary file's table characterizations. This
+covers novel topics with no exemplars in the library.
 
 **Step E — Selection rules**:
 - `ai-bookmarked` is mandatory (always first tag)
@@ -187,13 +201,13 @@ For each approved bookmark:
 mcp__raindrop__create_bookmarks(create=[{
   link: "<url>",
   title: "<title>",
-  collection_id: 69372352,
+  collection_id: <ai-bookmarked-id>,
   note: "<rationale from preview>"
 }])
 ```
 
-**CRITICAL:** Collection ID `69372352` ("AI-bookmarked") is hardcoded.
-NEVER write to any other collection — the user's organically curated 13k+
+**CRITICAL:** Use the AI-bookmarked collection ID discovered in Step 2.
+NEVER write to any other collection — the user's organically curated
 library must not be contaminated with AI-generated additions.
 
 Multiple approved bookmarks can be batched in a single `create_bookmarks`

@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.1][] - 2026-04-13
+
+### Fixed
+
+- **Personal content leakage** — removed hardcoded employer name (`040.se`),
+  personal tag conventions (`040-work`, TypeScript→javascript+types), hardcoded
+  collection ID (`69372352`), library size references (`13k+`), and
+  Swedish-specific audit steps from published plugin files. All user-specific
+  behavior now reads from the vocabulary file's YAML frontmatter.
+
+### Added
+
+- **Vocabulary file config fields** — `blocklist`, `context_tags`, and
+  `conventions` frontmatter fields in `~/.claude/references/raindrop-tags.md`.
+  Tag-sync seeds sensible defaults on creation and preserves config across sync
+  cycles.
+- **`--source` argument** for `/raindrop-triage --promote` — overrides the
+  default AI-triaged source collection, solving the bootstrap problem for
+  pre-triaged bookmarks.
+- **Progressive disclosure** — extracted tag selection strategy and promote
+  workflow from raindrop-triage SKILL.md into `references/` files, reducing
+  SKILL.md from ~3,200 to ~1,800 words.
+- **Count verification gate** in promote workflow — verifies processed + skipped
+  = source total after all batches.
+- **TodoWrite progress checklist** for the promote pass.
+- **Collection discovery** in session-bookmarks — replaced hardcoded collection
+  ID with `find_collections`/`create_collections` discovery pattern.
+
+### Changed
+
+- **raindrop-gardener** — Swedish/English parallel tag detection generalized to
+  non-primary-language detection (works for any language pair).
+- **Description trigger phrases** — added "deduplicate bookmarks", "find
+  duplicate bookmarks", "tag unsorted", "process raindrop inbox" to
+  raindrop-triage.
+
 ## [0.25.0][] - 2026-04-12
 
 ### Added
@@ -14,15 +50,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (temporal clusters of 3+ within 30min), theme-based clustering, vocabulary-
   grounded tag proposals, and batch-approval UX. Moves approved bookmarks to
   AI-triaged collection. A `--promote` pass classifies AI-triaged items into
-  AI-highlights, AI-archive, or AI-attention with structured note annotations.
-  Operates within a 5-collection AI-managed namespace (AI-bookmarked,
-  AI-triaged, AI-highlights, AI-archive, AI-attention) — never touches
-  user-curated collections.
+  AI-sorted (default), AI-gems (golden), AI-archive, or AI-attention with
+  structured note annotations. Operates within a 6-collection AI-managed
+  namespace (AI-bookmarked, AI-triaged, AI-sorted, AI-gems, AI-archive,
+  AI-attention) — never touches user-curated collections.
 
 ### Changed
 
 - **Raindrop collection rule** — expanded from "AI-bookmarked only" to
-  "AI-\* namespace only" (AI-bookmarked, AI-triaged, AI-highlights,
+  "AI-\* namespace only" (AI-bookmarked, AI-triaged, AI-sorted, AI-gems,
   AI-archive, AI-attention) in both global and project CLAUDE.md.
 - **session-bookmarks blocklist narrowed** — removed `cool`, `web2.0`, and
   Swedish personal tags (active curation tags, not legacy); added `2` to
@@ -866,6 +902,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.25.1]: https://github.com/voxpelli/vp-claude/compare/v0.25.0...v0.25.1
 [0.25.0]: https://github.com/voxpelli/vp-claude/compare/v0.24.1...v0.25.0
 [0.24.1]: https://github.com/voxpelli/vp-claude/compare/v0.24.0...v0.24.1
 [0.24.0]: https://github.com/voxpelli/vp-claude/compare/v0.23.0...v0.24.0

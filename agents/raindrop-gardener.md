@@ -169,18 +169,19 @@ Build a co-occurrence matrix from the samples. Flag pairs where:
 
 Report each pair with counts and a recommended merged tag name.
 
-### Step 9: Swedish/English parallel tags
+### Step 9: Non-primary-language tag detection
 
-Detect Swedish-language tags by scanning for:
-- Characters: `å`, `ä`, `ö`
-- Common suffixes: `-ning`, `-tion`, `-het`, `-skap`
-- Known Swedish words: `verktyg`, `teknik`, `programmering`, `blogg`,
-  `musik`, `politik`, `ekonomi`, `miljö`, `mat`, `konst`
+Detect tags in languages other than the library's primary language by scanning
+for:
+- **Non-ASCII Latin characters** — `å`, `ä`, `ö`, `ü`, `ñ`, `ç`, etc.
+- **CJK, Cyrillic, Arabic, or other non-Latin scripts**
+- **Common non-English suffixes** that differ from the majority language
 
-For each Swedish tag, check if an English equivalent exists. Report three
-categories:
-- **Parallel pairs** — both exist (recommend merge to English)
-- **Swedish-only** — no equivalent (recommend translate + rename)
+Determine the library's primary language from the majority of tags. For each
+non-primary-language tag, check if an equivalent in the primary language
+exists. Report three categories:
+- **Parallel pairs** — both exist (recommend merge to primary language)
+- **Non-primary only** — no equivalent (recommend translate + rename)
 - **Ambiguous** — could be either language (`design`, `film`)
 
 ### Step 10: Taxonomy gaps and recommendations
@@ -247,7 +248,7 @@ cleaned tags."
 - N legacy/historical tags
 - N orphan tags (1-2 bookmarks)
 - N mistagged bookmarks flagged
-- N Swedish/English parallel tags
+- N non-primary-language parallel tags
 
 ### Info
 - N co-occurrence pairs (>80% overlap)
