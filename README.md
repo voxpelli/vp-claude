@@ -202,6 +202,14 @@ A user-triggered skill that reviews the current conversation and saves insights 
 
 Unlike the automatic PreCompact hook (brief, fires under compaction pressure), `/session-reflect` is deliberate — it extracts candidates, finds the right target notes, shows a grouped preview, and waits before writing anything. Uses the same `[decision]`, `[lesson]`, `[gotcha]`, `[pattern]` observation vocabulary as PreCompact, plus `[limitation]` and `[breaking]` for thoroughness.
 
+### `/raindrop-triage` — Interactive unsorted bookmark triage
+
+Triages unsorted Raindrop bookmarks in interactive batches:
+
+> "Triage unsorted bookmarks" / "Clean up raindrop inbox" / "Sort unsorted"
+
+The first pass deduplicates by normalized URL (stripping tracking params), detects research bursts (temporal clusters of 3+ bookmarks within 30 minutes), clusters by theme, proposes vocabulary-grounded tags, and moves approved bookmarks to AI-triaged. A `--promote` pass classifies AI-triaged items into AI-highlights (high-reuse), AI-archive (low-reuse), or AI-attention (needs human decision) with structured note annotations. Operates within a 5-collection AI-managed namespace — never touches user-curated collections.
+
 ### Hooks — Automated quality guardrails
 
 Six hooks run automatically in the background:
@@ -335,6 +343,8 @@ skills/
     SKILL.md                           Raindrop tag vocabulary sync
   session-bookmarks/
     SKILL.md                           Session URL bookmarking to Raindrop
+  raindrop-triage/
+    SKILL.md                           Interactive unsorted bookmark triage
 agents/
   knowledge-gardener.md                Read-only graph auditor (tags + fourth-wall)
   knowledge-maintainer.md              Read-write graph enhancer (effort: high)
@@ -386,6 +396,8 @@ schemas/
  /schema-evolve X  -> schema-evolve skill -> field proposals + dual-sync
  /tag-sync [N]     -> tag-sync skill     -> ~/.claude/references/raindrop-tags.md
  /session-bookmarks-> session-bookmarks  -> AI-bookmarked collection in Raindrop
+ /raindrop-triage  -> raindrop-triage   -> dedupe + burst detect + tag + AI-triaged
+                      (--promote)       -> classify into highlights/archive/attention
  /session-reflect  -> session-reflect    -> BM notes + delegates /session-bookmarks
  "audit graph"     -> knowledge-gardener  -> health report (read-only, incl. tags)
  "fix the graph"   -> knowledge-maintainer-> structural + tag fixes + confirmations

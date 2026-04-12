@@ -2,6 +2,7 @@
 name: tool-intel
 description: "This skill should be used when the user asks to 'research a homebrew formula', 'brew intel', 'what does [brew-tool] do', 'research a cask', 'cask intel', 'what does [cask] do', 'research a GitHub Action', 'action intel', 'what does [action] do', 'research a docker image', 'docker intel', 'what does [docker image] do', 'research a VSCode extension', 'vscode intel', 'what does [extension] do', 'add tool to knowledge graph', 'enrich [tool]'. Researches a developer environment or CI/CD tool using five-source enrichment (DeepWiki, Tavily, Raindrop, Readwise, changelog) and creates/updates a structured Basic Memory note with post-write cross-linking. Supports Homebrew formulae (brew:), Homebrew casks (cask:), GitHub Actions (action:), Docker images (docker:), and VSCode extensions (vscode:)."
 user-invocable: true
+argument-hint: "<prefix>:<name>"
 allowed-tools:
   - Bash
   - Read

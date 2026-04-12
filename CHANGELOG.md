@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.0][] - 2026-04-12
+
+### Added
+
+- **`/raindrop-triage` skill** (11th skill) — interactive triage of unsorted
+  Raindrop bookmarks with URL normalization dedup, research burst detection
+  (temporal clusters of 3+ within 30min), theme-based clustering, vocabulary-
+  grounded tag proposals, and batch-approval UX. Moves approved bookmarks to
+  AI-triaged collection. A `--promote` pass classifies AI-triaged items into
+  AI-highlights, AI-archive, or AI-attention with structured note annotations.
+  Operates within a 5-collection AI-managed namespace (AI-bookmarked,
+  AI-triaged, AI-highlights, AI-archive, AI-attention) — never touches
+  user-curated collections.
+
+### Changed
+
+- **Raindrop collection rule** — expanded from "AI-bookmarked only" to
+  "AI-\* namespace only" (AI-bookmarked, AI-triaged, AI-highlights,
+  AI-archive, AI-attention) in both global and project CLAUDE.md.
+- **session-bookmarks blocklist narrowed** — removed `cool`, `web2.0`, and
+  Swedish personal tags (active curation tags, not legacy); added `2` to
+  numeric ratings. Aligned with raindrop-triage blocklist.
+- **`argument-hint` frontmatter** added to 6 skills (package-intel,
+  tool-intel, knowledge-ask, schema-evolve, tag-sync, raindrop-triage) —
+  shows expected input format in the slash-command picker.
+- **`paths` frontmatter** added to knowledge-gaps — skill conditionally
+  activates when manifest files (package.json, Cargo.toml, etc.) are touched.
+- **`validate-plugin.mjs` expanded** — known-fields allowlist for skill
+  frontmatter warns on unknown fields (catches typos); type validation for
+  `argument-hint`, `paths`, `effort`, `maxTurns`, `context` fields.
+- **Skill interaction conventions** added to CLAUDE.md — AskUserQuestion
+  must not be in allowed-tools, preview-approve-execute pattern, TodoWrite
+  for progress feedback.
+
 ## [0.24.1][] - 2026-04-06
 
 ### Fixed
@@ -832,6 +866,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.25.0]: https://github.com/voxpelli/vp-claude/compare/v0.24.1...v0.25.0
 [0.24.1]: https://github.com/voxpelli/vp-claude/compare/v0.24.0...v0.24.1
 [0.24.0]: https://github.com/voxpelli/vp-claude/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/voxpelli/vp-claude/compare/v0.22.1...v0.23.0

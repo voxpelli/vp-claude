@@ -209,6 +209,22 @@ const skillFiles = (await readdir(join(ROOT, 'skills'), { recursive: true }))
 
 const SKILL_REQUIRED = ['name', 'description', 'user-invocable', 'allowed-tools']
 
+const SKILL_KNOWN_FIELDS = new Set([
+  ...SKILL_REQUIRED,
+  'argument-hint',
+  'paths',
+  'effort',
+  'maxTurns',
+  'context',
+  'hooks',
+  'shell',
+  'disallowedTools',
+  'agent',
+  'disable-model-invocation',
+  'model',
+  'skills',
+])
+
 for (const file of skillFiles) {
   const content = await readFile(file, 'utf8')
   const fm = extractFrontmatter(content)
@@ -221,11 +237,32 @@ for (const file of skillFiles) {
       error(file, `Missing required frontmatter field: ${field}`)
     }
   }
+  // Warn on unknown frontmatter fields (catches typos)
+  for (const field of Object.keys(fm)) {
+    if (!SKILL_KNOWN_FIELDS.has(field)) {
+      warn(file, `Unknown skill frontmatter field: "${field}" — typo?`)
+    }
+  }
   if ('allowed-tools' in fm && !Array.isArray(fm['allowed-tools'])) {
     error(file, 'allowed-tools must be an array')
   }
   if ('user-invocable' in fm && typeof fm['user-invocable'] !== 'boolean') {
     error(file, `user-invocable must be a boolean, got ${typeof fm['user-invocable']}`)
+  }
+  if ('argument-hint' in fm && typeof fm['argument-hint'] !== 'string') {
+    error(file, `argument-hint must be a string, got ${typeof fm['argument-hint']}`)
+  }
+  if ('paths' in fm && !Array.isArray(fm.paths)) {
+    error(file, 'paths must be an array of glob strings')
+  }
+  if ('effort' in fm && !VALID_AGENT_EFFORTS.has(fm.effort)) {
+    error(file, `Invalid skill effort "${String(fm.effort)}", must be one of: ${[...VALID_AGENT_EFFORTS].join(', ')}`)
+  }
+  if ('maxTurns' in fm && (typeof fm.maxTurns !== 'number' || fm.maxTurns < 1)) {
+    error(file, `maxTurns must be a positive integer, got ${String(fm.maxTurns)}`)
+  }
+  if ('context' in fm && fm.context !== 'fork') {
+    error(file, `context must be "fork" if present, got "${String(fm.context)}"`)
   }
   if (Array.isArray(fm['allowed-tools'])) {
     validateMcpPrefixes(file, /** @type {string[]} */ (fm['allowed-tools']))

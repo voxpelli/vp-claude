@@ -2,6 +2,7 @@
 name: package-intel
 description: "This skill should be used when the user asks to 'research package', 'package intel', 'what does [npm-pkg] do', 'add package to knowledge graph', 'enrich [pkg]', when adding depends_on [[npm-*]] relations, 'research crate', 'what does [crate] do', 'crate intel', 'rust package', 'pypi package', 'python package', 'go module', 'golang package', 'composer package', 'php package', 'ruby gem', 'gem intel'. Researches a package using six-source enrichment (DeepWiki, Context7, Tavily, Raindrop, Readwise, changelog) and creates/updates a structured Basic Memory note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, and Ruby gems."
 user-invocable: true
+argument-hint: "<ecosystem>:<package>"
 allowed-tools:
   - Bash
   - Read

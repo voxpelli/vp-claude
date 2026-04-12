@@ -9,6 +9,7 @@ description: "This skill should be used when the user asks 'what do I know about
   answer with source citations and gap suggestions. NOT for project-wide inventory
   or coverage reports (use /knowledge-prime for that)."
 user-invocable: true
+argument-hint: "<question>"
 allowed-tools:
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__read_note

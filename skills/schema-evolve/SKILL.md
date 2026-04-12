@@ -2,6 +2,7 @@
 name: schema-evolve
 description: "This skill should be used when the user asks about 'schema drift', 'schema evolution', 'evolve schema', 'schema sync', 'sync schemas', 'update schema fields', 'schema field frequency', 'missing schema fields', 'unused schema fields', 'schema proposal', 'schema cardinality', 'check schema', 'schema audit', 'schema changes'. Detects drift between Basic Memory schema definitions and actual note usage, proposes field additions/removals based on frequency analysis, and dual-syncs BM notes + local schema files after approval."
 user-invocable: true
+argument-hint: "<note_type>"
 allowed-tools:
   - Read
   - Edit

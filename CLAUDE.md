@@ -25,6 +25,7 @@ skills/
   vp-note-quality/SKILL.md           # Fourth-wall anti-pattern checklist (not user-invocable)
   tag-sync/SKILL.md                  # Raindrop tag vocabulary sync
   session-bookmarks/SKILL.md         # Session URL bookmarking to Raindrop
+  raindrop-triage/SKILL.md           # Interactive unsorted bookmark triage
 agents/
   knowledge-gardener.md              # Read-only graph health auditor (incl. tag alignment)
   knowledge-maintainer.md            # All-in-one graph enhancer (writes, incl. tag fixes)
@@ -38,7 +39,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 
 ## Components
 
-### Skills (10)
+### Skills (11)
 
 - **package-intel** — Researches a package via six enrichment sources (DeepWiki, Context7, Tavily, Raindrop, Readwise, changelog) and writes/updates a structured prefixed note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer, Python PyPI, and Ruby gems. User-invocable as `/package-intel <pkg>`.
 - **tool-intel** — Researches a developer environment or CI/CD tool via five sources (Basic Memory, DeepWiki for actions/docker, Tavily, Raindrop, Readwise) and writes/updates a structured prefixed note with post-write cross-linking. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), and VSCode extensions (`vscode:`). User-invocable as `/tool-intel <prefix>:<name>`.
@@ -50,6 +51,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 - **vp-note-quality** — Reference checklist preventing the fourth-wall anti-pattern (self-referential content in subject-domain notes). Not user-invocable — preloaded into knowledge-maintainer and knowledge-gardener agents via the `skills` frontmatter field.
 - **tag-sync** — Fetches tags from Raindrop, curates the top N by usage count, adds one-line characterizations, groups by cluster, and writes/syncs the vocabulary file at `~/.claude/references/raindrop-tags.md`. Follows the vendor-sync pattern. User-invocable as `/tag-sync [count|--reset]`.
 - **session-bookmarks** — Scans the current conversation for high-signal URLs, suggests 1-3 as Raindrop bookmarks in the AI-bookmarked collection, and creates them after user approval. Auto-delegated from `/session-reflect` or invocable standalone. User-invocable as `/session-bookmarks`.
+- **raindrop-triage** — Interactive triage of unsorted Raindrop bookmarks: deduplicates by normalized URL, detects research bursts (temporal clusters), clusters by theme, proposes vocabulary-grounded tags, and moves approved bookmarks to AI-triaged. A `--promote` pass classifies AI-triaged items into AI-highlights, AI-archive, or AI-attention. User-invocable as `/raindrop-triage`.
 
 ### Agents (4)
 
@@ -115,7 +117,7 @@ Skills and agents reference tools from multiple MCP servers. When editing, use e
 | DeepWiki | `mcp__deepwiki__*` | package-intel, tool-intel |
 | Context7 | `mcp__plugin_context7_context7__*` | package-intel only |
 | Tavily | `mcp__tavily__*` | package-intel, tool-intel |
-| Raindrop | `mcp__raindrop__*` | package-intel, tool-intel, tag-sync, session-bookmarks, raindrop-gardener |
+| Raindrop | `mcp__raindrop__*` | package-intel, tool-intel, tag-sync, session-bookmarks, raindrop-triage, raindrop-gardener |
 | Readwise | `mcp__readwise__*` | package-intel, tool-intel, knowledge-gaps |
 
 ## Validation
@@ -145,6 +147,10 @@ and pass shellcheck + shfmt. The `check:sh` npm script validates both
 ### Skill frontmatter
 
 Required fields: `name`, `description`, `user-invocable`, `allowed-tools`. The `description` is a trigger phrase list — write it so Claude picks the right skill when a user says something relevant. The `allowed-tools` list is an allowlist; only include tools the skill actually calls. Skills with `user-invocable: false` are valid for reference/context-injection purposes (e.g., `vp-note-quality`) — they can be preloaded into agents via the `skills` frontmatter field and have `allowed-tools: []` when they contain no workflow steps. Non-user-invocable skills use the `vp-` prefix followed by a descriptive kebab-case name (e.g., `vp-note-quality`). The `vp-` prefix signals plugin-internal ownership and avoids collision with upstream `memory-*` skills.
+
+### Skill interaction conventions
+
+Never add `AskUserQuestion` to a skill's `allowed-tools` — it auto-approves the interaction, bypassing the UI prompt and returning empty answers (bug anthropics/claude-code#29547, fixed v2.1.69, but auto-approving defeats the tool's purpose even post-fix). Reference `AskUserQuestion` by name in workflow prose or use generic phrasing ("Wait for user response before proceeding"). For write/batch operations, follow the preview-approve-execute pattern: present a summary table of proposed changes, wait for user response, execute only approved items. For progress feedback in multi-step skills, use `TodoWrite` — it is the only progress tool available.
 
 ### Agent frontmatter
 

@@ -2,6 +2,7 @@
 name: tag-sync
 description: "This skill should be used when the user asks to 'manage tag vocabulary', 'update raindrop tags', 'sync tag vocabulary', 'curate tags', 'refresh tags file', 'rebuild tag vocabulary', 'what tags should I use', 'tag reference', 'raindrop tag vocabulary', 'create tags reference', 'tag inventory', 'tag sync'. Fetches the user's Raindrop tags, selects the top N by usage count, adds one-line characterizations, groups them by cluster, and writes or syncs the vocabulary file at ~/.claude/references/raindrop-tags.md."
 user-invocable: true
+argument-hint: "[count|--reset]"
 allowed-tools:
   - Read
   - Write

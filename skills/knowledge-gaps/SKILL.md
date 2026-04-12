@@ -2,6 +2,14 @@
 name: knowledge-gaps
 description: "This skill should be used when the user asks about 'knowledge gaps', 'package coverage', 'which packages need notes', 'undocumented dependencies', 'dependency audit', 'missing documentation', 'tool coverage', 'undocumented tools', 'brew/action/docker/vscode coverage', 'standard coverage', 'protocol coverage', 'domain standards', 'concept gaps', 'missing hub notes', 'undocumented concepts', 'topics without notes', or 'what should have its own note'. Cross-references project dependencies, tool manifests, and domain standards against Basic Memory notes to find undocumented packages, tools, standards, and concept-level hub gaps via relation graph analysis and Readwise reading signals. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, Ruby gems, Homebrew formulae/casks, GitHub Actions, Docker images, and VSCode extensions."
 user-invocable: true
+paths:
+  - "package.json"
+  - "Cargo.toml"
+  - "go.mod"
+  - "composer.json"
+  - "Brewfile"
+  - ".github/workflows/*.yml"
+  - "Dockerfile"
 allowed-tools:
   - Read
   - Grep

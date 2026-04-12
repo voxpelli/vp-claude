@@ -154,10 +154,9 @@ This prevents specific tags (e.g., `micropub`) from losing to generic
 ones (`code`) that are more common across results.
 
 **Step C — Filter blocklist**: Remove these tags from candidates:
-- Numeric ratings: `5`, `4`, `3`
-- Legacy status: `cool`, `web2.0`, `imported`, `toread`, `unread`
+- Numeric ratings: `5`, `4`, `3`, `2`
+- Import artifacts: `imported`, `toread`, `unread`
 - Sharing tags: any `for:*` prefix (Delicious-era social tags)
-- Swedish personal: `tankar`, `butik`, `nördigt`, `förening`, `sverige`
 
 **Step D — Fallback**: If fewer than 3 similar bookmarks found in Step A,
 load the vocabulary file via `Read` and match topics against table
