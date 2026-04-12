@@ -263,44 +263,8 @@ For each cluster, present a batch for user approval.
 
 #### Step 8a: Propose tags
 
-For each bookmark in the batch, propose tags using this strategy:
-
-**A — Copy-from-similar** (primary signal): Search for bookmarks similar to
-the candidate's topic:
-
-```
-mcp__raindrop__find_bookmarks(search="<topic keywords from title>", limit=5)
-```
-
-Extract tags from the top 3-5 results. Count tag frequency across results.
-
-**B — Topic-match boost**: If a tag name appears as a word in the bookmark's
-title or topic keywords, boost it regardless of frequency.
-
-**C — Filter blocklist**: Remove any tag listed in the vocabulary file's
-`blocklist` frontmatter field. Support exact matches (case-insensitive) and
-prefix wildcards (entries ending in `*` match any tag with that prefix, e.g.,
-`for:*` matches `for:jane`). If the vocabulary file exists but `blocklist`
-is absent, skip filtering. If the vocabulary file is missing entirely, apply
-a minimal fallback: numeric-only tags (`1`-`9`) and `imported`.
-
-**D — Vocabulary fallback**: If fewer than 3 similar bookmarks found in
-Step A, match topics against the vocabulary file's table characterizations.
-
-**E — Selection rules**:
-- Pick 2-4 tags per bookmark (aim for 3)
-- Each tag must add DISTINCT information — if A implies B, drop B
-- Prefer the MOST SPECIFIC tag: `nodejs` not `javascript`
-- Two tags from the same cluster is a smell — prefer cross-cluster
-- For research burst members: always include `research-burst`
-- For each `context_tags` entry in the vocabulary file's frontmatter where
-  `match: domain`, check if the bookmark URL hostname matches the `pattern`
-  glob. If it matches, inject the specified `tag`.
-
-**F — User conventions**: Apply any substitution rules from the vocabulary
-file's `conventions` frontmatter. For each entry, if the `replace` tag is
-being proposed, drop it and add all `with` tags instead. If no vocabulary
-file is loaded or `conventions` is absent, skip.
+For each bookmark in the batch, propose tags following the strategy in
+`references/tag-selection.md`.
 
 #### Step 8b: Present batch table
 
@@ -397,7 +361,9 @@ When `--promote` is passed, follow
 
 ---
 
-## Tag Selection Guidelines
+## Reference Files
 
-Propose tags following the strategy in
-`references/tag-selection.md`.
+- **`references/tag-selection.md`** — Tag proposal pipeline (A-F), tag axes,
+  vocabulary-first principle, blocklist, and user conventions
+- **`references/promote-workflow.md`** — Full promotion pass workflow (Steps 0-6)
+  with classification examples and attention note format

@@ -22,7 +22,7 @@ title or topic keywords, boost it regardless of frequency.
 **C — Filter blocklist**: Remove any tag listed in the vocabulary file's
 `blocklist` frontmatter field. Support exact matches (case-insensitive) and
 prefix wildcards (entries ending in `*` match any tag with that prefix, e.g.,
-`for:*` matches `for:jane`). If the vocabulary file exists but `blocklist`
+`for:*` matches `for:alice`). If the vocabulary file exists but `blocklist`
 is absent, skip filtering. If the vocabulary file is missing entirely, apply
 a minimal fallback: numeric-only tags (`1`-`9`) and `imported`.
 
