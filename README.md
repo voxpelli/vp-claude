@@ -426,7 +426,7 @@ schemas/
  /tag-sync [N]     -> tag-sync skill     -> ~/.claude/references/raindrop-tags.md
  /session-bookmarks-> session-bookmarks  -> AI-bookmarked collection in Raindrop
  /raindrop-triage  -> raindrop-triage   -> dedupe + burst detect + tag + AI-triaged
-                      (--promote)       -> classify into highlights/archive/attention
+                      (--promote)       -> classify into sorted/gems/archive/attention
  /wander [mode]    -> wander skill       -> serendipitous collisions (no scoring)
  /readwise-check X-> readwise-check    -> highlight count + document count + depth
  /session-reflect  -> session-reflect    -> BM notes + delegates /session-bookmarks
@@ -450,7 +450,7 @@ schemas/
 
 ## Relationship to upstream
 
-This plugin depends on but does not duplicate the 9 core `memory-*` skills from [`basicmachines-co/basic-memory-skills`](https://github.com/basicmachines-co/basic-memory-skills) (notes, schema, tasks, lifecycle, reflect, etc.). It adds multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), developer tool research (Homebrew, GitHub Actions, Docker, VSCode), project-level gap analysis, project context priming, schema evolution, tag alignment, and autonomous graph maintenance on top of those foundations.
+This plugin depends on but does not duplicate the 9 core `memory-*` skills from [`basicmachines-co/basic-memory-skills`](https://github.com/basicmachines-co/basic-memory-skills) (notes, schema, tasks, lifecycle, reflect, etc.). It adds multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), developer tool research (Homebrew, GitHub Actions, Docker, VSCode), project-level gap analysis, project context priming, knowledge exploration, Readwise integration, schema evolution, tag alignment, and autonomous graph maintenance on top of those foundations.
 
 ## Possible future additions
 
