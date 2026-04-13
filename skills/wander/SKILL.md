@@ -11,13 +11,9 @@ argument-hint: "[mode: walk|time-machine|collision|forgotten|obsession]"
 allowed-tools:
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__read_note
-  - mcp__basic-memory__build_context
   - mcp__basic-memory__recent_activity
   - mcp__raindrop__find_bookmarks
   - mcp__readwise__readwise_search_highlights
-  - mcp__readwise__reader_search_documents
-  - Read
-  - TodoWrite
 ---
 
 # Wander
@@ -82,7 +78,7 @@ Format the output for the selected mode. End with a one-line footer:
 
 ```
 ---
-`/wander` • [mode-name] • "Here are two things from your own history. Make of them what you will."
+`/wander` • [mode-name] • "From your own history. Make of it what you will."
 ```
 
 No analysis. No suggestions. No "you might want to explore this further."
@@ -150,16 +146,16 @@ topic.
 
 ### Steps
 
-1. Fetch old bookmarks (before 2016):
+1. Fetch old bookmarks (oldest first):
 
 ```
-mcp__raindrop__find_bookmarks(search="*", sort="-created", limit=50)
+mcp__raindrop__find_bookmarks(search="*", sort="created", limit=50)
 ```
 
-Filter results to those created before 2016-01-01. If the API does not
-support date filtering directly, fetch a broad set and filter client-side.
+Sort ascending by creation date to get the oldest bookmarks first. Filter
+results to those created before 2016-01-01.
 
-If no old bookmarks found, try broadening to before 2020.
+If no pre-2016 bookmarks found, try broadening to before 2020.
 
 2. Pick one at random. Extract topic keywords from its title and tags.
 
@@ -288,8 +284,8 @@ the interesting thing.*
 
 ## Mode 5: Obsession Detector
 
-Find the most-saved topic in the last 30 days that has zero Basic Memory
-notes.
+Surface topics from the last 30 days that appear in Raindrop but have no
+Basic Memory notes.
 
 ### Steps
 
@@ -301,40 +297,35 @@ mcp__raindrop__find_bookmarks(search="*", sort="-created", limit=100)
 
 Filter to last 30 days.
 
-2. Extract tags from all results. Count tag frequency. Rank by frequency.
+2. Extract tags from all results. Count tag frequency. Pick 5 tags that
+   appear 3+ times (no particular order — these are all recent interests).
 
-3. For the top 5 most frequent tags, check BM coverage:
+3. For each, check BM coverage:
 
 ```
 mcp__basic-memory__search_notes(query="<tag-topic>", page_size=3)
 ```
 
-4. Find tags with high Raindrop frequency but zero or near-zero BM results.
-   These are forming obsessions below the capture threshold.
+4. Separate into two groups: topics with BM notes and topics without.
 
 5. Present findings:
 
 ````markdown
-## Obsession Detector: forming below the surface
+## Obsession Detector: recent saves vs. captured knowledge
 
-| Topic | Bookmarks (30d) | BM Notes | Status |
-|-------|-----------------|----------|--------|
-| fhir | 7 | 0 | Uncaptured obsession |
-| font-rendering | 8 | 0 | Uncaptured obsession |
-| atproto | 12 | 4 | Well-captured |
-| mcp | 9 | 3 | Well-captured |
+**Topics with no BM notes:**
+- `fhir` — 7 bookmarks in 30 days, 0 notes
+- `font-rendering` — 8 bookmarks in 30 days, 0 notes
 
-**Forming interests with no knowledge capture:**
-- `fhir` — 7 bookmarks, zero notes. Healthcare interoperability is
-  pulling your attention.
-- `font-rendering` — 8 bookmarks, zero notes. Typography rendering
-  is a quiet fascination.
+**Topics already captured:**
+- `atproto` — 12 bookmarks, 4 notes
+- `mcp` — 9 bookmarks, 3 notes
 
-*These obsessions will dissipate if not noticed.*
+*Recent saves. Some captured, some not.*
 ````
 
-The closing line is observational, not prescriptive. No "you should create
-a note about this."
+Present raw counts as context, not as a ranking. No interpretation of what
+the topics mean or why they matter.
 
 ---
 
