@@ -24,6 +24,8 @@ skills/
   knowledge-ask/SKILL.md             # Freeform Q&A against the BM knowledge graph
   vp-note-quality/SKILL.md           # Fourth-wall anti-pattern checklist (not user-invocable)
   tag-sync/SKILL.md                  # Raindrop tag vocabulary sync
+  wander/SKILL.md                    # 5-mode purposeless knowledge exploration
+  readwise-check/SKILL.md            # Quick pre-research Readwise lookup
   session-bookmarks/SKILL.md         # Session URL bookmarking to Raindrop
   raindrop-triage/SKILL.md           # Interactive unsorted bookmark triage
     references/                      # 2 files: tag-selection, promote-workflow
@@ -40,7 +42,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 
 ## Components
 
-### Skills (11)
+### Skills (13)
 
 - **package-intel** — Researches a package via six enrichment sources (DeepWiki, Context7, Tavily, Raindrop, Readwise, changelog) and writes/updates a structured prefixed note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer, Python PyPI, and Ruby gems. User-invocable as `/package-intel <pkg>`.
 - **tool-intel** — Researches a developer environment or CI/CD tool via five sources (Basic Memory, DeepWiki for actions/docker, Tavily, Raindrop, Readwise) and writes/updates a structured prefixed note with post-write cross-linking. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), and VSCode extensions (`vscode:`). User-invocable as `/tool-intel <prefix>:<name>`.
@@ -50,6 +52,8 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 - **session-reflect** — Reviews the current conversation, extracts durable insights, finds target notes in Basic Memory, shows a grouped preview, and writes only what the user approves. The deliberate, user-triggered counterpart to the automatic PreCompact hook. User-invocable as `/session-reflect`.
 - **knowledge-ask** — Answers freeform questions by searching Basic Memory, loading relevant notes, traversing the graph, and synthesizing a cited answer with confidence tiers (Direct/Partial/No Coverage). Read-only — suggests `/package-intel` or `/tool-intel` for coverage gaps. User-invocable as `/knowledge-ask <question>`.
 - **vp-note-quality** — Reference checklist preventing the fourth-wall anti-pattern (self-referential content in subject-domain notes). Not user-invocable — preloaded into knowledge-maintainer and knowledge-gardener agents via the `skills` frontmatter field.
+- **wander** — Purposeless knowledge exploration with 5 modes: Random Walk (BM graph traversal), Time Machine (old+new bookmark pair), Cross-System Collision (Readwise highlight + Raindrop bookmark), Forgotten Shelf (old untagged bookmarks), Obsession Detector (recent topics with zero BM notes). Never scores, ranks, or recommends. User-invocable as `/wander [mode]`.
+- **readwise-check** — Quick pre-research lookup reporting highlight count, document count, and reading depth for a topic across Readwise highlights and Reader documents. Two API calls, compact output. User-invocable as `/readwise-check <topic>`.
 - **tag-sync** — Fetches tags from Raindrop, curates the top N by usage count, adds one-line characterizations, groups by cluster, and writes/syncs the vocabulary file at `~/.claude/references/raindrop-tags.md`. Follows the vendor-sync pattern. User-invocable as `/tag-sync [count|--reset]`.
 - **session-bookmarks** — Scans the current conversation for high-signal URLs, suggests 1-3 as Raindrop bookmarks in the AI-bookmarked collection (discovered via `find_collections`, not hardcoded), and creates them after user approval. Auto-delegated from `/session-reflect` or invocable standalone. User-invocable as `/session-bookmarks`.
 - **raindrop-triage** — Interactive triage of unsorted Raindrop bookmarks: deduplicates by normalized URL, detects research bursts (temporal clusters), clusters by theme, proposes vocabulary-grounded tags (blocklist, context tags, conventions all read from vocabulary file frontmatter), and moves approved bookmarks to AI-triaged. A `--promote` pass classifies AI-triaged items into AI-sorted (default), AI-gems (golden), AI-archive, or AI-attention. Supports `--source` to override the promote source collection. User-invocable as `/raindrop-triage`.
@@ -207,6 +211,8 @@ When the user asks about knowledge or packages, choose the right skill:
 | "what do we know about \[X\]", "recall", "find notes on", topic question | `/knowledge-ask [topic]` |
 | "research \[pkg\]", "document \[pkg\]", needs external sources | `/package-intel [pkg]` |
 | "gaps", "undocumented", "audit coverage" | `/knowledge-gaps` |
+| "wander", "surprise me", "time machine", "forgotten", "obsession" | `/wander [mode]` |
+| "how much have I read about", "readwise check", "reading depth" | `/readwise-check [topic]` |
 
 ### Output template conventions
 

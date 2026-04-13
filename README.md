@@ -194,6 +194,30 @@ A read-only skill that answers freeform questions by searching Basic Memory, loa
 
 Each answer includes a confidence tier (Direct, Partial, or No Coverage) so you know how much the graph actually covers. When coverage is incomplete, suggests `/package-intel`, `/tool-intel`, or `/knowledge-gaps` to fill the gap. Unlike `/knowledge-prime` (which shows project-wide dependency coverage), `/knowledge-ask` answers specific questions about individual topics.
 
+### `/wander [mode]` — Purposeless knowledge exploration
+
+Five modes surface serendipitous connections from across Basic Memory, Raindrop, and Readwise:
+
+> "Wander" / "Surprise me" / "Time machine" / "What am I obsessing about?"
+
+| Mode | What it does |
+|------|-------------|
+| Random Walk | Start at a random BM note, follow relations 3-5 hops |
+| Time Machine | Pair a 10+ year old bookmark with a recent one on a similar theme |
+| Cross-System Collision | Match a Readwise highlight with a Raindrop bookmark from different domains |
+| Forgotten Shelf | Surface 5 old, untagged bookmarks from another era |
+| Obsession Detector | Find the most-saved recent topic with zero BM notes |
+
+Critical design constraint: never scores, ranks, or recommends. Presents collisions and lets the user make meaning.
+
+### `/readwise-check <topic>` — Quick reading depth lookup
+
+Pre-research snapshot showing how much you've read about a topic:
+
+> "How much have I read about fastify?" / "Readwise check knowledge management"
+
+Reports highlight count, document count, and reading depth — two API calls, compact output.
+
 ### `/session-reflect` — On-demand conversation capture
 
 A user-triggered skill that reviews the current conversation and saves insights to Basic Memory with your approval:
@@ -341,6 +365,10 @@ skills/
     SKILL.md                           Fourth-wall anti-pattern checklist (not user-invocable)
   tag-sync/
     SKILL.md                           Raindrop tag vocabulary sync
+  wander/
+    SKILL.md                           5-mode purposeless knowledge exploration
+  readwise-check/
+    SKILL.md                           Quick pre-research Readwise lookup
   session-bookmarks/
     SKILL.md                           Session URL bookmarking to Raindrop
   raindrop-triage/
@@ -399,6 +427,8 @@ schemas/
  /session-bookmarks-> session-bookmarks  -> AI-bookmarked collection in Raindrop
  /raindrop-triage  -> raindrop-triage   -> dedupe + burst detect + tag + AI-triaged
                       (--promote)       -> classify into highlights/archive/attention
+ /wander [mode]    -> wander skill       -> serendipitous collisions (no scoring)
+ /readwise-check X-> readwise-check    -> highlight count + document count + depth
  /session-reflect  -> session-reflect    -> BM notes + delegates /session-bookmarks
  "audit graph"     -> knowledge-gardener  -> health report (read-only, incl. tags)
  "fix the graph"   -> knowledge-maintainer-> structural + tag fixes + confirmations

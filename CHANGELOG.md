@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.0][] - 2026-04-13
+
+### Added
+
+- **`/wander` skill** (12th skill) — purposeless knowledge exploration with 5
+  modes: Random Walk (BM graph traversal), Time Machine (old+new bookmark pair),
+  Cross-System Collision (Readwise highlight + Raindrop bookmark), Forgotten
+  Shelf (old untagged bookmarks), Obsession Detector (recent topics with zero BM
+  notes). Critical design constraint: never scores, ranks, or recommends —
+  presents collisions and lets the user make meaning.
+- **`/readwise-check <topic>` skill** (13th skill) — quick pre-research lookup
+  reporting highlight count, document count, and reading depth for a topic across
+  Readwise. Two API calls, compact output.
+- **SessionStart `/wander` hint** — session start now mentions `/wander` and
+  `/readwise-check` alongside existing `/knowledge-prime` and `/knowledge-ask`
+  suggestions.
+
 ## [0.25.1][] - 2026-04-13
 
 ### Fixed
@@ -902,6 +919,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.26.0]: https://github.com/voxpelli/vp-claude/compare/v0.25.1...v0.26.0
 [0.25.1]: https://github.com/voxpelli/vp-claude/compare/v0.25.0...v0.25.1
 [0.25.0]: https://github.com/voxpelli/vp-claude/compare/v0.24.1...v0.25.0
 [0.24.1]: https://github.com/voxpelli/vp-claude/compare/v0.24.0...v0.24.1
