@@ -29,6 +29,8 @@ skills/
   session-bookmarks/SKILL.md         # Session URL bookmarking to Raindrop
   raindrop-triage/SKILL.md           # Interactive unsorted bookmark triage
     references/                      # 2 files: tag-selection, promote-workflow
+  people-intel/SKILL.md              # Five-source person research
+    references/                      # 2 files: note-template, source-guide
 agents/
   knowledge-gardener.md              # Read-only graph health auditor (incl. tag alignment)
   knowledge-maintainer.md            # All-in-one graph enhancer (writes, incl. tag fixes)
@@ -42,7 +44,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 
 ## Components
 
-### Skills (13)
+### Skills (14)
 
 - **package-intel** — Researches a package via six enrichment sources (DeepWiki, Context7, Tavily, Raindrop, Readwise, changelog) and writes/updates a structured prefixed note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer, Python PyPI, and Ruby gems. User-invocable as `/package-intel <pkg>`.
 - **tool-intel** — Researches a developer environment or CI/CD tool via five sources (Basic Memory, DeepWiki for actions/docker, Tavily, Raindrop, Readwise) and writes/updates a structured prefixed note with post-write cross-linking. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), and VSCode extensions (`vscode:`). User-invocable as `/tool-intel <prefix>:<name>`.
@@ -57,6 +59,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 - **tag-sync** — Fetches tags from Raindrop, curates the top N by usage count, adds one-line characterizations, groups by cluster, and writes/syncs the vocabulary file at `~/.claude/references/raindrop-tags.md`. Follows the vendor-sync pattern. User-invocable as `/tag-sync [count|--reset]`.
 - **session-bookmarks** — Scans the current conversation for high-signal URLs, suggests 1-3 as Raindrop bookmarks in the AI-bookmarked collection (discovered via `find_collections`, not hardcoded), and creates them after user approval. Auto-delegated from `/session-reflect` or invocable standalone. User-invocable as `/session-bookmarks`.
 - **raindrop-triage** — Interactive triage of unsorted Raindrop bookmarks: deduplicates by normalized URL, detects research bursts (temporal clusters), clusters by theme, proposes vocabulary-grounded tags (blocklist, context tags, conventions all read from vocabulary file frontmatter), and moves approved bookmarks to AI-triaged. A `--promote` pass classifies AI-triaged items into AI-sorted (default), AI-gems (golden), AI-archive, or AI-attention. Supports `--source` to override the promote source collection. User-invocable as `/raindrop-triage`.
+- **people-intel** — Researches a person via five enrichment sources (Basic Memory deep graph traversal, Raindrop, Readwise, Tavily, DeepWiki) and writes/updates a structured person note with post-write bidirectional cross-linking. Includes fourth-wall guardrail and anti-hagiography measures. DeepWiki is conditional (developer profiles only). User-invocable as `/people-intel <name>`.
 
 ### Agents (4)
 
@@ -213,6 +216,7 @@ When the user asks about knowledge or packages, choose the right skill:
 | "gaps", "undocumented", "audit coverage" | `/knowledge-gaps` |
 | "wander", "surprise me", "time machine", "forgotten", "obsession" | `/wander [mode]` |
 | "how much have I read about", "readwise check", "reading depth" | `/readwise-check [topic]` |
+| "research person", "who is \[X\]", "person intel", "people intel" | `/people-intel [name]` |
 
 ### Output template conventions
 

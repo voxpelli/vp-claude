@@ -150,6 +150,25 @@ Compares actual note field usage against schema definitions, proposes additions 
 
 Includes a watch list for emerging fields (10-24% usage) and validates after every change.
 
+### `/people-intel <name>` — Research any person
+
+Queries five sources in parallel, synthesizes a structured person note, and cross-links existing notes:
+
+```
+/people-intel Aaron Gustafson
+/people-intel Linus Torvalds
+```
+
+| Source | What it finds |
+|--------|--------------|
+| Basic Memory | Existing mentions, cross-cluster connections (depth-2 traversal) |
+| Raindrop | Your bookmarked articles by or about the person |
+| Readwise | Your highlights from their writing |
+| Tavily | Bio, current role, projects, contributions, controversies |
+| DeepWiki | GitHub repo philosophy (developer profiles only) |
+
+Includes a fourth-wall guardrail (no self-referential knowledge-graph content in person notes) and an anti-hagiography step (explicit controversy search). After writing, searches for existing notes that mention the person and adds bidirectional cross-links using the person schema's relation vocabulary (`created`, `founded`, `maintains`, `works_with`, `enables`, `relates_to`).
+
 ### Knowledge Gardener — Read-only graph auditor
 
 An autonomous agent that produces a health report without modifying anything:
@@ -374,6 +393,10 @@ skills/
   raindrop-triage/
     SKILL.md                           Interactive unsorted bookmark triage
     references/                        Tag selection strategy + promote workflow
+  people-intel/
+    SKILL.md                           Five-source person research
+    references/note-template-person.md Person note template
+    references/source-guide.md         Source-specific research guidance
 agents/
   knowledge-gardener.md                Read-only graph auditor (tags + fourth-wall)
   knowledge-maintainer.md              Read-write graph enhancer (effort: high)
@@ -430,6 +453,7 @@ schemas/
  /wander [mode]    -> wander skill       -> serendipitous collisions (no scoring)
  /readwise-check X-> readwise-check    -> highlight count + document count + depth
  /session-reflect  -> session-reflect    -> BM notes + delegates /session-bookmarks
+ /people-intel X   -> people-intel skill -> person note + cross-links
  "audit graph"     -> knowledge-gardener  -> health report (read-only, incl. tags)
  "fix the graph"   -> knowledge-maintainer-> structural + tag fixes + confirmations
                       ├── audits graph inline (lightweight)

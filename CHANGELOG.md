@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.1][] - 2026-04-14
+
+### Added
+
+- **`/people-intel <name>` skill** (14th skill) — five-source person research
+  (Basic Memory deep graph traversal, Raindrop, Readwise, Tavily, DeepWiki).
+  Creates/updates structured person notes with bidirectional cross-linking,
+  fourth-wall guardrail, anti-hagiography step (explicit controversy search),
+  and cross-cluster discovery. DeepWiki is conditional (developer profiles
+  only). Includes 2 reference files: note template and source guide.
+
 ## [0.26.0][] - 2026-04-13
 
 ### Added
@@ -919,6 +930,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.26.1]: https://github.com/voxpelli/vp-claude/compare/v0.26.0...v0.26.1
 [0.26.0]: https://github.com/voxpelli/vp-claude/compare/v0.25.1...v0.26.0
 [0.25.1]: https://github.com/voxpelli/vp-claude/compare/v0.25.0...v0.25.1
 [0.25.0]: https://github.com/voxpelli/vp-claude/compare/v0.24.1...v0.25.0
