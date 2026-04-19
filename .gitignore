@@ -4,7 +4,8 @@
 node_modules/
 RETRO-*.md
 
-# Beads / Dolt files (added by bd init)
+# Beads / Dolt files — entire .beads/ directory is local-only
+.beads/
 .dolt/
 *.db
 .beads-credential-key
