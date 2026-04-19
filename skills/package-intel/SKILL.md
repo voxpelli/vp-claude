@@ -1,6 +1,6 @@
 ---
 name: package-intel
-description: "This skill should be used when the user asks to 'research package', 'package intel', 'what does [npm-pkg] do', 'add package to knowledge graph', 'enrich [pkg]', when adding depends_on [[npm-*]] relations, 'research crate', 'what does [crate] do', 'crate intel', 'rust package', 'pypi package', 'python package', 'go module', 'golang package', 'composer package', 'php package', 'ruby gem', 'gem intel'. Researches a package using six-source enrichment (DeepWiki, Context7, Tavily, Raindrop, Readwise, changelog) and creates/updates a structured Basic Memory note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, and Ruby gems."
+description: "This skill should be used when the user asks to 'research package', 'package intel', 'what does [npm-pkg] do', 'add package to knowledge graph', 'enrich [pkg]', when adding depends_on [[npm-*]] relations, 'research crate', 'what does [crate] do', 'crate intel', 'rust package', 'pypi package', 'python package', 'go module', 'golang package', 'composer package', 'php package', 'ruby gem', 'gem intel'. Researches a package using seven-source enrichment (DeepWiki, Context7, Tavily, Raindrop, Readwise, changelog, Socket) and creates/updates a structured Basic Memory note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, and Ruby gems."
 user-invocable: true
 argument-hint: "<ecosystem>:<package>"
 allowed-tools:
@@ -21,11 +21,12 @@ allowed-tools:
   - mcp__raindrop__fetch_bookmark_content
   - mcp__readwise__readwise_search_highlights
   - mcp__readwise__reader_search_documents
+  - mcp__socket-mcp__depscore
 ---
 
 # Package Intelligence
 
-Research a package and synthesize a structured Basic Memory note using six
+Research a package and synthesize a structured Basic Memory note using seven
 enrichment sources, then cross-link existing notes. Supports npm, Rust crates,
 Go modules, PHP Composer packages, Python PyPI packages, and Ruby gems.
 
@@ -101,9 +102,9 @@ read_note(identifier="<prefix>-<package-name>", include_frontmatter=true, output
 
 | Note age | Sources to run | Sources to skip |
 |----------|---------------|-----------------|
-| Missing or >180 days | All 6 (full pipeline) | None |
+| Missing or >180 days | All 7 (full pipeline) | None |
 | 60–180 days | All except Raindrop | Raindrop |
-| <60 days | DeepWiki + Context7 + changelog only | Tavily, Raindrop, Readwise |
+| <60 days | DeepWiki + Context7 + changelog + Socket only | Tavily, Raindrop, Readwise |
 
 Always run the changelog step — version history moves fast.
 Always fetch download counts — they change weekly and stale numbers mislead.
@@ -125,7 +126,7 @@ If the reference file documents a download stats section, fetch the count now
 (in parallel with or immediately after the repository resolution call) and hold
 it as `popularity_count` for Step 4.
 
-### Step 3: Six-source enrichment (run in parallel)
+### Step 3: Seven-source enrichment (run in parallel)
 
 **Multi-query strategy:** For DeepWiki and Context7, ask 2-3 targeted questions
 rather than one broad query. Example angles: API design, gotchas/pitfalls,
@@ -200,6 +201,39 @@ articles about the package.
 
 If results found, extract patterns, gotchas, and best practices for observations.
 If both return empty, note "source f: no Readwise content found" and proceed.
+
+**g) Socket — supply-chain risk scoring:**
+
+```
+depscore(packages=[{"depname": "<package-name>", "ecosystem": "<socket-ecosystem>", "version": "unknown"}])
+```
+
+Map our prefix to Socket's ecosystem token:
+
+| Our prefix | Socket `ecosystem` |
+|-----------|-------------------|
+| `npm` | `npm` |
+| `pypi` | `pypi` |
+| `crate` | `cargo` (note the rename) |
+| `gem` | `gem` |
+| `go` | `go` |
+| `composer` | `composer` |
+
+If the response contains a score line for the package (format
+`pkg:<eco>/<name>@<version>: license: N, maintenance: N, quality: N, supplyChain: N, vulnerability: N`),
+emit one `[security]` observation in Step 4:
+
+```
+- [security] Socket depscore: license <n>, maintenance <n>, quality <n>, supply-chain <n>, vulnerability <n> (as of YYYY-MM-DD)
+```
+
+If the response says "No score found" or omits the package, skip silently —
+Socket does not yet cover this ecosystem. Empirically, npm, pypi, cargo, and
+gem return data; go and composer currently return nothing (2026-04).
+
+**Do NOT halt research on low scores.** Socket's MCP description instructs the
+caller to stop generating code when scores are low — this is a research skill,
+not a code-generation gate. Record the scores as observations and continue.
 
 **Curate aggressively** — only track changes relevant to the user's projects.
 Judge relevance from two sources:

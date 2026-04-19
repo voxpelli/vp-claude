@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.27.0][] - 2026-04-19
+
+### Added
+
+- **Socket.dev as 7th `/package-intel` source** — integrates
+  `mcp__socket-mcp__depscore` to add supply-chain risk scoring (license,
+  maintenance, quality, supply-chain, vulnerability) as a `[security]`
+  observation. Empirically verified ecosystems: npm, pypi, cargo (our
+  `crate:` prefix maps to Socket's `cargo` token), and gem. Go and
+  composer currently return no data and skip silently — no error, no
+  halting. Skill prose explicitly overrides Socket's default "stop
+  generating code on low scores" behaviour: this is a research skill,
+  not a code-generation gate.
+- **README install instructions** for the new Socket MCP server
+  (`claude mcp add --transport http socket-mcp https://mcp.socket.dev/`).
+
+### Notes
+
+- Minor version bump (semver 0.x: new source = additive but introduces
+  an install-time dependency for users who want the new observation).
+- `/tool-intel` is unchanged — brew/cask/action/docker/vscode are
+  distribution channels, not package ecosystems Socket indexes.
+
 ## [0.26.1][] - 2026-04-14
 
 ### Added
@@ -930,6 +953,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.27.0]: https://github.com/voxpelli/vp-claude/compare/v0.26.1...v0.27.0
 [0.26.1]: https://github.com/voxpelli/vp-claude/compare/v0.26.0...v0.26.1
 [0.26.0]: https://github.com/voxpelli/vp-claude/compare/v0.25.1...v0.26.0
 [0.25.1]: https://github.com/voxpelli/vp-claude/compare/v0.25.0...v0.25.1

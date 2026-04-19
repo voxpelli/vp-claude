@@ -12,7 +12,7 @@ A Claude Code plugin (`vp-knowledge`) containing user-owned skills, agents, and 
 .claude-plugin/
   plugin.json                        # Plugin manifest
 skills/
-  package-intel/SKILL.md             # Six-source multi-ecosystem package research
+  package-intel/SKILL.md             # Seven-source multi-ecosystem package research
     references/                      # 12 files: 6 ecosystem + 6 note templates
   tool-intel/SKILL.md                # Five-source dev-tool research (brew/action/docker/vscode)
     references/                      # 10 files: 5 ecosystem + 5 note templates
@@ -46,7 +46,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 
 ### Skills (14)
 
-- **package-intel** — Researches a package via six enrichment sources (DeepWiki, Context7, Tavily, Raindrop, Readwise, changelog) and writes/updates a structured prefixed note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer, Python PyPI, and Ruby gems. User-invocable as `/package-intel <pkg>`.
+- **package-intel** — Researches a package via seven enrichment sources (DeepWiki, Context7, Tavily, Raindrop, Readwise, changelog, Socket) and writes/updates a structured prefixed note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer, Python PyPI, and Ruby gems. Socket supply-chain scoring covers npm/pypi/cargo/gem (go/composer skip silently). User-invocable as `/package-intel <pkg>`.
 - **tool-intel** — Researches a developer environment or CI/CD tool via five sources (Basic Memory, DeepWiki for actions/docker, Tavily, Raindrop, Readwise) and writes/updates a structured prefixed note with post-write cross-linking. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), and VSCode extensions (`vscode:`). User-invocable as `/tool-intel <prefix>:<name>`.
 - **knowledge-gaps** — Parses code manifest files (`package.json`, `Cargo.toml`, etc.) and tool manifests (`Brewfile`, `.github/workflows/*.yml`, `Dockerfile`, `.vscode/extensions.json`), checks BM coverage, tiers package gaps by import frequency, lists all undocumented tools, and detects concept-level hub gaps via graph analysis and Readwise reading signals. User-invocable as `/knowledge-gaps`.
 - **knowledge-prime** — Surfaces project-relevant Basic Memory knowledge on demand. Detects the project stack, cross-references deps against BM notes, scores relevance, loads critical observations (`[gotcha]`, `[breaking]`, `[limitation]`), and produces a concise context brief. Supports `--deep` for extended output. User-invocable as `/knowledge-prime`.
@@ -127,6 +127,7 @@ Skills and agents reference tools from multiple MCP servers. When editing, use e
 | Tavily | `mcp__tavily__*` | package-intel, tool-intel |
 | Raindrop | `mcp__raindrop__*` | package-intel, tool-intel, tag-sync, session-bookmarks, raindrop-triage, raindrop-gardener |
 | Readwise | `mcp__readwise__*` | package-intel, tool-intel, knowledge-gaps |
+| Socket | `mcp__socket-mcp__*` | package-intel only |
 
 ## Validation
 

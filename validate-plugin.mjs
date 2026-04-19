@@ -73,6 +73,7 @@ const KNOWN_MCP_PREFIXES = [
   'mcp__tavily__',
   'mcp__raindrop__',
   'mcp__readwise__',
+  'mcp__socket-mcp__',
 ]
 
 /**

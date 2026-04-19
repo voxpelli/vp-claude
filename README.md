@@ -14,7 +14,7 @@ vault notes need a one-time migration — see
 
 ### `/package-intel <pkg>` — Research any package
 
-Queries six sources in parallel, synthesizes a structured note, and cross-links existing notes. Supports six ecosystems:
+Queries seven sources in parallel, synthesizes a structured note, and cross-links existing notes. Supports six ecosystems:
 
 | Form | Ecosystem | Example |
 |------|-----------|---------|
@@ -40,6 +40,7 @@ Queries six sources in parallel, synthesizes a structured note, and cross-links 
 | Tavily | Security advisories, recent CVEs (RUSTSEC, PyPA, RubySec, etc.) |
 | Raindrop | Your bookmarked articles (with full content extraction) |
 | Readwise | Your highlights and saved articles about the package |
+| Socket | Supply-chain risk scores (license, maintenance, quality, supply-chain, vulnerability) for npm, pypi, cargo, gem |
 
 Plus changelog analysis via GitHub releases. After writing, searches for existing notes that reference the package and adds bidirectional cross-links. The result is an ecosystem-prefixed note (`npm-*`, `crate-*`, `pypi-*`, etc.) with observations, relations, and release highlights — connected into the graph from day one.
 
@@ -308,7 +309,7 @@ npx skills add basicmachines-co/basic-memory-skills
 
 ### Required for enrichment pipelines
 
-The `/package-intel` six-source pipeline and `/tool-intel` five-source pipeline need these additional MCP servers and plugins. Context7 is used by `/package-intel` only; DeepWiki and Tavily are used by both; Readwise is used by both plus `/knowledge-gaps`.
+The `/package-intel` seven-source pipeline and `/tool-intel` five-source pipeline need these additional MCP servers and plugins. Context7 and Socket are used by `/package-intel` only; DeepWiki and Tavily are used by both; Readwise is used by both plus `/knowledge-gaps`.
 
 **[DeepWiki](https://docs.devin.ai/work-with-devin/deepwiki-mcp)** — repository documentation and architecture questions:
 
@@ -341,6 +342,12 @@ claude mcp add --transport http raindrop https://api.raindrop.io/rest/v2/ai/mcp
 claude mcp add --transport http readwise https://mcp2.readwise.io/mcp
 ```
 
+**[Socket](https://socket.dev/blog/introducing-socket-mcp)** — supply-chain risk scores (license, maintenance, quality, supply-chain, vulnerability) for npm, PyPI, Rust/cargo, and RubyGems packages. Used by `/package-intel` only:
+
+```bash
+claude mcp add --transport http socket-mcp https://mcp.socket.dev/
+```
+
 ### Optional
 
 - **[`gh` CLI](https://cli.github.com)** — enables changelog analysis via GitHub releases in `/package-intel`
@@ -351,7 +358,7 @@ claude mcp add --transport http readwise https://mcp2.readwise.io/mcp
 .claude-plugin/plugin.json             Plugin manifest
 skills/
   package-intel/
-    SKILL.md                           Six-source research workflow
+    SKILL.md                           Seven-source research workflow
     references/ecosystem-npm.md        npm registry API + note template
     references/ecosystem-crates.md     crates.io API + note template
     references/ecosystem-go.md         Go module proxy + note template
