@@ -173,6 +173,12 @@ All plugin content (schemas, skills, agents) must be **domain-generic** — no h
 
 Every tool in `allowed-tools` (skills) or `tools` (agents) must be called in the workflow prose. Phantom tools (listed but never used) accumulate silently — run a periodic tool reference audit across all components. When creating a skill/agent pair that shares a workflow, keep tool lists identical and remove tools the agent doesn't need (e.g., `Bash` for git operations the agent can't perform).
 
+**New MCP server prefixes** — when a skill references a tool from a new MCP
+server (e.g., `mcp__socket-mcp__*`), add the prefix to `KNOWN_MCP_PREFIXES`
+in `validate-plugin.mjs`. Otherwise `npm run check:plugin` fails with
+"Unknown MCP prefix". The allowlist is a deliberate safety net against
+typos and undocumented MCP dependencies — update it, don't disable it.
+
 ### Cross-linking convention
 
 After writing or updating a note (via intel skills or maintainer fixes), search
