@@ -309,6 +309,14 @@ Version bump:
 - `CLAUDE.md` — Agents/Skills descriptions, component counts
 - `MEMORY.md` — component descriptions, version field
 
+Tag the release (after committing and pushing the bump):
+- Lightweight tag at the bump commit: `git tag vX.Y.Z <commit>` (convention
+  is lightweight tags, not annotated — check `git cat-file -t vX.Y.Z` on a
+  recent tag to confirm)
+- Push the tag: `git push origin vX.Y.Z`
+- Without the tag, the `CHANGELOG.md` compare link (`...compare/vA.B.C...vX.Y.Z`)
+  will 404 until the tag exists on the remote
+
 Source count propagation (when adding/removing a research source):
 - `skills/package-intel/SKILL.md` or `skills/tool-intel/SKILL.md` — step prose
 - `CLAUDE.md` — Skills section source count (e.g., "six enrichment sources")
