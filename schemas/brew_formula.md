@@ -12,6 +12,7 @@ schema:
   feature?(array): string, notable capabilities worth knowing beyond basic usage
   pattern?(array): string, usage patterns, integration recipes, and best practices
   convention?(array): string, standard setup conventions and idiomatic configuration choices
+  popularity?(array): string, Homebrew install analytics (30/90/365-day counts plus build-error count) with date stamp; omit when MCP unavailable
   relates_to?(array): Note, related formula, cask, or engineering notes
 settings:
   validation: warn
@@ -30,6 +31,7 @@ Schema for Homebrew formula notes — one note per formula in the `brew/` direct
 - [convention] `usage` should include the binary name when it differs from the formula name (e.g. ripgrep → rg, git-delta → delta, difftastic → difft)
 - [convention] `gotcha` entries are the highest-value observations — prioritise real-world surprises over docs
 - [convention] Relations use `[[brew-name]]`, `[[cask-name]]`, `[[npm-name]]` wiki-link format
+- [convention] `popularity` observations must cite window (30d/90d/365d), source (Homebrew MCP), and date — omit entirely when MCP is unavailable rather than fabricating from the JSON API, which does not expose analytics
 
 ## Relation Vocabulary
 

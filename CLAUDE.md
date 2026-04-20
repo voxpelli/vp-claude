@@ -47,7 +47,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 ### Skills (14)
 
 - **package-intel** — Researches a package via seven enrichment sources (DeepWiki, Context7, Tavily, Raindrop, Readwise, changelog, Socket) and writes/updates a structured prefixed note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer, Python PyPI, and Ruby gems. Socket supply-chain scoring covers npm/pypi/cargo/gem (go/composer skip silently). User-invocable as `/package-intel <pkg>`.
-- **tool-intel** — Researches a developer environment or CI/CD tool via five sources (Basic Memory, DeepWiki for actions/docker, Tavily, Raindrop, Readwise) and writes/updates a structured prefixed note with post-write cross-linking. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), and VSCode extensions (`vscode:`). User-invocable as `/tool-intel <prefix>:<name>`.
+- **tool-intel** — Researches a developer environment or CI/CD tool via five sources (Basic Memory, DeepWiki for actions/docker, Tavily, Raindrop, Readwise) and writes/updates a structured prefixed note with post-write cross-linking. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), and VSCode extensions (`vscode:`). For `brew:`/`cask:` an optional sixth source — the local Homebrew MCP (`mcp__homebrew__info`) — supplies install analytics as `[popularity]` observations when the server is reachable, and skips silently otherwise. User-invocable as `/tool-intel <prefix>:<name>`.
 - **knowledge-gaps** — Parses code manifest files (`package.json`, `Cargo.toml`, etc.) and tool manifests (`Brewfile`, `.github/workflows/*.yml`, `Dockerfile`, `.vscode/extensions.json`), checks BM coverage, tiers package gaps by import frequency, lists all undocumented tools, and detects concept-level hub gaps via graph analysis and Readwise reading signals. User-invocable as `/knowledge-gaps`.
 - **knowledge-prime** — Surfaces project-relevant Basic Memory knowledge on demand. Detects the project stack, cross-references deps against BM notes, scores relevance, loads critical observations (`[gotcha]`, `[breaking]`, `[limitation]`), and produces a concise context brief. Supports `--deep` for extended output. User-invocable as `/knowledge-prime`.
 - **schema-evolve** — Detects drift between BM schema definitions and actual note usage via `schema_diff`/`schema_infer`, proposes frequency-driven field additions/removals, and dual-syncs BM notes + local `schemas/` files after approval. User-invocable as `/schema-evolve <type>`.
@@ -128,6 +128,7 @@ Skills and agents reference tools from multiple MCP servers. When editing, use e
 | Raindrop | `mcp__raindrop__*` | package-intel, tool-intel, tag-sync, session-bookmarks, raindrop-triage, raindrop-gardener |
 | Readwise | `mcp__readwise__*` | package-intel, tool-intel, knowledge-gaps |
 | Socket | `mcp__socket-mcp__*` | package-intel only |
+| Homebrew MCP | `mcp__homebrew__*` | tool-intel (optional; brew/cask analytics) |
 
 ## Validation
 

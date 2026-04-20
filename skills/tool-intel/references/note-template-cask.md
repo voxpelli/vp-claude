@@ -37,6 +37,7 @@ Installs: <app-name>.app to /Applications
 - [requirement] macOS version requirement or architecture limitation
 - [gotcha] Auto-updates independently of Homebrew (if `auto_updates: true`)
 - [alternative] Alternative casks or web-based tools covering the same need
+- [popularity] X installs/30d · Y/90d · Z/365d (Homebrew MCP, YYYY-MM)
 
 ## Relations
 
@@ -67,6 +68,23 @@ Always `brew_cask` (snake_case). Not `brew-cask` or `homebrew_cask`.
 | `alternative` | Alternative tools with similar functionality |
 | `performance` | Startup time, memory usage, battery impact |
 | `conflict` | Conflicts with other casks or system tools |
+| `popularity` | Install counts from Homebrew analytics — MCP-sourced only |
+
+### Analytics observations (MCP-sourced only)
+
+When `mcp__homebrew__info` is reachable and its output includes an
+`==> Analytics` block, emit exactly one `[popularity]` observation with
+the 30/90/365-day install counts. Casks have no `build-error` counter.
+Always include the source stamp `(Homebrew MCP, YYYY-MM)`.
+
+If the MCP server is unavailable, omit the observation entirely — the
+`formulae.brew.sh` JSON API does not expose analytics and there is no
+structured fallback.
+
+When updating an existing note that already has a `[popularity]` line,
+use `edit_note` with `find_replace` to replace the old line rather than
+`append` — install counts change continuously and duplicate lines
+accumulate stale data.
 
 ### Auto-updating casks
 

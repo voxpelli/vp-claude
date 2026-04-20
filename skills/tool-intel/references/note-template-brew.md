@@ -36,6 +36,7 @@ Homepage: [<project-homepage>](<url>) | v<version> | <license>
 - [conflict] Conflicts with: brew-<other> — reason for conflict
 - [compatibility] macOS version requirements or architecture notes
 - [convention] Important shell setup or post-install steps from `caveats`
+- [popularity] X installs/30d · Y/90d · Z/365d · N build errors/30d (Homebrew MCP, YYYY-MM)
 
 ## Relations
 
@@ -67,6 +68,23 @@ Always `brew_formula` (snake_case). Not `brew-formula` or `homebrew_formula`.
 | `performance` | Speed or resource characteristics |
 | `security` | Security considerations for the tool itself |
 | `alternative` | Alternative formulae or casks covering the same need |
+| `popularity` | Install counts from Homebrew analytics — MCP-sourced only |
+
+### Analytics observations (MCP-sourced only)
+
+When `mcp__homebrew__info` is reachable and its output includes an
+`==> Analytics` block, emit exactly one `[popularity]` observation with
+the 30/90/365-day install counts and the 30-day build-error count.
+Always include the source stamp `(Homebrew MCP, YYYY-MM)`.
+
+If the MCP server is unavailable, omit the observation entirely — the
+`formulae.brew.sh` JSON API does not expose analytics and there is no
+structured fallback.
+
+When updating an existing note that already has a `[popularity]` line,
+use `edit_note` with `find_replace` to replace the old line rather than
+`append` — install counts change continuously and duplicate lines
+accumulate stale data.
 
 ### Keg-only formulae
 

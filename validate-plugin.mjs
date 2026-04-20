@@ -74,6 +74,7 @@ const KNOWN_MCP_PREFIXES = [
   'mcp__raindrop__',
   'mcp__readwise__',
   'mcp__socket-mcp__',
+  'mcp__homebrew__',
 ]
 
 /**

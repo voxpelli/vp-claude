@@ -70,6 +70,7 @@ Queries five sources in parallel, synthesizes a structured note, and cross-links
 | Tavily | Security advisories, CVEs, supply-chain risks, gotchas |
 | Raindrop | Your bookmarked articles (with full content extraction) |
 | Readwise | Your highlights and saved articles about the tool |
+| Homebrew MCP (optional) | Install analytics (30/90/365-day counts + build errors) for `brew:` and `cask:` — skipped silently when unavailable |
 
 Plus version/changelog data (GitHub releases for actions, Docker Hub tags for images, API versions for brew/vscode). After writing, searches for existing notes that reference the tool and adds bidirectional cross-links. The result is a prefixed note (`brew-*`, `action-*`, etc.) with type-specific sections — `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for Docker, `## Common Usage` for formulae — plus observations and relations.
 
@@ -346,6 +347,14 @@ claude mcp add --transport http readwise https://mcp2.readwise.io/mcp
 
 ```bash
 claude mcp add --transport http socket-mcp https://mcp.socket.dev/
+```
+
+### Optional for tool-intel
+
+**[Homebrew MCP](https://github.com/Homebrew/brew/blob/master/Library/Homebrew/mcp_server.rb)** — bundled with Homebrew 4.5+ (`brew mcp-server`). Surfaces install analytics (30/90/365-day install counts and build-error counts) that the public `formulae.brew.sh` JSON API does not expose. `/tool-intel` picks them up as `[popularity]` observations on `brew:` and `cask:` notes; when the MCP is not installed, the step skips silently without affecting the rest of the research.
+
+```bash
+claude mcp add homebrew -- brew mcp-server
 ```
 
 ### Optional

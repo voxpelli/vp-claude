@@ -19,6 +19,7 @@ allowed-tools:
   - mcp__raindrop__fetch_bookmark_content
   - mcp__readwise__readwise_search_highlights
   - mcp__readwise__reader_search_documents
+  - mcp__homebrew__info
 ---
 
 # Tool Intelligence

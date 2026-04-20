@@ -29,6 +29,46 @@ tavily_extract(
 | `disabled` | Boolean — if true, cask can't be installed |
 | `auto_updates` | Boolean — if true, the app manages its own updates |
 
+## Fetch Install Analytics (MCP, optional)
+
+The JSON API does not expose install analytics. When the local Homebrew MCP
+server is available, call `mcp__homebrew__info` to pick them up:
+
+```
+mcp__homebrew__info(formula_or_cask="<name>")
+```
+
+The parameter is literally `formula_or_cask` — the same tool handles both
+formulae and casks. The MCP returns human CLI text (`brew info <name>`
+output), not JSON. The relevant block is the `==> Analytics` section:
+
+```
+==> Analytics
+install: 12,840 (30 days), 38,120 (90 days), 142,903 (365 days)
+install-on-request: 12,840 (30 days), 38,120 (90 days), 142,903 (365 days)
+```
+
+Casks have `==> Analytics` but no `build-error` line (casks don't build).
+
+If the tool call errors, the server is disconnected, or the `==> Analytics`
+block is absent, skip this step entirely. Do not retry. Do not emit a
+`[popularity]` observation — there is no structured fallback in the JSON
+API.
+
+When analytics are present, extract the numbers and emit exactly one
+`[popularity]` observation in Step 6 (Synthesize) using this format:
+
+`[popularity] 12,840 installs/30d · 38,120/90d · 142,903/365d (Homebrew MCP, YYYY-MM)`
+
+If the response shape does not match a cask (contains `Dependencies` but no
+`artifacts`), the user asked for a cask but received a formula — note the
+discrepancy in synthesis and suggest rerunning with `brew:<name>`.
+
+The `Installed (on request)` line is machine-specific and must NOT be
+written to the note (notes are cross-machine). Use it only to optionally
+surface "you already have this installed" in the synthesis prose shown to
+the user.
+
 ## Resolve GitHub Repository
 
 Casks are typically closed-source GUI apps, so a GitHub repository may not

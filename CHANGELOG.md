@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.27.1][] - 2026-04-20
+
+### Added
+
+- **Homebrew MCP as optional complementary source for `/tool-intel`** —
+  integrates `mcp__homebrew__info` to fetch install analytics (30/90/365-day
+  install counts plus build-error counts for formulae) that the
+  `formulae.brew.sh` JSON API does not expose. Emits as `[popularity]`
+  observations on `brew_formula` / `brew_cask` notes, matching the category
+  already used by `/package-intel` for cross-ecosystem consistency. Tavily
+  remains the primary structured-metadata source — reading the upstream
+  implementation (`Homebrew/brew` PR #20041, `Library/Homebrew/mcp_server.rb`)
+  showed the MCP returns human CLI text via `Open3.popen2e`, not JSON, so
+  it complements rather than replaces the JSON API.
+- **Graceful degradation** — when the MCP server is unavailable (stdio MCPs
+  can disconnect mid-session; we experienced this while writing the change),
+  the analytics step skips silently with no retry and no fabricated values.
+  The rest of the `/tool-intel` research proceeds unchanged.
+- **Schema additions** — optional `popularity?(array)` field on both
+  `brew_formula` and `brew_cask` schemas plus a `[convention]` observation
+  stating the MCP-only provenance rule. Dual-synced to the Basic Memory
+  schema notes; all 52 existing formula notes and 5 cask notes remain
+  valid (purely additive change).
+
+### Notes
+
+- Patch version bump (semver 0.x: additive, non-breaking, optional
+  integration — no required install step for users who don't want the
+  `[popularity]` observation).
+- `mcp__homebrew__` added to `KNOWN_MCP_PREFIXES` in `validate-plugin.mjs`.
+- Only `mcp__homebrew__info` is in `allowed-tools`. The other 13 MCP tools
+  (`install`, `uninstall`, `upgrade`, etc.) stay out; opting in per-tool
+  follows the tool-list hygiene rule in CLAUDE.md.
+
 ## [0.27.0][] - 2026-04-19
 
 ### Added
@@ -953,6 +987,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.27.1]: https://github.com/voxpelli/vp-claude/compare/v0.27.0...v0.27.1
 [0.27.0]: https://github.com/voxpelli/vp-claude/compare/v0.26.1...v0.27.0
 [0.26.1]: https://github.com/voxpelli/vp-claude/compare/v0.26.0...v0.26.1
 [0.26.0]: https://github.com/voxpelli/vp-claude/compare/v0.25.1...v0.26.0
