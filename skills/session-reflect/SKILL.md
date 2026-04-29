@@ -16,16 +16,17 @@ Review the current conversation, extract insights worth persisting in Basic
 Memory, find the right existing notes, preview proposed captures, and write
 only what the user approves.
 
-This is the deliberate, user-triggered counterpart to the automatic PreCompact
-hook. Unlike the hook (brief, fires under context-ceiling pressure), this skill
-can be thorough, exercise judgment, and let the user decide what's worth keeping.
+User-triggered: extracts candidates, finds the right target notes, shows a
+grouped preview, and waits for approval before writing. Thorough by design —
+exercises judgment and lets the user decide what's worth keeping.
 
 ## Edge Cases
 
 - **Empty conversation / no insights** — report "No durable insights found in
   this conversation" and exit. Do not force captures.
 - **BM unavailable** — report the error and suggest trying again later. The
-  PostToolUseFailure hook covers tool-level errors.
+  PostToolUseFailure hook covers BM write-tool errors (write_note, edit_note,
+  schema_validate, schema_diff, schema_infer); other tool failures surface raw.
 - **All insights already captured** — if `build_context` 1-hop checks show
   every candidate is in a neighbor, report "All insights from this session
   appear to already be captured" with note links.
@@ -169,9 +170,8 @@ Skipped: [anything the user declined and why]
 
 ## Observation Categories
 
-The core set matches the PreCompact hook (`[decision]`, `[lesson]`, `[gotcha]`,
-`[pattern]`). This skill adds `[limitation]` and `[breaking]` for thoroughness,
-since it operates without time pressure.
+Use `[decision]`, `[lesson]`, `[gotcha]`, `[pattern]` for the durable core,
+plus `[limitation]` and `[breaking]` when scoping constraints or API changes.
 
 | Category | When to use |
 |----------|-------------|

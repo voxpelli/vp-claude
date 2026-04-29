@@ -1,5 +1,5 @@
 {
-  "description": "Basic Memory quality hooks: schema validation after writes, file edit quality checks, auto-reflect before compaction, graph summary at session start, Python-script prevention.",
+  "description": "Basic Memory quality hooks: schema validation after writes, file edit quality checks, graph summary at session start, Python-script prevention.",
   "hooks": {
     "PreToolUse": [
       {
@@ -43,18 +43,6 @@
             "type": "command",
             "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/post-bm-failure-classify.sh",
             "timeout": 10
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/precompact.sh",
-            "timeout": 5
           }
         ]
       }

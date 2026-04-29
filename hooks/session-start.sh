@@ -16,10 +16,10 @@ if [ "$count" -gt 0 ]; then
 	mod=$((count % 4))
 	if [ "$mod" -eq 3 ]; then
 		next=$((count + 1))
-		audit_reminder="Graph-audit reminder: Sprint ${next} will be a graph-audit sprint. When running /retrospective next time, also invoke the knowledge-gardener agent for full graph health: schema validation, stale-note detection, drift check, and orphan audit."
+		audit_reminder="Graph-audit reminder: Sprint ${next} will be a graph-audit sprint. When running /retrospective next time, run the knowledge-gardener agent (read-only audit) then knowledge-maintainer (auto-fix) for full graph health: schema validation, stale-note detection, drift check, and orphan audit."
 	elif [ "$mod" -eq 0 ]; then
 		current=$((count + 1))
-		audit_reminder="Graph-audit sprint: Sprint ${current} — run the knowledge-gardener agent alongside /retrospective for full graph health: schema validation, stale-note detection, drift detection, and orphan check."
+		audit_reminder="Graph-audit sprint: Sprint ${current} — run knowledge-gardener (audit) then knowledge-maintainer (fix) alongside /retrospective for full graph health: schema validation, stale-note detection, drift detection, and orphan check."
 	fi
 fi
 

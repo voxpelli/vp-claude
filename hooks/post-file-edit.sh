@@ -19,10 +19,17 @@ if [[ -z "$PLUGIN_ROOT" ]]; then
 	exit 0
 fi
 
-# Auto-format shell scripts under hooks/
+# Auto-format shell scripts under hooks/ and scripts/ — noisy-flag mode:
+# detect drift with -d first, emit diff in additionalContext, then auto-fix.
 if [[ "$FILE_PATH" == "${PLUGIN_ROOT}/hooks/"*.sh ]] || [[ "$FILE_PATH" == "${PLUGIN_ROOT}/scripts/"*.sh ]]; then
 	if command -v shfmt >/dev/null 2>&1; then
-		shfmt -w "$FILE_PATH" 2>/dev/null || true
+		DIFF=$(shfmt -d "$FILE_PATH" 2>/dev/null || true)
+		if [[ -n "$DIFF" ]]; then
+			jq -n --arg diff "$DIFF" --arg f "$FILE_PATH" \
+				'{additionalContext: ("shfmt detected formatting drift in " + $f + ":\n\n" + $diff + "\n\nAuto-fixed in place.")}'
+			shfmt -w "$FILE_PATH"
+			exit 0
+		fi
 	fi
 fi
 

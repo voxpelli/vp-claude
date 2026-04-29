@@ -245,7 +245,7 @@ A user-triggered skill that reviews the current conversation and saves insights 
 
 > "Reflect on this session" / "Save what we learned" / "Commit this to memory"
 
-Unlike the automatic PreCompact hook (brief, fires under compaction pressure), `/session-reflect` is deliberate — it extracts candidates, finds the right target notes, shows a grouped preview, and waits before writing anything. Uses the same `[decision]`, `[lesson]`, `[gotcha]`, `[pattern]` observation vocabulary as PreCompact, plus `[limitation]` and `[breaking]` for thoroughness.
+User-triggered: extracts candidates, finds the right target notes, shows a grouped preview, and waits before writing anything. Uses the `[decision]`, `[lesson]`, `[gotcha]`, `[pattern]`, `[limitation]`, and `[breaking]` observation vocabularies.
 
 ### `/raindrop-triage` — Interactive unsorted bookmark triage
 
@@ -257,14 +257,13 @@ The first pass deduplicates by normalized URL (stripping tracking params), detec
 
 ### Hooks — Automated quality guardrails
 
-Six hooks run automatically in the background:
+Five hooks run automatically in the background:
 
 - **PostToolUse** (BM writes) — After any `write_note` or `edit_note`, validates the note structure against its schema. Catches malformed notes immediately.
-- **PostToolUse** (file edits) — After editing shell scripts, auto-formats with `shfmt`. After editing schema files, reminds to sync Basic Memory.
+- **PostToolUse** (file edits) — After editing shell scripts, detects formatting drift with `shfmt -d`, surfaces the diff, and auto-fixes with `shfmt -w`. After editing schema files, reminds to sync Basic Memory.
 - **PostToolUseFailure** — Classifies Basic Memory write and schema tool failures into five categories with actionable recovery guidance.
-- **PreCompact** — Before context compaction, reviews the conversation for decisions, lessons, and gotchas worth saving. Writes them to Basic Memory so insights survive across sessions.
 - **SessionStart** — Injects a knowledge graph status summary and suggests `/knowledge-prime` for project context or `/knowledge-ask` for topic-specific questions.
-- **PreToolUse** (gardener Bash) — Blocks Python and Node.js script execution when running as the knowledge-gardener agent, enforcing read-only discipline.
+- **PreToolUse** (gardener Bash) — Blocks Python and Node.js script execution when running as the knowledge-gardener agent (via `permissionDecision: "deny"`), enforcing read-only discipline.
 
 ## Installation
 
@@ -420,12 +419,11 @@ agents/
   raindrop-gardener.md                 Read-only Raindrop tag auditor
 hooks/
   hooks.json                           PreToolUse, PostToolUse x2,
-                                       PostToolUseFailure, PreCompact, SessionStart
+                                       PostToolUseFailure, SessionStart
   pre-bash-no-python.sh                Python/Node.js blocker for gardener agent
   post-bm-write-validate.sh            Schema validation after BM writes
   post-bm-failure-classify.sh          Error classification for BM failures
   session-start.sh                     Graph context + priming hint script
-  precompact.sh                        Reflection instructions script
   post-file-edit.sh                    Shell formatting + schema sync script
 schemas/
   npm_package.md                       npm package schema (npm_package type)
@@ -481,9 +479,8 @@ schemas/
  "audit tags"      -> raindrop-gardener   -> tag health report (read-only)
 
  [any BM write]    -> PostToolUse hook    -> schema validation feedback
- [any file edit]   -> PostToolUse hook    -> shfmt + schema sync reminder
+ [any file edit]   -> PostToolUse hook    -> shfmt drift diff + schema sync reminder
  [BM tool failure] -> PostToolUseFailure  -> classified error + recovery guidance
- [context compact] -> PreCompact hook     -> insights saved to BM
  [session start]   -> SessionStart hook   -> graph context + priming hint
  /session-reflect  -> session-reflect     -> preview + write to BM
 ```

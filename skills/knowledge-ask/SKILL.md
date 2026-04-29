@@ -48,7 +48,8 @@ existence check via `list_directory` in addition to the hybrid search.
   notes matching this question." Suggest `/package-intel <pkg>` or `/tool-intel`
   if the query looks like a package or tool name.
 - **BM unavailable** -- report the error and suggest trying again later. The
-  PostToolUseFailure hook covers tool-level errors.
+  PostToolUseFailure hook covers BM write-tool errors only; read-tool failures
+  (search_notes, read_note, build_context) surface as raw error strings.
 - **Ambiguous query** -- if `search_notes` returns results spanning 3+ unrelated
   topics, pick the best-matching cluster and note "Results also touched \[other
   topics\] -- narrow your query for those."

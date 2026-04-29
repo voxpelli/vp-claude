@@ -2,8 +2,9 @@
 set -euo pipefail
 
 # PostToolUse hook for write_note|edit_note — emit additionalContext so the
-# main Claude session calls schema_validate (prompt hooks can't call MCP tools;
-# see RETRO-02 and UPSTREAM-claude-code.md for the PreCompact precedent).
+# main Claude session calls schema_validate. We use type:"command" with
+# additionalContext because type:"prompt" hooks spawn Haiku without MCP access
+# (RETRO-02 and UPSTREAM-claude-code.md document this constraint).
 
 INPUT=$(cat)
 

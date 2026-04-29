@@ -37,7 +37,7 @@ agents/
   knowledge-primer.md                # Autonomous project context priming
   raindrop-gardener.md               # Read-only Raindrop tag auditor
 hooks/
-  hooks.json                         # PreToolUse, PostToolUse, PostToolUseFailure, PreCompact, SessionStart
+  hooks.json                         # PreToolUse, PostToolUse, PostToolUseFailure, SessionStart
 ```
 
 No runtime code — pure markdown + JSON. No build step, no dependencies.
@@ -51,7 +51,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 - **knowledge-gaps** — Parses code manifest files (`package.json`, `Cargo.toml`, etc.) and tool manifests (`Brewfile`, `.github/workflows/*.yml`, `Dockerfile`, `.vscode/extensions.json`), checks BM coverage, tiers package gaps by import frequency, lists all undocumented tools, and detects concept-level hub gaps via graph analysis and Readwise reading signals. User-invocable as `/knowledge-gaps`.
 - **knowledge-prime** — Surfaces project-relevant Basic Memory knowledge on demand. Detects the project stack, cross-references deps against BM notes, scores relevance, loads critical observations (`[gotcha]`, `[breaking]`, `[limitation]`), and produces a concise context brief. Supports `--deep` for extended output. User-invocable as `/knowledge-prime`.
 - **schema-evolve** — Detects drift between BM schema definitions and actual note usage via `schema_diff`/`schema_infer`, proposes frequency-driven field additions/removals, and dual-syncs BM notes + local `schemas/` files after approval. User-invocable as `/schema-evolve <type>`.
-- **session-reflect** — Reviews the current conversation, extracts durable insights, finds target notes in Basic Memory, shows a grouped preview, and writes only what the user approves. The deliberate, user-triggered counterpart to the automatic PreCompact hook. User-invocable as `/session-reflect`.
+- **session-reflect** — Reviews the current conversation, extracts durable insights, finds target notes in Basic Memory, shows a grouped preview, and writes only what the user approves. User-invocable as `/session-reflect`.
 - **knowledge-ask** — Answers freeform questions by searching Basic Memory, loading relevant notes, traversing the graph, and synthesizing a cited answer with confidence tiers (Direct/Partial/No Coverage). Read-only — suggests `/package-intel` or `/tool-intel` for coverage gaps. User-invocable as `/knowledge-ask <question>`.
 - **vp-note-quality** — Reference checklist preventing the fourth-wall anti-pattern (self-referential content in subject-domain notes). Not user-invocable — preloaded into knowledge-maintainer and knowledge-gardener agents via the `skills` frontmatter field.
 - **wander** — Purposeless knowledge exploration with 5 modes: Random Walk (BM graph traversal), Time Machine (old+new bookmark pair), Cross-System Collision (Readwise highlight + Raindrop bookmark), Forgotten Shelf (old untagged bookmarks), Obsession Detector (recent topics with zero BM notes). Never scores, ranks, or recommends. User-invocable as `/wander [mode]`.
@@ -68,14 +68,13 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 - **knowledge-primer** — Autonomous read-only agent that surfaces project-relevant BM knowledge before work begins. Scans project manifests, cross-references deps against BM, scores relevance, produces a context brief with key gotchas, and sweeps graph-wide observations for critical warnings from non-dependency notes. The "before work" counterpart to `/session-reflect`.
 - **raindrop-gardener** — Read-only Raindrop tag auditor: library dashboard, tag inventory, naming violations, near-duplicates, mistagged bookmarks (via `find_mistagged_bookmarks`), orphan tags, legacy tag identification, co-occurrence analysis, non-primary-language tag detection, taxonomy gaps. Produces a structured report with exact `update_tags`/`delete_tags` tool calls as copy-paste recommendations. **Never modifies tags or bookmarks.**
 
-### Hooks (6)
+### Hooks (5)
 
 - **PostToolUse** (`write_note`/`edit_note` matcher) — Command hook that emits `additionalContext` instructing the main session to call `schema_validate` on the written note. Skips schema definition notes (`/schema/` permalinks).
-- **PostToolUse** (`Edit`/`Write` matcher) — Auto-formats shell scripts with `shfmt` and reminds to sync BM when editing schema files.
-- **PostToolUseFailure** (`write_note`/`edit_note`/`schema_validate`/`schema_diff`/`schema_infer` matcher) — Command hook that pattern-matches BM tool errors into five categories (server-unavailable, note-not-found, invalid-argument, permission-error, unknown) and emits `additionalContext` with recovery guidance.
-- **PreCompact** — Auto-reflects conversation insights into Basic Memory before context compaction.
+- **PostToolUse** (`Edit`/`Write` matcher) — Detects shell-script formatting drift via `shfmt -d`, emits the diff in `additionalContext`, then auto-fixes with `shfmt -w`. Reminds to sync BM when editing schema files.
+- **PostToolUseFailure** (`write_note`/`edit_note`/`schema_validate`/`schema_diff`/`schema_infer` matcher) — Command hook that pattern-matches BM write-tool errors into five categories (server-unavailable, note-not-found, invalid-argument, permission-error, unknown) and emits `additionalContext` with recovery guidance.
 - **SessionStart** — Emits a single `additionalContext` JSON object with knowledge graph guidance, skill suggestions (`/knowledge-prime`, `/knowledge-ask`, `/knowledge-gaps`, `/schema-evolve`, `/wander`, `/readwise-check`), and conditional graph-audit cycle reminders on every 4th sprint.
-- **PreToolUse** (`Bash` matcher) — Blocks Python and Node.js script execution inside the knowledge-gardener agent, enforcing read-only discipline. Main session and other agents are unaffected.
+- **PreToolUse** (`Bash` matcher) — Blocks Python and Node.js script execution inside the knowledge-gardener agent via `permissionDecision: "deny"`, enforcing read-only discipline. Main session and other agents are unaffected.
 
 ## Schemas
 
@@ -232,11 +231,11 @@ Every section in an output template (skill synthesize step or agent output step)
 
 ### Hook conventions
 
-Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. Command hooks with `additionalContext` are used for all event types — prompt hooks spawn Haiku without MCP access, so they cannot call MCP tools (see RETRO-02 for the PreCompact precedent). All hooks are defined in `hooks/hooks.json`. Hook scripts assume CWD = project root (consistent with vp-beads convention). Each hook must emit exactly one JSON object on stdout — Claude Code reads only the first object and silently drops the rest.
+Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. All hooks are `type: "command"` and emit `additionalContext` from a JSON object on stdout — `type: "prompt"` hooks spawn Haiku without MCP access, so they cannot call MCP tools (RETRO-02). All hooks are defined in `hooks/hooks.json`. Hook scripts assume CWD = project root (consistent with vp-beads convention). Each hook must emit exactly one JSON object on stdout — Claude Code reads only the first object and silently drops the rest.
 
 ### Hook additionalContext pattern
 
-SessionStart/PreCompact `additionalContext` should suggest existing skills (e.g., "suggest running `/knowledge-prime`") rather than duplicating skill workflow steps inline. Keeps hooks lightweight (~1 sentence) and avoids drift between hook instructions and skill definitions. PreCompact is an intentional exception — it operates under context-ceiling pressure where skill indirection is not acceptable.
+SessionStart `additionalContext` should suggest existing skills (e.g., "suggest running `/knowledge-prime`") rather than duplicating skill workflow steps inline. Keeps hooks lightweight (~1 sentence) and avoids drift between hook instructions and skill definitions.
 
 ### Three-level invocation pattern
 

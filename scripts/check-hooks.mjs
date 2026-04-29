@@ -201,20 +201,6 @@ test('no error field → silent', () => {
   return { ok: true }
 })
 
-// --- precompact.sh ---
-console.log('\nprecompact.sh')
-
-test('always emits 1 object with additionalContext', () => {
-  const { stdout } = runHook(join(HOOKS_DIR, 'precompact.sh'), '{}')
-  const { count, objects, parseError } = parseJsonObjects(stdout)
-  if (parseError) return { ok: false, reason: parseError }
-  if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count}` }
-  if (!('additionalContext' in /** @type {Record<string,unknown>} */ (objects[0]))) {
-    return { ok: false, reason: 'missing additionalContext' }
-  }
-  return { ok: true }
-})
-
 // --- post-file-edit.sh ---
 console.log('\npost-file-edit.sh')
 
@@ -248,6 +234,32 @@ test('non-matching path → silent', () => {
   if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
   const { count } = parseJsonObjects(stdout)
   if (count !== 0) return { ok: false, reason: `expected silent, got ${count} objects` }
+  return { ok: true }
+})
+
+test('shell file with formatting drift → 1 object with shfmt diff', () => {
+  const shFile = join(pluginRoot, 'hooks', 'test-drift.sh')
+  // Deliberately mis-formatted (no spaces around then, no newline after)
+  writeFileSync(shFile, '#!/bin/bash\nif [ x ];then echo hi;fi\n')
+  const { stdout } = runHook(join(HOOKS_DIR, 'post-file-edit.sh'),
+    JSON.stringify({ tool_input: { file_path: shFile } }), { args: [pluginRoot] })
+  const { count, objects, parseError } = parseJsonObjects(stdout)
+  if (parseError) return { ok: false, reason: parseError }
+  if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count}` }
+  const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
+  if (!ctx.includes('shfmt detected formatting drift')) return { ok: false, reason: 'missing drift message' }
+  return { ok: true }
+})
+
+test('shell file already well-formatted → silent', () => {
+  const shFile = join(pluginRoot, 'hooks', 'test-clean.sh')
+  // shfmt canonical: spaces around then, newlines after each clause, tab indent
+  writeFileSync(shFile, '#!/bin/bash\nif [ x ]; then\n\techo hi\nfi\n')
+  const { stdout, status } = runHook(join(HOOKS_DIR, 'post-file-edit.sh'),
+    JSON.stringify({ tool_input: { file_path: shFile } }), { args: [pluginRoot] })
+  if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
+  const { count } = parseJsonObjects(stdout)
+  if (count !== 0) return { ok: false, reason: `expected silent (no drift), got ${count} objects` }
   return { ok: true }
 })
 
@@ -300,7 +312,8 @@ test('python3 from knowledge-gardener → blocked', () => {
   const { count, objects, parseError } = parseJsonObjects(stdout)
   if (parseError) return { ok: false, reason: parseError }
   if (count !== 1) return { ok: false, reason: `expected block, got ${count}` }
-  if (/** @type {Record<string,unknown>} */ (objects[0]).decision !== 'block') return { ok: false, reason: 'expected block' }
+  const hso = /** @type {Record<string,unknown>} */ (/** @type {Record<string,unknown>} */ (objects[0]).hookSpecificOutput ?? {})
+  if (hso.permissionDecision !== 'deny') return { ok: false, reason: 'expected permissionDecision: deny' }
   return { ok: true }
 })
 
@@ -309,7 +322,8 @@ test('node -e from knowledge-gardener → blocked', () => {
     bashInput('node -e "console.log(1)"', 'knowledge-gardener'))
   const { count, objects } = parseJsonObjects(stdout)
   if (count !== 1) return { ok: false, reason: `expected block, got ${count}` }
-  if (/** @type {Record<string,unknown>} */ (objects[0]).decision !== 'block') return { ok: false, reason: 'expected block' }
+  const hso = /** @type {Record<string,unknown>} */ (/** @type {Record<string,unknown>} */ (objects[0]).hookSpecificOutput ?? {})
+  if (hso.permissionDecision !== 'deny') return { ok: false, reason: 'expected permissionDecision: deny' }
   return { ok: true }
 })
 
@@ -318,7 +332,8 @@ test('bash -c "python3 ..." from gardener → blocked (bypass vector)', () => {
     bashInput('bash -c "python3 -c \'import json\'"', 'knowledge-gardener'))
   const { count, objects } = parseJsonObjects(stdout)
   if (count !== 1) return { ok: false, reason: `expected block, got ${count}` }
-  if (/** @type {Record<string,unknown>} */ (objects[0]).decision !== 'block') return { ok: false, reason: 'expected block' }
+  const hso = /** @type {Record<string,unknown>} */ (/** @type {Record<string,unknown>} */ (objects[0]).hookSpecificOutput ?? {})
+  if (hso.permissionDecision !== 'deny') return { ok: false, reason: 'expected permissionDecision: deny' }
   return { ok: true }
 })
 
