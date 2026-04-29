@@ -5,6 +5,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.0][] - 2026-04-29
+
+### Removed
+
+- **PreCompact reflection hook retired.** No positive evidence of effectiveness
+  surfaced across 7 sprints of BM/retro review; the user's own
+  `Session Reflector Patterns` `[gotcha]` flagged its output as "low-quality
+  changelog noise". Outcome of a 9-agent audit that triangulated the finding,
+  ran an adversarial counter-pass to disprove it, and confirmed via doc-grep
+  that no forward-facing references survive. RETRO-02 lesson preserved as
+  historical record. Removes `hooks/precompact.sh`, the `PreCompact` matcher
+  in `hooks.json`, and references in `CLAUDE.md`, `README.md`, the project
+  `MEMORY.md`, plugin layout trees, the "How it fits together" diagram, and
+  the session-reflect skill's hook-comparison passages. Hook count: 6 → 5.
+
+### Changed
+
+- **`PreToolUse` gardener block uses `permissionDecision: "deny"`** (canonical
+  2026 form) instead of legacy `decision: "block"`. Surfaces a labelled
+  `[Plugin]` decision in the TUI and integrates with the post-fix
+  `permissions.deny` precedence rules. Three test assertions in
+  `check-hooks.mjs` updated atomically with the hook-output change to avoid
+  a transient broken-test window.
+- **`post-file-edit.sh` shfmt branch flipped to noisy-flag mode.** Replaces
+  the silent `shfmt -w "$FILE_PATH" 2>/dev/null || true` (which swallowed
+  every error) with a detect-then-fix pattern: `shfmt -d` surfaces the diff
+  in `additionalContext`, then `shfmt -w` auto-fixes. Style drift becomes
+  visible during edits instead of being absorbed silently.
+- **`PostToolUseFailure` skill prose narrowed** in `skills/session-reflect/SKILL.md`
+  and `skills/knowledge-ask/SKILL.md` to scope coverage to BM write tools only
+  (`write_note`, `edit_note`, `schema_validate`, `schema_diff`, `schema_infer`),
+  matching the matcher's actual coverage. The previous line claiming "covers
+  tool-level errors" was actively misleading.
+- **`SessionStart` audit reminder** now mentions `knowledge-maintainer`
+  alongside `knowledge-gardener` so the two-pass audit-then-fix workflow is
+  discoverable from the reminder text alone.
+
+### Added
+
+- **Two new hook integration tests** in `scripts/check-hooks.mjs` covering the
+  shfmt branch: drift detection (asserts the diff appears in `additionalContext`)
+  and clean-file silence (asserts zero JSON objects emitted). Closes the gap
+  identified by the audit: prior to this release, the shfmt path had zero
+  test coverage despite handling every shell-script edit in the plugin.
+
+### Notes
+
+- **Minor version bump (semver 0.x: breaking change).** PreCompact removal
+  is the breaking part — users relying on automatic context-compaction
+  reflection should invoke `/session-reflect` manually, or wait for the
+  PostCompact research bead (vp-claude-m7u) to land.
+- All 25 `check:hooks` integration tests pass. All four `npm run check` jobs
+  green: `check:plugin`, `check:md`, `check:sh`, `check:hooks`.
+- Three follow-ups filed as beads for later sprints:
+  - **vp-claude-k4d** — broaden `PostToolUseFailure` matcher to non-BM MCP
+    tools (Raindrop, Tavily, Readwise, DeepWiki) when retros surface real
+    failures going unhandled
+  - **vp-claude-pwp** — write-time wiki-link colon anti-pattern detector
+    (`[[npm:foo]]` → `[[npm-foo]]` correction at `write_note` / `edit_note`
+    time, gardener already catches these in periodic audits)
+  - **vp-claude-m7u** — research `PostCompact` (v2.1.76+) as a potential
+    replacement for the retired PreCompact, contingent on observed
+    `compact_summary` input shape and MCP-tool access in post-compact context
+
 ## [0.27.1][] - 2026-04-20
 
 ### Added
@@ -987,6 +1051,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.28.0]: https://github.com/voxpelli/vp-claude/compare/v0.27.1...v0.28.0
 [0.27.1]: https://github.com/voxpelli/vp-claude/compare/v0.27.0...v0.27.1
 [0.27.0]: https://github.com/voxpelli/vp-claude/compare/v0.26.1...v0.27.0
 [0.26.1]: https://github.com/voxpelli/vp-claude/compare/v0.26.0...v0.26.1
