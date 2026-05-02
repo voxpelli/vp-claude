@@ -56,3 +56,4 @@ Preferred relation labels for brew formula notes (use consistently):
 
 - see also [[schema/brew_cask]] (cask variant for GUI apps)
 - see also [[dotfiles:modern-cli-stack]] (hub note for documented CLI tools)
+- see also [[schema/gh_extension]] (gh CLI extensions are GitHub-distributed companions to brew-installed CLIs like brew-gh)

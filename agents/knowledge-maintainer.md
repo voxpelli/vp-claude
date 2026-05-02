@@ -92,12 +92,12 @@ categorizing findings. Otherwise, run a quick triage:
 
 1. **Inventory** — `list_directory(dir_name="/", depth=2)`
 
-2. **Validate all 17 schemas** — `schema_validate` for each note type
+2. **Validate all 18 schemas** — `schema_validate` for each note type
    (npm_package, crate_package, go_module, composer_package, pypi_package,
    ruby_gem, brew_formula, brew_cask, github_action, docker_image,
-   vscode_extension, engineering, standard, concept, milestone, service,
-   person). This catches notes that violate their schema (broken/missing
-   required fields).
+   vscode_extension, gh_extension, engineering, standard, concept,
+   milestone, service, person). This catches notes that violate their
+   schema (broken/missing required fields).
 
 3. **Check drift on high-volume types** — `schema_diff` for npm_package,
    engineering, standard, brew_formula, and concept. Drift findings (fields
@@ -202,6 +202,7 @@ For tool-type notes missing their required ecosystem tag:
 - github\_action notes → add `github-actions` tag
 - docker\_image notes → add `docker` tag
 - vscode\_extension notes → add `vscode` tag
+- gh\_extension notes → add `gh-extension` tag
 
 Log all tag changes in the summary: "brew-ripgrep: added missing `brew` tag",
 "npm-fastify: `node-js` → `nodejs`".
@@ -343,6 +344,7 @@ If the user's project has undocumented Tier 1 packages:
    Skill(skill: "tool-intel", args: "action:actions/checkout")
    Skill(skill: "tool-intel", args: "docker:node")
    Skill(skill: "tool-intel", args: "vscode:esbenp.prettier-vscode")
+   Skill(skill: "tool-intel", args: "gh:meiji163/gh-notify")
    ```
 
 6. Report what was created, grouped by ecosystem and tool type.

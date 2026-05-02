@@ -50,3 +50,4 @@ Preferred relation labels for GitHub Action notes:
 
 - see also [[schema/brew_formula]] (analogous schema for CLI tools)
 - see also [[schema/docker_image]] (often used together in CI workflows)
+- see also [[schema/gh_extension]] (gh CLI extensions often invoke or wrap actions)

@@ -87,7 +87,7 @@ Extract and hold in context:
 - **Controlled vocabulary** — approved tags grouped by category
 - **Per-type required tags** — `brew` for brew\_formula, `cask` for brew\_cask,
   `github-actions` for github\_action, `docker` for docker\_image,
-  `vscode` for vscode\_extension
+  `vscode` for vscode\_extension, `gh-extension` for gh\_extension
 
 If the note does not exist or cannot be read, skip step 8 entirely and note
 the missing standard in the report's Info section.
@@ -139,6 +139,7 @@ list_directory(dir_name="casks", depth=1)
 list_directory(dir_name="actions", depth=1)
 list_directory(dir_name="docker", depth=1)
 list_directory(dir_name="vscode", depth=1)
+list_directory(dir_name="gh", depth=1)
 list_directory(dir_name="schema", depth=1)
 ```
 
@@ -157,6 +158,7 @@ schema_validate(note_type="brew_cask")
 schema_validate(note_type="github_action")
 schema_validate(note_type="docker_image")
 schema_validate(note_type="vscode_extension")
+schema_validate(note_type="gh_extension")
 schema_validate(note_type="engineering")
 schema_validate(note_type="standard")
 schema_validate(note_type="concept")
@@ -252,6 +254,7 @@ search_notes(search_type="text", query="[[cask-", page_size=20)
 search_notes(search_type="text", query="[[action-", page_size=20)
 search_notes(search_type="text", query="[[docker-", page_size=20)
 search_notes(search_type="text", query="[[vscode-", page_size=20)
+search_notes(search_type="text", query="[[gh-", page_size=20)
 ```
 
 For each unique wiki-link found (e.g., `[[crate-serde]]`), check if a
@@ -272,6 +275,7 @@ Ecosystem → directory mapping:
 - `[[action-*]]` → `actions/`
 - `[[docker-*]]` → `docker/`
 - `[[vscode-*]]` → `vscode/`
+- `[[gh-*]]` → `gh/`
 
 Report frequently-referenced but undocumented packages as candidates for
 `/package-intel` with the appropriate prefix (e.g., `/package-intel crate:serde`).
@@ -314,6 +318,7 @@ search_notes(search_type="text", query="[[go-", entity_types=["observation"], pa
 search_notes(search_type="text", query="[[composer-", entity_types=["observation"], page_size=100)
 search_notes(search_type="text", query="[[pypi-", entity_types=["observation"], page_size=100)
 search_notes(search_type="text", query="[[gem-", entity_types=["observation"], page_size=100)
+search_notes(search_type="text", query="[[gh-", entity_types=["observation"], page_size=100)
 ```
 
 Every result is a violation — the observation content contains a `[[prefix-`
@@ -419,6 +424,7 @@ search_notes(search_type="permalink", query="casks/", page_size=20)
 search_notes(search_type="permalink", query="actions/", page_size=20)
 search_notes(search_type="permalink", query="docker/", page_size=20)
 search_notes(search_type="permalink", query="vscode/", page_size=20)
+search_notes(search_type="permalink", query="gh/", page_size=20)
 ```
 
 For each note returned, read frontmatter and check:
@@ -427,6 +433,7 @@ For each note returned, read frontmatter and check:
 - github\_action notes must have `github-actions` tag
 - docker\_image notes must have `docker` tag
 - vscode\_extension notes must have `vscode` tag
+- gh\_extension notes must have `gh-extension` tag
 
 **8e. Out-of-vocabulary tags:**
 Flag tags not present in the controlled vocabulary that appear on 2+ notes.

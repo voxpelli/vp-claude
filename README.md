@@ -1,6 +1,6 @@
 # vp-knowledge
 
-A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https://github.com/basicmachines-co/basic-memory) into an actively maintained knowledge graph. Research packages from six ecosystems and tools from five dev-environment categories using parallel enrichment, find documentation gaps in your projects, surface project-relevant knowledge before coding, and let autonomous agents audit and improve your notes — all without leaving your terminal.
+A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https://github.com/basicmachines-co/basic-memory) into an actively maintained knowledge graph. Research packages from six ecosystems and tools from six dev-environment categories using parallel enrichment, find documentation gaps in your projects, surface project-relevant knowledge before coding, and let autonomous agents audit and improve your notes — all without leaving your terminal.
 
 ## Breaking change in v0.22.0
 
@@ -46,7 +46,7 @@ Plus changelog analysis via GitHub releases. After writing, searches for existin
 
 ### `/tool-intel <prefix>:<name>` — Research any dev tool
 
-Queries five sources in parallel, synthesizes a structured note, and cross-links existing notes. Supports five tool categories:
+Queries five sources in parallel, synthesizes a structured note, and cross-links existing notes. Supports six tool categories:
 
 | Form | Category | Example |
 |------|----------|---------|
@@ -55,18 +55,20 @@ Queries five sources in parallel, synthesizes a structured note, and cross-links
 | `action:<owner>/<repo>` | GitHub Action | `action:actions/checkout` |
 | `docker:<image>` | Docker Hub image | `docker:node` |
 | `vscode:<publisher>.<ext>` | VSCode extension | `vscode:esbenp.prettier-vscode` |
+| `gh:<owner>/<repo>` | GitHub CLI extension | `gh:meiji163/gh-notify` |
 
 ```
 /tool-intel brew:ripgrep
 /tool-intel action:actions/checkout
 /tool-intel docker:node
 /tool-intel vscode:esbenp.prettier-vscode
+/tool-intel gh:meiji163/gh-notify
 ```
 
 | Source | What it finds |
 |--------|--------------|
 | Basic Memory | Existing notes, cross-references |
-| DeepWiki | Architecture, design patterns (actions and docker only) |
+| DeepWiki | Architecture, design patterns (actions and docker; conditional for gh — only when `gh release list` returns ≥1 release) |
 | Tavily | Security advisories, CVEs, supply-chain risks, gotchas |
 | Raindrop | Your bookmarked articles (with full content extraction) |
 | Readwise | Your highlights and saved articles about the tool |

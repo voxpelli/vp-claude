@@ -38,9 +38,10 @@ The user provides a topic or question after the skill invocation:
 | Concept | `/knowledge-ask IndieWeb` |
 | Package identifier (with prefix) | `/knowledge-ask npm:undici` |
 | Tool identifier (with prefix) | `/knowledge-ask brew:ripgrep` |
+| gh CLI extension (with prefix) | `/knowledge-ask gh:meiji163/gh-notify` |
 
-Prefixed identifiers (`npm:`, `crate:`, `brew:`, `action:`, etc.) trigger a fast
-existence check via `list_directory` in addition to the hybrid search.
+Prefixed identifiers (`npm:`, `crate:`, `brew:`, `action:`, `gh:`, etc.) trigger
+a fast existence check via `list_directory` in addition to the hybrid search.
 
 ## Edge Cases
 
@@ -76,8 +77,8 @@ search_notes(query="<user question>", page_size=10)
 ```
 
 If the query contains a recognized ecosystem prefix (`npm:`, `crate:`, `go:`,
-`composer:`, `pypi:`, `gem:`, `brew:`, `cask:`, `action:`, `docker:`, `vscode:`),
-also run a fast existence check:
+`composer:`, `pypi:`, `gem:`, `brew:`, `cask:`, `action:`, `docker:`, `vscode:`,
+`gh:`), also run a fast existence check:
 
 ```
 list_directory(dir_name="<ecosystem-dir>", file_name_glob="*<name>*")
@@ -98,6 +99,7 @@ Prefix-to-directory mapping:
 | `action:` | `actions/` |
 | `docker:` | `docker/` |
 | `vscode:` | `vscode/` |
+| `gh:` | `gh/` |
 
 Filter out schema notes (titles starting with `schema/`) from the results.
 

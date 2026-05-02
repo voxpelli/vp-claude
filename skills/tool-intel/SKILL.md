@@ -1,6 +1,6 @@
 ---
 name: tool-intel
-description: "This skill should be used when the user asks to 'research a homebrew formula', 'brew intel', 'what does [brew-tool] do', 'research a cask', 'cask intel', 'what does [cask] do', 'research a GitHub Action', 'action intel', 'what does [action] do', 'research a docker image', 'docker intel', 'what does [docker image] do', 'research a VSCode extension', 'vscode intel', 'what does [extension] do', 'add tool to knowledge graph', 'enrich [tool]'. Researches a developer environment or CI/CD tool using five-source enrichment (DeepWiki, Tavily, Raindrop, Readwise, changelog) and creates/updates a structured Basic Memory note with post-write cross-linking. Supports Homebrew formulae (brew:), Homebrew casks (cask:), GitHub Actions (action:), Docker images (docker:), and VSCode extensions (vscode:)."
+description: "This skill should be used when the user asks to 'research a homebrew formula', 'brew intel', 'what does [brew-tool] do', 'research a cask', 'cask intel', 'what does [cask] do', 'research a GitHub Action', 'action intel', 'what does [action] do', 'research a docker image', 'docker intel', 'what does [docker image] do', 'research a VSCode extension', 'vscode intel', 'what does [extension] do', 'research a gh extension', 'research a gh CLI extension', 'gh extension intel', 'what does [gh-extension] do', 'add tool to knowledge graph', 'enrich [tool]'. Researches a developer environment or CI/CD tool using five-source enrichment (DeepWiki, Tavily, Raindrop, Readwise, changelog) and creates/updates a structured Basic Memory note with post-write cross-linking. Supports Homebrew formulae (brew:), Homebrew casks (cask:), GitHub Actions (action:), Docker images (docker:), VSCode extensions (vscode:), and GitHub CLI extensions (gh:)."
 user-invocable: true
 argument-hint: "<prefix>:<name>"
 allowed-tools:
@@ -26,8 +26,8 @@ allowed-tools:
 
 Research a developer environment or CI/CD tool and synthesize a structured
 Basic Memory note using five enrichment sources, then cross-link existing notes.
-Supports Homebrew formulae, Homebrew casks, GitHub Actions, Docker images, and
-VSCode extensions.
+Supports Homebrew formulae, Homebrew casks, GitHub Actions, Docker images,
+VSCode extensions, and GitHub CLI extensions.
 
 ## Arguments
 
@@ -41,11 +41,13 @@ One argument: the tool identifier with a required ecosystem prefix.
 | `docker:<image>` | Docker Hub image | `docker:node` |
 | `docker:<org>/<image>` | Docker Hub community | `docker:grafana/grafana` |
 | `vscode:<publisher>.<ext>` | VSCode extension | `vscode:esbenp.prettier-vscode` |
+| `gh:<owner>/<repo>` | GitHub CLI extension | `gh:meiji163/gh-notify` |
 
 **Identifier normalization:**
 - `action:` — strip `@version` suffix from `uses:` lines (e.g., `actions/checkout@v4` → `action:actions/checkout`)
 - `docker:` — strip `:tag` suffix (e.g., `node:22-alpine` → `docker:node`)
 - `vscode:` — always `publisher.extension-id` dot-separated
+- `gh:` — strip `https://github.com/` if pasted, strip `@<tag>` suffix, require `owner/repo` form (e.g., `gh:meiji163/gh-notify`); error if no `/` is present
 
 ## Ecosystem Dispatch
 
@@ -53,8 +55,8 @@ One argument: the tool identifier with a required ecosystem prefix.
 
 The prefix before `:` determines the ecosystem. If no recognized prefix is
 found, return an error listing the valid prefixes (`brew:`, `cask:`,
-`action:`, `docker:`, `vscode:`). Do not fall back to package-intel — this
-skill covers tooling only.
+`action:`, `docker:`, `vscode:`, `gh:`). Do not fall back to package-intel —
+this skill covers tooling only.
 
 **Ecosystem → BM mapping:**
 
@@ -65,13 +67,15 @@ skill covers tooling only.
 | `action` | `actions/` | `github_action` | `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-action.md` |
 | `docker` | `docker/` | `docker_image` | `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-docker.md` |
 | `vscode` | `vscode/` | `vscode_extension` | `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-vscode.md` |
+| `gh` | `gh/` | `gh_extension` | `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-gh.md` |
 
 **Title convention:** The user command uses a colon delimiter (`brew:ripgrep`),
 but the BM note title replaces all `:` and `/` with `-` (preserving `@` and
 `.`). This matches the filename BM generates and enables native Obsidian
 wiki-link resolution. Examples: `brew:ripgrep` → `brew-ripgrep`,
 `action:actions/checkout` → `action-actions-checkout`,
-`docker:grafana/grafana` → `docker-grafana-grafana`.
+`docker:grafana/grafana` → `docker-grafana-grafana`,
+`gh:meiji163/gh-notify` → `gh-meiji163-gh-notify`.
 
 ### Step 1: Check for existing note
 
@@ -118,11 +122,14 @@ useful coverage of Homebrew, Actions, Docker, or VSCode ecosystems.
 
 Launch research queries — parallelize where possible:
 
-**a) DeepWiki — architecture and design (action: and docker: only):**
+**a) DeepWiki — architecture and design (action:, docker:, conditional for gh:):**
 
 Use DeepWiki for tools that have upstream GitHub repositories with meaningful
 code to analyze. Skip for `brew:` and `cask:` (formulae/casks rarely have
-rich repos). Use for `vscode:` when a public GitHub repo exists.
+rich repos). Use for `vscode:` when a public GitHub repo exists. For `gh:`,
+use **conditionally** — only when `gh release list --repo <owner>/<repo>`
+returns ≥1 release (a reliable proxy for "well-known enough to be indexed";
+alpha bash extensions like `gh-notify` are not in DeepWiki).
 
 ```
 ask_question(repo="owner/repo", question="What are the key inputs, outputs, design patterns, gotchas, and security considerations?")
@@ -140,6 +147,7 @@ Always run for all tool types. Tailor the query to the tool category:
 - `action:`: `tavily_search(query="<owner>/<repo> github action security supply chain <year>", max_results=5)`
 - `docker:`: `tavily_search(query="<image> docker image CVE vulnerability <year>", max_results=5)`
 - `vscode:`: `tavily_search(query="<extension-id> vscode extension performance issues <year>", max_results=5)`
+- `gh:`: `tavily_search(query="<owner>/<repo> gh extension security supply chain <year>", max_results=5)`
 
 For `action:` notes, also extract the action definition directly:
 ```
@@ -166,6 +174,7 @@ These are articles the user deliberately saved — high relevance signal.
 - `docker:`: Use Docker Hub tags API (see `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-docker.md`) for tag strategy overview
 - `brew:`/`cask:`: Extract version from the formulae.brew.sh API response (already fetched in Step 2)
 - `vscode:`: Extract version from Open VSX API response (already fetched in Step 2)
+- `gh:`: Use GitHub releases — `gh release list --repo <owner>/<repo> --limit 10 2>/dev/null`; empty result means `runtime_shape: script` (or `local` per Step 2's classification ladder)
 
 **e) Readwise — curated personal insights:**
 ```
@@ -207,6 +216,7 @@ conventions per tool type:
 | `action` | `action-<owner>-<repo>` | `actions/` | `github_action` |
 | `docker` | `docker-<image>` | `docker/` | `docker_image` |
 | `vscode` | `vscode-<publisher>.<ext>` | `vscode/` | `vscode_extension` |
+| `gh` | `gh-<owner>-<repo>` | `gh/` | `gh_extension` |
 
 All tool notes share three core enrichment layers plus a type-specific content section:
 - **Frontmatter** with `packages` array, `type`, and `tags`

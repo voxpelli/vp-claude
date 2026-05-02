@@ -5,6 +5,93 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.0][] - 2026-05-02
+
+### Added
+
+- **`gh:` ecosystem prefix for `/tool-intel`.** Researches GitHub CLI
+  extensions (installed via `gh extension install <owner>/<repo>` and
+  invoked as `gh <name> ...`) into a new `gh_extension` Basic Memory
+  schema with title format `gh-<owner>-<repo>` and directory `gh/`.
+  Sixth ecosystem alongside `brew:`, `cask:`, `action:`, `docker:`,
+  `vscode:`. Five-source enrichment with DeepWiki **conditional** —
+  runs only when `gh release list` returns ≥1 release (alpha bash
+  extensions like `gh-notify` aren't indexed and would 404). Mirrors
+  `/people-intel`'s conditional DeepWiki pattern.
+- **`gh_extension` schema** — frontmatter fields include
+  `runtime_shape` (`binary | script | local`), `discovery_mechanism`,
+  `host_command`, `naming_convention`, `language`, `source`. `local`
+  is required despite Wave-2 design discussion suggesting drop —
+  symlinked dev installs (`gh ext install .`) are real and present in
+  the user's environment. The `runtime_shape` classification ladder
+  in `references/ecosystem-gh.md` checks symlink first because
+  symlinked dev installs contain `.git/` too and would otherwise
+  misclassify as `script`.
+- **`gh-extension` controlled tag** — added to the per-type required-
+  tags table in `agents/knowledge-gardener.md` and
+  `agents/knowledge-maintainer.md`. Tag vocabulary entry added to
+  `~/.claude/references/raindrop-tags.md`.
+- **Reciprocal schema cross-refs** — `schemas/github_action.md` and
+  `schemas/brew_formula.md` gain `see also [[schema/gh_extension]]`
+  relations. gh extensions often invoke or wrap actions; gh itself
+  is brew-installed, so adjacency through both peers is genuine.
+- **Three new reference files**: `schemas/gh_extension.md`,
+  `skills/tool-intel/references/ecosystem-gh.md`, and
+  `skills/tool-intel/references/note-template-gh.md`.
+
+### Changed
+
+- **`/tool-intel` SKILL.md** — Arguments table, dispatch table,
+  Step 0 error message, Step 3 enrichment templates (Tavily, DeepWiki,
+  changelog), and Step 4 conventions table all extended with `gh:`
+  rows.
+- **Sibling skill prefix lists** — `knowledge-ask/SKILL.md`'s prefix
+  table and prose mention now include `gh:`. `knowledge-gaps/SKILL.md`
+  description notes that gh extensions have no manifest and stay
+  user-invoked (no auto-detect).
+- **`hooks/session-start.sh`** prefix list extended with
+  `gh:<owner>/<repo>`. Bash heredoc quoting verified intact via
+  `npm run check:sh`.
+- **`agents/knowledge-gardener.md`** — 8 prefix-mention spots updated:
+  inventory `list_directory`, `schema_validate` calls, wiki-link
+  search queries, observation-link queries, ecosystem→directory
+  mapping, per-type required-tag table.
+- **`agents/knowledge-maintainer.md`** — schema-validation list
+  extended to 18 types (adds `gh_extension`), required-ecosystem-
+  tag rule added, `Skill(skill: "tool-intel", args: "gh:...")`
+  example added.
+- **README.md, CLAUDE.md** — opener counts ("five → six categories"),
+  tool-intel section, references file count comment
+  (`12 files: 6 ecosystem + 6 note templates`).
+
+### Notes
+
+- **Patch version bump (semver 0.x: additive non-breaking).** New
+  ecosystem prefix is purely additive — no existing notes break, no
+  existing schemas change, no existing skill workflows alter their
+  outputs for non-`gh:` invocations.
+- **gh-audit-envs migration deliberately skipped.** The user's own
+  `voxpelli/gh-audit-envs` is documented at `engineering/security/...`
+  with type `engineering` and rich landscape content (competitive
+  matrix, USP, GitHub roadmap analysis). Wave-2 research evaluated a
+  split (thin `gh_extension` note + renamed engineering essay) but
+  the user chose to leave it as-is — the landscape content is genuinely
+  engineering-shaped, and `/knowledge-gaps` doesn't auto-detect
+  installed gh extensions (no manifest), so no false-positive flagging
+  risk. Revival trigger: if the engineering note acquires
+  `runtime_shape`/`host_command` fields it can't carry, or if the
+  upstream repo is retired.
+- **`pattern:extensible-cli-tools` hub note deferred.** Singleton hub
+  notes become orphans. Will revisit when a 2nd CLI-extension ecosystem
+  (`git_extension` or `kubectl_plugin`) lands and the hub has ≥2
+  concrete instances for authentic `[precedent]` and `[tradeoff]`
+  observations.
+- **Manifest detection deferred.** No checked-in installer scripts,
+  `gh-extensions.txt`, or `~/.config/gh/extensions.yml` patterns
+  observed in user repos. `gh:` stays user-invoked, mirroring `action:`.
+  A 2-line grep parser is stubbed as a comment for the future-
+  conditional path.
+
 ## [0.28.0][] - 2026-04-29
 
 ### Removed
@@ -1051,6 +1138,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.29.0]: https://github.com/voxpelli/vp-claude/compare/v0.28.0...v0.29.0
 [0.28.0]: https://github.com/voxpelli/vp-claude/compare/v0.27.1...v0.28.0
 [0.27.1]: https://github.com/voxpelli/vp-claude/compare/v0.27.0...v0.27.1
 [0.27.0]: https://github.com/voxpelli/vp-claude/compare/v0.26.1...v0.27.0

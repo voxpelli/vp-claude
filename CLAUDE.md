@@ -14,8 +14,8 @@ A Claude Code plugin (`vp-knowledge`) containing user-owned skills, agents, and 
 skills/
   package-intel/SKILL.md             # Seven-source multi-ecosystem package research
     references/                      # 12 files: 6 ecosystem + 6 note templates
-  tool-intel/SKILL.md                # Five-source dev-tool research (brew/action/docker/vscode)
-    references/                      # 10 files: 5 ecosystem + 5 note templates
+  tool-intel/SKILL.md                # Five-source dev-tool research (brew/action/docker/vscode/gh)
+    references/                      # 12 files: 6 ecosystem + 6 note templates
   knowledge-gaps/SKILL.md            # Cross-reference deps + tool manifests vs BM coverage
     references/                      # 2 files: standard-detection, concept-detection
   knowledge-prime/SKILL.md           # On-demand project context priming from BM
@@ -47,7 +47,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 ### Skills (14)
 
 - **package-intel** — Researches a package via seven enrichment sources (DeepWiki, Context7, Tavily, Raindrop, Readwise, changelog, Socket) and writes/updates a structured prefixed note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer, Python PyPI, and Ruby gems. Socket supply-chain scoring covers npm/pypi/cargo/gem (go/composer skip silently). User-invocable as `/package-intel <pkg>`.
-- **tool-intel** — Researches a developer environment or CI/CD tool via five sources (Basic Memory, DeepWiki for actions/docker, Tavily, Raindrop, Readwise) and writes/updates a structured prefixed note with post-write cross-linking. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), and VSCode extensions (`vscode:`). For `brew:`/`cask:` an optional sixth source — the local Homebrew MCP (`mcp__homebrew__info`) — supplies install analytics as `[popularity]` observations when the server is reachable, and skips silently otherwise. User-invocable as `/tool-intel <prefix>:<name>`.
+- **tool-intel** — Researches a developer environment or CI/CD tool via five sources (Basic Memory, DeepWiki for actions/docker and conditional for gh, Tavily, Raindrop, Readwise) and writes/updates a structured prefixed note with post-write cross-linking. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), VSCode extensions (`vscode:`), and GitHub CLI extensions (`gh:`). For `brew:`/`cask:` an optional sixth source — the local Homebrew MCP (`mcp__homebrew__info`) — supplies install analytics as `[popularity]` observations when the server is reachable, and skips silently otherwise. For `gh:`, `runtime_shape` (binary/script/local) drives upgrade-path expectations; DeepWiki runs only when `gh release list` returns ≥1 release. User-invocable as `/tool-intel <prefix>:<name>`.
 - **knowledge-gaps** — Parses code manifest files (`package.json`, `Cargo.toml`, etc.) and tool manifests (`Brewfile`, `.github/workflows/*.yml`, `Dockerfile`, `.vscode/extensions.json`), checks BM coverage, tiers package gaps by import frequency, lists all undocumented tools, and detects concept-level hub gaps via graph analysis and Readwise reading signals. User-invocable as `/knowledge-gaps`.
 - **knowledge-prime** — Surfaces project-relevant Basic Memory knowledge on demand. Detects the project stack, cross-references deps against BM notes, scores relevance, loads critical observations (`[gotcha]`, `[breaking]`, `[limitation]`), and produces a concise context brief. Supports `--deep` for extended output. User-invocable as `/knowledge-prime`.
 - **schema-evolve** — Detects drift between BM schema definitions and actual note usage via `schema_diff`/`schema_infer`, proposes frequency-driven field additions/removals, and dual-syncs BM notes + local `schemas/` files after approval. User-invocable as `/schema-evolve <type>`.
@@ -78,7 +78,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 
 ## Schemas
 
-The `schemas/` directory in the plugin root is the version-controlled source of truth for all Basic Memory note schemas. It contains twenty files mirroring the schema notes in BM:
+The `schemas/` directory in the plugin root is the version-controlled source of truth for all Basic Memory note schemas. It contains twenty-one files mirroring the schema notes in BM:
 
 **Package types:**
 - `schemas/npm_package.md` — npm package notes (`npm_package` type)
@@ -94,6 +94,7 @@ The `schemas/` directory in the plugin root is the version-controlled source of 
 - `schemas/github_action.md` — GitHub Actions notes (`github_action` type)
 - `schemas/docker_image.md` — Docker image notes (`docker_image` type)
 - `schemas/vscode_extension.md` — VSCode extension notes (`vscode_extension` type)
+- `schemas/gh_extension.md` — GitHub CLI extension notes (`gh_extension` type)
 
 **Knowledge types:**
 - `schemas/engineering.md` — engineering knowledge notes (`engineering` type)
