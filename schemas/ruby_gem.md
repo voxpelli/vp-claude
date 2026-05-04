@@ -31,10 +31,10 @@ Schema for Ruby gem notes — one note per gem in the `gems/` directory.
 ## Relation Vocabulary
 
 Preferred relation labels for gem notes:
-- `see also [[gem-x]]` — related gem in the same space
-- `pairs with [[gem-x]]` — commonly used together
-- `depends on [[gem-x]]` — declared gem dependency
-- `alternative to [[gem-x]]` — competes in the same space
+- `see_also [[gem-x]]` — related gem in the same space
+- `pairs_with [[gem-x]]` — commonly used together
+- `depends_on [[gem-x]]` — declared gem dependency
+- `alternative_to [[gem-x]]` — competes in the same space
 
 ## Observations
 

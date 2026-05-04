@@ -52,12 +52,12 @@ tradeoffs? → pattern. Does it describe *how to do X in tech Y*? → engineerin
 ## Relation Vocabulary
 
 Preferred relation labels for pattern notes:
-- `relates to [[pattern-x]]` — related pattern in the same analytical space
-- `has instance [[concept-x]]` — concrete instance of this abstract pattern
-- `instance of [[pattern-x]]` — abstract pattern this note instantiates
-- `applied to [[engineering-x]]` — engineering context where applied
-- `implemented by [[npm-x]]` — concrete implementation in a package
-- `part of [[pattern-x]]` — parent hub or pattern family
+- `relates_to [[pattern-x]]` — related pattern in the same analytical space
+- `has_instance [[concept-x]]` — concrete instance of this abstract pattern
+- `instance_of [[pattern-x]]` — abstract pattern this note instantiates
+- `applied_to [[engineering-x]]` — engineering context where applied
+- `implemented_by [[npm-x]]` — concrete implementation in a package
+- `part_of [[pattern-x]]` — parent hub or pattern family
 
 ## Observations
 

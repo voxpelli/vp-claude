@@ -99,12 +99,12 @@ binary distribution.
 
 ## Relations
 
-- runs on [[brew-gh]]
-- depends on [[brew-fzf]]
-- pairs with [[brew-bat]]
-- pairs with [[brew-git-delta]]
-- see also [[gh-dlvhdr-gh-dash]]
-<!-- relates to [[engineering/patterns/extensible-cli-tools]] — pattern note not yet created; uncomment after writing -->
+- runs_on [[brew-gh]]
+- depends_on [[brew-fzf]]
+- pairs_with [[brew-bat]]
+- pairs_with [[brew-git-delta]]
+- see_also [[gh-dlvhdr-gh-dash]]
+<!-- relates_to [[engineering/patterns/extensible-cli-tools]] — pattern note not yet created; uncomment after writing -->
 ````
 
 ## Field Guidelines

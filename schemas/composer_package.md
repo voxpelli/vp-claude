@@ -31,10 +31,10 @@ Schema for PHP Composer package notes — one note per package in the `composer/
 ## Relation Vocabulary
 
 Preferred relation labels for Composer package notes:
-- `see also [[composer-x]]` — related package in the same space
-- `pairs with [[composer-x]]` — commonly used together
-- `depends on [[composer-x]]` — declared Composer dependency
-- `alternative to [[composer-x]]` — competes in the same space
+- `see_also [[composer-x]]` — related package in the same space
+- `pairs_with [[composer-x]]` — commonly used together
+- `depends_on [[composer-x]]` — declared Composer dependency
+- `alternative_to [[composer-x]]` — competes in the same space
 
 ## Observations
 

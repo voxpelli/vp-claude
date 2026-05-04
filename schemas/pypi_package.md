@@ -33,10 +33,10 @@ Schema for Python PyPI package notes — one note per package in the `pypi/` dir
 ## Relation Vocabulary
 
 Preferred relation labels for PyPI package notes:
-- `see also [[pypi-x]]` — related package in the same space
-- `pairs with [[pypi-x]]` — commonly used together
-- `depends on [[pypi-x]]` — declared package dependency
-- `alternative to [[pypi-x]]` — competes in the same space
+- `see_also [[pypi-x]]` — related package in the same space
+- `pairs_with [[pypi-x]]` — commonly used together
+- `depends_on [[pypi-x]]` — declared package dependency
+- `alternative_to [[pypi-x]]` — competes in the same space
 
 ## Observations
 

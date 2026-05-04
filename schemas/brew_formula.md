@@ -36,15 +36,15 @@ Schema for Homebrew formula notes — one note per formula in the `brew/` direct
 ## Relation Vocabulary
 
 Preferred relation labels for brew formula notes (use consistently):
-- `see also [[brew-x]]` — related tool in the same space
+- `see_also [[brew-x]]` — related tool in the same space
 - `replaces [[brew-x]]` — this formula supersedes another
 - `runtime dep of [[brew-x]]` — this formula is a declared runtime dependency
-- `pairs with [[brew-x]]` — commonly used together
-- `configured in [[dotfiles:modern-cli-stack]]` — wired into the dotfiles setup
+- `pairs_with [[brew-x]]` — commonly used together
+- `configured_in [[dotfiles:modern-cli-stack]]` — wired into the dotfiles setup
 - `Layer 1 alias in [[dotfiles:modern-cli-stack]]` — transparent replacement
 - `Layer 2 nudge in [[dotfiles:modern-cli-stack]]` — hint-only (not alias)
-- `relates to [[brew-x]]` — related formula, cask, or engineering notes
-- `depends on [[brew-x]]` — runtime or build dependency
+- `relates_to [[brew-x]]` — related formula, cask, or engineering notes
+- `depends_on [[brew-x]]` — runtime or build dependency
 
 ## Observations
 

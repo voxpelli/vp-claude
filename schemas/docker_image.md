@@ -33,10 +33,10 @@ Schema for Docker image notes — one note per image in the `docker/` directory.
 ## Relation Vocabulary
 
 Preferred relation labels for Docker image notes:
-- `see also [[docker-x]]` — related image in the same space
+- `see_also [[docker-x]]` — related image in the same space
 - `base layer for [[docker-x]]` — this image is used as FROM in another
-- `pairs with [[action-x]]` — commonly used together in CI
-- `alternative to [[docker-x]]` — competes in the same space
+- `pairs_with [[action-x]]` — commonly used together in CI
+- `alternative_to [[docker-x]]` — competes in the same space
 
 ## Observations
 

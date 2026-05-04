@@ -33,10 +33,10 @@ Schema for Go module notes — one note per module in the `go/` directory.
 ## Relation Vocabulary
 
 Preferred relation labels for Go module notes:
-- `see also [[go-x]]` — related module in the same space
-- `pairs with [[go-x]]` — commonly used together
-- `depends on [[go-x]]` — declared module dependency
-- `alternative to [[go-x]]` — competes in the same space
+- `see_also [[go-x]]` — related module in the same space
+- `pairs_with [[go-x]]` — commonly used together
+- `depends_on [[go-x]]` — declared module dependency
+- `alternative_to [[go-x]]` — competes in the same space
 
 ## Observations
 

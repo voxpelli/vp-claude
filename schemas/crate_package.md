@@ -35,10 +35,10 @@ Schema for Rust crate notes — one note per crate in the `crates/` directory.
 ## Relation Vocabulary
 
 Preferred relation labels for crate notes:
-- `see also [[crate-x]]` — related crate in the same space
-- `pairs with [[crate-x]]` — commonly used together (e.g. anyhow + thiserror)
-- `depends on [[crate-x]]` — declared dependency
-- `alternative to [[crate-x]]` — competes in the same space
+- `see_also [[crate-x]]` — related crate in the same space
+- `pairs_with [[crate-x]]` — commonly used together (e.g. anyhow + thiserror)
+- `depends_on [[crate-x]]` — declared dependency
+- `alternative_to [[crate-x]]` — competes in the same space
 - `application pattern in [[engineering/x]]` — links to a patterns note using this crate
 
 ## Observations

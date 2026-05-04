@@ -47,14 +47,17 @@ Schema for GitHub CLI extension notes — one note per extension in the `gh/` di
 
 ## Relation Vocabulary
 
-Preferred relation labels for gh extension notes:
-- `see also [[gh-x]]` — related extension in the same space
-- `pairs with [[gh-x]]` — commonly installed together
-- `alternative to [[gh-x]]` — competes in the same space
-- `depends on [[brew-x]]` — runtime dependency on a Homebrew-installed tool
-- `runs on [[brew-gh]]` — host CLI this extension extends
+Preferred relation labels for gh extension notes (use the underscored canonical
+forms — BM's relation parser matches relation_type strings exactly, so
+`relates to` with a space silently creates a non-matching relation):
+- `see_also [[gh-x]]` — related extension in the same space
+- `pairs_with [[gh-x]]` — commonly installed together
+- `alternative_to [[gh-x]]` — competes in the same space
+- `depends_on [[brew-x]]` — runtime dependency on a Homebrew-installed tool
+- `runs_on [[brew-gh]]` — host CLI this extension extends
+- `extended_by [[gh-x]]` — inverse on the host (used in `brew-gh` to point at extensions)
 - `implements [[action-x]]` — wraps or invokes a related GitHub Action
-- `relates to [[engineering/x]]` — links to relevant engineering notes
+- `relates_to [[engineering/x]]` — links to relevant engineering notes
 
 ## Observations
 

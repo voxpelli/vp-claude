@@ -36,10 +36,10 @@ Do you read through for understanding? → engineering or concept.
 ## Relation Vocabulary
 
 Preferred relation labels for reference notes:
-- `relates to [[reference-x]]` — related reference document
+- `relates_to [[reference-x]]` — related reference document
 - `demonstrates [[pattern-x]]` — pattern this reference exemplifies
-- `relates to [[npm-x]]` — package this reference documents
-- `relates to [[engineering-x]]` — engineering topic this reference supports
+- `relates_to [[npm-x]]` — package this reference documents
+- `relates_to [[engineering-x]]` — engineering topic this reference supports
 
 ## Observations
 

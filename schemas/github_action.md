@@ -33,10 +33,10 @@ Schema for GitHub Actions notes — one note per action in the `actions/` direct
 ## Relation Vocabulary
 
 Preferred relation labels for GitHub Action notes:
-- `see also [[action-x]]` — related action in the same space
-- `pairs with [[action-x]]` — commonly used in the same workflow
-- `alternative to [[action-x]]` — competes in the same space
-- `relates to [[engineering/x]]` — links to relevant engineering notes
+- `see_also [[action-x]]` — related action in the same space
+- `pairs_with [[action-x]]` — commonly used in the same workflow
+- `alternative_to [[action-x]]` — competes in the same space
+- `relates_to [[engineering/x]]` — links to relevant engineering notes
 
 ## Observations
 

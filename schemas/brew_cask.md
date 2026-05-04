@@ -35,12 +35,12 @@ Schema for Homebrew cask notes — one note per cask in the `casks/` directory.
 ## Relation Vocabulary
 
 Preferred relation labels for cask notes:
-- `pairs with [[brew-x]]` — commonly used together
+- `pairs_with [[brew-x]]` — commonly used together
 - `replaces [[cask-x]]` — supersedes another cask
-- `alternative to [[cask-x]]` — competes in the same space
+- `alternative_to [[cask-x]]` — competes in the same space
 - `configured in dotfiles` — tracked in the dotfiles repo
-- `relates to [[cask-x]]` — related cask, formula, or engineering notes
-- `depends on [[brew-x]]` — Homebrew dependency or required system tool
+- `relates_to [[cask-x]]` — related cask, formula, or engineering notes
+- `depends_on [[brew-x]]` — Homebrew dependency or required system tool
 
 ## Observations
 

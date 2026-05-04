@@ -33,9 +33,9 @@ Schema for VSCode extension notes — one note per extension in the `vscode/` di
 
 Preferred relation labels for VSCode extension notes:
 - `relates_to [[vscode-x]]` — related extension in the same space
-- `pairs with [[vscode-x]]` — commonly installed together
-- `conflicts with [[vscode-x]]` — known incompatibility
-- `alternative to [[vscode-x]]` — competes in the same space
+- `pairs_with [[vscode-x]]` — commonly installed together
+- `conflicts_with [[vscode-x]]` — known incompatibility
+- `alternative_to [[vscode-x]]` — competes in the same space
 
 ## Observations
 

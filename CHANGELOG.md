@@ -5,6 +5,65 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.1][] - 2026-05-02
+
+### Fixed
+
+- **Canonicalize relation-vocabulary verbs to underscored forms across 13
+  schemas + their BM mirrors.** A 3-gardener audit on the v0.29.0 launch wave
+  discovered the new `gh_extension` schema's `## Relation Vocabulary` prose
+  section used spaced verbs (`see also`, `runs on`, `pairs with`,
+  `depends on`, `alternative to`, `relates to`) — the launch-wave agents
+  copied this into their notes, producing relation_type strings BM stores
+  but does not match against the canonical picoschema field names. Per
+  CLAUDE.md: "Relation verbs must exactly match picoschema field names —
+  `relates to` (space not underscore) silently creates non-matching
+  relations." Sweep applied to both repo files (`schemas/*.md`) AND BM
+  mirrors (`schema/*` notes) per the dual-sync rule.
+- **`pattern` schema vocabulary fix is the highest-stakes** — its
+  picoschema explicitly declares `has_instance`, `instance_of`, `applied_to`,
+  `implemented_by`, `part_of` as Note relation fields, so the prose forms
+  with spaces were a true picoschema mismatch. Fixed all 5.
+- **Other vocabulary canonicalizations**: `brew_formula`/`brew_cask`/
+  `github_action`/`docker_image`/`vscode_extension`/`crate_package`/
+  `go_module`/`composer_package`/`pypi_package`/`ruby_gem`/`reference`
+  vocabulary verbs now use underscored forms.
+- **Fix the 5 v0.29.0 launch-wave gh-extension notes' `## Relations`**
+  whose verbs had drifted to spaced form: `gh-github-gh-models`,
+  `gh-seachicken-gh-poi`, `gh-cschleiden-gh-actionlint`. Plus
+  `brew-actionlint`'s `also_available_as` (non-vocabulary verb) → `relates_to`.
+- **Fix `brew-gh` hub note**: 5 sequential launch-wave agent appends to
+  `## Extensions` had created a duplicate `### Documented Extensions`
+  subsection with overlapping bullets. Merged into one canonical 5-entry
+  list. `## Relations` normalized — all 5 extension links now use
+  `extended_by` (was inconsistent: 2× `extended_by`, 2× `relates_to`,
+  1× `has_extension`).
+- **Add `extended_by` to the `gh_extension` schema's vocabulary** — used
+  on the host (`brew-gh`) side to point at extensions, was missing from
+  the documented vocabulary.
+- **`note-template-gh.md` Relations example block** — canonicalize verbs
+  in the worked `gh-meiji163-gh-notify` example so future authors don't
+  copy spaced forms.
+
+### Notes
+
+- **Patch version bump (semver 0.x: additive, non-breaking).** No existing
+  notes break from this change — relation_type strings are now canonical
+  going forward, but graph-stored relations from prior runs remain
+  recognizable as the same edges.
+- **Skip-list verbs preserved** (intentional, separate design discussion):
+  `runtime dep of`, `Layer 1 alias in`, `Layer 2 nudge in`, `base layer for`,
+  `application pattern in` — multi-word noun-phrase relation labels that
+  don't fit cleanly into single-token underscored forms.
+- **Schemas' own `## Relations` blocks** still use `see also` (spaced)
+  in their cross-schema cross-references — pre-existing graph-wide
+  convention drift, not introduced by this PR. Filed as candidate for a
+  future broader sweep; non-blocking because `see_also` isn't a declared
+  picoschema relation field, so spaced vs underscored is convention-only
+  here, not picoschema-conformance.
+- All 21 schema_validate calls pass (0 errors). `npm run check` passes:
+  validate-plugin + remark + shellcheck + 25/25 hook tests.
+
 ## [0.29.0][] - 2026-05-02
 
 ### Added
@@ -1138,6 +1197,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.29.1]: https://github.com/voxpelli/vp-claude/compare/v0.29.0...v0.29.1
 [0.29.0]: https://github.com/voxpelli/vp-claude/compare/v0.28.0...v0.29.0
 [0.28.0]: https://github.com/voxpelli/vp-claude/compare/v0.27.1...v0.28.0
 [0.27.1]: https://github.com/voxpelli/vp-claude/compare/v0.27.0...v0.27.1
