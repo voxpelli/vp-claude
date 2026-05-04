@@ -11,8 +11,17 @@ schema:
   convention?(array): string, important usage conventions
   benefit?(array): string, advantages and strengths over alternatives
   limitation?(array): string, constraints and known weaknesses
+  security?(array): string, CVE status, supply-chain considerations, and advisories
+  api?(array): string, key API surface — method signatures, options, return shapes
+  platform?(array): string, OS/architecture compatibility and lock-in
+  history?(array): string, release tags and repo-creation dates
+  reference?(array): string, useful pointer to in-repo docs or external sources
+  license?: string, OSS license SPDX identifier or "no license" if unlicensed
+  author?: string, primary author or maintainer name
   relates_to?(array): Note, related knowledge notes
   depends_on?(array): Note, upstream module dependencies
+  created_by?: Note, primary author or maintainer (typically a person)
+  contrasts_with?(array): Note, design alternative or counter-example module
 settings:
   validation: warn
 ---
@@ -37,6 +46,8 @@ Preferred relation labels for Go module notes:
 - `pairs_with [[go-x]]` — commonly used together
 - `depends_on [[go-x]]` — declared module dependency
 - `alternative_to [[go-x]]` — competes in the same space
+- `created_by [[person-x]]` — primary author or maintainer
+- `contrasts_with [[go-x]]` — design alternative or counter-example
 
 ## Observations
 
