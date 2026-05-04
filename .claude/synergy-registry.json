@@ -1,0 +1,16 @@
+[
+  {
+    "name": "vp-beads",
+    "file": "SYNERGY-vp-beads.md",
+    "remote": "https://github.com/voxpelli/claude-beads",
+    "bm-entity": "engineering/agents/vp-plugins-vp-beads-and-vp-knowledge",
+    "relationship": "sibling-plugin"
+  },
+  {
+    "name": "vp-git",
+    "file": "SYNERGY-vp-git.md",
+    "remote": "https://github.com/voxpelli/claude-git",
+    "bm-entity": null,
+    "relationship": "sibling-plugin"
+  }
+]
