@@ -194,8 +194,8 @@ tooling, discovered while building vp-knowledge.
 
 ## Bugs
 
-_No entries yet._
+*No entries yet.*
 
 ## Upstream Opportunities
 
-_No entries yet._
+*No entries yet.*

@@ -187,4 +187,4 @@ of maintaining both halves catches drift cases a single-source record misses.
 
 ## They Have / We Don't
 
-_No entries yet._
+*No entries yet.*

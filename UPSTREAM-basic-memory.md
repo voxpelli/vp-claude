@@ -71,7 +71,7 @@ structured `relations` field to find zero-outbound candidates, then `build_conte
 on each candidate confirms zero-incoming. True orphans (zero in + zero out) are
 reliably detected this way.
 **Status:** Open — two-pass workaround documented; upstream API has no direct
-"find isolated nodes" capability. [upstream: [#762](https://github.com/basicmachines-co/basic-memory/issues/762) — open feature request filed by maintainer would obsolete this workaround]
+"find isolated nodes" capability (upstream: [#762](https://github.com/basicmachines-co/basic-memory/issues/762) — open feature request filed by maintainer would obsolete this workaround).
 
 ---
 
