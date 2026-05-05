@@ -140,6 +140,8 @@ Launch these research queries simultaneously:
 ask_question(repo="owner/repo", question="What are the key APIs, design patterns, gotchas, and configuration options?")
 ```
 
+**Hallucination caveat** — DeepWiki can return information about a *different* repo with a similar name (e.g., Sprint 19 observed `noctx`/`go-critic` info returned for a query about `timakin/bodyclose`). If answers look wrong-repo or cite unrelated APIs, fall back to `gh api` against the actual source repo per [`references/gh-api-fallback.md`](references/gh-api-fallback.md).
+
 **b) Context7 — API reference:**
 ```
 resolve-library-id(libraryName="<package-name>")
@@ -187,6 +189,8 @@ If `gh` is not installed or `gh release list` returns nothing, fall back to:
 ```
 tavily_extract(urls=["https://github.com/owner/repo/blob/main/CHANGELOG.md"], query="breaking changes migration")
 ```
+
+When sources a (DeepWiki) and b (Context7) underperform on niche repos, [`references/gh-api-fallback.md`](references/gh-api-fallback.md) lists `gh api` endpoints (contents, commits, issues, PRs, contributors) plus a verification rule for cited issue/PR numbers — closed-years-ago issues read as live concerns when search snippets cite them.
 
 **f) Readwise — curated personal insights:**
 ```

@@ -139,6 +139,8 @@ For `action:`, use `owner/repo` directly from the identifier.
 For `docker:`, find the GitHub source repo via the Docker Hub `source` field
 or repository link in the image description.
 
+**Hallucination caveat** — DeepWiki can return information about a *different* repo with a similar name, or reply "Repository not found" for repos that exist (e.g., `voxpelli/claude-beads` is not indexed; upstream `steveyegge/beads` is). For `action:`, `gh:`, and `docker:` prefixes, fall back to `gh api` against the source repo per [`references/gh-api-fallback.md`](references/gh-api-fallback.md).
+
 **b) Tavily — security, gotchas, and recent changes:**
 
 Always run for all tool types. Tailor the query to the tool category:
@@ -175,6 +177,8 @@ These are articles the user deliberately saved — high relevance signal.
 - `brew:`/`cask:`: Extract version from the formulae.brew.sh API response (already fetched in Step 2)
 - `vscode:`: Extract version from Open VSX API response (already fetched in Step 2)
 - `gh:`: Use GitHub releases — `gh release list --repo <owner>/<repo> --limit 10 2>/dev/null`; empty result means `runtime_shape: script` (or `local` per Step 2's classification ladder)
+
+For `action:`, `gh:`, and `docker:` prefixes, [`references/gh-api-fallback.md`](references/gh-api-fallback.md) documents additional `gh api` endpoints (contents, commits, contributors, issue/PR verification) — useful when DeepWiki was unreliable in step 3a or when the changelog is sparse.
 
 **e) Readwise — curated personal insights:**
 ```
