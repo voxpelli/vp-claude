@@ -2,6 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+<!-- Imports vendor-neutral agent instructions (shell-safety rules + `bd onboard` integration block). AGENTS.md is the file other agents read directly; `@AGENTS.md` is Claude Code's documented import syntax that inlines its contents here at session start. -->
+@AGENTS.md
+
 ## What This Is
 
 A Claude Code plugin (`vp-knowledge`) containing user-owned skills, agents, and hooks that build on [Basic Memory](https://github.com/basicmachines-co/basic-memory) (running as an MCP server). These complement the upstream `basicmachines-co/basic-memory-skills` (which provides core `memory-*` skills) with higher-level workflows for package and developer-tool research, knowledge graph maintenance, and automated quality checks.
