@@ -159,6 +159,39 @@ tooling, discovered while building vp-knowledge.
   file exists despite the skill prose suggesting a redirect; the carve-out
   is exercised in practice but undocumented.
 
+- **/harden-memories: new skill to triage and prune persistent memories** (2026-05-05) —
+  `bd prime` injects every `bd remember` entry in full at SessionStart
+  and PreCompact (~1.5–2k tokens for a 16-entry set; scales linearly).
+  Entries silently accumulate as conventions drift, skills ship, or facts
+  graduate to MEMORY.md / project CLAUDE.md / Basic Memory — but no skill
+  automates the audit, so the token cost is paid forever until a manual
+  pass. The canonical 3-question checklist already exists in Basic Memory
+  at `engineering/agents/three-memory-systems-taxonomy-and-graduation`
+  (`[pattern]` obs: "(1) already in BM or MEMORY.md/CLAUDE.md? → remove;
+  (2) stable architectural state? → migrate; (3) only recovery-from-
+  context-loss insights stay") with a `[lesson]` reporting "~40% token
+  reduction" typical per audit. Concrete shape: read `bd memories`,
+  cross-reference each entry against project CLAUDE.md / MEMORY.md /
+  Basic Memory, present a triage table (delete / migrate→CLAUDE.md /
+  migrate→MEMORY.md / migrate→BM / keep) with one-line rationale per
+  entry, then on user approval execute `bd forget` for deletions and
+  write migration patches with diff preview before applying. Sprint 20
+  ran the audit manually for vp-knowledge: 16 entries → 0 (100% prune;
+  most were post-shipping design notes), 5 facts migrated to project
+  CLAUDE.md, 1 to global `~/.claude/CLAUDE.md`, 10 pure deletes. Proposed
+  name: `/harden-memories` — names the end state (each remaining entry
+  has earned its per-session injection cost) rather than the action,
+  matching the verb-shaped style of `/vendor-sync` and `/session-reflect`.
+  Avoid `compact` in the name — it collides with `bd admin compact`
+  (closed-issue graceful decay), which already caused user confusion
+  this sprint when both topics surfaced in adjacent turns. Alternative
+  names considered: `/memories-audit`, `/remember-audit`, `/bd-prune`.
+  Ownership: upstream · Workaround: partial — taxonomy + checklist
+  exist in BM but no skill automates the triage; manual `bd forget`
+  loops plus ad-hoc `/knowledge-ask` invocations cover the gap with
+  significant ceremony per audit (~40 tool calls for vp-knowledge's
+  16-entry pass; an automated skill would compress to ~10).
+
 ## Bugs
 
 _No entries yet._
