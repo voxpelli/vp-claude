@@ -14,8 +14,8 @@
     {
       "name": "vp-beads",
       "source": { "source": "github", "repo": "voxpelli/claude-beads" },
-      "description": "Sprint workflow automation: backlog grooming, retrospectives, upstream vendor tracking, cross-project synergy tracking, swarm wave orchestration, and vendor sync for projects using beads and Basic Memory",
-      "version": "0.11.0"
+      "description": "Sprint workflow automation: backlog grooming, retrospectives, upstream vendor tracking, cross-project synergy tracking, swarm wave orchestration, vendor sync, and bilateral sibling reconciliation for projects using beads and Basic Memory",
+      "version": "0.12.0"
     },
     {
       "name": "vp-git",
