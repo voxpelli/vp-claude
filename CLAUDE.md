@@ -152,6 +152,14 @@ Scripts output NDJSON (one JSON object per line), use `set -euo pipefail`,
 and pass shellcheck + shfmt. The `check:sh` npm script validates both
 `hooks/*.sh` and `scripts/*.sh`.
 
+### bm CLI quirks
+
+Scripts using the `bm` CLI must work around three asymmetries:
+
+- `bm tool search-notes` returns JSON by default — results array contains `title`, `permalink`, `content`, `matched_chunk`, `metadata`. Pipeable to `jq`.
+- `bm tool read-note` has NO `--output-format json` flag — only raw markdown. The structured observations array is only available via the MCP `read_note(output_format='json')` tool. Scripts using `bm tool` cannot get parsed section data and must text-parse instead.
+- `bm project info` requires a project NAME argument: `bm project info main --json`. The `--json` output exposes `statistics.isolated_entities` (int), `statistics.note_types` (dict), `statistics.observation_categories` (dict), `statistics.most_connected_entities` (array).
+
 ## Conventions
 
 ### Skill frontmatter
@@ -232,7 +240,7 @@ Every section in an output template (skill synthesize step or agent output step)
 
 ### Hook conventions
 
-Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. All hooks are `type: "command"` and emit `additionalContext` from a JSON object on stdout — `type: "prompt"` hooks spawn Haiku without MCP access, so they cannot call MCP tools (RETRO-02). All hooks are defined in `hooks/hooks.json`. Hook scripts assume CWD = project root (consistent with vp-beads convention). Each hook must emit exactly one JSON object on stdout — Claude Code reads only the first object and silently drops the rest.
+Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. All hooks are `type: "command"` and emit `additionalContext` from a JSON object on stdout — `type: "prompt"` hooks spawn Haiku without MCP access, so they cannot call MCP tools (RETRO-02). All hooks are defined in `hooks/hooks.json`. Hook scripts assume CWD = project root (consistent with vp-beads convention). Each hook must emit exactly one JSON object on stdout — Claude Code reads only the first object and silently drops the rest. `${CLAUDE_PLUGIN_ROOT}` is Claude-side string substitution, not a shell env var — it works in `hooks.json` command fields, skill `SKILL.md` content, `.mcp.json`, `.lsp.json`, and `plugin.json`, but **does NOT work in agent `.md` files** (agents see the literal string). For script paths inside agents, use CWD or a path relative to project root.
 
 ### Hook additionalContext pattern
 
@@ -307,6 +315,9 @@ changes** (e.g., 0.22.0 for the colon-to-hyphen prefix migration). Patch
 bumps are non-breaking additions and fixes.
 
 ### Release checklist
+
+Pre-release:
+- Dogfood every changed skill on real data before tagging — static checks (`npm run check`) catch syntax issues, only live execution catches semantic leakage (e.g., domain-specific examples accidentally bleeding into generic skill prose).
 
 Version bump:
 - `plugin.json` — version field
