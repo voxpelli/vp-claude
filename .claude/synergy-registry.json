@@ -10,7 +10,7 @@
     "name": "vp-git",
     "file": "SYNERGY-vp-git.md",
     "remote": "https://github.com/voxpelli/claude-git",
-    "bm-entity": null,
+    "bm-entity": "engineering/agents/vp-plugins-vp-git-and-vp-knowledge",
     "relationship": "sibling-plugin"
   }
 ]
