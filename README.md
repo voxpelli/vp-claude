@@ -2,14 +2,6 @@
 
 A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https://github.com/basicmachines-co/basic-memory) into an actively maintained knowledge graph. Research packages from six ecosystems and tools from six dev-environment categories using parallel enrichment, find documentation gaps in your projects, surface project-relevant knowledge before coding, and let autonomous agents audit and improve your notes — all without leaving your terminal.
 
-## Breaking change in v0.22.0
-
-Note titles and wiki-links now use **hyphen delimiters** (`npm-fastify`,
-`[[npm-fastify]]`) instead of colons (`npm:fastify`, `[[npm:fastify]]`).
-User command syntax is unchanged (`/package-intel npm:fastify`). Existing
-vault notes need a one-time migration — see
-[TODO-obsidian-migration.md](TODO-obsidian-migration.md).
-
 ## What it does
 
 ### `/package-intel <pkg>` — Research any package
@@ -179,7 +171,7 @@ An autonomous agent that produces a health report without modifying anything:
 
 > "Audit my knowledge graph"
 
-Checks for: missing sections, schema violations, orphan notes, broken `[[wiki-links]]`, stale notes (90+ days), duplicates, project-specific data leaking into cross-project notes, tag alignment (non-canonical forms, retired tags, missing ecosystem tags, out-of-vocabulary tags).
+Checks for: missing sections, schema violations, orphan notes, broken `[[wiki-links]]`, stale notes (90+ days), duplicates, project-specific data leaking into cross-project notes, tag alignment (non-canonical forms, retired tags, missing ecosystem tags, out-of-vocabulary tags), and fourth-wall violations (self-referential knowledge-graph language in subject-domain notes).
 
 ### Knowledge Maintainer — All-in-one graph enhancer
 
@@ -195,6 +187,7 @@ Acts on audit findings with tiered autonomy:
 | Add missing ecosystem tags to tool notes | Auto-fix |
 | Link orphan notes to related notes | Auto-fix |
 | Fix frontmatter type to match schema | Auto-fix |
+| Fix fourth-wall violations (self-referential graph language) | Auto-fix |
 | Run `/package-intel` for Tier 1 undocumented packages | Auto-fix |
 | Run `/tool-intel` for undocumented tools from manifests | Auto-fix |
 | Merge duplicate notes | Asks first |
@@ -249,6 +242,14 @@ A user-triggered skill that reviews the current conversation and saves insights 
 
 User-triggered: extracts candidates, finds the right target notes, shows a grouped preview, and waits before writing anything. Uses the `[decision]`, `[lesson]`, `[gotcha]`, `[pattern]`, `[limitation]`, and `[breaking]` observation vocabularies.
 
+### `/session-bookmarks` — Save high-signal URLs from a session
+
+Scans the current conversation for high-signal URLs discovered during research and creates Raindrop bookmarks in the AI-bookmarked collection (after preview + approval):
+
+> "Bookmark URLs from this session" / "Save links we found" / "Save session URLs"
+
+Auto-delegated by `/session-reflect` when the conversation contains worth-keeping links, or invocable standalone. Creates 1-3 bookmarks per call, each with a one-line note explaining why it was bookmarked. Operates only within the AI-* collection namespace — never touches user-curated collections.
+
 ### `/raindrop-triage` — Interactive unsorted bookmark triage
 
 Triages unsorted Raindrop bookmarks in interactive batches:
@@ -256,6 +257,22 @@ Triages unsorted Raindrop bookmarks in interactive batches:
 > "Triage unsorted bookmarks" / "Clean up raindrop inbox" / "Sort unsorted"
 
 The first pass deduplicates by normalized URL (stripping tracking params), detects research bursts (temporal clusters of 3+ bookmarks within 30 minutes), clusters by theme, proposes vocabulary-grounded tags, and moves approved bookmarks to AI-triaged. A `--promote` pass classifies AI-triaged items into AI-sorted (default), AI-gems (golden), AI-archive (low-reuse), or AI-attention (needs human decision) with structured note annotations. Operates within a 6-collection AI-managed namespace — never touches user-curated collections.
+
+### `/tag-sync [count|--reset]` — Curate Raindrop tag vocabulary
+
+Fetches your tags from Raindrop, curates the top N by usage count, adds one-line characterizations, groups by cluster, and writes/syncs the vocabulary file at `~/.claude/references/raindrop-tags.md`:
+
+> "Sync raindrop tags" / "Refresh tag vocabulary" / "Update raindrop-tags.md"
+
+Used by `/raindrop-triage` as the canonical tag dictionary — the vocabulary file's frontmatter holds the blocklist, context tags, and naming conventions read at triage time. Follows the vendor-sync pattern: `--reset` rebuilds the file from scratch; without flags, syncs the top N (default 200) tags.
+
+### Raindrop Gardener — Read-only Raindrop tag auditor
+
+A read-only autonomous agent that audits the Raindrop bookmark library:
+
+> "Audit raindrop tags" / "Check raindrop tag health"
+
+Produces a structured report covering: library dashboard, tag inventory, naming violations, near-duplicate tags, mistagged bookmarks (via `find_mistagged_bookmarks`), orphan tags, legacy tag identification, co-occurrence analysis, non-primary-language tag detection, and taxonomy gaps. Output includes exact `update_tags` and `delete_tags` tool calls as copy-paste recommendations. Never modifies tags or bookmarks itself.
 
 ### Hooks — Automated quality guardrails
 
@@ -366,6 +383,7 @@ claude mcp add homebrew -- brew mcp-server
 
 ```
 .claude-plugin/plugin.json             Plugin manifest
+.claude-plugin/marketplace.json        Marketplace listing for vp-plugins
 skills/
   package-intel/
     SKILL.md                           Seven-source research workflow
@@ -375,6 +393,7 @@ skills/
     references/ecosystem-composer.md   Packagist API + note template
     references/ecosystem-pypi.md       PyPI API + note template
     references/ecosystem-gems.md       RubyGems API + note template
+    references/gh-api-fallback.md      GitHub API fallback for unindexed/wrong-repo cases
   tool-intel/
     SKILL.md                           Five-source research workflow
     references/ecosystem-brew.md       formulae.brew.sh API
@@ -387,8 +406,13 @@ skills/
     references/note-template-action.md github_action note template
     references/note-template-docker.md docker_image note template
     references/note-template-vscode.md vscode_extension note template
+    references/ecosystem-gh.md         gh CLI extension API + classification ladder
+    references/note-template-gh.md     gh_extension note template
+    references/gh-api-fallback.md      GitHub API fallback for unindexed/wrong-repo cases
   knowledge-gaps/
     SKILL.md                           Package + tool + concept coverage analysis
+    references/concept-detection.md    Concept-level hub gap detection
+    references/standard-detection.md   Domain standard coverage detection
   knowledge-prime/
     SKILL.md                           Project context priming from BM
   schema-evolve/
@@ -439,6 +463,7 @@ schemas/
   github_action.md                     GitHub Action schema (github_action type)
   docker_image.md                      Docker image schema (docker_image type)
   vscode_extension.md                  VSCode extension schema (vscode_extension type)
+  gh_extension.md                      gh CLI extension schema (gh_extension type)
   engineering.md                       Engineering knowledge schema (engineering type)
   pattern.md                           Cross-domain structural insight schema (pattern type)
   reference.md                         Lookup document schema (reference type)
@@ -448,6 +473,12 @@ schemas/
   service.md                           Service/product schema (service type)
   person.md                            Person schema (person type)
   project.md                           Project schema (project type)
+scripts/
+  audit-helpers.sh                     Audit subcommands: bm-stats, scope-leak summary/detail
+  audit-scope-leak.sh                  Project-specific content detection in cross-project notes
+  check-hooks.mjs                      Hook integration tests (npm run check:hooks)
+validate-plugin.mjs                    Plugin validator (color enum, frontmatter, MCP prefixes)
+VOICE.md                               Plugin identity, agent colors, description-tone conventions
 ```
 
 ## How it fits together
@@ -489,7 +520,7 @@ schemas/
 
 ## Relationship to upstream
 
-This plugin depends on but does not duplicate the 9 core `memory-*` skills from [`basicmachines-co/basic-memory-skills`](https://github.com/basicmachines-co/basic-memory-skills) (notes, schema, tasks, lifecycle, reflect, etc.). It adds multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), developer tool research (Homebrew, GitHub Actions, Docker, VSCode), project-level gap analysis, project context priming, knowledge exploration, Readwise integration, schema evolution, tag alignment, and autonomous graph maintenance on top of those foundations.
+This plugin depends on but does not duplicate the 10 core `memory-*` skills from [`basicmachines-co/basic-memory-skills`](https://github.com/basicmachines-co/basic-memory-skills) (notes, schema, tasks, lifecycle, reflect, etc.). It adds multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), developer tool research (Homebrew, GitHub Actions, Docker, VSCode), project-level gap analysis, project context priming, knowledge exploration, Readwise integration, schema evolution, tag alignment, and autonomous graph maintenance on top of those foundations.
 
 ## Possible future additions
 
@@ -498,6 +529,12 @@ These are scoped out of current releases but worth tracking:
 - **Tier-drift log for `knowledge-gaps`** — track when packages move between tiers over time so you can see which undocumented packages are becoming more critical (medium effort, medium value)
 - **Per-audit reflection notes from `knowledge-gardener`** — the gardener is intentionally read-only; surfacing audit findings to Basic Memory would need a new output mechanism (e.g. a paired write agent step or a PostToolUse hook on the audit output)
 - **Adaptive research depth in `package-intel`** — extend the 60-day freshness check into a multi-tier strategy: skip specific sources based on what changed since last update, weight sources by past yield for a given package (Phase 2+ from ACE/MemInsight research patterns)
+
+## Migration notes
+
+### v0.22.0 — Hyphen-delimited note titles and wiki-links
+
+Note titles and wiki-links use **hyphen delimiters** (`npm-fastify`, `[[npm-fastify]]`) instead of colons (`npm:fastify`, `[[npm:fastify]]`). User command syntax is unchanged (`/package-intel npm:fastify`). Vaults populated before v0.22.0 need a one-time migration — see [TODO-obsidian-migration.md](TODO-obsidian-migration.md).
 
 ## License
 
