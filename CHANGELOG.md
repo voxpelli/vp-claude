@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.2][] - 2026-05-06
+
+### Added
+
+- **`VOICE.md`** at the plugin root, documenting the gardener-with-notebook
+  identity, agent color assignments, description-tone conventions
+  (scoped to agent descriptions only — skill descriptions remain
+  trigger-phrase lists for routing), and a checklist for adding a fifth
+  agent. Cited from `CLAUDE.md`'s Agent frontmatter section for
+  discoverability.
+
+### Changed
+
+- **Agent colors refreshed.** `knowledge-gardener` cyan → green (the
+  central gardener; observation, growth). `knowledge-maintainer` green →
+  magenta (the only writer; avoids `red`'s destructive overcurrent and
+  `cyan`'s collision with `vp-beads:sprint-review`). `knowledge-primer`
+  (blue) and `raindrop-gardener` (yellow) unchanged. All four colors are
+  in the documented `validate-plugin.mjs` allowlist.
+
+### Fixed
+
+- **README catch-up to v0.29.1+ surface area.** Adds full sections in
+  "What it does" for `/session-bookmarks`, `/tag-sync`, and the Raindrop
+  Gardener agent (previously only in the diagram). Adds fourth-wall
+  coverage to the Knowledge Gardener "Checks for:" list and a
+  fourth-wall row to the Knowledge Maintainer autonomy table. Adds
+  `gh_extension` schema, `scripts/`, `validate-plugin.mjs`, `VOICE.md`,
+  and `marketplace.json` to the plugin structure tree, plus the `gh:`
+  ecosystem reference files (`ecosystem-gh.md`, `note-template-gh.md`,
+  `gh-api-fallback.md`) and the `knowledge-gaps/references/` subdir.
+- **README v0.22.0 banner demoted** to a "Migration notes" section near
+  License — still discoverable for users with pre-v0.22 vaults but no
+  longer claiming top-of-page real estate.
+- **Upstream skill count corrected** from 9 to 10 in the "Relationship
+  to upstream" section (verified against installed
+  `~/.claude/skills/memory-*`).
+
+### Notes
+
+- **Patch version bump** (semver 0.x: additive, non-breaking). No
+  functional changes — documentation, conventions, and agent
+  presentation only. `npm run check` passes all four stages
+  (validate-plugin + remark + shellcheck + 25/25 hook tests).
+
 ## [0.29.1][] - 2026-05-02
 
 ### Fixed
@@ -1197,6 +1242,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.29.2]: https://github.com/voxpelli/vp-claude/compare/v0.29.1...v0.29.2
 [0.29.1]: https://github.com/voxpelli/vp-claude/compare/v0.29.0...v0.29.1
 [0.29.0]: https://github.com/voxpelli/vp-claude/compare/v0.28.0...v0.29.0
 [0.28.0]: https://github.com/voxpelli/vp-claude/compare/v0.27.1...v0.28.0
