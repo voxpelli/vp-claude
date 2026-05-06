@@ -177,6 +177,8 @@ Never add `AskUserQuestion` to a skill's `allowed-tools` — it auto-approves th
 
 Required fields: `name`, `description`, `model`, `color`, `tools`. Optional fields: `skills` (preloaded skill content), `effort` (`low`/`medium`/`high`/`max`). The `tools` field is a YAML list of allowed tool names. The knowledge-gardener must remain read-only — never add `write_note`, `edit_note`, or `delete_note` to its tools list. The knowledge-maintainer has write access (`effort: high`) but must confirm before content-level changes.
 
+Color assignments and the agent description-tone conventions live in `VOICE.md` at the plugin root. Consult it before adding a fifth agent or rewriting an existing description.
+
 ### Content conventions
 
 All plugin content (schemas, skills, agents) must be **domain-generic** — no hardcoded directory paths, domain-specific examples, or topic-specific trigger phrases. Schema conventions should say "organized by domain" rather than prescribing specific directories. Examples in schemas should use broadly recognizable names (e.g. `HTTP/2`, `Vercel`) not niche domain terms. Tag blocklists, conventions, and context tags must be read from the vocabulary file frontmatter (`~/.claude/references/raindrop-tags.md`), never hardcoded in skill prose.

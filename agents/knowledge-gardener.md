@@ -29,7 +29,7 @@ General health check — gardener produces the report, maintainer would act on i
 </commentary>
 </example>"
 model: sonnet
-color: cyan
+color: green
 skills:
   - vp-note-quality
 tools:

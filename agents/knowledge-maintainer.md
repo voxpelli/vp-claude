@@ -39,7 +39,7 @@ Combines knowledge-gaps detection with auto-running /package-intel for Tier 1 pa
 </example>"
 model: inherit
 effort: high
-color: green
+color: magenta
 skills:
   - vp-note-quality
 tools:
