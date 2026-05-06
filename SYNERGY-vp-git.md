@@ -12,12 +12,16 @@ tooling that vp-claude could adopt.
 ## Shared Patterns
 
 - **Plugin scaffolding shape** (2026-05-04) — Both plugins share:
-  `.claude-plugin/plugin.json` manifest, `package.json` with `npm run check`
-  orchestrator (`run-p check:*`), root-level `validate-plugin.mjs`, MIT
-  license, `voxpelli` author, identical remark devDeps stack
+  `.claude-plugin/plugin.json` manifest, `package.json` with a top-level
+  `npm run check` orchestrator script, root-level `validate-plugin.mjs`,
+  MIT license, `voxpelli` author, identical remark devDeps stack
   (`remark-cli`, `remark-frontmatter`, `remark-preset-lint-consistent`,
   `remark-preset-lint-recommended`, `js-yaml`, `npm-run-all2`).
-  Status: aligned · Last verified: 2026-05-04
+  Status: aligned · Last verified: 2026-05-06
+  Note: Both have `npm-run-all2` as a devDep; vp-git uses `run-p check:*`
+  for parallel orchestration, vp-claude uses sequential `&&` chaining.
+  Tracked as drift on vp-beads's side (`SYNERGY-vp-beads.md` "npm-run-all2
+  parallel check stages") rather than duplicated here as a Divergence.
 
 - **`validate-plugin.mjs` tool-reference audit** (2026-05-04) — Both
   plugins maintain a root-level `validate-plugin.mjs` that audits

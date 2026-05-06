@@ -22,9 +22,10 @@ of maintaining both halves catches drift cases a single-source record misses.
   gap from plugin-specific extensions including the gardener read-only
   invariant and `KNOWN_MCP_PREFIXES` allowlist). Changes to either copy
   must stay in sync or the audit logic diverges silently.
-  Status: drifting · Last verified: 2026-05-04
-  Note: vp-beads marked this aligned 2026-04-05; the 25-line gap reflects
-  vp-claude additions since. Re-converge candidate when vg-3/vg-4
+  Status: drifting · Last verified: 2026-05-06
+  Note: Bilaterally confirmed drifting after Sprint 20 /sibling-sync pass
+  — vp-beads's row also marks drifting (LV 2026-05-04). The 25-line gap
+  reflects vp-claude additions since. Re-converge candidate when vg-3/vg-4
   (extracting plugin-utils.mjs) is acted on.
 
 - **post-file-edit.sh shfmt auto-format** (2026-05-04) — Both plugins use a
@@ -52,19 +53,22 @@ of maintaining both halves catches drift cases a single-source record misses.
   (`parseJsonObjects()` with `}\s*{` multi-object detection, `runHook()`
   via `spawnSync`, jq preflight). From vp-claude's side: 366 lines vs
   vp-beads's 284 lines (~80-line gap). Sprint 18 added shfmt drift + clean
-  test paths; v0.29.0 added gh-ecosystem hook coverage. **vp-beads's row
-  marks this aligned 2026-04-05 — that's now stale.**
-  Status: drifting · Last verified: 2026-05-04
+  test paths; v0.29.0 added gh-ecosystem hook coverage. Bilaterally
+  confirmed drifting after Sprint 20 /sibling-sync pass — vp-beads's row
+  also marks drifting (LV 2026-05-04).
+  Status: drifting · Last verified: 2026-05-06
   Note: Strong extraction candidate for shared `@voxpelli/claude-plugin-tools`.
 
-- **npm-run-all2 parallel check stages** (2026-04-04) — vp-beads adopted
-  `run-p check:*` for parallel CI execution. vp-claude also uses `run-p`
-  via the same `package.json` script shape. vp-beads's row noted
-  `diverging` 2026-04-04 because vp-claude was on sequential `&&` chaining;
-  vp-claude has since converged.
-  Status: aligned · Last verified: 2026-05-04
-  Note: vp-beads's diverging row should refresh to aligned at their next
-  sprint review.
+- **npm-run-all2 parallel check stages** (2026-04-04) — vp-beads and
+  vp-git both use `run-p check:*` for parallel CI execution. vp-claude
+  still uses sequential `&&` chaining in its `package.json` "check"
+  script.
+  Status: diverging · Last verified: 2026-05-06
+  Note: Sprint 19's reciprocation pass falsely claimed vp-claude had
+  converged; vp-beads's re-verification (2026-05-04) and Sprint 20's
+  /sibling-sync run (2026-05-06) both confirmed vp-claude remains
+  sequential. Convergence is a one-line edit — file as a beads follow-up
+  if adoption is wanted.
 
 - **BM error classification hook** (2026-04-05) — Both plugins have a
   PostToolUseFailure command hook for BM tools that classifies errors into
@@ -95,9 +99,10 @@ of maintaining both halves catches drift cases a single-source record misses.
   its PreCompact hook in v0.28.0 (commit `624e3df`, 2026-04-29) per the
   Sprint 18 hook audit, judged redundant with PostToolUse-driven
   session-reflect propagation. vp-beads keeps PreCompact for
-  sprint-reflect-before-cliff semantics. **vp-beads's `SYNERGY-vp-knowledge.md`
-  still tags PreCompact aligned (2026-04-05) — that row is now stale and
-  should be refreshed at their next sprint.**
+  sprint-reflect-before-cliff semantics. Bilaterally reciprocated 2026-05-04:
+  vp-beads's `SYNERGY-vp-knowledge.md` now carries the matching "PreCompact
+  hook retired in vp-knowledge v0.28.0" divergence with `Convergence path:
+  accept-difference`.
   Convergence path: accept-difference · Reason: vp-beads's
   reflect-before-compact tier is sprint-cycle-specific; vp-claude reflects
   via the on-demand `/session-reflect` skill instead. Different time-scales,
