@@ -12,9 +12,21 @@ schema:
     caveats
   performance?(array): string, performance characteristics — startup time, memory footprint, battery impact
   popularity?(array): string, Homebrew install analytics (30/90/365-day counts) with date stamp; omit when MCP unavailable
+  pattern?(array): string, recurring usage patterns and integration recipes
+  security?(array): string, supply-chain or runtime security considerations
+  licensing?(array): string, paid/subscription/free model details and renewal/seat caveats
+  integration?(array): string, integration surface with other tools or workflows
+  tension?(array): string, principle-vs-pragma trade-offs the tool's design accepts
+  architecture?(array): string, architectural choices — process model, sandboxing, plugin system, dependency boundaries
+  source?(array): string, canonical website / repo / vendor URL with date
+  ecosystem?(array): string, ecosystem position and relationship to alternatives
   relates_to?(array): Note, related cask, formula, or engineering notes
   depends_on?(array): Note, Homebrew dependencies or required system tools
   pairs_with?(array): Note, companion apps commonly used together
+  alternative_to?(array): Note, competes in the same space
+  replaces?(array): Note, supersedes another cask
+  composes_with?(array): Note, designed to compose with another tool (symmetric pairing)
+  mitigates_risk_of?(array): Note, this cask mitigates a risk class present in the target (e.g. plaintext-token storage)
 settings:
   validation: warn
 ---

@@ -24,6 +24,11 @@ schema:
   popularity?(array): string, GitHub stars, fork count, or `gh extension search` ranking with date stamp
   design?(array): string, architectural choices — pure-script vs binary release, single-file vs multi-file
   relates_to?(array): Note, related extensions, the gh formula, or engineering notes
+  see_also?(array): Note, related extension in the same space
+  pairs_with?(array): Note, commonly installed together
+  alternative_to?(array): Note, competes in the same space
+  runs_on?(array): Note, host CLI this extension extends (typically [[brew-gh]])
+  implements?(array): Note, wraps or invokes a related GitHub Action or other artifact
 settings:
   validation: warn
 ---

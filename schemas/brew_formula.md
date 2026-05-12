@@ -14,6 +14,19 @@ schema:
   convention?(array): string, standard setup conventions and idiomatic configuration choices
   popularity?(array): string, Homebrew install analytics (30/90/365-day counts plus build-error count) with date stamp; omit when MCP unavailable
   relates_to?(array): Note, related formula, cask, or engineering notes
+  see_also?(array): Note, related tool in the same space
+  pairs_with?(array): Note, commonly used together
+  depends_on?(array): Note, runtime or build dependency on another brew formula/cask/npm
+  replaces?(array): Note, this formula supersedes another
+  composes_with?(array): Note, designed to compose with another tool (symmetric pairing)
+  mitigates_risk_of?(array): Note, this formula mitigates a risk class present in the target (e.g. plaintext-token storage)
+  mitigated_by?(array): Note, inverse of mitigates_risk_of — used on the target side
+  integrated_into?(array): Note, integrated as a module/extension of the target (e.g. starship's direnv module)
+  extended_by?(array): Note, this formula is extended by another tool (e.g. brew-gh extended_by gh-* extensions)
+  alternative_to?(array): Note, competes in the same space as another tool
+  analogue_of?(array): Note, structurally analogous tool in a different ecosystem
+  built_with?(array): Note, this formula was built using/with another tool as toolchain
+  context_from?(array): Note, this formula's relevance is contextualized by a pattern/concept/history note
 settings:
   validation: warn
 ---
