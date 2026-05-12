@@ -20,6 +20,9 @@ schema:
   architecture?(array): string, architectural choices — process model, sandboxing, plugin system, dependency boundaries
   source?(array): string, canonical website / repo / vendor URL with date
   ecosystem?(array): string, ecosystem position and relationship to alternatives
+  velocity?(array): string, release cadence and update model (autobump, manual, etc.)
+  convention?(array): string, setup conventions worth highlighting (shell completion install, config file locations, etc.)
+  alternative?(array): string, prose listing of alternative tools (for specific wiki-linked alternatives, use the alternative_to relation)
   relates_to?(array): Note, related cask, formula, or engineering notes
   depends_on?(array): Note, Homebrew dependencies or required system tools
   pairs_with?(array): Note, companion apps commonly used together
@@ -27,6 +30,10 @@ schema:
   replaces?(array): Note, supersedes another cask
   composes_with?(array): Note, designed to compose with another tool (symmetric pairing)
   mitigates_risk_of?(array): Note, this cask mitigates a risk class present in the target (e.g. plaintext-token storage)
+  sandboxed_by?(array): Note, this cask runs inside a sandbox provided by the target (e.g. cask-claude-code sandboxed_by npm-@anthropic-ai-sandbox-runtime)
+  complemented_by?(array): Note, companion tool with non-overlapping responsibility (e.g. cask-claude-code complemented_by nah)
+  documented_in?(array): Note, concept/pattern/security hub note documenting this cask's usage
+  see_also?(array): Note, standard or reference relevant to this cask's behavior
 settings:
   validation: warn
 ---

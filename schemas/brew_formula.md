@@ -13,6 +13,7 @@ schema:
   pattern?(array): string, usage patterns, integration recipes, and best practices
   convention?(array): string, standard setup conventions and idiomatic configuration choices
   popularity?(array): string, Homebrew install analytics (30/90/365-day counts plus build-error count) with date stamp; omit when MCP unavailable
+  compatibility?(array): string, version pinning, OS/arch coverage, peer-tool compatibility caveats
   relates_to?(array): Note, related formula, cask, or engineering notes
   see_also?(array): Note, related tool in the same space
   pairs_with?(array): Note, commonly used together

@@ -18,7 +18,7 @@ schema:
   pattern?(array): string, recurring usage patterns and integration recipes
   command?(array): string, primary subcommands the extension exposes
   flag?(array): string, notable flags or options worth documenting
-  depends_on?(array): string, runtime dependencies required at execution time (binaries, brew formulae, fzf, jq, etc.)
+  runtime_dep?(array): string, runtime dependencies required at execution time as textual descriptions (e.g. "gh ≥ 2.0", "fzf optional", "shellcheck if available"); use the `depends_on` Note relation for wiki-linkable deps
   platform?(array): string, supported OS/arch combinations (linux-amd64, darwin-arm64, windows-amd64)
   install_mode?(array): string, installation methods — `gh extension install`, manual git clone, brew tap
   popularity?(array): string, GitHub stars, fork count, or `gh extension search` ranking with date stamp
@@ -29,6 +29,7 @@ schema:
   alternative_to?(array): Note, competes in the same space
   runs_on?(array): Note, host CLI this extension extends (typically [[brew-gh]])
   implements?(array): Note, wraps or invokes a related GitHub Action or other artifact
+  depends_on?(array): Note, runtime dependency on another BM-noted tool/formula (Homebrew, npm, etc.)
 settings:
   validation: warn
 ---
