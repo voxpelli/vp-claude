@@ -50,6 +50,28 @@ These should become `[readwise]` observations citing the source document.
 primarily in non-English languages. Note "source c: no Readwise content found"
 and proceed. Do not treat absence of highlights as absence of importance.
 
+## Framing extracted observations around the subject
+
+When writing `[raindrop]` or `[readwise]` observations from extracted content,
+frame them around the **subject's reach or influence**, not the user's
+bookmarking or reading pattern. The subject is the note's center; the user's
+corpus is evidence of reach, not the subject of the sentence.
+
+| Bad (fourth-wall) | Good (subject-focused) |
+|-------------------|------------------------|
+| `[raindrop] User bookmarked five posts from X's blog (2009-2010)` | `[reach] X's blog circulated through <network> 2009-2010 (5 posts saved as evidence)` |
+| `[raindrop] First contact with X's work in the user's library was via Y` | `[reach] Y was X's first-noticed surface in the user's library (date) — landed before <other-work> in third-party awareness` |
+| `[readwise] One Readwise highlight from X's landing page — no long-form articles in the user's Reader yet` | `[insight] "<direct quote from highlight>" — from the X landing page; X's long-form essays followed the marketing surface, indicating staged disclosure` |
+
+The user's corpus is acceptable as **parenthetical evidence** ("...5 posts
+saved as evidence", "...as documented in <book title>"), never as the
+primary observation framing.
+
+If the highlight or bookmark is genuinely a network-reach signal rather than
+a content signal, prefer `[reach]` or `[influence]` over `[raindrop]` /
+`[readwise]` — the latter categories should carry actual extracted content
+(a quote, a position, a claim), not just "user saved this".
+
 ## Source d: Tavily web search
 
 **Two targeted queries** (never one broad query):
