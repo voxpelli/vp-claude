@@ -14,6 +14,7 @@ schema:
   convention?(array): string, standard setup conventions and idiomatic configuration choices
   popularity?(array): string, Homebrew install analytics (30/90/365-day counts plus build-error count) with date stamp; omit when MCP unavailable
   compatibility?(array): string, version pinning, OS/arch coverage, peer-tool compatibility caveats
+  security?(array): string, supply-chain or runtime security considerations
   relates_to?(array): Note, related formula, cask, or engineering notes
   see_also?(array): Note, related tool in the same space
   pairs_with?(array): Note, commonly used together
@@ -44,21 +45,21 @@ Schema for Homebrew formula notes — one note per formula in the `brew/` direct
 - [convention] `purpose` should be one sentence — what problem it solves
 - [convention] `usage` should include the binary name when it differs from the formula name (e.g. ripgrep → rg, git-delta → delta, difftastic → difft)
 - [convention] `gotcha` entries are the highest-value observations — prioritise real-world surprises over docs
-- [convention] Relations use `[[brew-name]]`, `[[cask-name]]`, `[[npm-name]]` wiki-link format
+- [convention] Relations use `brew-<name>`, `cask-<name>`, `npm-<name>` wiki-link format (substitute the real name, wrapped in `[[...]]`)
 - [convention] `popularity` observations must cite window (30d/90d/365d), source (Homebrew MCP), and date — omit entirely when MCP is unavailable rather than fabricating from the JSON API, which does not expose analytics
 
 ## Relation Vocabulary
 
 Preferred relation labels for brew formula notes (use consistently):
-- `see_also [[brew-x]]` — related tool in the same space
-- `replaces [[brew-x]]` — this formula supersedes another
-- `runtime dep of [[brew-x]]` — this formula is a declared runtime dependency
-- `pairs_with [[brew-x]]` — commonly used together
-- `configured_in [[dotfiles:modern-cli-stack]]` — wired into the dotfiles setup
-- `Layer 1 alias in [[dotfiles:modern-cli-stack]]` — transparent replacement
-- `Layer 2 nudge in [[dotfiles:modern-cli-stack]]` — hint-only (not alias)
-- `relates_to [[brew-x]]` — related formula, cask, or engineering notes
-- `depends_on [[brew-x]]` — runtime or build dependency
+- `see_also` — `brew-<name>` — related tool in the same space
+- `replaces` — `brew-<name>` — this formula supersedes another
+- `runtime_dep_of` — `brew-<name>` — this formula is a declared runtime dependency
+- `pairs_with` — `brew-<name>` — commonly used together
+- `configured_in` — `dotfiles:modern-cli-stack` — wired into the dotfiles setup
+- `layer_1_alias_in` — `dotfiles:modern-cli-stack` — transparent replacement
+- `layer_2_nudge_in` — `dotfiles:modern-cli-stack` — hint-only (not alias)
+- `relates_to` — `brew-<name>` — related formula, cask, or engineering notes
+- `depends_on` — `brew-<name>` — runtime or build dependency
 
 ## Observations
 

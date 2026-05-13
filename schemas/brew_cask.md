@@ -49,17 +49,17 @@ Schema for Homebrew cask notes — one note per cask in the `casks/` directory.
 - [convention] Include a Cask Details table with Version, Homepage, Type (free/paid/subscription), macOS minimum
 - [convention] `gotcha` should always note licensing model (free/paid/subscription) and macOS version floor
 - [convention] `feature` entries should cover capabilities beyond the basic description
-- [convention] Relations use `[[brew-name]]`, `[[cask-name]]` wiki-link format
+- [convention] Relations use `brew-<name>`, `cask-<name>` wiki-link format (substitute the real name, wrapped in `[[...]]`)
 
 ## Relation Vocabulary
 
 Preferred relation labels for cask notes:
-- `pairs_with [[brew-x]]` — commonly used together
-- `replaces [[cask-x]]` — supersedes another cask
-- `alternative_to [[cask-x]]` — competes in the same space
-- `configured in dotfiles` — tracked in the dotfiles repo
-- `relates_to [[cask-x]]` — related cask, formula, or engineering notes
-- `depends_on [[brew-x]]` — Homebrew dependency or required system tool
+- `pairs_with` — `brew-<name>` — commonly used together
+- `replaces` — `cask-<name>` — supersedes another cask
+- `alternative_to` — `cask-<name>` — competes in the same space
+- `configured_in_dotfiles` — tracked in the dotfiles repo
+- `relates_to` — `cask-<name>` — related cask, formula, or engineering notes
+- `depends_on` — `brew-<name>` — Homebrew dependency or required system tool
 
 ## Observations
 
