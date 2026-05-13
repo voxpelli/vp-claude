@@ -349,6 +349,58 @@ If the user's project has undocumented Tier 1 packages:
 
 6. Report what was created, grouped by ecosystem and tool type.
 
+### 3b. Refresh drifted brew notes
+
+If a gardener report contains a `### Brew Version Drift` section, act on its
+findings. Drift refresh is conceptually similar to Section 3's "undocumented
+package" workflow — both delegate to `/tool-intel` via the Skill tool —
+except this targets *existing* notes whose recorded version has fallen
+behind upstream.
+
+Routing rules (the bucket names below match the gardener's `#### <bucket>`
+sub-headings exactly — they are the load-bearing strings to search for):
+
+- **`Drifted >30d`** → auto-refresh tier. Batch up to 5 entries in a single
+  parallel turn of `/tool-intel brew:<name>` calls. The `tool-intel` skill
+  is idempotent — it detects an existing note and runs in refresh mode,
+  appending new observations rather than overwriting. This matches the
+  existing parallel-research pattern used in Section 3 for new tool notes.
+- **`Archive candidates`** (formula deprecated or disabled upstream) →
+  surface under Section 4 "Needs Your Approval" with the suggested
+  `move_note` call. Never auto-archive — deprecation reversals do happen,
+  and archival is a content-level decision.
+- **`Drifted <30d`** or **`Drifted, age unknown`** → surface under Section 4
+  "Needs Your Approval" rather than auto-refresh. A very recent upstream
+  release may not yet be the version the user wants documented (pre-release,
+  unstable, or rolling-back-soon).
+- **`Unparseable`** → surface under Section 4 "Needs Your Approval" with a
+  suggested `/tool-intel brew:<name>` per entry to restore the version
+  metadata. Don't auto-refresh — the underlying note may have structural
+  issues that warrant inspection first.
+- **`Tap-only`** → ignore. The gardener flagged these as informational; no
+  action is available because tap-installed formulae aren't in the central
+  formulae.brew.sh API.
+
+Example parallel batch (single assistant turn):
+```
+Skill(skill: "tool-intel", args: "brew:bat")
+Skill(skill: "tool-intel", args: "brew:deno")
+Skill(skill: "tool-intel", args: "brew:eza")
+Skill(skill: "tool-intel", args: "brew:jq")
+Skill(skill: "tool-intel", args: "brew:difftastic")
+```
+
+**Partial-failure handling:** Track each Skill invocation's result. If any
+`/tool-intel` call fails (network, schema mismatch, tool-intel internal
+error), do NOT claim the whole batch succeeded. Report which entries
+succeeded and which failed, with the failure reason. Example summary:
+"Refreshed 3 of 5 drifted brew notes — bat, deno, eza succeeded; jq failed
+(network), difftastic failed (tool-intel schema error). Re-run for jq and
+difftastic to retry."
+
+After a successful refresh batch, optionally suggest re-running the gardener
+audit to confirm the entries have flipped to `Drifted` removed / current.
+
 ### 4. Present confirmation items
 
 For items requiring confirmation, present them grouped:

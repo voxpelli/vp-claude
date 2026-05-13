@@ -1,6 +1,6 @@
 ---
 name: knowledge-gaps
-description: "This skill should be used when the user asks about 'knowledge gaps', 'package coverage', 'which packages need notes', 'undocumented dependencies', 'dependency audit', 'missing documentation', 'tool coverage', 'undocumented tools', 'brew/action/docker/vscode coverage', 'standard coverage', 'protocol coverage', 'domain standards', 'concept gaps', 'missing hub notes', 'undocumented concepts', 'topics without notes', or 'what should have its own note'. Cross-references project dependencies, tool manifests, and domain standards against Basic Memory notes to find undocumented packages, tools, standards, and concept-level hub gaps via relation graph analysis and Readwise reading signals. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, Ruby gems, Homebrew formulae/casks, GitHub Actions, Docker images, and VSCode extensions. (gh CLI extensions have no manifest and are user-invoked via /tool-intel gh:owner/repo — not auto-detected here.)"
+description: "This skill should be used when the user asks about 'knowledge gaps', 'package coverage', 'which packages need notes', 'undocumented dependencies', 'dependency audit', 'missing documentation', 'tool coverage', 'undocumented tools', 'brew/action/docker/vscode coverage', 'standard coverage', 'protocol coverage', 'domain standards', 'concept gaps', 'missing hub notes', 'undocumented concepts', 'topics without notes', 'what should have its own note', 'stale brew notes', 'outdated brew formulae', 'drifted notes', or 'which brew tools need updating'. Cross-references project dependencies, tool manifests, and domain standards against Basic Memory notes to find undocumented packages, tools, standards, and concept-level hub gaps via relation graph analysis and Readwise reading signals. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, Ruby gems, Homebrew formulae/casks, GitHub Actions, Docker images, and VSCode extensions. (gh CLI extensions have no manifest and are user-invoked via /tool-intel gh:owner/repo — not auto-detected here.) When invoked with the `--stale` flag (`/knowledge-gaps --stale`), runs an alternative workflow that detects documented Homebrew formulae whose recorded version has drifted from upstream releases."
 user-invocable: true
 paths:
   - "package.json"
@@ -15,7 +15,9 @@ allowed-tools:
   - Grep
   - Glob
   - Bash
+  - Skill
   - mcp__basic-memory__search_notes
+  - mcp__basic-memory__read_note
   - mcp__basic-memory__list_directory
   - mcp__basic-memory__build_context
   - mcp__readwise__readwise_search_highlights
@@ -56,6 +58,31 @@ crates, Go modules, PHP Composer, PyPI, and RubyGems.
   index queries.
 
 ## Workflow
+
+This skill has **two mutually exclusive modes**. Pick exactly one based on
+the user's invocation, then run only that mode's steps. Never combine them.
+
+### Mode A — Stale mode (alternative entry point)
+
+**Triggered when:** the user invoked the skill with the `--stale` flag (e.g.,
+`/knowledge-gaps --stale`), or used trigger phrases like "stale brew notes",
+"outdated brew formulae", "which brew tools need updating".
+
+**What to do:** load and follow the staleness-detection reference file in
+full — do NOT execute any of the Mode B steps below in the same session:
+
+`${CLAUDE_PLUGIN_ROOT}/skills/knowledge-gaps/references/staleness-detection.md`
+
+Other ecosystems beyond Homebrew (npm, crates, actions, docker, vscode, gh)
+are Phase 2 — when added, they'll plug into the same `--stale` flag.
+
+### Mode B — Standard mode (manifest-driven coverage)
+
+**Triggered when:** the user invoked the skill *without* the `--stale` flag.
+
+The remaining steps below (numbered 0 through 15) describe this mode only.
+**Skip them entirely when `--stale` is present** — Mode A is a complete
+alternative workflow.
 
 ### 0. Detect project ecosystems
 

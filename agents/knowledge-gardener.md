@@ -342,6 +342,134 @@ before cross-referencing with the step 1 inventory.
 against the Step 1 inventory. Notes not in the recent set are stale. Reason
 through the comparison directly — do not write a set-difference script.
 
+### 5b. Brew version drift
+
+Detect drift between recorded `brew-*` note versions and live upstream
+releases. This is distinct from Step 5's date-based staleness — a note may
+have been edited recently while its `Version` value silently aged past the
+upstream stable release.
+
+**BM access is via MCP only.** The script invoked at the end of this step
+performs the *external API* work (formulae.brew.sh + optional `gh release
+list`) and never reads `~/basic-memory/`. The agent collects BM-side data
+(documented versions per note) via MCP and pipes names to the script.
+
+**Step 5b-i. Enumerate documented brew notes:**
+```
+list_directory(dir_name="brew", depth=1)
+```
+From the returned listing, **keep only titles that start with `brew-`**
+(filter out any stray drafts or non-prefixed notes). If the directory is
+empty or missing, skip this step silently — the user hasn't documented any
+brew formulae yet.
+
+**Step 5b-ii. Extract `bm_version` per note via MCP:** For each filtered
+title (e.g., `brew-bat`, `brew-ripgrep`), call:
+```
+read_note(identifier="<title>", include_frontmatter=true, output_format="json")
+```
+Issue up to 5 concurrent `read_note` calls per turn to keep latency bounded.
+Then reason about the `content` field to extract the documented version.
+Three formats currently coexist in the corpus (a corpus-quality issue worth
+surfacing separately):
+
+| Priority | Pattern | Example | Where seen |
+|---|---|---|---|
+| 1 | Formula Details table row | `\| Version \| 0.26.1 \|` | older /tool-intel output (brew-bat, brew-ripgrep) |
+| 2 | Inline header pipe | `Homepage: ... \| v1.39.0 \| <license>` | newer /tool-intel output (brew-fnm, brew-ast-grep) |
+| 3 | Registry Metadata bullet | `- **Version**: 0.11.13 (Homebrew, ...)` | brew-uv style |
+
+If multiple patterns match in the same note, **use the lowest-priority-number
+match (table row wins over inline header, which wins over bullet).** If
+none match, record the note as `unparseable` and move on.
+
+**Step 5b-iii. Pipe names to the upstream API script:** **Strip the
+`brew-` prefix** from each note title before piping — the script expects
+bare formula names (e.g., `bat`, not `brew-bat`):
+```
+Bash("printf '%s\\n' <bare-name1> <bare-name2> ... | bash scripts/fetch-brew-upstream.sh")
+```
+The script emits NDJSON per name with fields `upstream_version`, `homepage`,
+`deprecated`, `disabled`, `tier`, `days_stale`, and `upstream_state`
+(`ok` | `deprecated` | `disabled` | `not-in-api` | `api-unavailable`). The
+script's `upstream_state` describes the *upstream fact* only — drift is
+computed by this step, in-context, by comparing the script's
+`upstream_version` against the per-note `bm_version` collected in 5b-ii.
+
+**Step 5b-iv. Classify and bucket:** For each note, combine its `bm_version`
+(from MCP) with the script's NDJSON record. Strip a leading `v` from either
+value before comparison (`v1.39.0` and `1.39.0` are equivalent). Use these
+canonical bucket names (the maintainer text-searches for these exact strings
+in the report):
+
+| Canonical bucket | Trigger | Parent section |
+|---|---|---|
+| `Drifted >30d` | versions differ, `days_stale > 30` | Warning |
+| `Archive candidates` | script `upstream_state="deprecated"` or `"disabled"` | Warning |
+| `Drifted <30d` | versions differ, `days_stale ≤ 30` | Info |
+| `Drifted, age unknown` | versions differ, `days_stale == null` | Info |
+| `Unparseable` | none of the three patterns matched in 5b-ii | Info |
+| `Tap-only` | script `upstream_state="not-in-api"` | Info |
+| `API unavailable` | sole `api-unavailable` line from script | Info (single line) |
+
+Notes where `bm_version == upstream_version` and `upstream_state="ok"` are
+current and need no report entry.
+
+**Step 5b-v. Emit the report subsection.** The gardener report is structured
+with top-level `### Critical`, `### Warning`, `### Info`, `### Graph
+Statistics` sections. Add **one new top-level section** at the
+peer level:
+
+```
+### Brew Version Drift
+```
+
+Inside it, emit a `####` sub-heading for every non-empty canonical bucket,
+using the exact bucket names from 5b-iv. The maintainer's Section 3b
+auto-fix logic keys off these strings.
+
+Bullet formats per bucket:
+
+`Drifted >30d` and `Drifted <30d`:
+```
+- **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago)
+  — refresh via `/tool-intel brew:<name>`
+```
+
+`Drifted, age unknown`:
+```
+- **brew-<name>** v<bm_version> → v<upstream_version> (release date not available)
+  — refresh via `/tool-intel brew:<name>`
+```
+
+`Archive candidates`:
+```
+- **brew-<name>** v<bm_version> — formula <deprecated|disabled> upstream;
+  archive via `move_note(identifier="brew-<name>", new_path="archive/brew-<name>")`
+```
+
+`Unparseable` (one bullet listing all):
+```
+- brew-<name1>, brew-<name2>, ... — version not extractable from note content; run `/tool-intel brew:<name>` to restore the metadata layer
+```
+
+`Tap-only` (one bullet listing all):
+```
+- brew-<name1>, brew-<name2>, ... — tap-installed formulae not in central API; drift check skipped
+```
+
+`API unavailable` (one line):
+```
+- formulae.brew.sh unreachable — staleness check skipped this audit cycle
+```
+
+If all notes resolve to current+OK, emit only:
+```
+### Brew Version Drift
+
+All N documented brew notes are current with upstream — no action needed.
+```
+
 ### 6. Duplicate detection
 
 Look for notes with:
@@ -509,6 +637,29 @@ specific offending text. Suggest the maintainer for remediation.
 - [[npm-pkg]] referenced 3 times but has no dedicated note
 - [note-title] contains project-specific path: lib/routes/foo.js
 - Tag `custom-tag` appears on 3 notes but is not in controlled vocabulary
+
+### Brew Version Drift
+*(Emitted by Step 5b. Omit this section entirely if `brew/` directory is
+empty or absent. The maintainer's Section 3b text-searches for this heading
+and the canonical `#### <bucket>` sub-headings — keep them character-exact.)*
+
+#### Drifted >30d
+- **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago) — refresh via `/tool-intel brew:<name>`
+
+#### Archive candidates
+- **brew-<name>** v<bm_version> — formula deprecated upstream; archive via `move_note(identifier="brew-<name>", new_path="archive/brew-<name>")`
+
+#### Drifted <30d
+- **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago) — refresh via `/tool-intel brew:<name>`
+
+#### Drifted, age unknown
+- **brew-<name>** v<bm_version> → v<upstream_version> (release date not available) — refresh via `/tool-intel brew:<name>`
+
+#### Unparseable
+- brew-<name1>, brew-<name2> — version not extractable from note content; run `/tool-intel brew:<name>` to restore the metadata layer
+
+#### Tap-only
+- brew-<name1>, brew-<name2> — tap-installed formulae (or renamed/removed) not in central API; drift check skipped
 
 ### Graph Statistics
 - Total relations: N

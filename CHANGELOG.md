@@ -5,6 +5,72 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.3][] - 2026-05-13
+
+### Added
+
+- **Brew note staleness detection** — three-layer drift detector for
+  Homebrew formulae documented in Basic Memory. Answers "which of my
+  documented brew tools have received upstream updates since I last
+  refreshed them?"
+
+  - **`scripts/fetch-brew-upstream.sh`** — API-only worker. Reads formula
+    names on stdin, queries `formulae.brew.sh/api/formula.json`,
+    optionally enriches GitHub-hosted formulae with `gh release list`
+    timing, emits NDJSON per name. **Never reads `~/basic-memory/`** —
+    BM access flows through MCP per project convention; the script is
+    pure external I/O. Defensive JSON validation guards against
+    malformed API payloads silently mislabeling the entire vault.
+
+  - **`knowledge-gardener` Step 5b — Brew Version Drift** — MCP-first
+    audit step. Enumerates documented brew notes via `list_directory`,
+    extracts recorded versions via `read_note` (handles three known
+    Formula Details / inline header / Registry Metadata formats with
+    explicit priority tiebreak), pipes bare formula names to the
+    upstream script, computes drift in-context, and emits a
+    `### Brew Version Drift` report section with canonical `####`
+    sub-headings: `Drifted >30d`, `Archive candidates`, `Drifted <30d`,
+    `Drifted, age unknown`, `Unparseable`, and `Tap-only`.
+
+  - **`knowledge-maintainer` Section 3b** — text-searches for the
+    `### Brew Version Drift` section in the gardener report and
+    auto-batches up to 5 `/tool-intel brew:<name>` refreshes for the
+    `Drifted >30d` bucket. Routes `Archive candidates`, `Drifted <30d`,
+    `Drifted, age unknown`, and `Unparseable` to the approval queue.
+    Explicit partial-failure handling distinguishes succeeded from
+    failed refreshes rather than claiming whole-batch success.
+
+  - **`/knowledge-gaps --stale` mode** — user-invocable staleness check.
+    The `knowledge-gaps` skill now has a structural Mode A / Mode B
+    dispatch in its `## Workflow` section. Mode A (triggered by
+    `--stale`) delegates to a new `references/staleness-detection.md`
+    reference file following the same MCP-first pattern, with a
+    user-facing report shape sharing canonical bucket names with the
+    gardener's audit-time output. Mode B (default) runs the existing
+    coverage workflow unchanged.
+
+### Notes
+
+- **Patch version bump** (semver 0.x: additive, non-breaking). The
+  script is a new file, the agent sub-sections are new, and the
+  `--stale` flag is purely additive on `/knowledge-gaps`. No existing
+  surface behavior changes.
+- **Phase 2 enhancements** documented inline but not yet implemented:
+  `[version]` observation in `brew_formula` schema (would eliminate the
+  three-format regex matching by making version extraction
+  MCP-structural), `mcp__homebrew__info` popularity sort in the
+  gardener, cross-ecosystem staleness for npm/crates/Go/Composer/PyPI/
+  Gems/Actions/Docker/VSCode/gh.
+- **Deferred follow-ups** flagged by three rounds of agent reviews:
+  heading-hierarchy refactor in `knowledge-gaps/SKILL.md` (Steps 0-15
+  should be `####` under Mode B), canonical classification table
+  extraction to eliminate the bucket-name copy across gardener / skill
+  reference / maintainer, and the `audit-scope-leak.sh` carve-out
+  decision (architect: legitimate exception; reviewer: also in
+  violation — contested, user decision needed).
+- `npm run check` passes all four stages (validate-plugin + remark +
+  shellcheck/shfmt + 25/25 hook integration tests).
+
 ## [0.29.2][] - 2026-05-06
 
 ### Added
@@ -1242,6 +1308,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.29.3]: https://github.com/voxpelli/vp-claude/compare/v0.29.2...v0.29.3
 [0.29.2]: https://github.com/voxpelli/vp-claude/compare/v0.29.1...v0.29.2
 [0.29.1]: https://github.com/voxpelli/vp-claude/compare/v0.29.0...v0.29.1
 [0.29.0]: https://github.com/voxpelli/vp-claude/compare/v0.28.0...v0.29.0
