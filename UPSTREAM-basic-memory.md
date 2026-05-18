@@ -13,11 +13,7 @@ Friction, limitations, and capability discoveries found while building vp-knowle
 | PR | Date | Effect on local entries |
 |---|---|---|
 | [#770](https://github.com/basicmachines-co/basic-memory/pull/770) | 2026-04-29 | Regression guard for long `relation_type` values (#721). **Partial fix** for the `edit_note re-parse triggers validation errors from unrelated notes` entry — hardens against future regressions, but the cross-note error attribution problem remains |
-| [#769](https://github.com/basicmachines-co/basic-memory/pull/769) | 2026-04-29 | `fix(core): skip Obsidian callouts in observation parser` — Obsidian callout syntax (`> [!note]`) no longer pollutes observation parsing |
-| [#768](https://github.com/basicmachines-co/basic-memory/pull/768) | 2026-04-29 | `fix(mcp): remove no-op pagination params from read_note and view_note` — silent no-op `page`/`page_size` removed |
-| [#776](https://github.com/basicmachines-co/basic-memory/pull/776) | 2026-04-29 | `feat(cli): refuse db reset while basic-memory mcp processes run` — operational safety, not friction |
 | [#774](https://github.com/basicmachines-co/basic-memory/pull/774) | 2026-04-29 | `fix(core): degrade gracefully when sqlite-vec cannot load on init` — Windows `vec0` load failures no longer crash startup |
-| [#764](https://github.com/basicmachines-co/basic-memory/pull/764) | 2026-04-24 | Entity deletion no longer leaves orphaned rows in `search_vector_chunks` and `search_vector_embeddings` |
 | [#765](https://github.com/basicmachines-co/basic-memory/issues/765) | 2026-04-25 | Stale FTS index entries after `reset --reindex` and `reindex --search` (closed) |
 
 ### Open / in-progress upstream
