@@ -5,7 +5,8 @@ permalink: main/schema/go-module
 entity: go_module
 version: 1
 schema:
-  compatibility?: string, minimum Go version and module path (e.g. go 1.21, module github.com/x/y)
+  compatibility?: string, minimum Go version and module path (e.g. go 1.21, module
+    github.com/x/y)
   pattern?(array): string, recurring usage patterns and idioms
   gotcha?(array): string, surprising behaviors and common pitfalls
   convention?(array): string, important usage conventions

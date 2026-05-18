@@ -7,22 +7,31 @@ version: 1
 schema:
   purpose?: string, what the extension adds to the gh CLI and primary use case
   version?: string, latest released version (tag) on the upstream GitHub repo
-  runtime_shape?: string, "binary" (precompiled release assets), "script" (interpreted via shebang), or "local" (symlinked dev install via `gh ext install .`)
-  discovery_mechanism?: string, how gh locates the extension on disk; defaults to PATH-based via the gh extension subsystem
-  host_command?: string, the host CLI under which the extension is invoked; defaults to "gh"
+  runtime_shape?: string, "binary" (precompiled release assets), "script" (interpreted
+    via shebang), or "local" (symlinked dev install via `gh ext install .`)
+  discovery_mechanism?: string, how gh locates the extension on disk; defaults to
+    PATH-based via the gh extension subsystem
+  host_command?: string, the host CLI under which the extension is invoked; defaults
+    to "gh"
   naming_convention?: string, repository naming requirement; defaults to "gh-<name>"
   language?: string, primary implementation language (Go, Bash, Python, etc.)
   source?: string, canonical GitHub repository URL — owner/repo IS the identifier
-  gotcha?(array): string, common pitfalls — install vs upgrade, shadowed core commands, missing runtime deps
-  security?(array): string, supply-chain considerations, pin-to-tag risks, third-party publisher concerns
+  gotcha?(array): string, common pitfalls — install vs upgrade, shadowed core commands,
+    missing runtime deps
+  security?(array): string, supply-chain considerations, pin-to-tag risks, third-party
+    publisher concerns
   pattern?(array): string, recurring usage patterns and integration recipes
   command?(array): string, primary subcommands the extension exposes
   flag?(array): string, notable flags or options worth documenting
   runtime_dep?(array): string, runtime dependencies required at execution time as textual descriptions (e.g. "gh ≥ 2.0", "fzf optional", "shellcheck if available"); use the `depends_on` Note relation for wiki-linkable deps
-  platform?(array): string, supported OS/arch combinations (linux-amd64, darwin-arm64, windows-amd64)
-  install_mode?(array): string, installation methods — `gh extension install`, manual git clone, brew tap
-  popularity?(array): string, GitHub stars, fork count, or `gh extension search` ranking with date stamp
-  design?(array): string, architectural choices — pure-script vs binary release, single-file vs multi-file
+  platform?(array): string, supported OS/arch combinations (linux-amd64, darwin-arm64,
+    windows-amd64)
+  install_mode?(array): string, installation methods — `gh extension install`, manual
+    git clone, brew tap
+  popularity?(array): string, GitHub stars, fork count, or `gh extension search` ranking
+    with date stamp
+  design?(array): string, architectural choices — pure-script vs binary release, single-file
+    vs multi-file
   relates_to?(array): Note, related extensions, the gh formula, or engineering notes
   see_also?(array): Note, related extension in the same space
   pairs_with?(array): Note, commonly installed together

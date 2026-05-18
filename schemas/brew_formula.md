@@ -6,7 +6,8 @@ entity: brew_formula
 version: 1
 schema:
   purpose?: string, what the tool does and its primary value proposition
-  usage?(array): string, key invocation patterns and binary name if different from formula name
+  usage?(array): string, key invocation patterns and binary name if different from
+    formula name
   config?: string, configuration file location and key options or env vars
   gotcha?(array): string, common pitfalls, non-obvious behaviour, conflicts
   feature?(array): string, notable capabilities worth knowing beyond basic usage

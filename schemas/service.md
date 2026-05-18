@@ -1,7 +1,7 @@
 ---
+permalink: main/schema/service
 title: service
 type: schema
-permalink: main/schema/service
 entity: service
 version: 1
 schema:

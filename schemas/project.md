@@ -5,7 +5,7 @@ permalink: main/schema/project
 entity: project
 version: 1
 schema:
-  status(enum): [idea, labs, active, maintained, archived], project lifecycle stage
+  status(enum): '[idea, labs, active, maintained, archived], project lifecycle stage'
   source?: string, research provenance
   naming?: string, name etymology and branding decisions
   prior-art?(array): string, competitive landscape and prior work

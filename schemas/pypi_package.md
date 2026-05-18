@@ -5,7 +5,8 @@ permalink: main/schema/pypi-package
 entity: pypi_package
 version: 1
 schema:
-  compatibility?: string, minimum Python version and platform requirements (e.g. Python ≥3.9, CPython only)
+  compatibility?: string, minimum Python version and platform requirements (e.g. Python
+    ≥3.9, CPython only)
   pattern?(array): string, recurring usage patterns and idioms
   gotcha?(array): string, surprising behaviors and common pitfalls
   convention?(array): string, important usage conventions

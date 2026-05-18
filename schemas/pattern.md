@@ -6,7 +6,8 @@ entity: pattern
 version: 1
 schema:
   pattern(array): string, structural elements, recurring sub-patterns, named variants
-  tradeoff?(array): string, design tensions; when this pattern costs more than it saves
+  tradeoff?(array): string, design tensions; when this pattern costs more than it
+    saves
   insight?(array): string, non-obvious analytical conclusions
   precedent?(array): string, historical instances or prior art
   history?(array): string, origin, evolution, independent reinvention across domains
