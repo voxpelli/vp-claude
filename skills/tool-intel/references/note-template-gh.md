@@ -80,14 +80,14 @@ binary distribution.
 
 - [command] `gh notify` — primary entrypoint launching the fzf TUI
 - [flag] `-an` shows all notifications including already-read items
-- [depends-on] fzf is mandatory; the TUI is the entire feature surface
-- [depends-on] bash 4+ required for associative array syntax in the entry script
+- [depends_on] fzf is mandatory; the TUI is the entire feature surface
+- [depends_on] bash 4+ required for associative array syntax in the entry script
 - [platform] linux and darwin fully supported; windows requires WSL
 - [security] Installs from HEAD by default — pin with `gh extension install meiji163/gh-notify@v1.6.0` for reproducibility
 - [gotcha] Without fzf installed the script exits with an opaque "command not found" before reaching its own preflight check
 - [version] v1.6.0 (2024-02) — last tagged release; main branch may diverge
 - [popularity] ~1.4k stars, ~80 forks (GitHub, 2026-05) — top-tier in the gh-extension topic
-- [install-mode] Recommended: `gh extension install meiji163/gh-notify`; alternative: manual `git clone` into `~/.local/share/gh/extensions/gh-notify`
+- [install_mode] Recommended: `gh extension install meiji163/gh-notify`; alternative: manual `git clone` into `~/.local/share/gh/extensions/gh-notify`
 - [pattern] Inbox-style triage TUI bolted onto a non-interactive CLI — same shape as `gh dash`, `lazygit`-over-git
 - [design] Pure shell entry script — no compilation step, full source readable in one file (~600 lines)
 - [source] Canonical repo: https://github.com/meiji163/gh-notify
@@ -141,17 +141,22 @@ beyond these (e.g. `notifications`, `fzf`, `triage`).
 
 ### Observation categories
 
+> **Convention:** observation categories must use underscores to match
+> picoschema field names (`[depends_on]` not `[depends-on]`, `[install_mode]`
+> not `[install-mode]`) — hyphenated forms fall through to
+> `unmatched_observations` in `schema_validate`.
+
 | Category | When to use |
 |----------|-------------|
 | `command` | Primary subcommands the extension exposes |
 | `flag` | Notable flags worth documenting (not exhaustive — defer to README) |
-| `depends-on` | Runtime dependencies (binaries, brew formulae) |
+| `depends_on` | Runtime dependencies (binaries, brew formulae) |
 | `platform` | OS/arch support — especially gaps |
 | `security` | Pin-to-tag risks, supply-chain considerations |
 | `gotcha` | Surprising behavior, common misconfigurations |
 | `version` | Latest tag, breaking-change notes |
 | `popularity` | GitHub stars, forks, topic-search ranking with date stamp |
-| `install-mode` | Recommended vs alternative installation paths |
+| `install_mode` | Recommended vs alternative installation paths |
 | `pattern` | Recurring usage patterns and CLI-extension idioms |
 | `design` | Architectural choices — script vs binary, single-file vs multi-file |
 | `source` | Canonical upstream URL |

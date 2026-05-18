@@ -83,6 +83,68 @@ Always state what was auto-fixed and what needs confirmation in a summary.
 Note: permanent deletion is not available from this agent — use the Basic Memory
 CLI or `memory-lifecycle` skill directly if a note must be deleted.
 
+## Schema dual-sync rules
+
+Schema notes (`main/schema/<type>` in BM, paired with `schemas/<type>.md` on
+disk) require a specific edit pattern to avoid two known bugs. Read these
+constraints before touching any schema definition — both the BM picoschema
+and the local file MUST land together or the dual-sync drifts.
+
+### Rule 1: Keep `find_text` inside the YAML block
+
+`edit_note(find_replace)` re-parses the entire note after the substitution.
+If `find_text` (or `content`) crosses a `---` frontmatter marker, BM
+prepends a duplicate `permalink`-only frontmatter block and pushes the real
+schema into the body — `schema_validate` then keeps reading stale content.
+
+The safe constraint: `find_text` must stay strictly between the `schema:`
+and `settings:` lines, never including either `---` marker.
+
+```text
+# SAFE — entirely inside the YAML schema block
+edit_note(
+  identifier="main/schema/brew_formula",
+  operation="find_replace",
+  find_text="    security?: array",
+  content="    security?: array\n    deprecated?: boolean"
+)
+
+# UNSAFE — find_text crosses the closing --- marker
+edit_note(
+  identifier="main/schema/brew_formula",
+  operation="find_replace",
+  find_text="    security?: array\n---\n",
+  content="    security?: array\n    deprecated?: boolean\n---\n"
+)
+```
+
+### Rule 2: Never call `write_note(overwrite=True)` on schema notes
+
+Upstream basicmachines-co/basic-memory#818 (FastMCP `AliasChoices + bool | None`
+regression) makes `overwrite=True` silently ignored from external MCP
+clients — the call returns success but the existing note is untouched. A
+fix-branch exists upstream but has not landed. Until it does, schema edits
+must go through `edit_note(find_replace)` with the Rule 1 constraint above.
+
+### Rule 3: Dual-write to BM and the local schema file
+
+Every schema change must update both targets in the same operation:
+
+1. `edit_note` on the BM note (`main/schema/<type>`), respecting Rule 1
+2. `Edit` on the local file (`schemas/<type>.md`) with the matching change
+
+If only one side lands, the local repo and BM drift. The PostToolUse
+`Edit|Write` hook will remind you to sync when editing schema files
+manually, but the discipline is yours to enforce — there is no automated
+reconciliation.
+
+### References
+
+- MEMORY.md gotcha: search for "Schema dual-sync safe edit pattern"
+- bd issue: `vp-claude-syw` (tracks the upstream regression locally)
+- Upstream: basicmachines-co/basic-memory#818
+- Automated workflow: `/schema-evolve <type>` handles both sides
+
 ## Workflow
 
 ### 1. Assess current state

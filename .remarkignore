@@ -1,3 +1,7 @@
 # Basic Memory schema notes — use BM-specific notation ([category], [[wiki-links]])
 # that remark's no-undefined-references rule cannot parse.
 schemas/
+
+# Sprint retrospectives — gitignored, local-only, use BM-style [category] prose
+# and >NN constructs that trip no-undefined-references / no-blockquote-without-marker.
+RETRO-*.md

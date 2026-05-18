@@ -3,6 +3,7 @@
 .serena/
 node_modules/
 RETRO-*.md
+SWARM-*.md
 
 # Beads / Dolt files — entire .beads/ directory is local-only
 .beads/

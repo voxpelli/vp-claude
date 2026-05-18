@@ -61,6 +61,8 @@ Read(file_path="~/.claude/references/raindrop-tags.md")
   Also extract optional config fields from frontmatter: `blocklist`,
   `context_tags`, `conventions`. **Preserve these unchanged through the
   sync cycle** — they are user-authored config, not Raindrop-derived data.
+  Record which of the three are *absent* from frontmatter — Step 8 will
+  backfill them from the seed values defined below.
   Check staleness: if `fetched_at` matches today's date and no explicit
   arguments were passed, warn and suggest `--reset` or a count argument.
 - **File missing** (or `--reset`) — enter **creation mode**. Seed default
@@ -177,6 +179,24 @@ directory if it does not exist.
 **Reincorporate preserved config fields** into the written file's YAML
 frontmatter. Do not overwrite or strip `blocklist`, `context_tags`, or
 `conventions` — these are user-authored and must survive the sync cycle.
+
+**Additively heal pre-seeding vocab files.** If sync mode encountered a file
+that pre-dates the Step 2 seeding behavior, one or more of `blocklist`,
+`context_tags`, or `conventions` will be absent from the frontmatter
+extracted in Step 2. For each of these three fields, apply this rule when
+building the written frontmatter:
+
+- **Field present** (even if empty — `blocklist: []` or `blocklist:` with no
+  value) — preserve as-is. Treat presence as an intentional user choice.
+- **Field absent** (key not in the frontmatter at all) — backfill with the
+  Step 2 creation-mode seed value (the same defaults applied when seeding a
+  new file: `blocklist: ["5", "4", "3", "2", "imported", "toread", "unread",
+  "for:*"]`, `context_tags: []`, `conventions: []`).
+
+Healing is additive only — never replace, merge, or augment an existing
+field's contents. The three fields are evaluated independently (a file may
+have `context_tags` set but be missing `blocklist`). Mention any healed
+fields in the Step 9 report so the user sees what was backfilled.
 
 ### Step 9: Report
 
