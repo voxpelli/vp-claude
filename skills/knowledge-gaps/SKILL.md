@@ -84,7 +84,7 @@ The remaining steps below (numbered 0 through 15) describe this mode only.
 **Skip them entirely when `--stale` is present** — Mode A is a complete
 alternative workflow.
 
-### 0. Detect project ecosystems
+#### 0. Detect project ecosystems
 
 Before parsing dependencies, scan for manifest files using the `Read` tool
 (not Bash). Check for the following in the current working directory:
@@ -119,7 +119,7 @@ If Read succeeds, the ecosystem is present and the content is already loaded
 for Step 1 (no re-reading needed). If Read returns "file not found", skip
 that ecosystem.
 
-### 1. Parse dependencies
+#### 1. Parse dependencies
 
 For each detected ecosystem, read the manifest and extract dependencies:
 
@@ -148,7 +148,7 @@ Read `composer.json` and extract `require` and `require-dev` keys. Skip
 Read `Gemfile` and extract all `gem '<name>'` lines. Group by Bundler groups
 (`group :development`, etc.).
 
-### 2. Check Basic Memory coverage
+#### 2. Check Basic Memory coverage
 
 For each ecosystem, get all documented packages in one lightweight call:
 
@@ -172,7 +172,7 @@ Classify matches as:
 
 Limit this fallback to Tier 1 candidates to avoid excessive API calls.
 
-### 3. Tier by import frequency
+#### 3. Tier by import frequency
 
 For undocumented packages, count imports using the Grep tool. Ripgrep
 automatically respects `.gitignore`, skipping `node_modules`, `.git`, etc.
@@ -221,7 +221,7 @@ Classify:
 - **Tier 2** (1-2 files): Should document — used but limited scope
 - **Tier 3** (devDependencies/dev only, 0 runtime imports): Optional — tooling
 
-### 4. Generate gap report
+#### 4. Generate gap report
 
 Present a structured report with a section per ecosystem:
 
@@ -263,7 +263,7 @@ Present a structured report with a section per ecosystem:
 - Undocumented Tier 1: P packages
 ```
 
-### 5. Offer enrichment
+#### 5. Offer enrichment
 
 For the top 3-5 undocumented Tier 1 packages across all ecosystems, offer to
 run `/package-intel` with the appropriate prefixed invocation:
@@ -279,7 +279,7 @@ Present packages ranked by import count.
 
 ---
 
-### 6. Detect tool manifests
+#### 6. Detect tool manifests
 
 Glob for tool manifest files in the current working directory:
 
@@ -296,7 +296,7 @@ Read("./.vscode/extensions.json")
 Announce which manifests are found. If none are found, skip Steps 7–9 and
 note "No tool manifests detected" in the report.
 
-### 7. Parse tool manifests
+#### 7. Parse tool manifests
 
 For each detected manifest, read and extract tool identifiers:
 
@@ -345,7 +345,7 @@ Read the file and extract the `recommendations` array. Each entry is a
 ```
 → `vscode:esbenp.prettier-vscode`, `vscode:dbaeumer.vscode-eslint`
 
-### 8. Check Basic Memory coverage for tools
+#### 8. Check Basic Memory coverage for tools
 
 For each tool type with detected entries, get all documented tools in one call:
 
@@ -362,7 +362,7 @@ Cross-reference against the parsed identifiers to classify each tool:
 - **Documented** — a `<prefix>-<name>` note exists
 - **Undocumented** — no dedicated note
 
-### 9. Add tools section to gap report
+#### 9. Add tools section to gap report
 
 Append a tools section to the gap report after the package sections:
 
@@ -408,7 +408,7 @@ For the top undocumented tools, offer `/tool-intel` invocations:
 
 ---
 
-### 10. Detect dead wiki-links
+#### 10. Detect dead wiki-links
 
 Check the graph for wiki-links referencing non-existent notes — organic
 documentation debt surfaced by the graph itself.
@@ -476,7 +476,7 @@ dead links.
 
 ---
 
-### 11–13. Domain standard detection
+#### 11–13. Domain standard detection
 
 Read the standard detection reference file for Steps 11–13:
 `${CLAUDE_PLUGIN_ROOT}/skills/knowledge-gaps/references/standard-detection.md`
@@ -486,7 +486,7 @@ codebase reference count, and adding a standards section to the gap report.
 
 ---
 
-### 14–15. Concept-level gap detection
+#### 14–15. Concept-level gap detection
 
 Read the concept detection reference file for Steps 14–15:
 `${CLAUDE_PLUGIN_ROOT}/skills/knowledge-gaps/references/concept-detection.md`
