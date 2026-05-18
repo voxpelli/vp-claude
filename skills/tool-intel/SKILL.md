@@ -106,6 +106,32 @@ which sources to prioritize.
 
 Append new observations rather than overwriting.
 
+**Audit-context stale-handling branch:** If this invocation was triggered
+from an audit-driven workflow (signaled by the caller — e.g. an audit
+context arg like `audit-source=gardener-drift`, an `AUDIT_CONTEXT` env
+var, or an explicit "from audit findings" annotation in the user
+message), the audit's notion of freshness may already be stale by the
+time research begins. Before launching enrichment:
+
+1. Re-read the existing note as above (`read_note(..., output_format="json")`).
+2. Recompute the freshness tier from the *current* `updated_at`, not the
+   value the audit captured. Audits have a ~30-minute wall-clock
+   staleness window in practice — another agent or a manual `/tool-intel`
+   run may have refreshed the note between audit and this invocation.
+3. If the recomputed freshness is `<60 days`, narrow the source pipeline
+   per the freshness table above (DeepWiki + changelog only — skip
+   Tavily, Raindrop, Readwise). Do NOT re-run the full 5-source pipeline
+   just because the audit said the note was stale.
+4. If the audit's stated drift fact (e.g. "version X.Y.Z behind upstream
+   A.B.C") no longer matches what the re-read reveals, abort with
+   `"stale audit input — note already current at <version>; no refresh
+   needed"` and return without writing. The calling agent
+   (knowledge-maintainer Section 3b) will surface this as a skip in its
+   summary.
+
+This branch is a no-op for direct user invocations (`/tool-intel brew:bat`
+with no audit signal) — the freshness check above runs unchanged.
+
 ### Step 2: Fetch registry data
 
 Delegate to the ecosystem reference file for this step:

@@ -145,6 +145,41 @@ reconciliation.
 - Upstream: basicmachines-co/basic-memory#818
 - Automated workflow: `/schema-evolve <type>` handles both sides
 
+## Baseline-counting rules
+
+When you need an authoritative count of relations, observations, or
+entities — typically before and after a canonicalization sprint, schema
+migration, or vocabulary cleanup — use `bm project info` as the source of
+truth, NOT `search_notes`.
+
+```bash
+bm project info main --json | jq .statistics.relation_types
+# → full map of every relation verb to its true count, including
+#   non-canonical residuals (legacy verbs, typos, deprecated forms)
+```
+
+Equivalent keys on `statistics`: `note_types`, `observation_categories`,
+`isolated_entities`, `most_connected_entities` — all reflect the indexed
+ground truth.
+
+**Anti-pattern:** Do NOT use `search_notes(entity_types=["relation"])`
+to derive baseline counts. It filters to canonical (schema-listed) verbs
+only and silently undercounts non-canonical residuals — exactly the rows
+a canonicalization sprint is trying to find and fix.
+
+**Empirical evidence:** Sprint 25 Wave 2B used
+`search_notes(entity_types=["relation"])` for a "see also" baseline and
+reported **1** residual. The post-sprint Phase 5 audit via
+`bm project info --json | jq .statistics.relation_types` found **38**
+residuals — a 38× undercount. Future canonicalization sprints must
+baseline from `bm project info` before claiming completion.
+
+If `bm` CLI is unavailable in the session, fall back to
+`mcp__basic-memory__list_directory` plus the
+`mcp__basic-memory__search_notes` workaround, but flag the result as
+"approximate (search_notes filtered to canonical verbs only)" so the
+caller knows the residual is upper-bounded by their count, not equal to it.
+
 ## Workflow
 
 ### 1. Assess current state
@@ -154,12 +189,15 @@ categorizing findings. Otherwise, run a quick triage:
 
 1. **Inventory** — `list_directory(dir_name="/", depth=2)`
 
-2. **Validate all 18 schemas** — `schema_validate` for each note type
+2. **Validate all 21 schemas** — `schema_validate` for each note type
    (npm_package, crate_package, go_module, composer_package, pypi_package,
    ruby_gem, brew_formula, brew_cask, github_action, docker_image,
-   vscode_extension, gh_extension, engineering, standard, concept,
-   milestone, service, person). This catches notes that violate their
-   schema (broken/missing required fields).
+   vscode_extension, gh_extension, engineering, pattern, reference,
+   standard, concept, milestone, service, person, project). To avoid
+   drift as schemas are added, prefer dynamic discovery — call
+   `list_directory(dir_name="schema")` and iterate the resulting note
+   names — rather than relying on the static list above. This catches
+   notes that violate their schema (broken/missing required fields).
 
 3. **Check drift on high-volume types** — `schema_diff` for npm_package,
    engineering, standard, brew_formula, and concept. Drift findings (fields
@@ -320,6 +358,72 @@ edit_note(
 file, not end of section. Use `operation="find_replace"` targeting the last
 line of the section instead.
 
+#### Pre-write checks (mandatory before any `edit_note` / `write_note`)
+
+Before each `edit_note` or `write_note` call that **appends an observation
+or relation**, run two cheap checks. Both are sub-second `read_note` calls
+and prevent the most common silent-corruption modes.
+
+**Check A — Observation dedup pre-flight (mandatory before appending observations):**
+
+`edit_note` does a raw string replace then re-parses the entire note. If
+the observation text already exists, you will silently create a duplicate
+observation — and if `schema_validate` then errors on the re-parse, the
+write is NOT rolled back (see the validation-error-doesn't-roll-back
+gotcha captured as a `[gotcha]` observation on
+`engineering/agents/parallel-agent-orchestration-lessons`). The combined
+effect: corrupted note + spurious validation error you didn't cause.
+
+Mitigation — read the structured observation array first and skip on
+exact-text match:
+
+```
+read_note(identifier="<note-title>", output_format="json")
+# → check observations[] for an item whose `content` matches verbatim
+# → if duplicate found, skip the edit_note and log "dedup-skipped"
+# → if validation error fires after a retry, do another read_note before
+#   the next attempt — the previous write may have partially landed
+```
+
+This rule is mandatory before any `edit_note(operation="find_replace")`
+that adds an observation line, and before any `write_note` whose body
+contains observations. Cross-reference: the validation-error-doesn't-roll-back
+gotcha means "got an error, retry" is unsafe — verify with `read_note`
+before retrying.
+
+**Check B — Relation verb linting against the target schema (mandatory before adding relations):**
+
+Before each `edit_note` or `write_note` that adds a `- <verb> [[target]]`
+line under `## Relations`, look up the verb against the **source note's**
+schema picoschema (the note you are editing, not the target). Schema notes
+declare the canonical relation vocabulary; unmatched verbs become silently
+non-matching relations that `schema_validate` flags as missing.
+
+```
+read_note(identifier="main/schema/<note_type>", include_frontmatter=true)
+# → inspect the `relations:` block in the picoschema
+# → compare proposed verb against the listed verbs
+```
+
+If the verb is **not** in the schema's relation vocabulary, present a
+three-way prompt to the user before writing:
+
+1. **(a) use a schema-listed verb instead** — pick the closest match from
+   the existing vocabulary (most common — usually `relates_to`,
+   `depends_on`, `composes_with`, `mitigates_risk_of`, etc. — only those
+   the schema actually declares).
+2. **(b) propose adding the verb via `/schema-evolve <type>`** — the
+   right call when several notes already use the verb and the schema
+   has drifted.
+3. **(c) write anyway** — escape hatch for one-off cases; surface in
+   the Step 6 summary as a schema-vocabulary deviation so the user can
+   reconcile later.
+
+User can override (option c), but the silent-absorb path is closed.
+Empirical motivation: verbs like `composes_with` and `mitigates_risk_of`
+have leaked into `brew_formula` / `brew_cask` notes via prior maintainer
+runs that didn't lint, leaving relations that fail `schema_validate`.
+
 #### 2d. Strip wiki-links from observations
 
 `[[wiki-links]]` in observation lines break BM's relation parser — text before
@@ -423,22 +527,80 @@ package" workflow — both delegate to `/tool-intel` via the Skill tool —
 except this targets *existing* notes whose recorded version has fallen
 behind upstream.
 
-Routing rules (the bucket names below match the gardener's `#### <bucket>`
-sub-headings exactly — they are the load-bearing strings to search for):
+**Mandatory behavior — full `/tool-intel` enrichment, NOT minimal version bumps**
 
-- **`Drifted >30d`** → auto-refresh tier. Batch up to 5 entries in a single
-  parallel turn of `/tool-intel brew:<name>` calls. The `tool-intel` skill
-  is idempotent — it detects an existing note and runs in refresh mode,
-  appending new observations rather than overwriting. This matches the
-  existing parallel-research pattern used in Section 3 for new tool notes.
+Every refresh action in this section MUST go through the full five-source
+`/tool-intel` skill via the Skill tool. Do NOT shortcut to a single
+`edit_note` appending a `[release] vX.Y.Z` observation — that path
+demonstrably loses security signal.
+
+Empirical motivation (Sprint 23 field-test of v0.29.3): when this section
+was previously executed as "auto-batch up to 5 minimal version bumps", a
+cosign 3.0.5 → 3.0.6 refresh recorded as a single `[release]` line. A
+subsequent manual `/tool-intel brew:cosign` running the full pipeline
+surfaced **three** 2026 CVEs the bump-only path missed (CVE-2026-22703
+bundle verification bypass, CVE-2026-39395 auth bypass, CVE-2026-24122
+cert chain timing). Treat "skip the skill, write the version directly" as
+**broken**, not as a performance optimization.
+
+If you are tempted to inline a version-only edit because "the Skill tool
+only loads instructions on parallel invocation, not enrichment loops" —
+that rationalisation is wrong. The Skill tool DOES run the full skill
+body on each invocation. Use it.
+
+**Pre-action re-read (mandatory before EACH target)**
+
+Audit findings have a ~30-minute wall-clock staleness window in practice
+— another agent or a manual `/tool-intel` run may have refreshed the
+note between gardener and maintainer. Before acting on each Drifted-target
+entry, re-read the target and re-confirm the audit input still holds:
+
+```
+read_note(identifier="brew-<name>", output_format="json")
+# → locate the most recent [version] observation
+# → compare against the gardener report's recorded version
+# → if they no longer match (drift already resolved), skip the action
+#   with a "stale audit input" annotation in the Step 6 summary
+```
+
+This adds <1s per target and prevents the maintainer from re-refreshing
+notes that have already been brought current. Source pattern: Sprint 23
+flagged `brew-tailscale` as `Drifted <30d` but the recorded version was
+already current (1.96.4) by remediation time; a re-read would have caught
+this and skipped.
+
+**Routing rules** (bucket names match the gardener's `#### <bucket>`
+sub-headings exactly — load-bearing strings to search for):
+
+- **`Drifted >30d`** → auto-refresh tier. After the pre-action re-read
+  confirms drift still exists, batch up to 5 entries in a single parallel
+  turn of `/tool-intel brew:<name>` Skill invocations. The `tool-intel`
+  skill is idempotent — it detects an existing note and runs in refresh
+  mode, appending new observations rather than overwriting. This matches
+  the existing parallel-research pattern used in Section 3 for new tool
+  notes. **Always full pipeline, never a minimal version-only edit.**
+  When the bucket has more than 5 entries, prioritize bullets annotated
+  `[semver-major]` first, then `[semver-minor-multi]`, then `[patch]` —
+  the gardener emits these distance-class annotations in Step 5b-iv
+  resolution rule 5 so that major-version drifts win batch selection
+  regardless of age.
+- **Security-sensitive override (applies to ALL buckets):** if the
+  target note has any prior `[security]` observation (check during the
+  pre-action re-read), it ALWAYS gets a full `/tool-intel` refresh
+  regardless of age bucket — including `Drifted <30d` and
+  `Drifted, age unknown`. Patch-level bumps on security tools routinely
+  ship CVE fixes (the cosign case above). Do NOT defer security tools
+  to Section 4 approval.
 - **`Archive candidates`** (formula deprecated or disabled upstream) →
   surface under Section 4 "Needs Your Approval" with the suggested
   `move_note` call. Never auto-archive — deprecation reversals do happen,
   and archival is a content-level decision.
 - **`Drifted <30d`** or **`Drifted, age unknown`** → surface under Section 4
-  "Needs Your Approval" rather than auto-refresh. A very recent upstream
-  release may not yet be the version the user wants documented (pre-release,
-  unstable, or rolling-back-soon).
+  "Needs Your Approval" rather than auto-refresh (UNLESS the
+  security-sensitive override applies — then auto-refresh via full
+  `/tool-intel`). A very recent upstream release may not yet be the
+  version the user wants documented (pre-release, unstable, or
+  rolling-back-soon).
 - **`Unparseable`** → surface under Section 4 "Needs Your Approval" with a
   suggested `/tool-intel brew:<name>` per entry to restore the version
   metadata. Don't auto-refresh — the underlying note may have structural
@@ -447,7 +609,8 @@ sub-headings exactly — they are the load-bearing strings to search for):
   action is available because tap-installed formulae aren't in the central
   formulae.brew.sh API.
 
-Example parallel batch (single assistant turn):
+Example parallel batch (single assistant turn, after pre-action re-reads
+confirm drift still exists):
 ```
 Skill(skill: "tool-intel", args: "brew:bat")
 Skill(skill: "tool-intel", args: "brew:deno")
@@ -462,7 +625,8 @@ error), do NOT claim the whole batch succeeded. Report which entries
 succeeded and which failed, with the failure reason. Example summary:
 "Refreshed 3 of 5 drifted brew notes — bat, deno, eza succeeded; jq failed
 (network), difftastic failed (tool-intel schema error). Re-run for jq and
-difftastic to retry."
+difftastic to retry. Skipped tailscale (stale audit input — already
+current at 1.96.4 on re-read)."
 
 After a successful refresh batch, optionally suggest re-running the gardener
 audit to confirm the entries have flipped to `Drifted` removed / current.
@@ -510,6 +674,31 @@ knowledge while signaling it's been addressed.
 ### 5. Apply confirmed changes
 
 After user approval, apply changes and report results.
+
+**Archival via `move_note`** — when the user approves an "Archive" item
+from Step 4, archive by moving the note into the `archive/` directory
+(optionally with a sub-bucket like `archive/superseded/` for duplicates
+that lost a merge). Concrete invocation:
+
+```
+move_note(
+  identifier="old-api-design",
+  destination_path="archive/old-api-design"
+)
+```
+
+For a superseded duplicate after a merge:
+```
+move_note(
+  identifier="npm-mcp-it-fastify",
+  destination_path="archive/superseded/npm-mcp-it-fastify"
+)
+```
+
+`move_note` preserves the entity, observations, and relations — only the
+path changes. Never use `delete_note`; the tool is intentionally excluded
+from this agent. If the user explicitly asks for permanent deletion,
+direct them to the Basic Memory CLI or `memory-lifecycle` skill.
 
 ### 6. Summary
 

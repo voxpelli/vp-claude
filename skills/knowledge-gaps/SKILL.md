@@ -56,6 +56,11 @@ crates, Go modules, PHP Composer, PyPI, and RubyGems.
 - **`bm` CLI not available** — if the `bm project info` command in Step 10
   fails, skip the quick-exit gate and proceed directly with the relation
   index queries.
+- **`brew` CLI not available** — if `brew leaves` in Step 7b fails (non-zero
+  exit, command not found, or empty output on a non-macOS host), skip the
+  Brewfile-vs-installed reconciliation silently and report brew coverage in
+  Brewfile-only mode. This is the expected fallback for auditing a remote
+  machine's declared deps from a different host.
 
 ## Workflow
 
@@ -308,6 +313,9 @@ Read the file and extract entries by line pattern:
 
 Skip comment lines (`#`) and other directive types (`tap`, `mas`, `whalebrew`).
 
+Keep the parsed `brew:` set as the **Brewfile-declared** set. Step 7b reconciles
+it against actual installed leaves before coverage is computed.
+
 **`.github/workflows/*.yml` / `*.yaml`:**
 Read each workflow file. Grep for `uses:` lines:
 ```
@@ -345,6 +353,61 @@ Read the file and extract the `recommendations` array. Each entry is a
 ```
 → `vscode:esbenp.prettier-vscode`, `vscode:dbaeumer.vscode-eslint`
 
+#### 7b. Reconcile Brewfile against `brew leaves` (ground truth)
+
+The Brewfile is **aspirational** (what the user *declared* they want installed)
+— `brew leaves` is **actual** (formulae installed and not pulled in as a
+dependency of something else). The two diverge in two directions worth
+surfacing:
+
+- **Installed but not Brewfile-declared** — silent leaves that snuck in via
+  `brew install` outside the Brewfile. These are real usage signals worth
+  documenting, even though no manifest declares them.
+- **Brewfile-declared but not installed** — dead declarations the user
+  intends but never realised, or formulae they have since uninstalled.
+
+**When to run:** only if Step 7 parsed at least one `brew:<name>` entry from
+a Brewfile (no Brewfile → nothing to reconcile, skip this step).
+
+**Detection:** check whether the `brew` CLI is available and runnable:
+
+```
+Bash: command -v brew >/dev/null 2>&1 && brew leaves 2>/dev/null
+```
+
+If the command succeeds, treat its stdout (one formula name per line) as the
+**installed-leaves set**. If it fails (non-zero exit, command not found, or
+empty output on a non-macOS host), skip the reconciliation silently and
+proceed to Step 8 with the Brewfile-declared set unchanged — this is the
+expected fallback when auditing a remote machine's declared deps from a
+different host.
+
+**Why `brew leaves` and not `brew list` or the Homebrew MCP:**
+- `brew list` includes transitive dependencies — the audit would flood with
+  formulae the user never asked for (e.g., `openssl@3`, `libffi`).
+- The Homebrew MCP's list endpoint returns plain text without
+  `installed_on_request` metadata, so leaves cannot be distinguished from
+  transitive deps.
+- Per-formula Homebrew MCP info calls would need ~190 invocations at
+  2-5s each — minutes of latency for one audit. `brew leaves` is the
+  canonical leaf-finder and returns in ~200ms.
+
+**Compute the diff** between `brewfile_declared` and `installed_leaves`:
+
+- `installed_unlisted = installed_leaves − brewfile_declared`
+- `declared_uninstalled = brewfile_declared − installed_leaves`
+- `installed_and_declared = brewfile_declared ∩ installed_leaves`
+
+**Update the brew set for Step 8:** the canonical installed-formulae set
+used for BM coverage classification becomes
+`installed_leaves ∪ brewfile_declared` (union — document anything the user
+either declared or actually installed as a leaf). The two diff buckets are
+carried forward for Step 9 to surface in the report.
+
+If `brew leaves` was unavailable, the set used in Step 8 is just
+`brewfile_declared`, and Step 9 reports brew coverage in Brewfile-only mode
+without the diff buckets.
+
 #### 8. Check Basic Memory coverage for tools
 
 For each tool type with detected entries, get all documented tools in one call:
@@ -376,6 +439,26 @@ Append a tools section to the gap report after the package sections:
 |------|--------|
 | brew-ripgrep | ✓ documented |
 | brew-jq | ✗ undocumented |
+
+#### Brewfile ↔ installed reconciliation
+
+Include this sub-section only when Step 7b ran successfully (the `brew leaves`
+command was available).
+
+##### Installed but not Brewfile-declared (silent leaves worth documenting)
+| Formula | BM coverage |
+|---------|-------------|
+| jq      | ✗ undocumented |
+| fd      | ✓ documented |
+
+##### Brewfile-declared but not installed (dead declarations)
+| Formula | BM coverage |
+|---------|-------------|
+| pandoc  | ✓ documented |
+
+If `brew leaves` was unavailable, omit the reconciliation sub-section and add
+the note "Brewfile-only mode — `brew` CLI not available; install reconciliation
+skipped" below the Homebrew Formulae table.
 
 ### Homebrew Casks: X/Y documented
 ...

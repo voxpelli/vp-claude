@@ -199,6 +199,22 @@ the `error_count` and `warning_count` fields directly from the response. Tally
 totals as you go. If warnings exist, scan the `warnings` array in context and
 list up to 5. Do not batch results for later processing.
 
+**Silent drift extraction (do not script):** The `schema_validate` response
+also returns two arrays per validated note: `unmatched_observations`
+(observation `[category]` tags not declared in the schema's `observations`
+picoschema) and `unmatched_relations` (relation verbs not declared in the
+schema's `relations` picoschema). These never raise validation errors —
+they are silently absorbed by the validator — so they are the highest-leverage
+drift signal. Tally per-type counts of each unmatched category / verb as
+you read the responses (e.g., `composes_with: 4 notes`, `[tension]: 7 notes`).
+
+Emit a **Silent drift** sub-section under **Warning** (see Output Format)
+listing each unmatched category or verb that appears at all, grouped by
+note type, with the affected note titles. When a single unmatched
+category or verb has **5+ uses across the corpus**, escalate that line
+with a `→ run \`/schema-evolve <type>\`` suggestion — the threshold marks
+the field as an evolution candidate rather than a one-off slip.
+
 For each note, verify it has all three enrichment layers:
 - **Frontmatter `packages`** — at least one package listed (skip meta/process notes)
 - **`## Observations`** section with `[category]` tagged items
@@ -208,10 +224,44 @@ Flag notes missing any layer.
 
 ### 3. Orphan detection
 
+This step uses two independent detection paths to cross-validate a single
+class of orphan (zero-link entities). The redundancy is intentional — when
+the bm CLI and the build_context inspection disagree, the disagreement is
+itself a finding (index/file divergence or a stale BM index).
+
+| Class | Definition | Detection | Typical cause |
+|---|---|---|---|
+| **Zero-link orphan (CLI)** | Entity reported with zero relations by the `bm` CLI | `bm orphans` (Pass 0) | Stub note, missing wiki-links, draft in flight |
+| **Zero-link orphan (inspection)** | Markdown file exists but has no incoming or outgoing relations per `build_context` | `read_note` + `build_context` (Pass 1 + Pass 2) | Same as above |
+
+> **Note on file-missing orphans (BM index row with no markdown file):** this
+> class would need a separate filesystem-vs-index comparison step (compare
+> `list_directory` output against `bm project info` entity list). The `bm
+> orphans` CLI does NOT detect this class — it only surfaces graph-disconnected
+> entities. File-missing detection is tracked as a separate audit feature; do
+> NOT claim Pass 0 finds them.
+
+**Pass 0 — Fast bm-CLI sanity check (basic-memory 0.21.0+):**
+```
+Bash("bm orphans --json")
+```
+The command lists entities with zero relations per the CLI's own graph view.
+If the `--json` flag is unsupported in the installed `bm` version, fall back
+to parsing the plain-text output. If `bm` is not on PATH, skip Pass 0
+silently and proceed to Pass 1 — do not abort.
+
+Use Pass 0's output to cross-validate Pass 1+2. Discrepancies (CLI says
+zero-link but `build_context` finds relations, or vice versa) indicate an
+index-vs-file divergence worth flagging in the audit report. Notes
+appearing in BOTH the Pass 0 set AND the Pass 1+2 set are high-confidence
+zero-link orphans — report them under **Warning** with the suggested
+remediation: add appropriate wiki-links via `/package-intel`,
+`/tool-intel`, or a manual `edit_note`.
+
 **Gate:** If Step 0.5 ran and `isolated_entities == 0`, skip Pass 1 entirely —
-the graph has no zero-link notes. Record "0 orphans (confirmed via stats snapshot)"
-in the report. If `isolated_entities > 0`, use the count to bound Pass 1 — stop
-after collecting that many zero-outgoing candidates.
+the graph has no zero-link notes. Record "0 zero-link orphans (confirmed via
+stats snapshot)" in the report. If `isolated_entities > 0`, use the count to
+bound Pass 1 — stop after collecting that many zero-outgoing candidates.
 
 **Pass 1 — Identify zero-outgoing notes:**
 For each note from the step 1 inventory, call:
@@ -363,15 +413,16 @@ From the returned listing, **keep only titles that start with `brew-`**
 empty or missing, skip this step silently — the user hasn't documented any
 brew formulae yet.
 
-**Step 5b-ii. Extract `bm_version` per note via MCP:** For each filtered
-title (e.g., `brew-bat`, `brew-ripgrep`), call:
+**Step 5b-ii. Extract `bm_version` and `bm_tap` per note via MCP:** For each
+filtered title (e.g., `brew-bat`, `brew-ripgrep`), call:
 ```
 read_note(identifier="<title>", include_frontmatter=true, output_format="json")
 ```
 Issue up to 5 concurrent `read_note` calls per turn to keep latency bounded.
-Then reason about the `content` field to extract the documented version.
-Three formats currently coexist in the corpus (a corpus-quality issue worth
-surfacing separately):
+Then reason about the `content` field to extract two values:
+
+*Documented version (`bm_version`).* Three formats currently coexist in the
+corpus (a corpus-quality issue worth surfacing separately):
 
 | Priority | Pattern | Example | Where seen |
 |---|---|---|---|
@@ -381,7 +432,18 @@ surfacing separately):
 
 If multiple patterns match in the same note, **use the lowest-priority-number
 match (table row wins over inline header, which wins over bullet).** If
-none match, record the note as `unparseable` and move on.
+none match, record the note's `bm_version` as `unparseable`.
+
+*Recorded tap (`bm_tap`).* Inspect the `observations` array for any item
+whose category is `[tap]` (e.g., `[tap] codescene-oss/tap`). Also accept a
+plain `Tap: <name>` row in the Formula Details table as a fallback. If
+the note records a tap path other than `homebrew/core` (or omits the tap
+entirely while `bm_version` is wildcard/range-shaped like `8.x` or
+`~0.15.x`), mark the note as `bm_tap_present=true`. This signal is used
+in 5b-iv to route tap-only formulae before falling through to
+`Unparseable` — many tap-distributed formulae have a recorded tap but no
+parseable version row, and they must not land in the `Unparseable`
+bucket.
 
 **Step 5b-iii. Pipe names to the upstream API script:** **Strip the
 `brew-` prefix** from each note title before piping — the script expects
@@ -396,24 +458,58 @@ script's `upstream_state` describes the *upstream fact* only — drift is
 computed by this step, in-context, by comparing the script's
 `upstream_version` against the per-note `bm_version` collected in 5b-ii.
 
-**Step 5b-iv. Classify and bucket:** For each note, combine its `bm_version`
-(from MCP) with the script's NDJSON record. Strip a leading `v` from either
-value before comparison (`v1.39.0` and `1.39.0` are equivalent). Use these
-canonical bucket names (the maintainer text-searches for these exact strings
-in the report):
+**Step 5b-iv. Classify and bucket (two-dimensional):** For each note,
+combine its `bm_version` and `bm_tap_present` (from MCP) with the script's
+NDJSON record. Strip a leading `v` from either version value before
+comparison (`v1.39.0` and `1.39.0` are equivalent).
 
-| Canonical bucket | Trigger | Parent section |
-|---|---|---|
-| `Drifted >30d` | versions differ, `days_stale > 30` | Warning |
-| `Archive candidates` | script `upstream_state="deprecated"` or `"disabled"` | Warning |
-| `Drifted <30d` | versions differ, `days_stale ≤ 30` | Info |
-| `Drifted, age unknown` | versions differ, `days_stale == null` | Info |
-| `Unparseable` | none of the three patterns matched in 5b-ii | Info |
-| `Tap-only` | script `upstream_state="not-in-api"` | Info |
-| `API unavailable` | sole `api-unavailable` line from script | Info (single line) |
+Bucketing runs across two independent dimensions — **age** and **version
+distance** — that are resolved into a single canonical bucket name. The
+maintainer text-searches for these exact strings in the report, so the
+canonical names below are character-exact.
 
-Notes where `bm_version == upstream_version` and `upstream_state="ok"` are
+*Dimension 1 — age (release recency):*
+
+| Age class | Trigger |
+|---|---|
+| `age-stale` | `days_stale > 30` |
+| `age-fresh` | `days_stale ≤ 30` |
+| `age-unknown` | `days_stale == null` |
+
+*Dimension 2 — version distance (semver gap between `bm_version` and
+`upstream_version`):*
+
+| Distance class | Trigger |
+|---|---|
+| `semver-major` | leading major component differs (e.g., `1.84.0` → `2.0.1`); for `0.x` versions any minor bump qualifies (`version-zero-minor` rule — pre-1.0 minor is breaking per semver convention) |
+| `semver-minor-multi` | major matches, minor jumped by **≥3** (e.g., `0.4.7` → `0.7.0` within a `1.x` line); ignored for `0.x` lines (already caught by `semver-major`) |
+| `patch` | only trailing component changed (`1.0.3` → `1.0.4`) |
+| `distance-unknown` | either version unparseable for semver split |
+
+*Resolution to canonical bucket:*
+
+Apply rules in order; first match wins.
+
+1. `bm_tap_present == true` **AND** script `upstream_state ∈ {"not-in-api", "api-unavailable"}` → **`Tap-only`** *(checked before `Unparseable` — a tap-distributed formula naturally 404s on `formulae.brew.sh` and that is not a parse failure)*
+2. script `upstream_state == "not-in-api"` AND `bm_tap_present == false` AND `bm_version == "unparseable"` → **`Tap-only`** *(no tap recorded but the 404 + unparseable combination still strongly suggests tap/renamed/removed — same actionable advice: re-run `/tool-intel`)*
+3. script `upstream_state ∈ {"deprecated", "disabled"}` → **`Archive candidates`**
+4. `bm_version == "unparseable"` (and rule 1/2 did not fire) → **`Unparseable`**
+5. versions differ AND **distance is `semver-major`** → **`Drifted >30d`** *(semver-major **escalates** regardless of `days_stale` — a major-version gap is forward-compatibility risk that the age axis hides. Document the actual `days_stale` value in the bullet so the maintainer knows the escalation was distance-driven.)*
+6. versions differ AND `age-stale` → **`Drifted >30d`**
+7. versions differ AND `age-fresh` → **`Drifted <30d`** *(annotate `semver-minor-multi` distance inline so the maintainer can spot near-major risk even when age is fresh)*
+8. versions differ AND `age-unknown` → **`Drifted, age unknown`**
+9. sole script line is `upstream_state == "api-unavailable"` for every note → **`API unavailable`** (single-line)
+
+Notes where `bm_version == upstream_version` and `upstream_state == "ok"` are
 current and need no report entry.
+
+*Why this matters for the maintainer.* The maintainer's Section 3b
+auto-batch fires on the **`Drifted >30d`** bucket only. The escalation
+rule (5) is the mechanism that lifts semver-major risks into that bucket
+even when the upstream release is only days old — e.g., a `1.84.0 → 2.0.1`
+note where 2.0.1 shipped 4 days ago would otherwise sit in `Drifted <30d`
+indefinitely. The maintainer should weight any bullet annotated
+`[semver-major]` as the highest-priority refresh in its batch.
 
 **Step 5b-v. Emit the report subsection.** The gardener report is structured
 with top-level `### Critical`, `### Warning`, `### Info`, `### Graph
@@ -430,11 +526,16 @@ auto-fix logic keys off these strings.
 
 Bullet formats per bucket:
 
-`Drifted >30d` and `Drifted <30d`:
+`Drifted >30d` and `Drifted <30d` (annotate the version-distance class
+inline — the maintainer keys off `[semver-major]` to weight the batch):
 ```
-- **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago)
+- **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago) [<distance-class>]
   — refresh via `/tool-intel brew:<name>`
 ```
+Where `<distance-class>` is `semver-major`, `semver-minor-multi`, `patch`,
+or `distance-unknown`. Omit the bracketed annotation only when distance
+is `patch` AND age is `age-stale` (the default case — no extra signal
+needed).
 
 `Drifted, age unknown`:
 ```
@@ -453,9 +554,11 @@ Bullet formats per bucket:
 - brew-<name1>, brew-<name2>, ... — version not extractable from note content; run `/tool-intel brew:<name>` to restore the metadata layer
 ```
 
-`Tap-only` (one bullet listing all):
+`Tap-only` (one bullet listing all — covers formulae routed here by
+either rule 1 or rule 2 in 5b-iv, i.e. tap-distributed, renamed, or
+removed from the core API):
 ```
-- brew-<name1>, brew-<name2>, ... — tap-installed formulae not in central API; drift check skipped
+- brew-<name1>, brew-<name2>, ... — tap-installed formulae (or renamed/removed) not in central API; drift check skipped
 ```
 
 `API unavailable` (one line):
@@ -624,9 +727,10 @@ specific offending text. Suggest the maintainer for remediation.
 ### Critical (broken or incomplete)
 - [note-title] — missing ## Observations section
 - [note-title] — missing ## Relations section
+- [note-title] — file-missing orphan (BM index row points at a markdown file that no longer exists on disk; surfaced by Step 3 Pass 0 via `bm orphan`) — re-run `/package-intel` / `/tool-intel` to restore, or remove the dead index row
 
 ### Warning (quality issues)
-- [note-title] — orphan note (zero incoming + outgoing links)
+- [note-title] — zero-link orphan note (file exists, zero incoming + outgoing links)
 - [note-title] — stale (not updated in 90+ days)
 - [note-title] — potential duplicate of [other-note]
 - [note-title] — non-canonical tag `node-js` (should be `nodejs`)
@@ -636,6 +740,15 @@ specific offending text. Suggest the maintainer for remediation.
 - [note-title] — title scope mismatch: title covers "Patterns" but content only addresses brew
 - [note-title] — 25 flat observations, candidate for subsection splitting
 - [note-title] — fourth-wall violation (severity B): "This topic has zero presence in Raindrop"
+
+#### Silent drift (unmatched categories / verbs by type)
+*(Emitted by Step 2. Lists `unmatched_observations` and `unmatched_relations`
+returned by `schema_validate` — the validator absorbs these silently, so
+they only surface here. A line with **5+ uses corpus-wide** is escalated
+with a `/schema-evolve` suggestion.)*
+- **brew_cask** — `[tension]` on 1 note ([cask-1password-cli])
+- **brew_cask** — `composes_with` verb on 1 note ([cask-1password-cli])
+- **npm_package** — `[ownership]` on 7 notes ([npm-fastify], [npm-pino], ...) → run `/schema-evolve npm_package`
 
 ### Info (maintenance suggestions)
 - [[npm-pkg]] referenced 3 times but has no dedicated note
@@ -648,13 +761,14 @@ empty or absent. The maintainer's Section 3b text-searches for this heading
 and the canonical `#### <bucket>` sub-headings — keep them character-exact.)*
 
 #### Drifted >30d
-- **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago) — refresh via `/tool-intel brew:<name>`
+- **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago) [<distance-class>] — refresh via `/tool-intel brew:<name>`
+- **brew-dolt** v1.84.0 → v2.0.1 (released 4d ago) [semver-major] — refresh via `/tool-intel brew:dolt` *(example: escalated by distance, not age)*
 
 #### Archive candidates
 - **brew-<name>** v<bm_version> — formula deprecated upstream; archive via `move_note(identifier="brew-<name>", new_path="archive/brew-<name>")`
 
 #### Drifted <30d
-- **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago) — refresh via `/tool-intel brew:<name>`
+- **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago) [<distance-class>] — refresh via `/tool-intel brew:<name>`
 
 #### Drifted, age unknown
 - **brew-<name>** v<bm_version> → v<upstream_version> (release date not available) — refresh via `/tool-intel brew:<name>`
