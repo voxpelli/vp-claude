@@ -25,10 +25,12 @@ schema:
   mitigated_by?(array): Note, inverse of mitigates_risk_of — used on the target side
   integrated_into?(array): Note, integrated as a module/extension of the target (e.g. starship's direnv module)
   extended_by?(array): Note, this formula is extended by another tool (e.g. brew-gh extended_by gh-* extensions)
-  alternative_to?(array): Note, competes in the same space as another tool
+  alternative_to?(array): Note, competes in the same space as another tool (cf. npm_package/service `competes_with` — kept as ecosystem-specific synonyms since "brew formulae are alternatives" reads more naturally than "compete")
   analogue_of?(array): Note, structurally analogous tool in a different ecosystem
   built_with?(array): Note, this formula was built using/with another tool as toolchain
   context_from?(array): Note, this formula's relevance is contextualized by a pattern/concept/history note
+  integrates_with?(array): Note, runtime integration with another tool via data flow (distinct from `pairs_with` — integrates implies data exchange, pairs implies CLI composition)
+  maintained_by?(array): Note, person or org responsible for upstream maintenance
 settings:
   validation: warn
 ---

@@ -23,6 +23,17 @@ schema:
   relates_to(array): Note, related knowledge notes
   extends?(array): Note, parent notes this note specializes or builds upon
   depends_on?(array): Note, package dependencies relevant to topic
+  references?(array): Note, knowledge notes or specs this references (directional, distinct from `relates_to`)
+  documents?(array): Note, protocols/services/projects this note documents
+  informs?(array): Note, knowledge notes whose direction this informs
+  informed_by?(array): Note, knowledge notes that informed this note
+  inspired_by?(array): Note, prior art or ideas that influenced this note
+  inspired?(array): Note, downstream notes this influenced
+  has_spoke?(array): Note, spoke notes under this hub (hub-and-spoke topology)
+  hub_for?(array): Note, hub note this is a spoke of (inverse of `has_spoke`)
+  bridges_to?(array): Note, parallel or analogous concept in another domain
+  succeeded_by?(array): Note, successor pattern or technology in lineage
+  preceded_by?(array): Note, predecessor pattern or technology in lineage
 settings:
   validation: warn
 ---

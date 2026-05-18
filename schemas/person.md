@@ -20,6 +20,8 @@ schema:
   works_with?(array): Note, collaborators or related people
   enables?(array): Note, projects or standards they enabled
   relates_to?(array): Note, related notes
+  inspired?(array): Note, downstream people, projects, or movements they inspired
+  inspired_by?(array): Note, prior figures whose ideas influenced this person's work
 settings:
   validation: warn
 ---

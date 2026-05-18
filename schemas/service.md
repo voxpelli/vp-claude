@@ -21,6 +21,10 @@ schema:
   used_by?(array): Note, services or projects that depend on this
   bridges_to?(array): Note, protocols or ecosystems it bridges to
   part_of?: Note, parent ecosystem or platform
+  competes_with?(array): Note, services in the same niche (cf. npm_package `competes_with`)
+  integrates_with?(array): Note, services this composes with at runtime via data flow
+  maintained_by?(array): Note, person or org responsible for maintenance
+  founded_by?(array): Note, person or org that founded the service (inverse of person `founded`)
 settings:
   validation: warn
 ---

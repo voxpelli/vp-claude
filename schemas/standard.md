@@ -26,6 +26,8 @@ schema:
   used_by?(array): Note, services and tools using this protocol
   implemented_by?(array): Note, implementations of this protocol
   part_of?: Note, parent movement or stack
+  succeeded_by?(array): Note, successor standard (inverse of `succeeded`)
+  preceded_by?(array): Note, predecessor standard in lineage
 settings:
   validation: warn
 ---

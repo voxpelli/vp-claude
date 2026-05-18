@@ -15,6 +15,15 @@ schema:
   architecture?(array): string, internal design, module structure, and build approach
   relates_to?(array): Note, related knowledge notes
   depends_on?(array): Note, upstream package dependencies
+  competes_with?(array): Note, alternative packages with overlapping purpose (cf. brew_formula `alternative_to`)
+  integrates_with?(array): Note, packages this composes with at runtime via data flow
+  composes_with?(array): Note, packages this is idiomatically combined with
+  references?(array): Note, knowledge notes this package implements or refers to
+  inspired_by?(array): Note, prior art or designs that influenced this package
+  inspired?(array): Note, downstream packages this influenced
+  maintained_by?(array): Note, person or org responsible for maintenance
+  succeeded_by?(array): Note, successor package in a lineage
+  preceded_by?(array): Note, predecessor package in a lineage
 settings:
   validation: warn
 ---
