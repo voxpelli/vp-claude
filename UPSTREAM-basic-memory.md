@@ -2,26 +2,18 @@
 
 Friction, limitations, and capability discoveries found while building vp-knowledge on top of Basic Memory.
 
-## Latest upstream activity (snapshot 2026-05-04)
+## Latest upstream activity (snapshot 2026-05-18)
 
-**Latest release:** [v0.20.3](https://github.com/basicmachines-co/basic-memory/releases/tag/v0.20.3) (2026-03-27)
-**Latest `main` commit:** [a661e92](https://github.com/basicmachines-co/basic-memory/commit/a661e92) (2026-05-04) — `feat(mcp): create projects by workspace slug` (#789)
-**Activity:** 44 commits in last 4 weeks (accelerating from 38 prior 4 weeks); 30+ commits on `main` since v0.20.3; 62 open issues. Workspace-aware MCP routing dominates the post-v0.20.3 sprint — v0.20.4 / v0.21 cut likely imminent.
-
-### Merged PRs that touch entries below (unreleased — pending v0.20.4/v0.21)
-
-| PR | Date | Effect on local entries |
-|---|---|---|
-| [#770](https://github.com/basicmachines-co/basic-memory/pull/770) | 2026-04-29 | Regression guard for long `relation_type` values (#721). **Partial fix** for the `edit_note re-parse triggers validation errors from unrelated notes` entry — hardens against future regressions, but the cross-note error attribution problem remains |
-| [#774](https://github.com/basicmachines-co/basic-memory/pull/774) | 2026-04-29 | `fix(core): degrade gracefully when sqlite-vec cannot load on init` — Windows `vec0` load failures no longer crash startup |
-| [#765](https://github.com/basicmachines-co/basic-memory/issues/765) | 2026-04-25 | Stale FTS index entries after `reset --reindex` and `reindex --search` (closed) |
+**Latest release:** [v0.21.1](https://github.com/basicmachines-co/basic-memory/releases/tag/v0.21.1) (2026-05-17, CI-only point release — see [v0.21.0](https://github.com/basicmachines-co/basic-memory/releases/tag/v0.21.0) (2026-05-16) for substantive changes).
+**Headline:** v0.21.0 reworked workspace/project routing across MCP + CLI, shipped breaking change [#824](https://github.com/basicmachines-co/basic-memory/pull/824) (relation parsing — bare prose wikilinks now index as `links_to`), added `bm orphan` CLI ([#816](https://github.com/basicmachines-co/basic-memory/pull/816)), made multi-project `search_notes` opt-in via `search_all_projects=True` ([#807](https://github.com/basicmachines-co/basic-memory/pull/807)), and introduced MCP parameter aliases ([#766](https://github.com/basicmachines-co/basic-memory/pull/766) — known regression [#818](https://github.com/basicmachines-co/basic-memory/issues/818) affects `write_note(overwrite=True)` from external clients; upstream fix branch exists).
+**Activity:** ~80 commits between v0.20.3 and v0.21.0. Post-v0.21.0 cluster (5+ open issues) concentrated in cloud/Postgres/pgvector paths — local SQLite users unaffected.
 
 ### Open / in-progress upstream
 
 | Issue/PR | Effect on local entries |
 |---|---|
 | [#762](https://github.com/basicmachines-co/basic-memory/issues/762) (open feature) | "Show which entities do not have relations" — filed by maintainer; would **obsolete the two-pass orphan-detection workaround** in `build_context` entry below |
-| [#763](https://github.com/basicmachines-co/basic-memory/issues/763) (open bug) | `write_note` / `edit_note` return before semantic indexing completes — see new entry below |
+| [#763](https://github.com/basicmachines-co/basic-memory/issues/763) (closed not-a-bug 2026-04-29) | `write_note` / `edit_note` async vector indexing — maintainer ruled by design; see reframed entry below |
 | [#786](https://github.com/basicmachines-co/basic-memory/issues/786) (open enhancement) | MCP settings tool for active project/workspace context |
 | [#760](https://github.com/basicmachines-co/basic-memory/issues/760) (open) | Harden subprocess usage in `sync_service.py` and expand `SECURITY.md` |
 | Workspace-aware MCP routing sprint | PRs #777, #783, #788, #789, #790 — post-v0.20.3 multi-workspace support; introduces `external_id` project resolution and workspace-qualified memory URLs |
@@ -241,20 +233,6 @@ note cleanly. This avoids the re-parse that generates the duplicate frontmatter.
 
 ---
 
-### `search_notes(note_types=[X])` matches directory paths, not just frontmatter type
-
-**Discovered:** 2026-04-06
-**Impact:** Medium — `search_notes(note_types=["engineering"])` returns notes whose
-file path contains "engineering" (e.g. `engineering/history/Agile Manifesto.md` with
-`type: milestone`), not just notes with `type: engineering` in frontmatter. This
-inflates type counts by ~20% for types sharing names with directories.
-**Workaround:** Verify counts via `read_note(include_frontmatter=true)` on individual
-results when precision matters. Never rely on `search_notes` counts alone for type
-audits.
-**Status:** Open — behavior is undocumented.
-
----
-
 ### `bm project info` exposes `most_connected_entities` and `total_unresolved_relations`
 
 **Discovered:** 2026-03-30 (DeepWiki research for concept gap detection)
@@ -268,9 +246,10 @@ audits.
 
 ---
 
-### `write_note` / `edit_note` return before semantic indexing completes
+### `write_note` / `edit_note` return before semantic indexing completes (won't-fix limitation)
 
 **Discovered:** 2026-05-04 (from upstream activity review of post-v0.20.3 sprint)
+**Status:** **Won't-fix limitation** — maintainer ruled this is intentional design ([#763 closed 2026-04-29 as not-a-bug](https://github.com/basicmachines-co/basic-memory/issues/763)). Async vector embedding keeps write latency bounded by I/O + FTS only, not by embedding inference, to keep write paths fast.
 **Impact:** Medium — write tools return as soon as the FTS index is updated synchronously, but vector embedding indexing runs asynchronously. A note written via `write_note` may not be hybrid-search-hittable for a few seconds even though `read_note` works immediately. Affects workflows that write a note then immediately search for it (cross-link sweeps, schema validation chains).
-Severity: degraded · Ownership: upstream · Workaround: full — separate the write and the semantic-search query in time, or use FTS-only search via `search_type="text"` for the immediate post-write read. Most vp-knowledge skills that already do this (post-write cross-linking happens via `search_notes` with text queries) are unaffected.
-**Status:** Open upstream — [#763](https://github.com/basicmachines-co/basic-memory/issues/763) filed 2026-04-24 by `groksrc`. Already on the maintainer's radar; not yet fixed in `main`.
+Severity: degraded · Ownership: upstream-by-design · Workaround: full — separate the write and the semantic-search query in time, or use FTS-only search via `search_type="text"` for the immediate post-write read. Most vp-knowledge skills that already do this (post-write cross-linking happens via `search_notes` with text queries) are unaffected.
+**Upstream enhancement candidate:** opt-in `--wait-for-index` flag could give callers an explicit way to opt into post-indexing return. Not yet filed — see the maintainer's closing comment on [#763](https://github.com/basicmachines-co/basic-memory/issues/763) for the hint at this direction. Tracked as bd issue (Phase 6 candidate).

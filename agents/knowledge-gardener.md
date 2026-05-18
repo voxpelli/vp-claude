@@ -588,7 +588,11 @@ count the observations array length. Report the count alongside the title.
 ### 10. Note quality (fourth-wall check)
 
 Apply the rules from the preloaded `vp-note-quality` skill. Search for red-flag
-phrases that indicate self-referential content in subject-domain notes:
+phrases that indicate self-referential content in subject-domain notes.
+Single-project scope is intentional — gardener audits the active BM project
+only. Pass `search_all_projects=True` to each call below if you maintain
+multiple BM projects holding subject-domain notes (basic-memory 0.21.0+
+made cross-project search opt-in via PR #807).
 
 ```
 search_notes(search_type="text", query="zero presence in", page_size=20)

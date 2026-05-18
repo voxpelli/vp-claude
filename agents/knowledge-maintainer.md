@@ -290,7 +290,11 @@ read or edit during this session. For notes you are about to modify via
 question: "Would someone unfamiliar with Basic Memory understand every
 sentence?"
 
-Search for red-flag phrases across subject-domain notes:
+Search for red-flag phrases across subject-domain notes. Single-project
+scope is intentional — maintainer mirrors the gardener's audit on the
+active BM project only. Pass `search_all_projects=True` to each call below
+if you maintain multiple BM projects holding subject-domain notes
+(basic-memory 0.21.0+ made cross-project search opt-in via PR #807).
 ```
 search_notes(search_type="text", query="zero presence in", page_size=20)
 search_notes(search_type="text", query="not yet in Basic Memory", page_size=20)
