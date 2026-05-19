@@ -36,12 +36,15 @@ tooling that vp-claude could adopt.
 
 ## Divergences
 
-- **Hooks/agents/skills scope** (2026-05-04) — vp-claude has 14 skills, 4
-  agents, 5 hooks. vp-git has 1 skill (`rebase-validate`), 0 agents, 0 hooks.
-  Domain choice — vp-git is a focused git-safety-skill plugin with no runtime
-  intervention surface; vp-claude is a multi-skill BM platform.
+- **Hooks/agents/skills scope** (2026-05-19) — vp-claude has 14 skills, 4
+  agents, 5 hooks. vp-git has 2 skills (`rebase-validate`, `stack-cascade`),
+  0 agents, 0 hooks. Domain choice — vp-git is a focused git-safety-skill
+  plugin with no runtime intervention surface; vp-claude is a multi-skill
+  BM platform.
   Convergence path: accept-difference · Reason: different plugin domains
   justify different scope.
+  Note: `stack-cascade` added in vp-git 0.6.0 (2026-05-19). Re-verified
+  during the marketplace bump that landed today.
 
 ## Extraction Candidates
 

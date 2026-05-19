@@ -59,17 +59,6 @@ of maintaining both halves catches drift cases a single-source record misses.
   Status: drifting · Last verified: 2026-05-06
   Note: Strong extraction candidate for shared `@voxpelli/claude-plugin-tools`.
 
-- **npm-run-all2 parallel check stages** (2026-04-04) — vp-beads and
-  vp-git both use `run-p check:*` for parallel CI execution. vp-claude
-  still uses sequential `&&` chaining in its `package.json` "check"
-  script.
-  Status: diverging · Last verified: 2026-05-06
-  Note: Sprint 19's reciprocation pass falsely claimed vp-claude had
-  converged; vp-beads's re-verification (2026-05-04) and Sprint 20's
-  /sibling-sync run (2026-05-06) both confirmed vp-claude remains
-  sequential. Convergence is a one-line edit — file as a beads follow-up
-  if adoption is wanted.
-
 - **BM error classification hook** (2026-04-05) — Both plugins have a
   PostToolUseFailure command hook for BM tools that classifies errors into
   categories (`server-unavailable`, `note-not-found`, `invalid-argument`,
@@ -94,6 +83,20 @@ of maintaining both halves catches drift cases a single-source record misses.
   Status: aligned · Last verified: 2026-04-05 (per vp-beads's record)
 
 ## Divergences
+
+- **npm-run-all2 parallel check stages** (2026-05-19) — vp-beads and
+  vp-git both use `run-p check:*` for parallel CI execution; vp-claude
+  still uses sequential `&&` chaining in its `package.json` "check"
+  script. Convergence is a one-line edit on this side.
+  Convergence path: adopt-theirs · Last verified: 2026-05-19
+  Note: Re-filed from Shared Patterns 2026-05-19 — the entry had been
+  carrying `Status: diverging` which is not a valid Shared Patterns
+  value (only `aligned | drifting`). Sprint 19's reciprocation pass
+  falsely claimed vp-claude had converged; vp-beads's re-verification
+  (2026-05-04) and Sprint 20's /sibling-sync run (2026-05-06) both
+  re-confirmed vp-claude remains sequential. Reciprocate on vp-beads's
+  `SYNERGY-vp-knowledge.md` (their row carries the same
+  misclassification).
 
 - **PreCompact hook retired in v0.28.0** (2026-05-04) — vp-claude retired
   its PreCompact hook in v0.28.0 (commit `624e3df`, 2026-04-29) per the
