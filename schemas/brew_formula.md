@@ -20,6 +20,7 @@ schema:
   see_also?(array): Note, related tool in the same space
   pairs_with?(array): Note, commonly used together
   depends_on?(array): Note, runtime or build dependency on another brew formula/cask/npm
+  used_by?(array): Note, projects or workflows that depend on this formula (inverse of depends_on)
   replaces?(array): Note, this formula supersedes another
   composes_with?(array): Note, designed to compose with another tool (symmetric pairing)
   mitigates_risk_of?(array): Note, this formula mitigates a risk class present in the target (e.g. plaintext-token storage)

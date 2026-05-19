@@ -10,8 +10,11 @@ schema:
   convention?(array): string, important usage conventions
   benefit?(array): string, advantages and strengths over alternatives
   limitation?(array): string, constraints and known weaknesses
+  popularity?(array): string, Packagist install counts with date stamp
   relates_to?(array): Note, related knowledge notes
   depends_on?(array): Note, upstream package dependencies
+  used_by?(array): Note, downstream consumers of this package (inverse of depends_on)
+  alternative_to?(array): Note, packages that serve as direct substitutes
 settings:
   validation: warn
 ---

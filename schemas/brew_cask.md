@@ -25,6 +25,7 @@ schema:
   alternative?(array): string, prose listing of alternative tools (for specific wiki-linked alternatives, use the alternative_to relation)
   relates_to?(array): Note, related cask, formula, or engineering notes
   depends_on?(array): Note, Homebrew dependencies or required system tools
+  used_by?(array): Note, projects or workflows that depend on this cask (inverse of depends_on)
   pairs_with?(array): Note, companion apps commonly used together
   alternative_to?(array): Note, competes in the same space
   replaces?(array): Note, supersedes another cask

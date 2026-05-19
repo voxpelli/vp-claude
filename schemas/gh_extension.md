@@ -39,6 +39,7 @@ schema:
   runs_on?(array): Note, host CLI this extension extends (typically [[brew-gh]])
   implements?(array): Note, wraps or invokes a related GitHub Action or other artifact
   depends_on?(array): Note, runtime dependency on another BM-noted tool/formula (Homebrew, npm, etc.)
+  used_by?(array): Note, users, scripts, or workflows that invoke this extension
 settings:
   validation: warn
 ---

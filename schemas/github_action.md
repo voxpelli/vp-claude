@@ -11,7 +11,10 @@ schema:
   version?(array): string, version pinning and update guidance
   usage?(array): string, common workflow patterns and invocation examples
   pattern?(array): string, workflow patterns, integration recipes, and best practices
+  popularity?(array): string, marketplace adoption signals (stars, used-by count, marketplace downloads) with date stamp
   relates_to?(array): Note, related actions or engineering notes
+  used_by?(array): Note, workflows that invoke this action
+  alternative_to?(array): Note, actions that serve as direct substitutes
 settings:
   validation: warn
 ---

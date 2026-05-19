@@ -11,7 +11,10 @@ schema:
   convention?(array): string, important usage conventions
   pattern?(array): string, recurring usage patterns and idioms
   feature?(array): string, notable capabilities beyond the basic description
+  popularity?(array): string, Marketplace install counts and ratings with date stamp
   relates_to?(array): Note, related extensions or engineering notes
+  used_by?(array): Note, projects or teams using this extension
+  alternative_to?(array): Note, extensions that serve as direct substitutes
 settings:
   validation: warn
 ---

@@ -11,7 +11,10 @@ schema:
   gotcha?(array): string, common pitfalls, size/security, pinning vs latest
   security?(array): string, known CVEs, base image vulnerabilities, and security advisories
   feature?(array): string, notable capabilities or base layer choices
+  popularity?(array): string, Docker Hub pull counts and star ratings with date stamp
   relates_to?(array): Note, related images or engineering notes
+  used_by?(array): Note, projects or services that use this image (as base or runtime)
+  alternative_to?(array): Note, images that serve as direct substitutes
 settings:
   validation: warn
 ---
