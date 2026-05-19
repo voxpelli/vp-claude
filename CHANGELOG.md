@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.4][] - 2026-05-19
+
+### Fixed
+
+- **Append-mode regression in intel-skill update paths** (`vp-claude-fo8`)
+  — Step 5 of `/package-intel` and `/tool-intel`, and Step 4 of
+  `/people-intel`, documented a prohibition against
+  `edit_note(operation="append", section="Observations")` but gave no
+  concrete positive example. Models executing the update path fell back
+  to `append`, which Basic Memory treats as end-of-file regardless of the
+  `section` parameter — observations landed below `## Relations` and were
+  parsed as malformed relations, some with ~300-char `relation_type`
+  overflows. Three npm notes were silently damaged before detection
+  (`npm-umzeption`, `npm-@voxpelli-pg-utils`, `npm-@yikesable-fastify-saas-auth-pg`,
+  all hand-repaired in a prior maintainer pass).
+
+  Each affected Step 5 / Step 4 block now contains a state→action
+  decision table covering all four note states (`## Observations`
+  populated, empty, absent, or with a multi-line last observation), a
+  canonical `edit_note(find_replace)` template, an empty-section
+  fallback anchored on the section header, a generic `<prefix>-<X>`
+  placeholder that works across every ecosystem each skill supports
+  (npm/crate/go/composer/pypi/gem for package-intel;
+  brew/cask/action/docker/vscode/gh for tool-intel), a clarification
+  that `find_replace` does byte-exact substring matching, and a bounded
+  retry instruction (one retry on no-match, then report to user — no
+  infinite loop).
+
+- **Follow-up tracking** — `vp-claude-ytn` (P2) tracks the upstream
+  Basic Memory footgun (`edit_note(append, section=X)` ignores the
+  section parameter). `vp-claude-c1r` (P2) tracks a graph-wide sweep
+  for legacy append-mode damage in notes outside the three confirmed
+  cases. `vp-claude-bce` (P3) tracks a CLAUDE.md release-checklist
+  clarification (MEMORY.md is referenced but absent).
+
 ## [0.29.3][] - 2026-05-13
 
 ### Added
@@ -1308,6 +1343,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.29.4]: https://github.com/voxpelli/vp-claude/compare/v0.29.3...v0.29.4
 [0.29.3]: https://github.com/voxpelli/vp-claude/compare/v0.29.2...v0.29.3
 [0.29.2]: https://github.com/voxpelli/vp-claude/compare/v0.29.1...v0.29.2
 [0.29.1]: https://github.com/voxpelli/vp-claude/compare/v0.29.0...v0.29.1

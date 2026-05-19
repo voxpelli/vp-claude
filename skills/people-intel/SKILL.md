@@ -225,10 +225,46 @@ Put all wiki-links in `## Relations` only.
 **New person:** Use `write_note` with the full template. Set
 `note_type="person"`.
 
-**Existing person:** Use `edit_note` with `find_replace` to insert new
-observations after the last existing `- [category]` line in `## Observations`.
-Do NOT use `operation="append"` with `section="Observations"` — it appends to
-the end of the file, not the end of the section.
+**Existing person:** Pick the operation based on the note's current state:
+
+| Note state | Use |
+|------------|-----|
+| `## Observations` has at least one `- [category]` line | `find_replace` anchored on the last observation line |
+| `## Observations` exists but is empty | `find_replace` anchored on `## Observations\n` |
+| `## Observations` is absent entirely | `find_replace` anchored on the next section header (typically `## Relations\n`); prepend a new `## Observations` section before it |
+| Last observation wraps across multiple lines | Include all continuation lines in both `find_text` and the prefix of `content`, then append the new observation after |
+
+Canonical call (populated section):
+
+````
+edit_note(
+  identifier="<person-title>",
+  operation="find_replace",
+  find_text="- [<last-category>] <last observation text>",
+  content="- [<last-category>] <last observation text>\n- [<new-category>] <new observation text>"
+)
+````
+
+Empty-section fallback (anchor on header):
+
+````
+edit_note(
+  identifier="<person-title>",
+  operation="find_replace",
+  find_text="## Observations\n",
+  content="## Observations\n- [<new-category>] <new observation text>\n"
+)
+````
+
+Do NOT use `operation="append"` with `section="Observations"` when the section
+already exists — it appends to end of file, not end of section. The substring
+match in `find_replace` is byte-exact: use the observation text verbatim, no
+whitespace normalization or escaping.
+
+If `find_replace` fails (no match found), the note may have been edited since
+you last read it. Re-run `read_note`, re-derive the anchor, and retry once.
+If the second attempt also fails, stop and report the error to the user — do
+not loop.
 
 ### Step 5: Confirm and summarize
 
