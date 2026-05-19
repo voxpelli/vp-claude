@@ -13,12 +13,14 @@ schema:
   security?(array): string, CVE status, supply-chain considerations, and advisories
   api?(array): string, key API surface — method signatures, options, return shapes
   architecture?(array): string, internal design, module structure, and build approach
+  popularity?(array): string, download counts and adoption signals (e.g., npm weekly downloads)
   relates_to?(array): Note, related knowledge notes
   depends_on?(array): Note, upstream package dependencies
+  used_by?(array): Note, downstream consumers of this package (inverse of depends_on)
   competes_with?(array): Note, alternative packages with overlapping purpose (cf. brew_formula `alternative_to`)
+  alternative_to?(array): Note, packages that serve as direct substitutes (parallel to brew_formula's verb of the same name)
   integrates_with?(array): Note, packages this composes with at runtime via data flow
   composes_with?(array): Note, packages this is idiomatically combined with
-  references?(array): Note, knowledge notes this package implements or refers to
   inspired_by?(array): Note, prior art or designs that influenced this package
   inspired?(array): Note, downstream packages this influenced
   maintained_by?(array): Note, person or org responsible for maintenance
