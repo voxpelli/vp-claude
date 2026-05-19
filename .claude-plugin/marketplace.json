@@ -20,8 +20,8 @@
     {
       "name": "vp-git",
       "source": { "source": "github", "repo": "voxpelli/claude-git" },
-      "description": "Git workflow safety skills: validation, verification, and repair for rebase, merge, and stacked PR workflows",
-      "version": "0.2.0"
+      "description": "Git workflow safety skills for stacked-PR chains: rebase-validate (five-layer pipeline — range-diff, sem, weave, jscpd, tests) and stack-cascade (safety-tagged rebase --update-refs with atomic force-with-lease push). Installable as a Claude Code plugin or via the cross-agent Agent Skills standard (skills.sh)",
+      "version": "0.6.0"
     }
   ]
 }
