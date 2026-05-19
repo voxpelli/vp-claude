@@ -164,6 +164,13 @@ Scripts using the `bm` CLI must work around three asymmetries:
 - `bm tool read-note` has NO `--output-format json` flag — only raw markdown. The structured observations array is only available via the MCP `read_note(output_format='json')` tool. Scripts using `bm tool` cannot get parsed section data and must text-parse instead.
 - `bm project info` requires a project NAME argument: `bm project info main --json`. The `--json` output exposes `statistics.isolated_entities` (int), `statistics.note_types` (dict), `statistics.observation_categories` (dict), `statistics.most_connected_entities` (array).
 
+### bd CLI quirks
+
+- `bd create` (not `bd add`) — the `Did you mean ado?` typo suggestion is misleading
+- `bd create --type=bug` requires `## Steps to Reproduce` AND `## Acceptance Criteria` sections in the description
+- `bd create --type=task` requires `## Acceptance Criteria` — title-case "Criteria" only (lowercase rejected)
+- `bd close <id>` requires `-r "<summary>"` — non-empty reason is mandatory
+
 ## Conventions
 
 ### Skill frontmatter
