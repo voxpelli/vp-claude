@@ -11,6 +11,7 @@ schema:
   benefit?(array): string, design rationale — why use this over alternatives
   convention?(array): string, project-specific usage conventions and import patterns
   limitation?(array): string, known constraints, no_std caveats, feature-flag requirements
+  security?(array): string, CVE/RUSTSEC status, supply-chain considerations, and advisories
   popularity?(array): string, crates.io download counts (total and recent) with date stamp
   relates_to?(array): Note, related crates or engineering notes
   depends_on?(array): Note, declared crate dependencies
