@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.0][] - 2026-05-20
+
+### Added
+
+- **`/knowledge-garden` + `/knowledge-maintain` skills** — scope-partitioned
+  front-doors for the `knowledge-gardener` / `knowledge-maintainer` agents.
+  Audit/fix a bounded set of named notes inline (in the main session, with
+  per-edit confirmation for `/knowledge-maintain`); graph-wide work delegates
+  to the agent via the `Agent` tool. Both are explicit `/command` only
+  (`disable-model-invocation: true`) so they never compete with their
+  delegate-target agents for trigger phrases. Hardened from multi-agent review:
+  delegate-failure handling, insert-then-strip observation moves with an
+  `N_before`/`N_after` survival check, two-pass orphan detection, and
+  `identifier`-scoped `schema_validate`.
+- **knowledge-gardener Step 11 — source-URL provenance nudge** (read-only,
+  informational). Flags notes that already have a `## Sources`/`## Key Sources`
+  body section citing in bare text, nudging toward the new "Source citations"
+  convention. Reads the body (not observations); never resolves URLs itself.
+- **CLAUDE.md "Source citations (all note types)" convention** — source URLs
+  belong in a body `## Sources` markdown list or `url:`/`source:` frontmatter,
+  never inside a `[category]` observation (a markdown link there can silently
+  drop — verified during this cycle's Simon Willison note backfill).
+- **`validate-plugin.mjs` phantom-subagent check** — a typo'd
+  `Agent(subagent_type=...)` reference in a skill now fails the build, mirroring
+  the existing agent→skill phantom-reference check.
+
+### Removed
+
+- **BREAKING: `/wander` skill** — the 5-mode purposeless-exploration skill was
+  cut as off-core; it never wrote to the knowledge graph.
+- **BREAKING: `/readwise-check` skill** — removed as a standalone command; the
+  Readwise reading-depth lookup is subsumed by the Readwise enrichment step
+  already present in `/package-intel`, `/tool-intel`, and `/knowledge-gaps`.
+
+  Skill count 16 → 14. Under semver 0.x a minor bump signals a breaking change.
+
+### Changed
+
+- SessionStart hook (`session-start.sh`) drops the now-dead `/wander` and
+  `/readwise-check` suggestions and hints the explicit-only
+  `/knowledge-garden` / `/knowledge-maintain` instead.
+- The subagent tool is referenced as `Agent` (renamed from `Task` in Claude
+  Code v2.1.63; `Task` remains an alias) across the new skills.
+
 ## [0.29.4][] - 2026-05-19
 
 ### Fixed
@@ -1343,6 +1387,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.30.0]: https://github.com/voxpelli/vp-claude/compare/v0.29.4...v0.30.0
 [0.29.4]: https://github.com/voxpelli/vp-claude/compare/v0.29.3...v0.29.4
 [0.29.3]: https://github.com/voxpelli/vp-claude/compare/v0.29.2...v0.29.3
 [0.29.2]: https://github.com/voxpelli/vp-claude/compare/v0.29.1...v0.29.2
