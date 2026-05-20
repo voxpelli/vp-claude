@@ -201,6 +201,16 @@ in `validate-plugin.mjs`. Otherwise `npm run check:plugin` fails with
 "Unknown MCP prefix". The allowlist is a deliberate safety net against
 typos and undocumented MCP dependencies — update it, don't disable it.
 
+`allowed-tools` **pre-approves, does not restrict** — listing a tool grants it
+without a prompt; omitting a write tool does NOT make a skill read-only (every
+tool stays callable, gated only by permission settings). For hard read-only use
+permission `deny` rules, not omission. (The read-only *agents* are enforced by
+their `tools` allowlist + the PreToolUse hook, not by skills' `allowed-tools`.)
+
+Launch a subagent via the **`Agent`** tool: `Agent(subagent_type="<name>", ...)`.
+`Task` is the pre-v2.1.63 alias — prefer `Agent`. The validator's phantom-subagent
+check keys on `subagent_type=`, so it's rename-safe.
+
 ### Cross-linking convention
 
 After writing or updating a note (via intel skills or maintainer fixes), search
@@ -400,6 +410,13 @@ via the `vp-plugins` marketplace at `voxpelli/vp-claude`.
 ### Parallel agent orchestration
 
 Up to 10 background `/package-intel` + `/tool-intel` agents can run safely in parallel — notes are file-disjoint across ecosystems. The gardener→maintainer two-pass workflow (audit first, fix second) is the recommended approach for graph maintenance.
+
+- Static checks (`npm run check`, `validate-plugin.mjs`) validate *structure*, not
+  logic — a new audit/check can pass every gate and still measure the wrong thing;
+  adversarial-review new check logic before shipping.
+- A sub-agent's "couldn't find X" is absence-of-evidence, not proof X is wrong —
+  verify against the authoritative source (e.g. `gh` for issue/PR numbers) before
+  editing on a sub-agent's doubt.
 
 ### Relationship to upstream memory-* skills
 
