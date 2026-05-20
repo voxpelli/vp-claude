@@ -32,6 +32,7 @@ These local entries have no upstream issue/PR despite being clear friction. Cand
 - `character-handling.md` omits colon documentation — **docs-only PR, easy contribution**
 - LinkResolver should resolve wiki-links against aliases/metadata — design proposal
 - Phased Obsidian colon-compatibility — Upstream Opportunity, **Merge readiness: needs-redesign**, no PR submitted
+- Markdown link + trailing parenthetical inside an observation silently drops the whole observation — clear bug, high-value filing
 
 ## Open items
 
@@ -253,3 +254,11 @@ note cleanly. This avoids the re-parse that generates the duplicate frontmatter.
 **Impact:** Medium — write tools return as soon as the FTS index is updated synchronously, but vector embedding indexing runs asynchronously. A note written via `write_note` may not be hybrid-search-hittable for a few seconds even though `read_note` works immediately. Affects workflows that write a note then immediately search for it (cross-link sweeps, schema validation chains).
 Severity: degraded · Ownership: upstream-by-design · Workaround: full — separate the write and the semantic-search query in time, or use FTS-only search via `search_type="text"` for the immediate post-write read. Most vp-knowledge skills that already do this (post-write cross-linking happens via `search_notes` with text queries) are unaffected.
 **Upstream enhancement candidate:** opt-in `--wait-for-index` flag could give callers an explicit way to opt into post-indexing return. Not yet filed — see the maintainer's closing comment on [#763](https://github.com/basicmachines-co/basic-memory/issues/763) for the hint at this direction. Tracked as bd issue (Phase 6 candidate).
+
+---
+
+### Markdown link + trailing parenthetical inside an observation silently drops the observation
+
+**Discovered:** 2026-05-20 (v0.21.x, Simon Willison note source-URL backfill)
+**Impact:** Medium — an observation line of the form `- [category] … [text](url) … (trailing parenthetical)` is silently dropped from the parsed observation index. `schema_validate` still reports a clean pass, so the loss is invisible without a before/after observation count. Reproduced on an `engineering` note: a `## Key Sources` block of 8 `[source]` lines parsed as 7 — the one line carrying an inline markdown link followed by a trailing `(link post …)` aside vanished, while its 7 siblings parsed. Likely the inline-link/observation exclusion ([#247](https://github.com/basicmachines-co/basic-memory/issues/247)) interacting with the observation `(context)` suffix parser when both appear on the same line.
+Severity: degraded · Ownership: upstream · Workaround: full — keep source URLs in the note body (a `## Sources` markdown list) or in `source:`/`url:` frontmatter, never inside a `[category]` observation. Bare URLs with no `[]()` syntax are also safe inside observations.
