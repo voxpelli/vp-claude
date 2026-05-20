@@ -22,11 +22,15 @@ of maintaining both halves catches drift cases a single-source record misses.
   gap from plugin-specific extensions including the gardener read-only
   invariant and `KNOWN_MCP_PREFIXES` allowlist). Changes to either copy
   must stay in sync or the audit logic diverges silently.
-  Status: drifting · Last verified: 2026-05-06
+  Status: drifting · Last verified: 2026-05-20
   Note: Bilaterally confirmed drifting after Sprint 20 /sibling-sync pass
   — vp-beads's row also marks drifting (LV 2026-05-04). The 25-line gap
   reflects vp-claude additions since. Re-converge candidate when vg-3/vg-4
-  (extracting plugin-utils.mjs) is acted on.
+  (extracting plugin-utils.mjs) is acted on. 2026-05-20 (Sprint 27): vp-claude
+  added a **phantom-subagent check** — `Agent(subagent_type="X")` references in
+  skill prose are validated against `agents/X.md`, mirroring the existing
+  agent→skill phantom-skill check. vp-beads lacks it; widens the drift.
+  Extractable as part of the shared validator (see Extraction Candidates).
 
 - **post-file-edit.sh shfmt auto-format** (2026-05-04) — Both plugins use a
   PostToolUse command hook (matcher: `Edit|Write`) that runs `shfmt -d`
@@ -151,13 +155,18 @@ of maintaining both halves catches drift cases a single-source record misses.
   paths more heavily in skill workflows, so a misclassified read-failure
   matters more on their side.
 
-- **Frontmatter features (skills, user-invocable, effort)** (2026-04-05) —
+- **Frontmatter features (skills, user-invocable, effort, disable-model-invocation)** (2026-04-05) —
   vp-claude v0.21.0+ uses `skills` (agent skill preloading),
   `user-invocable: false` (reference-only skills like `vp-note-quality`),
-  and `effort` in agent/skill frontmatter. vp-beads validates these fields
-  but has no use case yet.
-  Convergence path: evaluate · Reason: vp-beads will adopt when a
-  reference-only skill or preloading need surfaces.
+  `effort`, and (v0.30.0) `disable-model-invocation: true` — the latter on the
+  scope-partitioned `/knowledge-garden` and `/knowledge-maintain` skills so they
+  stay explicit-`/command`-only and never compete with their delegate-target
+  agents (`knowledge-gardener`/`knowledge-maintainer`) for trigger phrases.
+  vp-beads has skill/agent pairs (e.g. the sprint-review agent alongside sprint
+  skills) but validates these fields without using them yet.
+  Convergence path: evaluate · Last verified: 2026-05-20 · Reason: vp-beads will
+  adopt when a reference-only skill, preloading, or skill↔agent trigger-collision
+  need surfaces — the collision-avoidance pattern is the newly relevant one.
 
 ## Extraction Candidates
 
