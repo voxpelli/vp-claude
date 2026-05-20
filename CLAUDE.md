@@ -66,7 +66,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 
 ### Agents (4)
 
-- **knowledge-gardener** — Read-only autonomous auditor: inventory, schema validation, orphan detection, relation integrity, stale/duplicate notes (step 5), brew version drift against `formulae.brew.sh` (step 5b — MCP enumeration + `fetch-brew-upstream.sh` for API facts, emits a `### Brew Version Drift` report section), cross-project consistency, tag alignment (step 8), fourth-wall note quality (step 10). Preloads `vp-note-quality` skill for audit guidance. **Never writes or modifies notes.**
+- **knowledge-gardener** — Read-only autonomous auditor: inventory, schema validation, orphan detection, relation integrity, stale/duplicate notes (step 5), brew version drift against `formulae.brew.sh` (step 5b — MCP enumeration + `fetch-brew-upstream.sh` for API facts, emits a `### Brew Version Drift` report section), cross-project consistency, tag alignment (step 8), fourth-wall note quality (step 10), source-URL provenance nudge (step 11 — informational, emerging-convention). Preloads `vp-note-quality` skill for audit guidance. **Never writes or modifies notes.**
 - **knowledge-maintainer** — All-in-one write agent (`effort: high`, `model: inherit`) that acts on audit findings. Auto-fixes structural issues (missing sections, broken frontmatter, orphan linking, tag alignment, fourth-wall violations). Confirms before content changes (merging duplicates, rewriting prose, archiving). Auto-runs `/package-intel` for Tier 1 undocumented packages (3+ imports) and `/tool-intel` for undocumented tools from detected manifests. Auto-batches up to 5 `/tool-intel brew:<name>` refreshes for gardener-flagged `Drifted >30d` brew notes (section 3b — surfaces Archive candidates and Drifted <30d to the approval queue; explicit partial-failure handling). Preloads `vp-note-quality` skill. `delete_note` and `write_note` intentionally excluded — use `move_note` to `archive/`, delegate new notes to `/package-intel` or `/tool-intel` via `Skill`. For maximum quality, invoke from an Opus session — `model: inherit` propagates the parent model. Reactive only — user must explicitly invoke.
 - **knowledge-primer** — Autonomous read-only agent that surfaces project-relevant BM knowledge before work begins. Scans project manifests, cross-references deps against BM, scores relevance, produces a context brief with key gotchas, and sweeps graph-wide observations for critical warnings from non-dependency notes. The "before work" counterpart to `/session-reflect`.
 - **raindrop-gardener** — Read-only Raindrop tag auditor: library dashboard, tag inventory, naming violations, near-duplicates, mistagged bookmarks (via `find_mistagged_bookmarks`), orphan tags, legacy tag identification, co-occurrence analysis, non-primary-language tag detection, taxonomy gaps. Produces a structured report with exact `update_tags`/`delete_tags` tool calls as copy-paste recommendations. **Never modifies tags or bookmarks.**
@@ -282,6 +282,30 @@ resolution. Examples: `npm:fastify` → `npm-fastify`,
 **Migration (v0.22.0+):** Existing vault notes need a one-time rename — see
 `TODO-obsidian-migration.md`. New notes emitted by the plugin use hyphen
 titles automatically.
+
+### Source citations (all note types)
+
+Capture external source URLs so a note's provenance is self-contained and
+clickable. Established this session (the Simon Willison note backfill) after
+discovering that URLs inside observations are fragile:
+
+- **Body `## Sources` section** — list citations as markdown links:
+  `- [title](https://canonical-url) — publication, date`. Preferred for
+  hand-authored knowledge notes that cite per-claim or multi-source
+  (engineering, concept, standard, milestone).
+- **`url:` / `source:` frontmatter** — a single canonical origin URL. The
+  package/tool/person `*-intel` templates already do this (`url:` frontmatter +
+  a markdown link in the content header) — they are the reference implementation.
+- **Never put a source URL inside a `[category]` observation line.** A markdown
+  link plus a trailing parenthetical collides with BM's observation `(context)`
+  parser and the observation silently drops while `schema_validate` still passes
+  (see the BM tool-catalog `[gotcha]`). Bare URLs with no `[]()` syntax survive
+  in observations but are not clickable — prefer the body/frontmatter forms.
+- Prefer the canonical/permalink URL form to limit link rot. Raindrop stays the
+  discovery/bookmark layer; the resolvable URL still belongs in the note.
+- The `knowledge-gardener` Step 11 flags (informationally) notes that already
+  have a `## Sources` section but cite in bare text — it never resolves URLs
+  itself (an auto-resolved wrong URL is false provenance).
 
 ### Note structure conventions (for package-intel output)
 

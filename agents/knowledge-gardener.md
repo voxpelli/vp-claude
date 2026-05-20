@@ -714,6 +714,54 @@ For each hit, read the note and classify:
 Report fourth-wall violations in the **Warning** section with severity and the
 specific offending text. Suggest the maintainer for remediation.
 
+### 11. Source-URL provenance nudge (emerging convention — low confidence)
+
+**Informational only — never Critical or Warning.** Nudges toward the source
+citation convention (see CLAUDE.md "Source citations"): URLs belong in a body
+`## Sources` section as markdown links, or in `source:`/`url:` frontmatter —
+never inside a `[category]` observation (a markdown link there can silently
+drop; see the BM tool-catalog gotcha). Keep it light: sampled, capped,
+aggregate — a direction nudge, not a backlog.
+
+**Detect only the one reliably-actionable gap** (not "missing sources" in
+general): a note that *already has* a `## Sources` or `## Key Sources` body
+section whose citation lines are **bare text** — they name a domain, an article
+title, or an author + publication but contain no markdown link `](` and no
+`http`. That is a note already trying to cite sources but without resolvable
+URLs — the exact, fixable target. Detect from the **body**, not from
+observations (the convention puts URLs in the body/frontmatter, which an
+observation search cannot see).
+
+Gather candidates by heading phrase, then verify each in the body:
+```
+search_notes(query="Key Sources", search_type="text", page_size=10)
+search_notes(query="Sources", search_type="text", note_types=["engineering", "concept", "standard", "milestone", "service", "person"], page_size=10)
+```
+For each candidate, `read_note(identifier="<permalink>", output_format="json")`
+and inspect ONLY its `## Sources` / `## Key Sources` section. Flag the note when
+that section's citation lines are bare text (no `](`, no `http`). The body
+re-read is what makes the noisy heading search safe — unverified hits drop out.
+
+**Do NOT flag:**
+- Notes with **no** `## Sources` / `## Key Sources` section — a synthesized note
+  distilled from many inputs legitimately has no single source URL. Absence is
+  not a defect.
+- Citation lines that already carry a markdown link or an `http` URL.
+- A `source:` / `url:` frontmatter field holding a URL (satisfies the convention).
+- Research-method provenance ("Researched <date> via Tavily/DeepWiki") — that
+  records *how* it was researched, not *where* the subject lives.
+
+Emit a SINGLE aggregate Info nudge (never one finding per note): how many
+candidate notes have a sources section citing in bare text, up to 5 example
+titles, and the suggestion to convert those to markdown links. If zero, emit
+nothing.
+
+> **Calibration:** the convention is newly established and low-frequency, so this
+> step flags only the narrow, certain case (an existing sources section using
+> bare text); it never flags missing sources, and it never resolves URLs itself
+> — an auto-resolved wrong URL is false provenance, worse than the gap. A
+> systematic backfill remains a separate, human-confirmed decision.
+
 ## Output Format
 
 ````markdown
@@ -754,6 +802,10 @@ with a `/schema-evolve` suggestion.)*
 - [[npm-pkg]] referenced 3 times but has no dedicated note
 - [note-title] contains project-specific path: lib/routes/foo.js
 - Tag `custom-tag` appears on 3 notes but is not in controlled vocabulary
+
+#### Source-URL provenance nudge (emerging — informational)
+*(Emitted by Step 11. Aggregate, NOT per-note. Omit entirely if no note has a `## Sources` section citing in bare text.)*
+- N notes have a `## Sources`/`## Key Sources` section citing sources as bare text (no resolvable URL) — e.g. [note-a], [note-b]. Convert those citations to markdown links `[title](url)` (or set a `source:` frontmatter URL). Informational only — a systematic backfill is a separate human-confirmed decision; the gardener never resolves URLs itself.
 
 ### Brew Version Drift
 *(Emitted by Step 5b. Omit this section entirely if `brew/` directory is
