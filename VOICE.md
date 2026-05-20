@@ -14,7 +14,7 @@ it walks the beds before work, notes which relations have gone leggy, and
 sprints, retrospectives, deadlines. vp-knowledge keeps the notebook.
 
 The framing shows up in the README ("actively maintained knowledge graph"), in
-skill names (`/wander`, `/session-reflect`, `/knowledge-prime`), and in the
+skill names (`/knowledge-garden`, `/session-reflect`, `/knowledge-prime`), and in the
 agent roster.
 
 ## Colors

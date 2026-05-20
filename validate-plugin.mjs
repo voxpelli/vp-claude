@@ -270,6 +270,16 @@ for (const file of skillFiles) {
     validateMcpPrefixes(file, /** @type {string[]} */ (fm['allowed-tools']))
     auditToolReferences(file, content, /** @type {string[]} */ (fm['allowed-tools']), 'allowed-tools')
   }
+  // Validate Agent(subagent_type="X") references resolve to an actual agent file.
+  // Skills that delegate to a subagent (e.g. /knowledge-garden) silently no-op
+  // at runtime if the agent name is a typo or was renamed — mirror the agent→skill
+  // phantom-reference check for the skill→agent direction.
+  for (const match of content.matchAll(/subagent_type\s*=\s*["']([a-zA-Z0-9_-]+)["']/g)) {
+    const agentName = match[1]
+    if (!existsSync(join(ROOT, 'agents', `${agentName}.md`))) {
+      error(file, `Phantom subagent reference: "${agentName}" — no file at agents/${agentName}.md`)
+    }
+  }
 }
 
 // --- Agents (optional) ---

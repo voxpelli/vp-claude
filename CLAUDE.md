@@ -25,10 +25,10 @@ skills/
   schema-evolve/SKILL.md             # Frequency-driven schema drift detection and dual-sync
   session-reflect/SKILL.md           # On-demand conversation → memory capture
   knowledge-ask/SKILL.md             # Freeform Q&A against the BM knowledge graph
+  knowledge-garden/SKILL.md          # Scoped note audit inline; delegates graph-wide to gardener agent
+  knowledge-maintain/SKILL.md        # Scoped note fixes inline; delegates heavy remediation to maintainer agent
   vp-note-quality/SKILL.md           # Fourth-wall anti-pattern checklist (not user-invocable)
   tag-sync/SKILL.md                  # Raindrop tag vocabulary sync
-  wander/SKILL.md                    # 5-mode purposeless knowledge exploration
-  readwise-check/SKILL.md            # Quick pre-research Readwise lookup
   session-bookmarks/SKILL.md         # Session URL bookmarking to Raindrop
   raindrop-triage/SKILL.md           # Interactive unsorted bookmark triage
     references/                      # 2 files: tag-selection, promote-workflow
@@ -56,9 +56,9 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 - **schema-evolve** — Detects drift between BM schema definitions and actual note usage via `schema_diff`/`schema_infer`, proposes frequency-driven field additions/removals, and dual-syncs BM notes + local `schemas/` files after approval. User-invocable as `/schema-evolve <type>`.
 - **session-reflect** — Reviews the current conversation, extracts durable insights, finds target notes in Basic Memory, shows a grouped preview, and writes only what the user approves. User-invocable as `/session-reflect`.
 - **knowledge-ask** — Answers freeform questions by searching Basic Memory, loading relevant notes, traversing the graph, and synthesizing a cited answer with confidence tiers (Direct/Partial/No Coverage). Read-only — suggests `/package-intel` or `/tool-intel` for coverage gaps. User-invocable as `/knowledge-ask <question>`.
+- **knowledge-garden** — Read-only audit of a bounded set of named notes (schema, structure, relations, orphan, fourth-wall), run inline in the main session, producing copy-paste remediation. The scoped, interactive sibling of the `knowledge-gardener` agent: graph-wide requests delegate to the agent via `Agent` for context isolation; named-note requests stay inline. **Explicit `/command` only (`disable-model-invocation: true`)** — the agent owns automatic graph-wide routing. Suggests `/knowledge-maintain` for fixes. User-invocable as `/knowledge-garden [note ...]`.
+- **knowledge-maintain** — Applies targeted fixes to a bounded set of named notes (missing sections, relation-verb drift, trailing-observation tidies, archival via `move_note`) inline so the user confirms each edit. The scoped, interactive sibling of the `knowledge-maintainer` agent: heavy/autonomous remediation delegates to the agent via `Agent`. **Explicit `/command` only (`disable-model-invocation: true`).** Shares the agent's write discipline — `find_replace` only (never `append`+`section`), read-before-edit, insert-then-strip moves with an `N_before`/`N_after` survival check, `schema_validate` after, `write_note`/`delete_note` excluded. User-invocable as `/knowledge-maintain [note ...]`.
 - **vp-note-quality** — Reference checklist preventing the fourth-wall anti-pattern (self-referential content in subject-domain notes). Not user-invocable — preloaded into knowledge-maintainer and knowledge-gardener agents via the `skills` frontmatter field.
-- **wander** — Purposeless knowledge exploration with 5 modes: Random Walk (BM graph traversal), Time Machine (old+new bookmark pair), Cross-System Collision (Readwise highlight + Raindrop bookmark), Forgotten Shelf (old untagged bookmarks), Obsession Detector (recent topics with zero BM notes). Never scores, ranks, or recommends. User-invocable as `/wander [mode]`.
-- **readwise-check** — Quick pre-research lookup reporting highlight count, document count, and reading depth for a topic across Readwise highlights and Reader documents. Two API calls, compact output. User-invocable as `/readwise-check <topic>`.
 - **tag-sync** — Fetches tags from Raindrop, curates the top N by usage count, adds one-line characterizations, groups by cluster, and writes/syncs the vocabulary file at `~/.claude/references/raindrop-tags.md`. Follows the vendor-sync pattern. User-invocable as `/tag-sync [count|--reset]`.
 - **session-bookmarks** — Scans the current conversation for high-signal URLs, suggests 1-3 as Raindrop bookmarks in the AI-bookmarked collection (discovered via `find_collections`, not hardcoded), and creates them after user approval. Auto-delegated from `/session-reflect` or invocable standalone. User-invocable as `/session-bookmarks`.
 - **raindrop-triage** — Interactive triage of unsorted Raindrop bookmarks: deduplicates by normalized URL, detects research bursts (temporal clusters), clusters by theme, proposes vocabulary-grounded tags (blocklist, context tags, conventions all read from vocabulary file frontmatter), and moves approved bookmarks to AI-triaged. A `--promote` pass classifies AI-triaged items into AI-sorted (default), AI-gems (golden), AI-archive, or AI-attention. Supports `--source` to override the promote source collection. User-invocable as `/raindrop-triage`.
@@ -76,7 +76,7 @@ No runtime code — pure markdown + JSON. No build step, no dependencies.
 - **PostToolUse** (`write_note`/`edit_note` matcher) — Command hook that emits `additionalContext` instructing the main session to call `schema_validate` on the written note. Skips schema definition notes (`/schema/` permalinks).
 - **PostToolUse** (`Edit`/`Write` matcher) — Detects shell-script formatting drift via `shfmt -d`, emits the diff in `additionalContext`, then auto-fixes with `shfmt -w`. Reminds to sync BM when editing schema files.
 - **PostToolUseFailure** (`write_note`/`edit_note`/`schema_validate`/`schema_diff`/`schema_infer` matcher) — Command hook that pattern-matches BM write-tool errors into five categories (server-unavailable, note-not-found, invalid-argument, permission-error, unknown) and emits `additionalContext` with recovery guidance.
-- **SessionStart** — Emits a single `additionalContext` JSON object with knowledge graph guidance, skill suggestions (`/knowledge-prime`, `/knowledge-ask`, `/knowledge-gaps`, `/schema-evolve`, `/wander`, `/readwise-check`), and conditional graph-audit cycle reminders on every 4th sprint.
+- **SessionStart** — Emits a single `additionalContext` JSON object with knowledge graph guidance, skill suggestions (`/knowledge-prime`, `/knowledge-ask`, `/knowledge-gaps`, `/schema-evolve`, and the explicit-only `/knowledge-garden`/`/knowledge-maintain`), and conditional graph-audit cycle reminders on every 4th sprint.
 - **PreToolUse** (`Bash` matcher) — Blocks Python and Node.js script execution inside the knowledge-gardener agent via `permissionDecision: "deny"`, enforcing read-only discipline. Main session and other agents are unaffected.
 
 ## Schemas
@@ -244,9 +244,11 @@ When the user asks about knowledge or packages, choose the right skill:
 | "research \[pkg\]", "document \[pkg\]", needs external sources | `/package-intel [pkg]` |
 | "gaps", "undocumented", "audit coverage" | `/knowledge-gaps` |
 | "stale", "drifted", "outdated brew notes", "which brew tools need updating" | `/knowledge-gaps --stale` |
-| "wander", "surprise me", "time machine", "forgotten", "obsession" | `/wander [mode]` |
-| "how much have I read about", "readwise check", "reading depth" | `/readwise-check [topic]` |
 | "research person", "who is \[X\]", "person intel", "people intel" | `/people-intel [name]` |
+| "audit these notes", "check note health", "fourth-wall check \[note\]" (named notes) | `/knowledge-garden [note ...]` |
+| "audit my knowledge graph", "full audit", "graph health" (graph-wide) | `knowledge-gardener` agent |
+| "fix these notes", "apply audit fixes", "tidy \[note\]" (named notes) | `/knowledge-maintain [note ...]` |
+| "fix the whole audit", "remediate the graph", "research missing packages" | `knowledge-maintainer` agent |
 
 ### Output template conventions
 
@@ -263,6 +265,8 @@ SessionStart `additionalContext` should suggest existing skills (e.g., "suggest 
 ### Three-level invocation pattern
 
 Features that benefit from progressive disclosure can be offered at three levels: (1) SessionStart hook hint (passive, ~1 sentence `additionalContext`), (2) on-demand skill (user-invocable, full workflow), (3) autonomous agent (same workflow, runs as subagent). Not all features need all three levels — use the knowledge-prime/knowledge-primer pair as the reference implementation. `/session-reflect` is skill-only because its source of truth (the conversation transcript) requires main-session context that agents cannot access.
+
+**Scope-partitioned variant (skill + agent, not duplicates):** when a feature's cost scales with scope, the skill and agent can partition by scope rather than mirror the same workflow. `/knowledge-garden` ↔ `knowledge-gardener` and `/knowledge-maintain` ↔ `knowledge-maintainer` are the reference pairs: the **skill** owns the bounded case (audit/fix a handful of named notes inline — cheap, interactive, shares context with the next step), the **agent** owns the graph-wide case (full sweep / autonomous remediation — context-isolated in a subagent). The skill's first workflow step is a venue decision that delegates to the agent via the `Agent` tool (`Agent(subagent_type=...)`) when the request is graph-wide. This avoids the prime/primer duplication-and-drift cost because the scoped audit is a genuinely shorter procedure than the agent's 10-step sweep, not a copy of it. Choose this over pure mirroring when the agent's workflow is large. **To prevent the skill from competing with its delegate-target agent on trigger phrases, both skills set `disable-model-invocation: true` (explicit `/command` only) so the agent owns automatic graph-wide routing while the skill is reached deliberately for scoped work.**
 
 ### Prefix convention: colons in commands, hyphens in titles
 

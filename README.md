@@ -238,29 +238,21 @@ A read-only skill that answers freeform questions by searching Basic Memory, loa
 
 Each answer includes a confidence tier (Direct, Partial, or No Coverage) so you know how much the graph actually covers. When coverage is incomplete, suggests `/package-intel`, `/tool-intel`, or `/knowledge-gaps` to fill the gap. Unlike `/knowledge-prime` (which shows project-wide dependency coverage), `/knowledge-ask` answers specific questions about individual topics.
 
-### `/wander [mode]` — Purposeless knowledge exploration
+### `/knowledge-garden [note ...]` — Audit named notes
 
-Five modes surface serendipitous connections from across Basic Memory, Raindrop, and Readwise:
+A read-only skill that audits a bounded set of named notes for schema, structure, relation integrity, orphan status, and fourth-wall quality, then reports copy-paste-ready remediation:
 
-> "Wander" / "Surprise me" / "Time machine" / "What am I obsessing about?"
+> "Audit npm-fastify and npm-undici" / "Fourth-wall check on the Ted Nelson note"
 
-| Mode | What it does |
-|------|-------------|
-| Random Walk | Start at a random BM note, follow relations 3-5 hops |
-| Time Machine | Pair a 10+ year old bookmark with a recent one on a similar theme |
-| Cross-System Collision | Match a Readwise highlight with a Raindrop bookmark from different domains |
-| Forgotten Shelf | Surface 5 old, untagged bookmarks from another era |
-| Obsession Detector | Find the most-saved recent topic with zero BM notes |
+The scoped, interactive sibling of the `knowledge-gardener` agent. Named-note requests run inline in the main session; graph-wide requests delegate to the agent via `Agent` so the full sweep's hundreds of note reads stay out of the main context. Explicit `/command` only (`disable-model-invocation`) — the agent owns automatic graph-wide routing. Hands fixes to `/knowledge-maintain`.
 
-Critical design constraint: never scores, ranks, or recommends. Presents collisions and lets the user make meaning.
+### `/knowledge-maintain [note ...]` — Fix named notes
 
-### `/readwise-check <topic>` — Quick reading depth lookup
+A write skill that applies targeted fixes to a bounded set of named notes — missing sections, relation-verb drift, trailing-observation tidies, archival — inline, so you see and confirm each edit:
 
-Pre-research snapshot showing how much you've read about a topic:
+> "Fix the orphan links in npm-foo" / "Apply the audit fixes to these two notes"
 
-> "How much have I read about fastify?" / "Readwise check knowledge management"
-
-Reports highlight count, document count, and reading depth — two API calls, compact output.
+The scoped, interactive sibling of the `knowledge-maintainer` agent. Heavy or autonomous remediation ("fix the whole audit", anything that spawns `/package-intel` or `/tool-intel`, brew-refresh batches) delegates to the agent via `Agent`. Explicit `/command` only (`disable-model-invocation`). Shares the agent's write discipline: `find_replace` only (never `append`+`section`), read-before-edit, insert-then-strip moves with an `N_before`/`N_after` survival check, `schema_validate` after each change, and `write_note`/`delete_note` excluded (new notes via the intel skills, archival via `move_note`).
 
 ### `/session-reflect` — On-demand conversation capture
 
@@ -450,14 +442,14 @@ skills/
     SKILL.md                           On-demand conversation → memory capture
   knowledge-ask/
     SKILL.md                           Freeform Q&A against the BM knowledge graph
+  knowledge-garden/
+    SKILL.md                           Scoped note audit inline; delegates graph-wide to gardener agent
+  knowledge-maintain/
+    SKILL.md                           Scoped note fixes inline; delegates heavy remediation to maintainer agent
   vp-note-quality/
     SKILL.md                           Fourth-wall anti-pattern checklist (not user-invocable)
   tag-sync/
     SKILL.md                           Raindrop tag vocabulary sync
-  wander/
-    SKILL.md                           5-mode purposeless knowledge exploration
-  readwise-check/
-    SKILL.md                           Quick pre-research Readwise lookup
   session-bookmarks/
     SKILL.md                           Session URL bookmarking to Raindrop
   raindrop-triage/
@@ -529,10 +521,12 @@ VOICE.md                               Plugin identity, agent colors, descriptio
  /session-bookmarks-> session-bookmarks  -> AI-bookmarked collection in Raindrop
  /raindrop-triage  -> raindrop-triage   -> dedupe + burst detect + tag + AI-triaged
                       (--promote)       -> classify into sorted/gems/archive/attention
- /wander [mode]    -> wander skill       -> serendipitous collisions (no scoring)
- /readwise-check X-> readwise-check    -> highlight count + document count + depth
  /session-reflect  -> session-reflect    -> BM notes + delegates /session-bookmarks
  /people-intel X   -> people-intel skill -> person note + cross-links
+ /knowledge-garden N -> knowledge-garden  -> scoped audit of named notes (inline)
+                      (no args/graph-wide)-> delegates to knowledge-gardener agent
+ /knowledge-maintain N -> knowledge-maintain -> scoped fixes to named notes (inline, confirmed)
+                      (heavy remediation) -> delegates to knowledge-maintainer agent
  "audit graph"     -> knowledge-gardener  -> health report (read-only, incl. tags)
  "fix the graph"   -> knowledge-maintainer-> structural + tag fixes + confirmations
                       ├── audits graph inline (lightweight)
