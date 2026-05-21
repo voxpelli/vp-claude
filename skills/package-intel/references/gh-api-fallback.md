@@ -28,6 +28,7 @@ Trigger conditions:
 |------|---------|
 | README, manifest, source files | `gh api repos/<owner>/<repo>/contents/<path>` |
 | Change history | `gh api repos/<owner>/<repo>/commits` |
+| Git tags (when the release list is stale or empty) | `gh api repos/<owner>/<repo>/tags --jq '.[].name'` |
 | Issue freshness verification | `gh issue view <n> --repo <owner>/<repo> --json state,title,closedAt` |
 | PR ground truth | `gh pr view <n> --repo <owner>/<repo> --json state,mergedAt,title` |
 | Maintainer profile + co-contributors | `gh api repos/<owner>/<repo>/contributors --jq '.[].login'` |
@@ -37,6 +38,35 @@ Trigger conditions:
 For raw file content (decoded), pipe `gh api .../contents/<path>` through
 `jq -r '.content' \| base64 -d`. For directory listings, omit the file
 path: `gh api repos/<owner>/<repo>/contents` returns an array.
+
+## Recovering a Version/Changelog from Tags
+
+When the release list lags the registry version, recover from tags — but
+four GitHub API behaviors will silently mislead a naive read:
+
+- **`/tags` is ordered by creation/reachability, not semver.** Do not
+  treat `.[0]` (or the first line) as "newest." Collect the tags, parse
+  each to semver, sort descending, and pick the highest. The same caveat
+  applies to `gh release list` (date-ordered) — pick the highest *semver*
+  Release, not the top row (a backported patch can sit on top).
+- **Exclude pre-releases.** Skip tags with `-rc`/`-beta`/`-alpha`/`-pre`
+  suffixes and non-semver schemes (CalVer, `build-NNNN`) when choosing
+  "latest stable" — recording `v2.0.0-rc1` as the stable version is worse
+  than the lagging-but-correct release list. If nothing parses to a clean
+  stable semver, keep the registry version unchanged.
+- **`compare/<base>...<head>` truncates at 250 commits** and returns a
+  `status` field. If `total_commits` exceeds the returned `.commits`
+  array, the changelog is partial — say so. If `.status` is `diverged`
+  or `behind`, `<base>` is not an ancestor of `<head>` (wrong/renamed
+  tag) and the commit list is meaningless — fall back to
+  `commits?sha=<newest-tag>`.
+- **An error is not an empty result.** `2>/dev/null` hides auth,
+  rate-limit, network, and 404 failures — all of which yield empty stdout
+  indistinguishable from a genuinely empty array. Treat empty output as a
+  *fact* (no tags / no releases) only after confirming the command
+  exited 0; the quickest check is to re-run without `2>/dev/null`. On
+  error, surface it and record nothing — never let a suppressed failure
+  become a recorded version or changelog.
 
 ## Verification Rule
 

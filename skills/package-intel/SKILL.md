@@ -142,6 +142,8 @@ ask_question(repo="owner/repo", question="What are the key APIs, design patterns
 
 **Hallucination caveat** — DeepWiki can return information about a *different* repo with a similar name (e.g., Sprint 19 observed `noctx`/`go-critic` info returned for a query about `timakin/bodyclose`). If answers look wrong-repo or cite unrelated APIs, fall back to `gh api` against the actual source repo per [`references/gh-api-fallback.md`](references/gh-api-fallback.md).
 
+**Indexing lag** — DeepWiki re-indexes periodically, so for actively developed packages, recently added APIs may not appear yet. When the changelog step (3e) surfaces a version newer than what DeepWiki describes, treat its API coverage as incomplete for that version range and supplement from the changelog or commit log.
+
 **b) Context7 — API reference:**
 ```
 resolve-library-id(libraryName="<package-name>")
@@ -185,7 +187,19 @@ gh release list --repo owner/repo --limit 10 2>/dev/null
 gh release view vX.Y.Z --repo owner/repo 2>/dev/null
 ```
 
-If `gh` is not installed or `gh release list` returns nothing, fall back to:
+<!-- Staleness-detection logic is mirrored in tool-intel Step 3d — update both. Recording target differs by ecosystem: ## Release Highlights here, a [version] observation there. -->
+**Release-list staleness** — compare the newest GitHub Release against the `latest`/`version` from the registry API (Step 2). If the registry version is *newer* than the newest Release, or `gh release list` is empty for an otherwise active repo, the release list lags reality (a tag was pushed without a Release). Recover the latest tag:
+```bash
+gh api repos/owner/repo/tags --jq '.[].name' 2>/dev/null | head -20
+```
+The `/tags` and `gh release list` outputs are *not* semver-sorted, and an error reads the same as an empty result — re-run without `2>/dev/null` to confirm the command exited 0, then apply the sorting, pre-release, and error≠empty rules in [`references/gh-api-fallback.md`](references/gh-api-fallback.md) ("Recovering a Version/Changelog from Tags"). Then derive the changelog. With a prior Release, diff against it:
+```bash
+gh api repos/owner/repo/compare/<last-release-tag>...<newest-tag> \
+  --jq '.commits[].commit.message | split("\n")[0]' 2>/dev/null
+```
+With no prior Release to compare from, list recent commits via `gh api "repos/owner/repo/commits?sha=<newest-tag>"`. Record the recovered version in `## Release Highlights` with explicit provenance, e.g. `vX.Y.Z (git tag <tag-name>, no GitHub Release as of YYYY-MM-DD)` — and curate the commit subjects (skip merges and internal refactors) rather than dumping them.
+
+If `gh` is not installed or both the release list and tags return nothing, fall back to:
 ```
 tavily_extract(urls=["https://github.com/owner/repo/blob/main/CHANGELOG.md"], query="breaking changes migration")
 ```

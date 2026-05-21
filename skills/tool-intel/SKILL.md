@@ -167,6 +167,8 @@ or repository link in the image description.
 
 **Hallucination caveat** — DeepWiki can return information about a *different* repo with a similar name, or reply "Repository not found" for repos that exist (e.g., `voxpelli/claude-beads` is not indexed; upstream `steveyegge/beads` is). For `action:`, `gh:`, and `docker:` prefixes, fall back to `gh api` against the source repo per [`references/gh-api-fallback.md`](references/gh-api-fallback.md).
 
+**Indexing lag** — DeepWiki re-indexes periodically, so for fast-moving CLI tools, recently added commands or flags may not appear yet. When Step 2 or the changelog step (3d) surfaces a version newer than what DeepWiki describes, treat its feature coverage as incomplete for that version range and supplement from the tool's `--help` output, README, or commit log.
+
 **b) Tavily — security, gotchas, and recent changes:**
 
 Always run for all tool types. Tailor the query to the tool category:
@@ -200,9 +202,25 @@ These are articles the user deliberately saved — high relevance signal.
 
 - `action:`: Use GitHub releases — `gh release list --repo <owner>/<repo> --limit 10 2>/dev/null`; if empty, `tavily_extract` on the GitHub CHANGELOG.md
 - `docker:`: Use Docker Hub tags API (see `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-docker.md`) for tag strategy overview
-- `brew:`/`cask:`: Extract version from the formulae.brew.sh API response (already fetched in Step 2)
+- `brew:`/`cask:`: Extract version from the formulae.brew.sh API response (already fetched in Step 2). If that stable version is *newer* than the upstream repo's newest GitHub Release, the release notes for the current version are missing — recover the changelog from git tags per [`references/gh-api-fallback.md`](references/gh-api-fallback.md) ("Recovering a Version/Changelog from Tags"). This is the `brew:sem` shape.
 - `vscode:`: Extract version from Open VSX API response (already fetched in Step 2)
 - `gh:`: Use GitHub releases — `gh release list --repo <owner>/<repo> --limit 10 2>/dev/null`; empty result means `runtime_shape: script` (or `local` per Step 2's classification ladder)
+
+<!-- Staleness-detection logic is mirrored in package-intel Step 3e — update both. Recording target differs by ecosystem: a [version] observation here, ## Release Highlights there. -->
+**Release-list staleness (`action:`/`gh:`)** — these prefixes have no independent registry, so the GitHub release list is the only version signal — and it lags whenever a maintainer pushes a git tag without cutting a Release. **Always cross-check** the newest Release against the newest git tag:
+
+```bash
+gh api repos/<owner>/<repo>/tags --jq '.[].name' 2>/dev/null | head -20
+```
+
+The `/tags` and `gh release list` outputs are *not* semver-sorted, and an error reads the same as an empty result — re-run without `2>/dev/null` to confirm the command exited 0, then follow the sorting, pre-release, and error≠empty rules in [`references/gh-api-fallback.md`](references/gh-api-fallback.md) ("Recovering a Version/Changelog from Tags") before trusting either. If the newest stable semver tag is ahead of the newest Release (or the release list is empty but the repo has recent commits), treat that tag as the real latest version, and derive a changelog from the commits between the last released tag and it:
+
+```bash
+gh api repos/<owner>/<repo>/compare/<last-release-tag>...<newest-tag> \
+  --jq '.commits[].commit.message | split("\n")[0]' 2>/dev/null
+```
+
+(With no prior Release to compare from, list recent commits instead: `gh api "repos/<owner>/<repo>/commits?sha=<newest-tag>"`.) Record the recovered version as a `[version]` observation with explicit provenance, so a later reader knows it came from a tag, not a Release: `- [version] X.Y.Z (git tag <tag-name> — no GitHub Release as of YYYY-MM-DD)` — keep that parenthetical link-free (a markdown link plus a trailing parenthetical silently drops the whole observation past BM's `(context)` parser). Curate the commit subjects (skip merges and internal refactors) rather than dumping them. A release list that is empty *and* has no newer git tag (command confirmed to have exited 0) still means `runtime_shape: script` for `gh:`.
 
 For `action:`, `gh:`, and `docker:` prefixes, [`references/gh-api-fallback.md`](references/gh-api-fallback.md) documents additional `gh api` endpoints (contents, commits, contributors, issue/PR verification) — useful when DeepWiki was unreliable in step 3a or when the changelog is sparse.
 

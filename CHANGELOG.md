@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.1][] - 2026-05-21
+
+### Changed
+
+- **`/tool-intel` (Step 3d) + `/package-intel` (Step 3e) — release-list
+  staleness heuristic + git-tag fallback.** Maintainers sometimes tag a release
+  and ship it to a registry without cutting a GitHub Release, so `gh release
+  list` can lag the true latest version. Both skills now compare the newest
+  Release against the registry/formula stable version and, on mismatch (or an
+  empty release list for an active repo), fall back to `gh api
+  repos/<owner>/<repo>/tags` and derive a changelog equivalent from the commits
+  between the last released tag and the newest tag. Recovered versions record
+  their provenance (`git tag … — no GitHub Release as of <date>`). Discovered
+  while researching `brew:sem` (formula stable `0.6.0`, git tag `v0.6.0`, but
+  `gh release list` topped out at `v0.5.5`).
+- **DeepWiki indexing-lag callout** — Step 3a of both skills now notes that
+  DeepWiki re-indexes periodically and may not yet cover recently added
+  features; when the changelog reveals a newer version, supplement from
+  `--help`/README/commit log.
+- **Both `references/gh-api-fallback.md`** gained a git-tags endpoint row and a
+  "Recovering a Version/Changelog from Tags" section documenting the GitHub API
+  footguns the fallback must avoid: `/tags` and `gh release list` are not
+  semver-sorted, pre-release/CalVer tags must be excluded, `compare` truncates
+  at 250 commits and reports a `status`, and a suppressed error reads the same
+  as an empty result. The `tool-intel` copy also routes the `brew:` changelog
+  step here for the formula-newer-than-Release case (the `brew:sem` shape),
+  closing an orphaned-guidance gap.
+
 ## [0.30.0][] - 2026-05-20
 
 ### Added
@@ -1387,6 +1415,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.30.1]: https://github.com/voxpelli/vp-claude/compare/v0.30.0...v0.30.1
 [0.30.0]: https://github.com/voxpelli/vp-claude/compare/v0.29.4...v0.30.0
 [0.29.4]: https://github.com/voxpelli/vp-claude/compare/v0.29.3...v0.29.4
 [0.29.3]: https://github.com/voxpelli/vp-claude/compare/v0.29.2...v0.29.3

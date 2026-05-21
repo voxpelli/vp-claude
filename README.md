@@ -34,7 +34,7 @@ Queries seven sources in parallel, synthesizes a structured note, and cross-link
 | Readwise | Your highlights and saved articles about the package |
 | Socket | Supply-chain risk scores (license, maintenance, quality, supply-chain, vulnerability) for npm, pypi, cargo, gem |
 
-Plus changelog analysis via GitHub releases. After writing, searches for existing notes that reference the package and adds bidirectional cross-links. The result is an ecosystem-prefixed note (`npm-*`, `crate-*`, `pypi-*`, etc.) with observations, relations, and release highlights — connected into the graph from day one.
+Plus changelog analysis via GitHub releases — with a git-tag fallback when the release list lags the registry version (a tag pushed without a published Release). After writing, searches for existing notes that reference the package and adds bidirectional cross-links. The result is an ecosystem-prefixed note (`npm-*`, `crate-*`, `pypi-*`, etc.) with observations, relations, and release highlights — connected into the graph from day one.
 
 ### `/tool-intel <prefix>:<name>` — Research any dev tool
 
@@ -66,7 +66,7 @@ Queries five sources in parallel, synthesizes a structured note, and cross-links
 | Readwise | Your highlights and saved articles about the tool |
 | Homebrew MCP (optional) | Install analytics (30/90/365-day counts + build errors) for `brew:` and `cask:` — skipped silently when unavailable |
 
-Plus version/changelog data (GitHub releases for actions, Docker Hub tags for images, API versions for brew/vscode). After writing, searches for existing notes that reference the tool and adds bidirectional cross-links. The result is a prefixed note (`brew-*`, `action-*`, etc.) with type-specific sections — `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for Docker, `## Common Usage` for formulae — plus observations and relations.
+Plus version/changelog data (GitHub releases for actions, Docker Hub tags for images, API versions for brew/vscode) — with a git-tag fallback for `action:`/`gh:`/`brew:` when the release list lags the newest git tag. After writing, searches for existing notes that reference the tool and adds bidirectional cross-links. The result is a prefixed note (`brew-*`, `action-*`, etc.) with type-specific sections — `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for Docker, `## Common Usage` for formulae — plus observations and relations.
 
 ### `/knowledge-gaps` — Find undocumented dependencies
 
@@ -397,7 +397,7 @@ claude mcp add homebrew -- brew mcp-server
 
 ### Optional
 
-- **[`gh` CLI](https://cli.github.com)** — enables changelog analysis via GitHub releases in `/package-intel`
+- **[`gh` CLI](https://cli.github.com)** — enables changelog analysis via GitHub releases (with a git-tag fallback when the release list lags) in `/package-intel` and `/tool-intel`
 
 ## Plugin structure
 
