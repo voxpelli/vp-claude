@@ -112,6 +112,79 @@ function auditToolReferences (file, content, declaredTools, fieldName) {
   }
 }
 
+/**
+ * @param {unknown} hooksData
+ * @returns {Array<{event: string, matcher: string, hookTypes: string[]}>}
+ */
+function hookSignature (hooksData) {
+  if (!hooksData || typeof hooksData !== 'object' || !('hooks' in hooksData)) return []
+  const hooks = /** @type {Record<string, unknown>} */ (/** @type {Record<string, unknown>} */ (hooksData).hooks)
+  return Object.entries(hooks).flatMap(([event, entries]) => {
+    if (!Array.isArray(entries)) return []
+    return entries.map((entry) => {
+      const e = /** @type {Record<string, unknown>} */ (entry)
+      const hookTypes = Array.isArray(e.hooks)
+        ? e.hooks.map((hook) => String(/** @type {Record<string, unknown>} */ (hook).type ?? ''))
+        : []
+      return {
+        event,
+        matcher: String(e.matcher ?? ''),
+        hookTypes,
+      }
+    })
+  })
+}
+
+/**
+ * @param {string} filePath
+ * @param {Record<string, unknown>} hooksObj
+ */
+function validateHooksObject (filePath, hooksObj) {
+  if (!hooksObj.hooks || typeof hooksObj.hooks !== 'object') {
+    error(filePath, 'Missing top-level "hooks" object')
+    return
+  }
+  const hooks = /** @type {Record<string, unknown>} */ (hooksObj.hooks)
+  for (const [event, entries] of Object.entries(hooks)) {
+    if (!Array.isArray(entries)) {
+      error(filePath, `hooks.${event} must be an array`)
+      continue
+    }
+    for (const entry of entries) {
+      const e = /** @type {Record<string, unknown>} */ (entry)
+      if (typeof e.matcher !== 'string') {
+        error(filePath, `hooks.${event}: entry missing "matcher" (string)`)
+      }
+      if (!Array.isArray(e.hooks)) {
+        error(filePath, `hooks.${event}: entry missing "hooks" (array)`)
+        continue
+      }
+      for (const hook of e.hooks) {
+        const hk = /** @type {Record<string, unknown>} */ (hook)
+        if (!VALID_HOOK_TYPES.has(hk.type)) {
+          error(filePath, `hooks.${event}: hook type must be one of ${[...VALID_HOOK_TYPES].join(', ')}, got "${String(hk.type)}"`)
+        }
+        if (hk.type === 'prompt') {
+          warn(filePath, `hooks.${event}: type "prompt" hooks spawn Haiku without MCP access — consider "command" with additionalContext instead (see RETRO-02)`)
+        }
+        if (typeof hk.timeout !== 'number') {
+          error(filePath, `hooks.${event}: hook missing "timeout" (number)`)
+        }
+        if (hk.type === 'command' && typeof hk.command === 'string') {
+          const resolved = hk.command
+            .replace(/\$\{CLAUDE_PLUGIN_ROOT\}/g, ROOT)
+            .replace(/\$\{PLUGIN_ROOT\}/g, ROOT)
+          const parts = resolved.split(/\s+/)
+          const scriptPath = parts.find((p) => p.startsWith('/') || p.startsWith('./'))
+          if (scriptPath && !existsSync(scriptPath)) {
+            error(filePath, `hooks.${event}: referenced file does not exist: ${hk.command}`)
+          }
+        }
+      }
+    }
+  }
+}
+
 // --- plugin.json ---
 
 const pluginPath = join(ROOT, '.claude-plugin', 'plugin.json')
@@ -121,6 +194,15 @@ if (plugin !== undefined) {
   for (const field of ['name', 'version', 'description']) {
     if (!(field in p)) {
       error(pluginPath, `Missing required field: ${field}`)
+    }
+  }
+  if ('hooks' in p && typeof p.hooks !== 'string' && typeof p.hooks !== 'object') {
+    error(pluginPath, `hooks must be a string path or inline object, got ${typeof p.hooks}`)
+  }
+  if (typeof p.hooks === 'string') {
+    const resolvedHooksPath = join(ROOT, p.hooks)
+    if (!existsSync(resolvedHooksPath)) {
+      error(pluginPath, `hooks path does not exist: ${String(p.hooks)}`)
     }
   }
 }
@@ -153,53 +235,26 @@ if (existsSync(marketplacePath)) {
 // --- hooks.json (optional) ---
 
 const hooksPath = join(ROOT, 'hooks', 'hooks.json')
-if (existsSync(hooksPath)) {
-  const hooksData = await readJson(hooksPath)
-  if (hooksData !== undefined) {
-    const h = /** @type {Record<string, unknown>} */ (hooksData)
-    if (!h.hooks || typeof h.hooks !== 'object') {
-      error(hooksPath, 'Missing top-level "hooks" object')
-    } else {
-      const hooks = /** @type {Record<string, unknown>} */ (h.hooks)
-      for (const [event, entries] of Object.entries(hooks)) {
-        if (!Array.isArray(entries)) {
-          error(hooksPath, `hooks.${event} must be an array`)
-          continue
-        }
-        for (const entry of entries) {
-          const e = /** @type {Record<string, unknown>} */ (entry)
-          if (typeof e.matcher !== 'string') {
-            error(hooksPath, `hooks.${event}: entry missing "matcher" (string)`)
-          }
-          if (!Array.isArray(e.hooks)) {
-            error(hooksPath, `hooks.${event}: entry missing "hooks" (array)`)
-            continue
-          }
-          for (const hook of e.hooks) {
-            const hk = /** @type {Record<string, unknown>} */ (hook)
-            if (!VALID_HOOK_TYPES.has(hk.type)) {
-              error(hooksPath, `hooks.${event}: hook type must be one of ${[...VALID_HOOK_TYPES].join(', ')}, got "${String(hk.type)}"`)
-            }
-            if (hk.type === 'prompt') {
-              warn(hooksPath, `hooks.${event}: type "prompt" hooks spawn Haiku without MCP access — consider "command" with additionalContext instead (see RETRO-02)`)
-            }
-            if (typeof hk.timeout !== 'number') {
-              error(hooksPath, `hooks.${event}: hook missing "timeout" (number)`)
-            }
-            // Validate command hook paths
-            if (hk.type === 'command' && typeof hk.command === 'string') {
-              const resolved = hk.command.replace(/\$\{CLAUDE_PLUGIN_ROOT\}/g, ROOT)
-              // Extract the file path from the command (after "bash " or similar)
-              const parts = resolved.split(/\s+/)
-              const scriptPath = parts.find((p) => p.startsWith('/') || p.startsWith('./'))
-              if (scriptPath && !existsSync(scriptPath)) {
-                error(hooksPath, `hooks.${event}: referenced file does not exist: ${hk.command}`)
-              }
-            }
-          }
-        }
-      }
-    }
+const rootHooksPath = join(ROOT, 'hooks.json')
+const hooksData = existsSync(hooksPath) ? await readJson(hooksPath) : undefined
+const rootHooksData = existsSync(rootHooksPath) ? await readJson(rootHooksPath) : undefined
+
+if (hooksData !== undefined) {
+  validateHooksObject(hooksPath, /** @type {Record<string, unknown>} */ (hooksData))
+}
+if (rootHooksData !== undefined) {
+  validateHooksObject(rootHooksPath, /** @type {Record<string, unknown>} */ (rootHooksData))
+}
+
+if (hooksData !== undefined && rootHooksData === undefined) {
+  warn(rootHooksPath, 'Missing root hooks.json compatibility shim — Copilot installs may skip helper-script hooks under hooks/')
+}
+
+if (hooksData !== undefined && rootHooksData !== undefined) {
+  const nestedSignature = JSON.stringify(hookSignature(hooksData))
+  const rootSignature = JSON.stringify(hookSignature(rootHooksData))
+  if (nestedSignature !== rootSignature) {
+    error(rootHooksPath, 'Root hooks.json and hooks/hooks.json differ in event/matcher/type coverage — keep the compatibility shim aligned')
   }
 }
 

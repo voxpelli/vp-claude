@@ -14,6 +14,7 @@ A Claude Code plugin (`vp-knowledge`) containing user-owned skills, agents, and 
 ```
 .claude-plugin/
   plugin.json                        # Plugin manifest
+hooks.json                           # Root-level Copilot-compatible hook shim
 skills/
   package-intel/SKILL.md             # Seven-source multi-ecosystem package research
     references/                      # 12 files: 6 ecosystem + 6 note templates
@@ -266,7 +267,9 @@ Every section in an output template (skill synthesize step or agent output step)
 
 ### Hook conventions
 
-Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. All hooks are `type: "command"` and emit `additionalContext` from a JSON object on stdout — `type: "prompt"` hooks spawn Haiku without MCP access, so they cannot call MCP tools (RETRO-02). All hooks are defined in `hooks/hooks.json`. Hook scripts assume CWD = project root (consistent with vp-beads convention). Each hook must emit exactly one JSON object on stdout — Claude Code reads only the first object and silently drops the rest. `${CLAUDE_PLUGIN_ROOT}` is Claude-side string substitution, not a shell env var — it works in `hooks.json` command fields, skill `SKILL.md` content, `.mcp.json`, `.lsp.json`, and `plugin.json`, but **does NOT work in agent `.md` files** (agents see the literal string). For script paths inside agents, use CWD or a path relative to project root.
+Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. All hooks are `type: "command"` and emit `additionalContext` from a JSON object on stdout — `type: "prompt"` hooks spawn Haiku without MCP access, so they cannot call MCP tools (RETRO-02). `hooks/hooks.json` remains the Claude-native source layout, while the root-level `hooks.json` is the Copilot-compatible shim referenced by `.claude-plugin/plugin.json`. Keep both files aligned on event/matcher/type coverage. Hook scripts assume CWD = project root (consistent with vp-beads convention). Each hook must emit exactly one JSON object on stdout — Claude Code reads only the first object and silently drops the rest. `${CLAUDE_PLUGIN_ROOT}` is Claude-side string substitution, not a shell env var — it works in `hooks.json` command fields, skill `SKILL.md` content, `.mcp.json`, `.lsp.json`, and `plugin.json`, but **does NOT work in agent `.md` files** (agents see the literal string). For script paths inside agents, use CWD or a path relative to project root.
+
+**Hook compatibility split:** the two PostToolUse hooks are the cross-runtime critical path, so the root shim keeps them working without relying on helper-script packaging. PreToolUse, PostToolUseFailure, and SessionStart remain helper-script-backed and should fail soft if a Copilot-installed plugin omits the `hooks/*.sh` assets.
 
 ### Hook additionalContext pattern
 
