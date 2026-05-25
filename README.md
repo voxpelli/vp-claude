@@ -351,6 +351,20 @@ ls -la ~/.copilot/installed-plugins/vp-plugins/vp-knowledge
 ls -la ~/.copilot/installed-plugins/vp-plugins/vp-knowledge/hooks
 ```
 
+### Agent Skills compatibility
+
+The `skills/` tree is written to stay close to the open [Agent Skills
+standard](https://agentskills.io). The portable core is the skill markdown;
+plugin-only extras live around it:
+
+- `skills/` — portable skill definitions
+- `agents/`, `hooks*.json`, `.claude-plugin/marketplace.json` — plugin/runtime
+  glue that not every agent host preserves or understands
+
+That split mirrors the recent `voxpelli/claude-git` cleanup: keep the skill
+content broadly reusable, and treat hook/marketplace behavior as a thin
+runtime-specific layer.
+
 ## Prerequisites
 
 ### Required

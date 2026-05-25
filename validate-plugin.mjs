@@ -280,6 +280,8 @@ const SKILL_KNOWN_FIELDS = new Set([
   'disable-model-invocation',
   'model',
   'skills',
+  'license',
+  'compatibility',
 ])
 
 for (const file of skillFiles) {
@@ -308,6 +310,15 @@ for (const file of skillFiles) {
   }
   if ('argument-hint' in fm && typeof fm['argument-hint'] !== 'string') {
     error(file, `argument-hint must be a string, got ${typeof fm['argument-hint']}`)
+  }
+  if ('license' in fm && typeof fm.license !== 'string') {
+    error(file, `license must be a string, got ${typeof fm.license}`)
+  }
+  if ('compatibility' in fm) {
+    const compat = fm.compatibility
+    if (typeof compat !== 'string' && !(Array.isArray(compat) && compat.length > 0 && compat.every((c) => typeof c === 'string'))) {
+      error(file, 'compatibility must be a non-empty string or array of strings')
+    }
   }
   if ('paths' in fm && !Array.isArray(fm.paths)) {
     error(file, 'paths must be an array of glob strings')
