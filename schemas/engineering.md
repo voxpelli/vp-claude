@@ -20,6 +20,8 @@ schema:
   anti-pattern?(array): string, approaches to avoid and why
 
   decision?(array): string, architectural and design decisions with rationale
+  comparison?(array): string, "vs X" framings against analogous tools or approaches in adjacent domains
+
   relates_to(array): Note, related knowledge notes
   extends?(array): Note, parent notes this note specializes or builds upon
   depends_on?(array): Note, package dependencies relevant to topic
