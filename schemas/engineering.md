@@ -21,6 +21,7 @@ schema:
 
   decision?(array): string, architectural and design decisions with rationale
   comparison?(array): string, "vs X" framings against analogous tools or approaches in adjacent domains
+  adoption?(array): string, adoption signals from ecosystem usage and downstream wrappers
 
   relates_to(array): Note, related knowledge notes
   extends?(array): Note, parent notes this note specializes or builds upon
