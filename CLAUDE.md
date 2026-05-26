@@ -417,6 +417,16 @@ Up to 10 background `/package-intel` + `/tool-intel` agents can run safely in pa
 - A sub-agent's "couldn't find X" is absence-of-evidence, not proof X is wrong —
   verify against the authoritative source (e.g. `gh` for issue/PR numbers) before
   editing on a sub-agent's doubt.
+- Adversarial pre-write verification (3 disjoint-scope agents: BM-internals via
+  DeepWiki + graph-coverage via BM reads + external-evidence via
+  Tavily/Readwise/Raindrop) is the Wave-1 second-order verification pattern
+  applied **pre-`write_note` rather than post-write**. Sprint 28 demonstrated:
+  9 /session-reflect candidate observations → 6 ship-able captures (1 dropped
+  wrong-mechanism after DeepWiki read of the actual parser source, 1 skipped
+  90%-duplicate after full-content read of likely targets, 1 merged). The
+  three agents have disjoint scopes so they run concurrently in a single
+  message with no coordination cost. Extension candidate for the
+  /session-reflect skill itself.
 
 ### Relationship to upstream memory-* skills
 
