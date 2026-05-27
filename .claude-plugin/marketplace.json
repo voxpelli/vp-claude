@@ -20,8 +20,8 @@
     {
       "name": "vp-git",
       "source": { "source": "github", "repo": "voxpelli/claude-git" },
-      "description": "Git workflow safety skills for stacked-PR chains: rebase-validate (five-layer pipeline — range-diff, sem, weave, jscpd, tests) and stack-cascade (safety-tagged rebase --update-refs with atomic force-with-lease push). Installable as a Claude Code plugin or via the cross-agent Agent Skills standard (skills.sh)",
-      "version": "0.7.0"
+      "description": "Git workflow safety skills for stacked-PR chains: rebase-validate (five-layer pipeline — range-diff, sem, weave, jscpd, tests), stack-cascade (safety-tagged rebase --update-refs with atomic force-with-lease push), and tag-audit (SHA-grouped triage of accumulated safety tags with KEEP/DROP confirmation gate). Installable as a Claude Code plugin or via the cross-agent Agent Skills standard (skills.sh)",
+      "version": "0.8.0"
     }
   ]
 }
