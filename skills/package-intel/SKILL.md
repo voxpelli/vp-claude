@@ -122,6 +122,20 @@ Read the ecosystem reference file for registry-specific instructions:
 Each reference file explains the registry API, required headers, and how to
 extract `owner/repo` for use in the DeepWiki and changelog steps.
 
+**Forge detection:** parse the **host** of the resolved repository URL and hold
+it as `repo_forge` for Steps 3a/3e:
+
+| Host | `repo_forge` |
+|------|--------------|
+| `github.com` | `github` — existing path (gh api, DeepWiki), unchanged |
+| `codeberg.org` (or a Forgejo instance) | `codeberg` |
+| `*.sr.ht` | `sourcehut` |
+| anything else (or no repo URL) | `unknown` |
+
+When `repo_forge != github`, follow
+`${CLAUDE_PLUGIN_ROOT}/skills/package-intel/references/forge-fallback.md` for
+the DeepWiki-skip rule and the changelog procedure.
+
 If the reference file documents a download stats section, fetch the count now
 (in parallel with or immediately after the repository resolution call) and hold
 it as `popularity_count` for Step 4.
@@ -135,7 +149,11 @@ question.
 
 Launch these research queries simultaneously:
 
-**a) DeepWiki — architecture and design:**
+**a) DeepWiki — architecture and design (GitHub-only):**
+
+**Skip this source when `repo_forge != github`** (from Step 2) — DeepWiki
+indexes only GitHub repositories. Note the skip in Step 6 synthesis; it is
+expected behavior for non-GitHub forges, not an error.
 ```
 ask_question(repo="owner/repo", question="What are the key APIs, design patterns, gotchas, and configuration options?")
 ```
@@ -180,6 +198,13 @@ fetch_bookmark_content(bookmark_id=<id>)
 These are articles the user deliberately saved — high relevance signal.
 
 **e) Changelog — version history and breaking changes:**
+
+**Forge branch:** if `repo_forge != github` (from Step 2), follow the
+forge-specific changelog procedure in
+[`references/forge-fallback.md`](references/forge-fallback.md) instead of the
+`gh` commands below (Codeberg/Forgejo REST is shape-isomorphic to these; other
+forges fall back to Tavily), then continue to Step 3f. The GitHub path below
+applies when `repo_forge == github`.
 ```bash
 # GitHub releases first (structured, usually has migration notes)
 gh release list --repo owner/repo --limit 10 2>/dev/null

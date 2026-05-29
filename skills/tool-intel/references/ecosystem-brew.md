@@ -77,6 +77,11 @@ projects this is often `https://github.com/<owner>/<repo>/archive/...`.
 
 Extract `owner/repo` for use in the changelog step.
 
+> **Forge note:** parse the host first. If it is not `github.com` (e.g.
+> `codeberg.org`, `*.sr.ht`), set `repo_forge` and follow
+> `../../package-intel/references/forge-fallback.md` per the Step 2
+> forge-detection block — `gh`/DeepWiki are GitHub-only.
+
 If neither field resolves to GitHub, fall back to:
 ```
 tavily_search(query="<formula-name> homebrew github repository source")

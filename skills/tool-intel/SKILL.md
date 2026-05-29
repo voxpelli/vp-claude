@@ -141,6 +141,15 @@ Each reference file explains the registry API or extraction method, required
 fields, and how to find the upstream GitHub repository (for DeepWiki and
 changelog steps).
 
+**Forge detection (`brew:`, `cask:`, `vscode:`, `docker:`):** parse the **host**
+of the resolved repository/homepage URL and hold it as `repo_forge` — `github`,
+`codeberg` (or any Forgejo instance), `sourcehut` (`*.sr.ht`), or `unknown`.
+When `repo_forge != github`, follow
+`${CLAUDE_PLUGIN_ROOT}/skills/package-intel/references/forge-fallback.md` (shared
+reference) for the DeepWiki-skip rule and changelog procedure. **`action:` and
+`gh:` are always `github`** — their identifier encodes a GitHub `owner/repo`, so
+skip forge detection for them.
+
 ### Step 3: Five-source enrichment
 
 **Context7 is skipped for all tool types** — it is npm-biased and has no
@@ -155,7 +164,9 @@ code to analyze. Skip for `brew:` and `cask:` (formulae/casks rarely have
 rich repos). Use for `vscode:` when a public GitHub repo exists. For `gh:`,
 use **conditionally** — only when `gh release list --repo <owner>/<repo>`
 returns ≥1 release (a reliable proxy for "well-known enough to be indexed";
-alpha bash extensions like `gh-notify` are not in DeepWiki).
+alpha bash extensions like `gh-notify` are not in DeepWiki). **Also skip for any
+tool whose `repo_forge != github` (from Step 2)** — DeepWiki indexes only
+GitHub; note the skip in Step 6 (expected, not an error).
 
 ```
 ask_question(repo="owner/repo", question="What are the key inputs, outputs, design patterns, gotchas, and security considerations?")
@@ -199,6 +210,13 @@ fetch_bookmark_content(bookmark_id=<id>)
 These are articles the user deliberately saved — high relevance signal.
 
 **d) Changelog / versions:**
+
+**Forge branch (`vscode:`, `brew:`, `cask:`):** if `repo_forge != github` (from
+Step 2), the upstream repo's changelog lives on a non-GitHub forge — follow
+[`../package-intel/references/forge-fallback.md`](../package-intel/references/forge-fallback.md)
+(shared reference: Codeberg/Forgejo REST, sourcehut, unknown-forge fallback)
+instead of the `gh` commands below. `action:`/`gh:`/`docker:` are unaffected
+(GitHub or Docker Hub by construction).
 
 - `action:`: Use GitHub releases — `gh release list --repo <owner>/<repo> --limit 10 2>/dev/null`; if empty, `tavily_extract` on the GitHub CHANGELOG.md
 - `docker:`: Use Docker Hub tags API (see `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-docker.md`) for tag strategy overview

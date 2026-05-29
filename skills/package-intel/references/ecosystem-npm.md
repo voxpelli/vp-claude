@@ -17,6 +17,10 @@ npm view <package-name> repository.url 2>/dev/null
 This returns the full git URL (e.g., `https://github.com/owner/repo.git`).
 Extract `owner/repo` for use in DeepWiki and changelog steps.
 
+> **Forge note:** parse the host first. If it is not `github.com` (e.g.
+> `codeberg.org`, `*.sr.ht`), set `repo_forge` and follow `forge-fallback.md`
+> per the Step 2 forge-detection block — `gh`/DeepWiki are GitHub-only.
+
 If `npm view` fails (package not found, network error, or returns empty), fall
 back to:
 

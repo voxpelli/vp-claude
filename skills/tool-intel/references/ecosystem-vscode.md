@@ -96,6 +96,11 @@ that hub note carries the cross-ecosystem trust-tier model this signal instances
 The `repository.url` field from Open VSX (or from the Marketplace page) gives
 the source repository. Extract `owner/repo` for DeepWiki and changelog steps.
 
+> **Forge note:** parse the host first. If it is not `github.com` (e.g.
+> `codeberg.org` — as for `mkhl.shfmt` — or `*.sr.ht`), set `repo_forge` and
+> follow `../../package-intel/references/forge-fallback.md` per the Step 2
+> forge-detection block — `gh`/DeepWiki are GitHub-only.
+
 Note: Many popular extensions are on GitHub (e.g., `prettier/prettier-vscode`,
 `microsoft/vscode-eslint`). Some are proprietary (e.g., GitHub Copilot) with
 no public source repo.
