@@ -409,7 +409,7 @@ emitting one `### Version Drift — <eco>` subsection per cohort:**
 | npm | `npm-` | `npm/` | `fetch-npm-upstream.sh` | `dist-tags.latest` | yes | no |
 | cask | `cask-` | `casks/` | `fetch-cask-upstream.sh` | `.version` (leading comma-segment) | yes | no |
 | crate | `crate-` | `crates/` | `fetch-crate-upstream.sh` | `.crate.max_stable_version` | no | no |
-| vscode | `vscode-` | `vscode/` | `fetch-vscode-upstream.sh` | Open VSX `.version` | no | no |
+| vscode | `vscode-` | `vscode/` | `fetch-vscode-upstream.sh` | Open VSX latest **stable** (non-pre-release); falls back to `.version` | no | no |
 
 `action`, `gh`, `go`, `docker` are excluded by construction (no single
 canonical comparable version). The **brew cohort below is the worked
@@ -479,9 +479,13 @@ Bash("printf '%s\\n' <name1> <name2> ... | bash scripts/fetch-<eco>-upstream.sh"
 Each script emits NDJSON per name with core fields `upstream_version`,
 `homepage`, `deprecated`, `disabled`, `tier`, `days_stale`, and
 `upstream_state` (`ok` | `deprecated` | `disabled` | `not-in-api` |
-`api-unavailable`); the **vscode** script adds `openvsx_version` +
-`marketplace_version` (drift is judged on Open VSX; a Marketplace-ahead value
-is an annotation only). **brew/cask are bulk** (one curl failure is
+`api-unavailable`); the **vscode** script adds `openvsx_version` (raw default
+`.version`, may be a pre-release), `marketplace_version`, the trust fields
+(`openvsx_namespace_access`/`openvsx_verified`/`openvsx_publisher`), and
+`openvsx_prerelease`. For vscode, `upstream_version` is the resolved latest
+**stable** (non-pre-release) version — drift is judged on that, not the raw
+`openvsx_version`; a Marketplace-ahead value is an annotation only.
+**brew/cask are bulk** (one curl failure is
 cohort-wide `api-unavailable`); **npm/crate/vscode are per-name** (a 404 is
 that note's `not-in-api`, a 5xx/timeout that note's `api-unavailable`; the rest
 of the cohort still reports). `upstream_state` describes the *upstream fact*
@@ -514,7 +518,7 @@ canonical names below are character-exact.
 | `semver-major` | leading major component differs (e.g., `1.84.0` → `2.0.1`); for `0.x` versions any minor bump qualifies (`version-zero-minor` rule — pre-1.0 minor is breaking per semver convention) |
 | `semver-minor-multi` | major matches, minor jumped by **≥3** (e.g., `0.4.7` → `0.7.0` within a `1.x` line); ignored for `0.x` lines (already caught by `semver-major`) |
 | `patch` | only trailing component changed (`1.0.3` → `1.0.4`) |
-| `distance-unknown` | either version unparseable for semver split |
+| `distance-unknown` | either version unparseable for semver split; **or** the two versions use different schemes — one CalVer (leading component ≥ 2000), the other not. A scheme mismatch is NEVER escalated as `semver-major` (canonical logic: `lib/version-distance.mjs`, fixture-tested via `check:distance`) |
 
 *Resolution to canonical bucket:*
 
@@ -524,7 +528,7 @@ Apply rules in order; first match wins.
 2. script `upstream_state == "not-in-api"` AND `bm_tap_present == false` AND `bm_version == "unparseable"` → **`Not in registry`** *(no tap recorded but the 404 + unparseable combination still strongly suggests tap/renamed/removed — same actionable advice: re-run `/tool-intel`)*
 3. script `upstream_state ∈ {"deprecated", "disabled"}` → **`Archive candidates`**
 4. `bm_version == "unparseable"` (and rule 1/2 did not fire) → **`Unparseable`**
-5. versions differ AND **distance is `semver-major`** → **`Drifted >30d`** *(semver-major **escalates** regardless of `days_stale` — a major-version gap is forward-compatibility risk that the age axis hides. Document the actual `days_stale` value in the bullet so the maintainer knows the escalation was distance-driven.)*
+5. versions differ AND **distance is `semver-major`** → **`Drifted >30d`** *(semver-major **escalates** regardless of `days_stale` — a major-version gap is forward-compatibility risk that the age axis hides. Document the actual `days_stale` value in the bullet so the maintainer knows the escalation was distance-driven.)* **Scheme-homogeneity prerequisite:** apply this rule ONLY when both versions share a scheme. If one has a leading numeric component ≥ 2000 (CalVer) and the other does not, distance is `distance-unknown` — skip to rules 6–8 (age-based). A CalVer year (e.g. `2026`) MUST NOT be treated as a semver major against `3`.
 6. versions differ AND `age-stale` → **`Drifted >30d`**
 7. versions differ AND `age-fresh` → **`Drifted <30d`** *(annotate `semver-minor-multi` distance inline so the maintainer can spot near-major risk even when age is fresh)*
 8. versions differ AND `age-unknown` → **`Drifted, age unknown`**
@@ -534,8 +538,12 @@ Notes where `bm_version == upstream_version` and `upstream_state == "ok"` are
 current and need no report entry.
 
 *Per-cohort application of this one model (do not fork a simplified variant):*
-- **brew / npm / crate / vscode** are clean semver — the distance dimension
-  applies directly.
+- **brew / npm / crate** are clean semver — the distance dimension applies directly.
+- **vscode** is nominally semver, but some extensions run a dual-channel model
+  (stable=semver, pre-release=CalVer, e.g. `biomejs.biome`). The fetch script
+  resolves `upstream_version` to the latest stable version; only a
+  pre-release-only extension yields a CalVer `upstream_version`, where the
+  scheme-mismatch guard (rule 5 prerequisite) produces `distance-unknown`.
 - **cask** versions are comma-mangled; the fetch script emits only the leading
   comma-segment. If that segment is not clean semver, distance resolves to
   `distance-unknown` (never a false `semver-major`).

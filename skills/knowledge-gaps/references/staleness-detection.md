@@ -32,7 +32,7 @@ script, and the upstream version field the script returns:
 | `npm` | `npm-` | `npm/` | `fetch-npm-upstream.sh` | `dist-tags.latest` | yes |
 | `cask` | `cask-` | `casks/` | `fetch-cask-upstream.sh` | `.version` (leading comma-segment) | yes |
 | `crate` | `crate-` | `crates/` | `fetch-crate-upstream.sh` | `.crate.max_stable_version` | no |
-| `vscode` | `vscode-` | `vscode/` | `fetch-vscode-upstream.sh` | Open VSX `.version` | no |
+| `vscode` | `vscode-` | `vscode/` | `fetch-vscode-upstream.sh` | Open VSX latest **stable** (non-pre-release); falls back to `.version` | no |
 
 Run the workflow below **once per selected cohort**, emitting one
 `### Version Drift — <eco>` section per cohort.
@@ -108,7 +108,11 @@ Each script emits NDJSON per name. Core fields (identical across scripts):
 `name`, `upstream_version`, `homepage`, `deprecated`, `disabled`, `tier`,
 `days_stale`, `upstream_state` (`ok` | `deprecated` | `disabled` |
 `not-in-api` | `api-unavailable`). The vscode script adds `openvsx_version`
-and `marketplace_version`.
+(raw default `.version`, may be a pre-release), `marketplace_version`,
+`openvsx_namespace_access`, `openvsx_verified`, `openvsx_publisher`, and
+`openvsx_prerelease` (true when the default `.version` is a pre-release). For
+vscode, `upstream_version` is the resolved latest **stable** version, which can
+differ from `openvsx_version`.
 
 Join each NDJSON row back to its source note via the `name` field — it equals
 the recovered name you piped in (npm `packages[0]` or the prefix-stripped
@@ -128,13 +132,20 @@ skill, in S4, by comparing `upstream_version` against `bm_version`.
 - **crate** rate-limits (1 s between calls); large cohorts serialize.
 - **vscode** queries **both** Open VSX (authoritative — the drift verdict) and
   the VS Marketplace (best-effort annotation). Compute drift against
-  `openvsx_version`. When `marketplace_version` is *ahead* of Open VSX, surface
-  it as an annotation only — never the verdict, never a bucket. A vscode
-  `not-in-api` (Open VSX 404) with a **non-empty `marketplace_version`** is the
-  **marketplace-only** case: the Open VSX namespace is unclaimed/squattable and
-  fork-IDEs (Cursor/Windsurf/Codium) resolve installs against it — flag it as a
-  security exposure in S6, not a benign gap (see `tool-intel`'s
-  `references/ecosystem-vscode.md` "Open VSX Trust Signal").
+  **`upstream_version`** (the resolved latest *stable* version), NOT the raw
+  `openvsx_version` — Open VSX has no `stable` alias and sorts CalVer
+  pre-releases above semver stable, so `.version` can be a pre-release; the
+  script resolves the latest non-pre-release version into `upstream_version`.
+  When `openvsx_prerelease == true` AND no stable was found (a pre-release-only
+  extension), `upstream_version` is the pre-release — apply the S4
+  scheme-mismatch guard before comparing against a semver `bm_version`. When
+  `marketplace_version` is *ahead*, surface it as an annotation only — never
+  the verdict, never a bucket. A vscode `not-in-api` (Open VSX 404) with a
+  **non-empty `marketplace_version`** is the **marketplace-only** case: the
+  Open VSX namespace is unclaimed/squattable and fork-IDEs (Cursor/Windsurf/Codium)
+  resolve installs against it — flag it as a security exposure in S6, not a
+  benign gap (see `tool-intel`'s `references/ecosystem-vscode.md`
+  "Open VSX Trust Signal").
 
 ### S4. Compute drift and bucket (two-dimensional)
 
@@ -164,7 +175,15 @@ annotated inline so the maintainer can prioritize:
 | `semver-major` | leading major differs (`1.84.0` → `2.0.1`); for `0.x` any minor bump qualifies (pre-1.0 minor is breaking) |
 | `semver-minor-multi` | major matches, minor jumped by ≥3 |
 | `patch` | trailing-component change |
-| `distance-unknown` | either version not cleanly semver-splittable |
+| `distance-unknown` | either version not cleanly semver-splittable, **or** the two versions use different schemes (one is CalVer — leading component ≥ 2000 — the other is not). A scheme mismatch is NEVER escalated as `semver-major` |
+
+**Scheme-mismatch guard (runs first):** before classifying distance, check
+whether the two versions share a scheme. A leading numeric component ≥ 2000 is
+CalVer; everything else is semver. If one is CalVer and the other is not,
+distance is `distance-unknown` regardless of the numeric comparison — a CalVer
+year (e.g. `2026.3.311859`) MUST NOT be read as a semver major against `3`. The
+canonical logic is `lib/version-distance.mjs` (`classifyVersionDistance`,
+fixture-tested via `check:distance`); keep this summary in lockstep with it.
 
 **Escalation rule (preserved verbatim from the gardener):** a `semver-major`
 gap forces `Drifted >30d` **regardless of `days_stale`** — a major-version gap
@@ -174,7 +193,12 @@ keys off `[semver-major]` > `[semver-minor-multi]` > `[patch]`.
 
 **Per-cohort distance notes:**
 
-- **brew / npm / crate / vscode** are clean semver → the model applies directly.
+- **brew / npm / crate** are clean semver → the model applies directly.
+- **vscode** is nominally semver but some extensions run a dual-channel model
+  (stable=semver, pre-release=CalVer, e.g. `biomejs.biome`). The fetch script
+  resolves `upstream_version` to the latest stable version; only a
+  pre-release-only extension yields a CalVer `upstream_version`, in which case
+  the scheme-mismatch guard produces `distance-unknown` (never `semver-major`).
 - **cask** versions are comma-mangled; after taking the leading comma-segment,
   if it is not clean semver it resolves to **`distance-unknown`** (never a false
   `semver-major`).

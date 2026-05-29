@@ -12,26 +12,33 @@ set -euo pipefail
 # The calling agent resolves each note's extension ID (strip the leading
 # `vscode-` prefix) via the BM MCP tools and pipes just the IDs here.
 #
-# Drift verdict is computed against Open VSX only (upstream_version =
-# openvsx_version) so a refresh converges. The Marketplace version is surfaced
-# as an annotation when ahead — never the verdict, never a bucket.
+# Drift verdict is computed against the latest STABLE Open VSX version
+# (upstream_version) so a refresh converges. Open VSX has no `stable` alias and
+# sorts CalVer pre-releases above semver stable, so `.version` (openvsx_version)
+# can be a pre-release; when it is, upstream_version is resolved to the latest
+# non-pre-release version. The Marketplace version is an annotation only.
 #
-# Output fields per line (brew contract + two vscode-specific fields):
+# Output fields per line (brew contract + vscode-specific fields):
 #   name                extension ID (matches input)
-#   upstream_version    openvsx_version (the drift verdict; "" when not-in-api)
+#   upstream_version    latest STABLE Open VSX version (the drift verdict);
+#                       falls back to .version when no stable exists; "" when not-in-api
 #   homepage            always ""
 #   deprecated          always false
 #   disabled            always false
 #   tier                always "1"
-#   days_stale          days since Open VSX .timestamp
+#   days_stale          days since the resolved version's Open VSX .timestamp
 #   upstream_state      ok | not-in-api | api-unavailable
-#   openvsx_version     Open VSX .version ("" when not on Open VSX)
+#   openvsx_version     Open VSX default .version (raw; may be a pre-release)
 #   marketplace_version VS Marketplace latest version ("" on failure/absence)
 #   openvsx_namespace_access  "restricted" | "public" | "" — Open VSX namespace
 #                             lock state; "public" means anyone may publish into
 #                             the namespace (unverified bottom trust tier)
 #   openvsx_verified    true | false — Open VSX namespace `verified` flag
 #   openvsx_publisher   Open VSX publishedBy.loginName ("" when not on Open VSX)
+#   openvsx_prerelease  true | false — whether the default .version is a
+#                       pre-release (true also when only pre-releases exist and
+#                       no stable could be resolved; consumers apply the
+#                       semver↔calver scheme-mismatch guard in that case)
 #
 # A 404 on Open VSX with a non-empty marketplace_version is the "marketplace-only"
 # signal: the namespace is unclaimed/squattable and fork-IDEs (Cursor, Windsurf,
@@ -58,6 +65,8 @@ emit() {
 	[[ -z "$d" ]] && d="null"
 	local ver="${9:-false}"
 	[[ -z "$ver" ]] && ver="false"
+	local prerel="${11:-false}"
+	[[ -z "$prerel" ]] && prerel="false"
 	jq -cn \
 		--arg name "$1" \
 		--arg up_v "$2" \
@@ -69,7 +78,8 @@ emit() {
 		--arg nsa "$8" \
 		--argjson verified "$ver" \
 		--arg publisher "${10}" \
-		'{name:$name, upstream_version:$up_v, homepage:"", deprecated:false, disabled:false, tier:$tier, days_stale:$days, upstream_state:$upstream_state, openvsx_version:$ovsx, marketplace_version:$mp, openvsx_namespace_access:$nsa, openvsx_verified:$verified, openvsx_publisher:$publisher}'
+		--argjson prerelease "$prerel" \
+		'{name:$name, upstream_version:$up_v, homepage:"", deprecated:false, disabled:false, tier:$tier, days_stale:$days, upstream_state:$upstream_state, openvsx_version:$ovsx, marketplace_version:$mp, openvsx_namespace_access:$nsa, openvsx_verified:$verified, openvsx_publisher:$publisher, openvsx_prerelease:$prerelease}'
 }
 
 # Days since an ISO 8601 UTC timestamp. Normalizes to the strict
@@ -96,6 +106,52 @@ days_since() {
 	fi
 	now_epoch=$(date -u "+%s")
 	echo $(((now_epoch - epoch) / 86400))
+}
+
+# Set by extract_stable_version() to the resolved stable version's timestamp.
+STABLE_TIMESTAMP=""
+
+# Resolve the latest STABLE (non-pre-release) Open VSX version when the default
+# .version is a pre-release. Open VSX has no `stable` alias and sorts CalVer
+# pre-releases above semver stable, so `.version` alone is unreliable. Strategy:
+# parse the allVersions map already in $BODY, drop CalVer keys (leading numeric
+# component >= 2000) and non-version alias keys (e.g. "latest"/"pre-release",
+# which lack a leading "<digits>." form), pick the highest-sorting semver key,
+# then confirm preRelease:false with ONE extra request (capturing its timestamp
+# into STABLE_TIMESTAMP). Echoes the resolved version, or "" if none qualifies
+# (pre-release-only extension). Never fails the script.
+extract_stable_version() {
+	local pub="$1" ext="$2" cand verbody verhttp pr
+	STABLE_TIMESTAMP=""
+
+	cand=$(jq -r '
+		(.allVersions // {}) | keys_unsorted[]
+		| select(test("^[0-9]+\\.") and ((split(".")[0] | tonumber) < 2000))
+	' "$BODY" 2>/dev/null |
+		sort -t. -k1,1rn -k2,2rn -k3,3rn | head -1)
+
+	if [[ -z "$cand" ]]; then
+		echo ""
+		return
+	fi
+
+	verbody=$(mktemp)
+	verhttp=$(curl -s -o "$verbody" -w "%{http_code}" \
+		--max-time 15 "https://open-vsx.org/api/$pub/$ext/$cand" 2>/dev/null) || verhttp="000"
+	if [[ "$verhttp" != "200" ]] || ! jq empty "$verbody" >/dev/null 2>&1; then
+		rm -f "$verbody"
+		echo ""
+		return
+	fi
+	pr=$(jq -r 'if .preRelease == true then "true" else "false" end' "$verbody")
+	if [[ "$pr" == "true" ]]; then
+		rm -f "$verbody"
+		echo ""
+		return
+	fi
+	STABLE_TIMESTAMP=$(jq -r '.timestamp // ""' "$verbody")
+	rm -f "$verbody"
+	echo "$cand"
 }
 
 # Best-effort VS Marketplace lookup. Never fails the script; empty on any error.
@@ -129,19 +185,33 @@ while IFS= read -r name; do
 	# Open VSX 404 → not on Open VSX (often MS-proprietary). Surface the
 	# Marketplace version as annotation but route the verdict to not-in-api.
 	if [[ "$http_code" == "404" ]]; then
-		emit "$name" "" "1" "not-in-api" "" "" "$mp_version" "" "false" ""
+		emit "$name" "" "1" "not-in-api" "" "" "$mp_version" "" "false" "" "false"
 		continue
 	fi
 	if [[ "$http_code" != "200" ]] || ! jq empty "$BODY" >/dev/null 2>&1; then
-		emit "$name" "" "1" "api-unavailable" "" "" "$mp_version" "" "false" ""
+		emit "$name" "" "1" "api-unavailable" "" "" "$mp_version" "" "false" "" "false"
 		continue
 	fi
 
 	ovsx_version=$(jq -r '.version // ""' "$BODY")
+	ovsx_prerelease=$(jq -r 'if .preRelease == true then "true" else "false" end' "$BODY")
 	timestamp=$(jq -r '.timestamp // ""' "$BODY")
 	if [[ -z "$ovsx_version" ]]; then
-		emit "$name" "" "1" "api-unavailable" "" "" "$mp_version" "" "false" ""
+		emit "$name" "" "1" "api-unavailable" "" "" "$mp_version" "" "false" "" "false"
 		continue
+	fi
+
+	# The drift verdict uses the latest STABLE version; openvsx_version keeps the
+	# raw default .version for provenance. When the default is a pre-release,
+	# resolve the latest non-pre-release version (CalVer pre-releases sort above
+	# semver stable on Open VSX, so .version alone would shadow the stable line).
+	upstream_version="$ovsx_version"
+	if [[ "$ovsx_prerelease" == "true" ]]; then
+		stable_version=$(extract_stable_version "$pub" "$ext")
+		if [[ -n "$stable_version" ]]; then
+			upstream_version="$stable_version"
+			[[ -n "$STABLE_TIMESTAMP" ]] && timestamp="$STABLE_TIMESTAMP"
+		fi
 	fi
 
 	days="null"
@@ -152,6 +222,6 @@ while IFS= read -r name; do
 	verified=$(jq -r 'if .verified == true then "true" else "false" end' "$BODY")
 	ovsx_publisher=$(jq -r '.publishedBy.loginName // ""' "$BODY")
 
-	emit "$name" "$ovsx_version" "1" "ok" "$days" "$ovsx_version" "$mp_version" \
-		"$ns_access" "$verified" "$ovsx_publisher"
+	emit "$name" "$upstream_version" "1" "ok" "$days" "$ovsx_version" "$mp_version" \
+		"$ns_access" "$verified" "$ovsx_publisher" "$ovsx_prerelease"
 done
