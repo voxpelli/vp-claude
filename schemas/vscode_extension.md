@@ -12,6 +12,7 @@ schema:
   pattern?(array): string, recurring usage patterns and idioms
   feature?(array): string, notable capabilities beyond the basic description
   popularity?(array): string, Marketplace install counts and ratings with date stamp
+  security?(array): string, supply-chain / publisher-verification / Open VSX trust signals
   relates_to?(array): Note, related extensions or engineering notes
   used_by?(array): Note, projects or teams using this extension
   alternative_to?(array): Note, extensions that serve as direct substitutes
@@ -31,6 +32,7 @@ Schema for VSCode extension notes — one note per extension in the `vscode/` di
 - [convention] `config` should cover workspace vs user scope settings and their defaults
 - [convention] `gotcha` should note activation events — extension activating on every file type can hurt startup time
 - [convention] Relations use `[[vscode-publisher.ext]]` wiki-link format
+- [convention] `security` captures the Open VSX trust ladder (verified-restricted / public-namespace / marketplace-only=squattable / not-published-anywhere); a Marketplace-only extension has an unclaimed namespace that fork-IDEs (Cursor/Windsurf/Codium) resolve installs against — record the state with a date stamp
 
 ## Relation Vocabulary
 

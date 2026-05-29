@@ -612,6 +612,15 @@ removed from the core API):
 ```
 - brew-<name1>, brew-<name2>, ... — tap-installed formulae (or renamed/removed) not in central API; drift check skipped
 ```
+**vscode security split:** a vscode `not-in-api` row with a non-empty
+`marketplace_version` is **marketplace-only** — the Open VSX namespace is
+unclaimed/squattable and fork-IDEs (Cursor/Windsurf/Codium) resolve installs
+against it. Annotate these as a ⚠ security exposure and recommend a
+`/tool-intel vscode:<id>` refresh (which records the Open VSX trust signal);
+an empty `marketplace_version` is the benign not-published-anywhere case:
+```
+- vscode-<pub>.<ext> (Marketplace v<x> — not on Open VSX) ⚠ squattable namespace (fork-IDE exposure); refresh via `/tool-intel vscode:<pub>.<ext>`
+```
 
 `API unavailable` (one line):
 ```

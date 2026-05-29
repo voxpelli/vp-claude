@@ -59,6 +59,38 @@ tavily_extract(
 
 The Marketplace page is HTML — Tavily will extract the readable content.
 
+## Open VSX Trust Signal
+
+Open VSX is **less curated than the VS Marketplace** — it has shipped malware
+(SecureAnnex "These Vibes Are Off"; the GlassWorm self-propagating worm). The
+sharper risk is **namespace squatting**: fork-IDEs (Cursor, Windsurf,
+Antigravity, Trae, VSCodium, Theia) recommend VS Marketplace extension IDs but
+resolve installs against **Open VSX**, so an extension that exists on the
+Marketplace but **not** on Open VSX has an *unclaimed, squattable* namespace an
+attacker can register and ship malware through.
+
+Record one `[security]` observation capturing where this extension sits on the
+4-state trust ladder. Read the fields from the Open VSX API response already
+fetched above (`namespaceAccess`, `verified`, `publishedBy.loginName`) and from
+whether the Marketplace lookup succeeded:
+
+| State | How to detect | Severity | `[security]` observation |
+|-------|---------------|----------|--------------------------|
+| **verified-restricted** | on Open VSX, `verified: true` / `namespaceAccess: "restricted"` | none (baseline) | `Open VSX: verified, restricted namespace (publisher <login>) — baseline trust (YYYY-MM-DD)` |
+| **public-namespace** | on Open VSX, `namespaceAccess: "public"` | low | `Open VSX: namespace is "public" (unverified) — anyone may publish into <namespace>; prefer a restricted/verified namespace (YYYY-MM-DD)` |
+| **marketplace-only** | Open VSX 404 **and** present on VS Marketplace | **medium** | `Open VSX: not published — Marketplace-only (v<mp-version>). Namespace unclaimed/squattable; fork-IDEs (Cursor/Windsurf/Codium) resolve installs against Open VSX, exposing users to namespace takeover (YYYY-MM-DD)` |
+| **not-published-anywhere** | Open VSX 404 **and** absent from VS Marketplace | info | `Open VSX: not published; also not found on VS Marketplace — likely renamed/removed/private (YYYY-MM-DD)` |
+
+Always add `relates_to [[Publisher Verification Gradient]]` in `## Relations` —
+that hub note carries the cross-ecosystem trust-tier model this signal instances.
+
+> **Out of scope (recorded):** comparing the Open VSX `publishedBy` / namespace
+> owner against the *Marketplace* publisher to catch active impersonation
+> (a different entity publishing the same ID on each registry) is a higher-value
+> but heavier check — it needs Marketplace publisher identity via the unofficial
+> `extensionquery` API. Note a cross-registry mismatch if you happen to spot one,
+> but the per-note signal above does not require it.
+
 ## Resolve GitHub Repository
 
 The `repository.url` field from Open VSX (or from the Marketplace page) gives

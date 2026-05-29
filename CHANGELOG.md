@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.1][] - 2026-05-29
+
+### Added
+
+- **Open VSX trust signal for VSCode extensions.** `/tool-intel vscode:<id>` now
+  records a 4-state Open VSX trust observation (`verified-restricted` /
+  `public-namespace` / `marketplace-only=squattable` / `not-published-anywhere`)
+  as a `[security]` observation and links the note to the
+  `Publisher Verification Gradient` hub. The sharp case: an extension present on
+  the VS Marketplace but **absent from Open VSX** has an unclaimed, *squattable*
+  namespace — fork-IDEs (Cursor, Windsurf, VSCodium, Theia) resolve installs
+  against Open VSX, so an attacker who registers the namespace ships malware to
+  those users (motivated by SecureAnnex "These Vibes Are Off", the GlassWorm
+  worm, and fork-IDE recommended-extension attacks). Documented in `tool-intel`'s
+  `references/ecosystem-vscode.md` "Open VSX Trust Signal".
+- **`scripts/fetch-vscode-upstream.sh`** emits three additive NDJSON fields —
+  `openvsx_namespace_access` (`restricted`/`public`/`""`), `openvsx_verified`
+  (bool), `openvsx_publisher` — so `/knowledge-gaps --stale vscode` and the
+  `knowledge-gardener` can flag the squattable case.
+- **`vscode_extension` schema** gains a `security` observation category
+  (dual-synced to the Basic Memory schema note).
+
+### Changed
+
+- **`/knowledge-gaps --stale vscode` and the `knowledge-gardener` no longer treat
+  every "Not in registry" vscode note as benign.** A `not-in-api` result with a
+  non-empty `marketplace_version` is annotated as a ⚠ squattable-namespace
+  security exposure (fork-IDE risk); an empty `marketplace_version` remains the
+  benign not-published-anywhere case. Bucket strings unchanged (an annotation,
+  not a new bucket) — the emit↔consume contract is untouched.
+
 ## [0.31.0][] - 2026-05-29
 
 ### Changed
@@ -1459,6 +1490,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.31.1]: https://github.com/voxpelli/vp-claude/compare/v0.31.0...v0.31.1
 [0.31.0]: https://github.com/voxpelli/vp-claude/compare/v0.30.1...v0.31.0
 [0.30.1]: https://github.com/voxpelli/vp-claude/compare/v0.30.0...v0.30.1
 [0.30.0]: https://github.com/voxpelli/vp-claude/compare/v0.29.4...v0.30.0

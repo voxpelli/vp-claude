@@ -129,7 +129,12 @@ skill, in S4, by comparing `upstream_version` against `bm_version`.
 - **vscode** queries **both** Open VSX (authoritative — the drift verdict) and
   the VS Marketplace (best-effort annotation). Compute drift against
   `openvsx_version`. When `marketplace_version` is *ahead* of Open VSX, surface
-  it as an annotation only — never the verdict, never a bucket.
+  it as an annotation only — never the verdict, never a bucket. A vscode
+  `not-in-api` (Open VSX 404) with a **non-empty `marketplace_version`** is the
+  **marketplace-only** case: the Open VSX namespace is unclaimed/squattable and
+  fork-IDEs (Cursor/Windsurf/Codium) resolve installs against it — flag it as a
+  security exposure in S6, not a benign gap (see `tool-intel`'s
+  `references/ecosystem-vscode.md` "Open VSX Trust Signal").
 
 ### S4. Compute drift and bucket (two-dimensional)
 
@@ -238,7 +243,18 @@ Marketplace (not Open VSX); for crate, published but with no stable release yet
 is nothing stable to compare). Drift cannot be checked automatically. For
 vscode, show the Marketplace version as an annotation when available.
 
-- vscode-ms-something (Marketplace 1.2.3 — not on Open VSX)
+**vscode security split — not all "not in registry" is benign.** When a vscode
+note is `not-in-api` AND `marketplace_version` is non-empty, it is
+**marketplace-only**: the Open VSX namespace is unclaimed and *squattable*, and
+fork-IDEs (Cursor/Windsurf/Codium/Theia) resolve installs against Open VSX —
+an attacker who registers the namespace ships malware to those users. Annotate
+these as a **⚠ security exposure** (not a passive gap) and suggest a
+`/tool-intel vscode:<id>` refresh so the note records the Open VSX trust signal.
+A `not-in-api` with an *empty* `marketplace_version` is the benign
+"not-published-anywhere" case (likely renamed/removed/private).
+
+- vscode-ms-something (Marketplace 1.2.3 — not on Open VSX) ⚠ squattable namespace (fork-IDE exposure)
+- vscode-foo-gone (not on Open VSX or Marketplace — likely removed)
 
 #### Summary
 

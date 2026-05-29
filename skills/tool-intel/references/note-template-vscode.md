@@ -23,6 +23,8 @@ packages: ["<publisher>.<extension-id>"]
 
 Publisher: [<publisher>](https://open-vsx.org/user/<publisher>) | v<version> | <license>
 
+Open VSX status: <verified-restricted | public-namespace | marketplace-only (squattable) | not-published-anywhere>
+
 ## Features
 
 Brief description of what this extension adds to the editor.
@@ -45,12 +47,14 @@ Key settings (add to `settings.json`):
 - [performance] CPU/memory impact, activation events, startup overhead
 - [conflict] Conflicts with: vscode-<other> — reason
 - [pattern] How this extension is typically configured in a project
+- [security] Open VSX: <trust-state> — <one-line rationale> (YYYY-MM-DD)
 
 ## Relations
 
 - requires [[brew-<companion-cli>]]
 - alternative_to [[vscode-<alternative-extension>]]
 - relates_to [[npm-<companion-package>]]
+- relates_to [[Publisher Verification Gradient]]
 ```
 
 ## Field Guidelines
@@ -76,6 +80,7 @@ Always `vscode_extension` (snake_case). Not `vscode-extension` or `vs_extension`
 | `gotcha` | Non-obvious setup, workspace vs user settings distinction |
 | `compatibility` | VS Code version requirements, Cursor/Codium compatibility |
 | `alternative` | Extensions with similar functionality |
+| `security` | Open VSX trust state (verified-restricted / public-namespace / marketplace-only=squattable / not-published-anywhere), publisher verification, supply-chain caveats — see the "Open VSX Trust Signal" section in `ecosystem-vscode.md` |
 
 ### Companion CLI tools
 

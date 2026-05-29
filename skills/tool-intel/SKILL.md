@@ -272,6 +272,15 @@ All tool notes share three core enrichment layers plus a type-specific content s
 - **`## Relations`** with `[[wiki-links]]`
 - **Type-specific content section** (differs by type — e.g. `## Common Usage` for brew, `## Inputs & Outputs` for actions; see templates)
 
+**For `vscode:` — always record the Open VSX trust signal.** Resolve the
+4-state ladder (verified-restricted / public-namespace / marketplace-only=squattable
+/ not-published-anywhere) from the Open VSX API fields fetched in Step 2 plus
+Marketplace presence, emit it as one `[security]` observation, and add
+`relates_to [[Publisher Verification Gradient]]`. The full ladder, detection
+rules, and observation wording live in the "Open VSX Trust Signal" section of
+`references/ecosystem-vscode.md`. (This is a derived signal off the existing
+Open VSX fetch — not a new research source.)
+
 **No wiki-links in observations.** Never use `[[Target]]` syntax in observation
 lines. BM's parser treats any `[[` as a relation boundary — the text before it
 becomes the `relation_type` field (max 200 chars), causing validation failures.

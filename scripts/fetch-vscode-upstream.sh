@@ -27,6 +27,16 @@ set -euo pipefail
 #   upstream_state      ok | not-in-api | api-unavailable
 #   openvsx_version     Open VSX .version ("" when not on Open VSX)
 #   marketplace_version VS Marketplace latest version ("" on failure/absence)
+#   openvsx_namespace_access  "restricted" | "public" | "" — Open VSX namespace
+#                             lock state; "public" means anyone may publish into
+#                             the namespace (unverified bottom trust tier)
+#   openvsx_verified    true | false — Open VSX namespace `verified` flag
+#   openvsx_publisher   Open VSX publishedBy.loginName ("" when not on Open VSX)
+#
+# A 404 on Open VSX with a non-empty marketplace_version is the "marketplace-only"
+# signal: the namespace is unclaimed/squattable and fork-IDEs (Cursor, Windsurf,
+# VSCodium, Theia) resolve installs against Open VSX — see
+# `references/ecosystem-vscode.md` "Open VSX Trust Signal".
 #
 # Usage:
 #   printf '%s\n' esbenp.prettier-vscode | bash fetch-vscode-upstream.sh
@@ -46,6 +56,8 @@ trap 'rm -f "$BODY"' EXIT
 emit() {
 	local d="${5:-null}"
 	[[ -z "$d" ]] && d="null"
+	local ver="${9:-false}"
+	[[ -z "$ver" ]] && ver="false"
 	jq -cn \
 		--arg name "$1" \
 		--arg up_v "$2" \
@@ -54,7 +66,10 @@ emit() {
 		--argjson days "$d" \
 		--arg ovsx "$6" \
 		--arg mp "$7" \
-		'{name:$name, upstream_version:$up_v, homepage:"", deprecated:false, disabled:false, tier:$tier, days_stale:$days, upstream_state:$upstream_state, openvsx_version:$ovsx, marketplace_version:$mp}'
+		--arg nsa "$8" \
+		--argjson verified "$ver" \
+		--arg publisher "${10}" \
+		'{name:$name, upstream_version:$up_v, homepage:"", deprecated:false, disabled:false, tier:$tier, days_stale:$days, upstream_state:$upstream_state, openvsx_version:$ovsx, marketplace_version:$mp, openvsx_namespace_access:$nsa, openvsx_verified:$verified, openvsx_publisher:$publisher}'
 }
 
 # Days since an ISO 8601 UTC timestamp. Normalizes to the strict
@@ -114,23 +129,29 @@ while IFS= read -r name; do
 	# Open VSX 404 → not on Open VSX (often MS-proprietary). Surface the
 	# Marketplace version as annotation but route the verdict to not-in-api.
 	if [[ "$http_code" == "404" ]]; then
-		emit "$name" "" "1" "not-in-api" "" "" "$mp_version"
+		emit "$name" "" "1" "not-in-api" "" "" "$mp_version" "" "false" ""
 		continue
 	fi
 	if [[ "$http_code" != "200" ]] || ! jq empty "$BODY" >/dev/null 2>&1; then
-		emit "$name" "" "1" "api-unavailable" "" "" "$mp_version"
+		emit "$name" "" "1" "api-unavailable" "" "" "$mp_version" "" "false" ""
 		continue
 	fi
 
 	ovsx_version=$(jq -r '.version // ""' "$BODY")
 	timestamp=$(jq -r '.timestamp // ""' "$BODY")
 	if [[ -z "$ovsx_version" ]]; then
-		emit "$name" "" "1" "api-unavailable" "" "" "$mp_version"
+		emit "$name" "" "1" "api-unavailable" "" "" "$mp_version" "" "false" ""
 		continue
 	fi
 
 	days="null"
 	[[ -n "$timestamp" ]] && days=$(days_since "$timestamp")
 
-	emit "$name" "$ovsx_version" "1" "ok" "$days" "$ovsx_version" "$mp_version"
+	# Open VSX trust fields: namespace lock state, verified flag, publisher login.
+	ns_access=$(jq -r '.namespaceAccess // ""' "$BODY")
+	verified=$(jq -r 'if .verified == true then "true" else "false" end' "$BODY")
+	ovsx_publisher=$(jq -r '.publishedBy.loginName // ""' "$BODY")
+
+	emit "$name" "$ovsx_version" "1" "ok" "$days" "$ovsx_version" "$mp_version" \
+		"$ns_access" "$verified" "$ovsx_publisher"
 done
