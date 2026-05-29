@@ -22,7 +22,7 @@ of maintaining both halves catches drift cases a single-source record misses.
   gap from plugin-specific extensions including the gardener read-only
   invariant and `KNOWN_MCP_PREFIXES` allowlist). Changes to either copy
   must stay in sync or the audit logic diverges silently.
-  Status: drifting · Last verified: 2026-05-20
+  Status: drifting · Last verified: 2026-05-29
   Note: Bilaterally confirmed drifting after Sprint 20 /sibling-sync pass
   — vp-beads's row also marks drifting (LV 2026-05-04). The 25-line gap
   reflects vp-claude additions since. Re-converge candidate when vg-3/vg-4
@@ -30,6 +30,13 @@ of maintaining both halves catches drift cases a single-source record misses.
   added a **phantom-subagent check** — `Agent(subagent_type="X")` references in
   skill prose are validated against `agents/X.md`, mirroring the existing
   agent→skill phantom-skill check. vp-beads lacks it; widens the drift.
+  2026-05-29: vp-claude added a **staleness-bucket emit↔consume contract
+  check** but extracted its logic to `lib/staleness-contract.mjs` (a new
+  pure-module pattern) imported back into `validate-plugin.mjs`, so the
+  net inline growth is small while a new shared-able artifact appeared. This
+  is the first vp-claude validator check with its own fixture self-test
+  (`check:contract`) — a testability approach the shared `@voxpelli/...`
+  package should inherit.
   Extractable as part of the shared validator (see Extraction Candidates).
 
 - **post-file-edit.sh shfmt auto-format** (2026-05-04) — Both plugins use a
@@ -201,6 +208,15 @@ of maintaining both halves catches drift cases a single-source record misses.
   future bilateral drift across the three vp-plugins.
   Source: this file + `SYNERGY-vp-git.md` · Readiness: proof-of-concept
   Effort: significant
+  Note (2026-05-29): vp-claude's `--stale` work added a sixth artifact and,
+  more usefully, a **testability template** for the bundle:
+  `lib/staleness-contract.mjs` (pure logic) + `scripts/check-staleness-contract.mjs`
+  (fixture self-test, `npm run check:contract`). It demonstrates the
+  pure-module-plus-fixture-test shape the shared package would want for every
+  check — proving a contract guard actually catches drift, rather than trusting
+  a manual negative-test. When the bundle is built, mirror this shape;
+  `check-hooks.mjs` (already shared) + `check-staleness-contract.mjs` are the
+  two worked examples of self-testing plugin tooling to generalize from.
 
 ## They Have / We Don't
 

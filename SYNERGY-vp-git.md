@@ -62,6 +62,14 @@ _No entries yet._
   Priority: adopt-soon · Effort: trivial-to-moderate (port the script,
   adapt to vp-knowledge file inventory, add `check:portability` to
   `npm run check`)
+  Note (2026-05-29): **Corroborating instance found** — the `--stale`
+  five-ecosystem work surfaced `vp-claude-fgy`: `staleness-detection.md` and
+  `knowledge-gardener.md` invoke `bash scripts/fetch-<eco>-upstream.sh` with a
+  bare CWD-relative path that breaks when the skill runs from a non-plugin-root
+  directory (the vault-wide-audit case). This is precisely the regression class
+  `check-portability.mjs` flags. The bug went undetected by every existing
+  `npm run check` gate (shellcheck/shfmt/remark/validate-plugin) — exactly the
+  blind spot this adoption closes. Escalates the case for adopting it.
 
 - **`plugin-utils.mjs` shared utility module** (2026-05-04) — vp-git has a
   root-level `plugin-utils.mjs` exporting `ROOT`, `formatWarn`, and
@@ -72,6 +80,13 @@ _No entries yet._
   and improve maintainability if vg-3 (check-portability) is adopted.
   Priority: consider · Effort: trivial (extract, import in
   validate-plugin.mjs)
+  Note (2026-05-29): vp-claude took its **first step toward this pattern** —
+  the `--stale` work extracted `lib/staleness-contract.mjs` (pure
+  emit↔consume bucket-contract logic) out of `validate-plugin.mjs`, imported
+  back in, and unit-tested via `scripts/check-staleness-contract.mjs`
+  (`npm run check:contract`). vp-claude now has a `lib/` dir and the
+  extract-pure-logic-then-test habit vp-git's `plugin-utils.mjs` exemplifies;
+  a shared module is a smaller leap from here.
 
 - **`skill-check` spec validator via npx** (2026-05-04) — vp-git runs
   `npx --yes skill-check check --no-security-scan` as part of `npm run check`

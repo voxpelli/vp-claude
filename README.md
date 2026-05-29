@@ -1,6 +1,6 @@
 # vp-knowledge
 
-A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https://github.com/basicmachines-co/basic-memory) into an actively maintained knowledge graph. Research packages from six ecosystems and tools from six dev-environment categories using parallel enrichment, find documentation gaps in your projects, detect when documented brew formulae have drifted from upstream releases, surface project-relevant knowledge before coding, and let autonomous agents audit and improve your notes — all without leaving your terminal.
+A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https://github.com/basicmachines-co/basic-memory) into an actively maintained knowledge graph. Research packages from six ecosystems and tools from six dev-environment categories using parallel enrichment, find documentation gaps in your projects, detect when documented packages and tools have drifted from upstream registries (brew, npm, cask, crate, vscode), surface project-relevant knowledge before coding, and let autonomous agents audit and improve your notes — all without leaving your terminal.
 
 ## What it does
 
@@ -110,12 +110,12 @@ Scans your project's manifest files for both code dependencies and dev tooling, 
 
 Also detects **concept-level hub gaps** — topics referenced by 3+ notes but with no dedicated note — and **reading-signal gaps** from Readwise highlights. Offers to run `/package-intel` (with the right ecosystem prefix) for top undocumented packages and `/tool-intel` for undocumented tools.
 
-### `/knowledge-gaps --stale` — Check brew note staleness
+### `/knowledge-gaps --stale` — Check version drift across ecosystems
 
-A focused alternative mode of `/knowledge-gaps` that detects when documented Homebrew formulae have drifted from their upstream stable releases. Uses an MCP-first workflow (BM-side data via `list_directory` + `read_note`) plus an API-only worker script (`scripts/fetch-brew-upstream.sh`) for upstream facts.
+A focused alternative mode of `/knowledge-gaps` that detects when documented notes have drifted from their upstream stable releases. Takes an optional ecosystem token — `--stale [brew|npm|cask|crate|vscode]` (bare = all five). Uses an MCP-first workflow (BM-side data via `list_directory` + `read_note`) plus per-ecosystem API-only worker scripts (`scripts/fetch-<eco>-upstream.sh`) for upstream facts. vscode checks both Open VSX (authoritative) and the VS Marketplace (annotation).
 
 ```
-## Brew Note Staleness — 40 documented notes checked
+## Version Drift — brew — 40 documented notes checked
 
 #### Drifted >30d (3 notes — refresh recommended)
 
@@ -130,11 +130,11 @@ A focused alternative mode of `/knowledge-gaps` that detects when documented Hom
 |-----------|------------|-----------------|-----------------------------|
 | brew-foo  | 1.2.3      | deprecated      | `move_note(... archive/...)` |
 
-#### Tap-only (2 notes — drift check skipped)
+#### Not in registry (2 notes — drift check skipped)
 - brew-arm-none-eabi-gcc, brew-mcp-netutils
 ```
 
-Bucket names (`Drifted >30d`, `Drifted <30d`, `Drifted, age unknown`, `Archive candidates`, `Unparseable`, `Tap-only`) are the same canonical strings the `knowledge-gardener` Step 5b emits, so the maintainer's auto-refresh logic works against either output. Phase 2: npm, crates, Go modules, GitHub Actions, Docker images, and VSCode extensions will plug into the same `--stale` flag.
+Bucket names (`Drifted >30d`, `Drifted <30d`, `Drifted, age unknown`, `Archive candidates`, `Unparseable`, `Not in registry`, `API unavailable`) are the same canonical strings the `knowledge-gardener` Step 5b emits, so the maintainer's auto-refresh logic works against either output. Supported cohorts: brew, npm, cask, crate, vscode. `action`/`gh`/`go`/`docker` are excluded (no single canonical comparable version); `pypi`/`gem`/`composer` are deferred until their cohorts grow.
 
 ### `/knowledge-prime` — Surface project-relevant knowledge
 
@@ -197,7 +197,7 @@ An autonomous agent that produces a health report without modifying anything:
 
 > "Audit my knowledge graph"
 
-Checks for: missing sections, schema violations, orphan notes, broken `[[wiki-links]]`, stale notes (90+ days), **brew version drift** (Step 5b — recorded versions compared against `formulae.brew.sh` with optional `gh release` timing, emitted as a `### Brew Version Drift` report section), duplicates, project-specific data leaking into cross-project notes, tag alignment (non-canonical forms, retired tags, missing ecosystem tags, out-of-vocabulary tags), and fourth-wall violations (self-referential knowledge-graph language in subject-domain notes).
+Checks for: missing sections, schema violations, orphan notes, broken `[[wiki-links]]`, stale notes (90+ days), **version drift** (Step 5b — recorded versions compared against upstream registries for brew, npm, cask, crate, and vscode, emitted as `### Version Drift — <eco>` report sections), duplicates, project-specific data leaking into cross-project notes, tag alignment (non-canonical forms, retired tags, missing ecosystem tags, out-of-vocabulary tags), and fourth-wall violations (self-referential knowledge-graph language in subject-domain notes).
 
 ### Knowledge Maintainer — All-in-one graph enhancer
 
@@ -216,8 +216,8 @@ Acts on audit findings with tiered autonomy:
 | Fix fourth-wall violations (self-referential graph language) | Auto-fix |
 | Run `/package-intel` for Tier 1 undocumented packages | Auto-fix |
 | Run `/tool-intel` for undocumented tools from manifests | Auto-fix |
-| Refresh drifted brew notes (>30d) via parallel `/tool-intel` batch | Auto-fix |
-| Archive deprecated/disabled brew formulae | Asks first |
+| Refresh drifted notes (>30d) via parallel `/tool-intel` + `/package-intel` batch | Auto-fix |
+| Archive deprecated/disabled packages (brew/cask/npm) | Asks first |
 | Merge duplicate notes | Asks first |
 | Archive abandoned notes (move to `archive/`) | Asks first |
 | Rewrite note prose | Asks first |
@@ -433,7 +433,7 @@ skills/
     SKILL.md                           Package + tool + concept coverage analysis; --stale flag dispatches to Mode A
     references/concept-detection.md    Concept-level hub gap detection
     references/standard-detection.md   Domain standard coverage detection
-    references/staleness-detection.md  Brew note staleness check (Mode A workflow)
+    references/staleness-detection.md  Version-drift check across ecosystems (Mode A workflow)
   knowledge-prime/
     SKILL.md                           Project context priming from BM
   schema-evolve/
@@ -498,8 +498,15 @@ scripts/
   audit-helpers.sh                     Audit subcommands: bm-stats, scope-leak summary/detail
   audit-scope-leak.sh                  Project-specific content detection in cross-project notes
   check-hooks.mjs                      Hook integration tests (npm run check:hooks)
+  check-staleness-contract.mjs         Staleness drift-bucket contract tests (npm run check:contract)
   fetch-brew-upstream.sh               API-only upstream facts for brew formulae (stdin: names; never reads ~/basic-memory)
-validate-plugin.mjs                    Plugin validator (color enum, frontmatter, MCP prefixes)
+  fetch-cask-upstream.sh               API-only upstream facts for casks (bulk cask.json; comma-segment version)
+  fetch-npm-upstream.sh                API-only upstream facts for npm packages (abbreviated packument)
+  fetch-crate-upstream.sh              API-only upstream facts for crates (crates.io; UA + 1s rate-limit)
+  fetch-vscode-upstream.sh             API-only upstream facts for VSCode exts (Open VSX + VS Marketplace)
+lib/
+  staleness-contract.mjs               Pure emit↔consume bucket-contract logic (imported by validate-plugin.mjs + check:contract)
+validate-plugin.mjs                    Plugin validator (color enum, frontmatter, MCP prefixes, staleness-bucket contract)
 VOICE.md                               Plugin identity, agent colors, description-tone conventions
 ```
 
@@ -512,7 +519,7 @@ VOICE.md                               Plugin identity, agent colors, descriptio
  /tool-intel X     -> tool-intel skill    -> <type>-X note + cross-links
  /knowledge-gaps   -> knowledge-gaps skill-> gap report (packages, tools, concepts)
                                              + offers /package-intel, /tool-intel
- /knowledge-gaps --stale -> knowledge-gaps Mode A -> brew note staleness report
+ /knowledge-gaps --stale -> knowledge-gaps Mode A -> version drift report (per ecosystem)
                                                      + offers /tool-intel refreshes
  /knowledge-prime  -> knowledge-prime     -> context brief with gotchas + gaps
  /knowledge-ask Q  -> knowledge-ask skill -> cited answer + confidence tier
@@ -533,7 +540,7 @@ VOICE.md                               Plugin identity, agent colors, descriptio
                       ├── auto-fixes structure and tags
                       ├── auto-runs /package-intel for Tier 1 package gaps
                       ├── auto-runs /tool-intel for undocumented tool manifests
-                      ├── auto-batches /tool-intel for drifted brew notes (>30d)
+                      ├── auto-batches /tool-intel + /package-intel for drifted notes (>30d)
                       └── asks before content changes
  "prime context"   -> knowledge-primer    -> context brief (autonomous agent)
  "audit tags"      -> raindrop-gardener   -> tag health report (read-only)

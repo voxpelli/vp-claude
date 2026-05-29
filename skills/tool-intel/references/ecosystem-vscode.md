@@ -3,6 +3,13 @@
 Use this reference file during Step 2 (Fetch registry data) when the detected
 ecosystem is `vscode`.
 
+> **Canonical version for staleness (`--stale`):** record the **Open VSX**
+> `.version` as this note's version (the drift verdict is computed against Open
+> VSX, not the VS Marketplace). `scripts/fetch-vscode-upstream.sh` compares
+> against the same field, so `/knowledge-gaps --stale` and a subsequent
+> `/tool-intel` refresh converge. The Marketplace version is recorded as an
+> annotation only.
+
 ## Extension Identifier Format
 
 VSCode extensions are identified as `<publisher>.<extension-id>` (dot-separated).

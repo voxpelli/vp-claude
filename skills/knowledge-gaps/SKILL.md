@@ -1,7 +1,8 @@
 ---
 name: knowledge-gaps
-description: "This skill should be used when the user asks about 'knowledge gaps', 'package coverage', 'which packages need notes', 'undocumented dependencies', 'dependency audit', 'missing documentation', 'tool coverage', 'undocumented tools', 'brew/action/docker/vscode coverage', 'standard coverage', 'protocol coverage', 'domain standards', 'concept gaps', 'missing hub notes', 'undocumented concepts', 'topics without notes', 'what should have its own note', 'stale brew notes', 'outdated brew formulae', 'drifted notes', or 'which brew tools need updating'. Cross-references project dependencies, tool manifests, and domain standards against Basic Memory notes to find undocumented packages, tools, standards, and concept-level hub gaps via relation graph analysis and Readwise reading signals. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, Ruby gems, Homebrew formulae/casks, GitHub Actions, Docker images, and VSCode extensions. (gh CLI extensions have no manifest and are user-invoked via /tool-intel gh:owner/repo — not auto-detected here.) When invoked with the `--stale` flag (`/knowledge-gaps --stale`), runs an alternative workflow that detects documented Homebrew formulae whose recorded version has drifted from upstream releases."
+description: "This skill should be used when the user asks about 'knowledge gaps', 'package coverage', 'which packages need notes', 'undocumented dependencies', 'dependency audit', 'missing documentation', 'tool coverage', 'undocumented tools', 'brew/action/docker/vscode coverage', 'standard coverage', 'protocol coverage', 'domain standards', 'concept gaps', 'missing hub notes', 'undocumented concepts', 'topics without notes', 'what should have its own note', 'stale brew notes', 'outdated brew formulae', 'stale npm notes', 'stale crate notes', 'outdated vscode extensions', 'outdated packages', 'drifted notes', 'version drift', or 'which tools/packages need updating'. Cross-references project dependencies, tool manifests, and domain standards against Basic Memory notes to find undocumented packages, tools, standards, and concept-level hub gaps via relation graph analysis and Readwise reading signals. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, Ruby gems, Homebrew formulae/casks, GitHub Actions, Docker images, and VSCode extensions. (gh CLI extensions have no manifest and are user-invoked via /tool-intel gh:owner/repo — not auto-detected here.) When invoked with the `--stale` flag (`/knowledge-gaps --stale [brew|npm|cask|crate|vscode]`), runs an alternative workflow that detects documented notes whose recorded version has drifted from upstream registry releases. A bare `--stale` checks all supported cohorts (brew, npm, cask, crate, vscode); an ecosystem token scopes it to one."
 user-invocable: true
+argument-hint: "[--stale [brew|npm|cask|crate|vscode]]"
 paths:
   - "package.json"
   - "Cargo.toml"
@@ -29,6 +30,11 @@ allowed-tools:
 Analyze the current project's dependencies against Basic Memory coverage to
 identify packages that should be documented but aren't. Supports npm, Rust
 crates, Go modules, PHP Composer, PyPI, and RubyGems.
+
+When invoked with `--stale [<ecosystem>]`, the skill instead runs an
+alternative version-drift workflow (Mode A below) that flags documented
+brew/npm/cask/crate/vscode notes whose recorded version has fallen behind
+upstream — not a coverage audit.
 
 ## Edge Cases
 
@@ -70,16 +76,29 @@ the user's invocation, then run only that mode's steps. Never combine them.
 ### Mode A — Stale mode (alternative entry point)
 
 **Triggered when:** the user invoked the skill with the `--stale` flag (e.g.,
-`/knowledge-gaps --stale`), or used trigger phrases like "stale brew notes",
-"outdated brew formulae", "which brew tools need updating".
+`/knowledge-gaps --stale`, `/knowledge-gaps --stale npm`), or used trigger
+phrases like "stale notes", "outdated formulae", "drifted notes", "which tools
+need updating".
+
+**Argument parsing:** `--stale` takes an optional ecosystem token —
+`--stale [brew|npm|cask|crate|vscode]`:
+
+- **bare `--stale`** → check all five supported cohorts.
+- **`--stale <token>`** where the token ∈ `brew|npm|cask|crate|vscode` → check
+  only that cohort.
+- **any other token** (e.g. `action`, `gh`, `go`, `docker`, `pypi`, `gem`,
+  `composer`) → reject with: "`--stale` supports brew, npm, cask, crate, vscode.
+  `action`/`gh`/`go`/`docker` have no single canonical comparable version;
+  `pypi`/`gem`/`composer` are deferred." Do NOT silently fall back to all.
 
 **What to do:** load and follow the staleness-detection reference file in
 full — do NOT execute any of the Mode B steps below in the same session:
 
 `${CLAUDE_PLUGIN_ROOT}/skills/knowledge-gaps/references/staleness-detection.md`
 
-Other ecosystems beyond Homebrew (npm, crates, actions, docker, vscode, gh)
-are Phase 2 — when added, they'll plug into the same `--stale` flag.
+Pass the parsed ecosystem scope (one cohort, or all five) to that workflow; it
+runs the per-cohort drift check and renders one `### Version Drift — <eco>`
+section per checked cohort.
 
 ### Mode B — Standard mode (manifest-driven coverage)
 

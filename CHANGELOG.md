@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.0][] - 2026-05-29
+
+### Changed
+
+- **BREAKING (bucket rename): `--stale` version-drift detection extended from
+  Homebrew-only to five ecosystems — brew, npm, cask, crate, and vscode.** The
+  `/knowledge-gaps --stale` flag now takes an optional ecosystem token
+  (`--stale [brew|npm|cask|crate|vscode]`; bare = all). The user-facing bucket
+  `Tap-only` is renamed **`Not in registry`** (now covers tap-distributed brew
+  formulae, unpublished/renamed packages, and Marketplace-only VSCode
+  extensions), and the report section heading `Brew Version Drift` /
+  `Brew Note Staleness` is renamed **`Version Drift — <eco>`** (one section per
+  cohort). These are the canonical strings the `knowledge-gardener` emits and
+  the `knowledge-maintainer` Section 3b consumes, so the rename is a breaking
+  change under semver-0.x → minor bump.
+
+### Added
+
+- **Four self-contained fetch scripts** — `scripts/fetch-{cask,npm,crate,vscode}-upstream.sh`,
+  mirroring `fetch-brew-upstream.sh`'s NDJSON contract and read-only/MCP-free
+  discipline. npm uses the abbreviated packument (`dist-tags.latest`, deprecation
+  via `versions[latest].deprecated`); cask reads the bulk `cask.json`
+  (comma-segment normalization, `version=="latest"` → not-in-api, `auto_updates`
+  casks still checked); crate uses `crates.io` (`max_stable_version`, required
+  User-Agent, 1 s rate-limit); vscode queries **both** Open VSX (authoritative
+  drift verdict) and the VS Marketplace (best-effort annotation). All strip
+  fractional-second timestamps and split HTTP 404 (`not-in-api`) from 5xx
+  (`api-unavailable`) per row.
+- **`validate-plugin.mjs` staleness-bucket contract check** — machine-checks
+  the emit side (gardener + `staleness-detection.md` `#### <bucket>` headings)
+  and consume side (maintainer Section 3b routing bullets) against a single
+  canonical bucket list, with a ">=1 heading matched" guard against vacuous
+  passes.
+
+### Notes
+
+- The brew fetch script's NDJSON output is byte-identical (only a comment
+  updated). The `knowledge-gardener` Step 5b 2-D (age × semver-distance)
+  bucketing model is preserved verbatim and applied to all semver cohorts
+  (cask normalizes to `distance-unknown`; tap routing stays brew-only).
+- `action`, `gh`, `go`, and `docker` are excluded by construction (no single
+  canonical comparable version); `pypi`, `gem`, and `composer` are deferred
+  until their cohorts grow.
+
 ## [0.30.1][] - 2026-05-21
 
 ### Changed
@@ -1415,6 +1459,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.31.0]: https://github.com/voxpelli/vp-claude/compare/v0.30.1...v0.31.0
 [0.30.1]: https://github.com/voxpelli/vp-claude/compare/v0.30.0...v0.30.1
 [0.30.0]: https://github.com/voxpelli/vp-claude/compare/v0.29.4...v0.30.0
 [0.29.4]: https://github.com/voxpelli/vp-claude/compare/v0.29.3...v0.29.4

@@ -392,71 +392,101 @@ before cross-referencing with the step 1 inventory.
 against the Step 1 inventory. Notes not in the recent set are stale. Reason
 through the comparison directly — do not write a set-difference script.
 
-### 5b. Brew version drift
+### 5b. Version drift (registry-backed ecosystems)
 
-Detect drift between recorded `brew-*` note versions and live upstream
+Detect drift between recorded `<prefix>-*` note versions and live upstream
 releases. This is distinct from Step 5's date-based staleness — a note may
 have been edited recently while its `Version` value silently aged past the
 upstream stable release.
 
-**BM access is via MCP only.** The script invoked at the end of this step
-performs the *external API* work (formulae.brew.sh + optional `gh release
-list`) and never reads `~/basic-memory/`. The agent collects BM-side data
-(documented versions per note) via MCP and pipes names to the script.
+Drift is valid only for registry-backed, single-canonical-latest,
+stable-channel ecosystems. **Run 5b-i through 5b-v once per supported cohort,
+emitting one `### Version Drift — <eco>` subsection per cohort:**
 
-**Step 5b-i. Enumerate documented brew notes:**
-```
-list_directory(dir_name="brew", depth=1)
-```
-From the returned listing, **keep only titles that start with `brew-`**
-(filter out any stray drafts or non-prefixed notes). If the directory is
-empty or missing, skip this step silently — the user hasn't documented any
-brew formulae yet.
+| Cohort | Prefix | BM dir | Fetch script | Upstream version | Deprecation? | Tap dim? |
+|--------|--------|--------|--------------|------------------|--------------|----------|
+| brew | `brew-` | `brew/` | `fetch-brew-upstream.sh` | `.versions.stable` | yes | yes (brew-only) |
+| npm | `npm-` | `npm/` | `fetch-npm-upstream.sh` | `dist-tags.latest` | yes | no |
+| cask | `cask-` | `casks/` | `fetch-cask-upstream.sh` | `.version` (leading comma-segment) | yes | no |
+| crate | `crate-` | `crates/` | `fetch-crate-upstream.sh` | `.crate.max_stable_version` | no | no |
+| vscode | `vscode-` | `vscode/` | `fetch-vscode-upstream.sh` | Open VSX `.version` | no | no |
 
-**Step 5b-ii. Extract `bm_version` and `bm_tap` per note via MCP:** For each
-filtered title (e.g., `brew-bat`, `brew-ripgrep`), call:
+`action`, `gh`, `go`, `docker` are excluded by construction (no single
+canonical comparable version). The **brew cohort below is the worked
+reference**; per-cohort deltas (name recovery, fetch script, deprecation
+availability, distance handling) are called out inline.
+
+**BM access is via MCP only.** Each cohort's `fetch-<eco>-upstream.sh` performs
+the *external API* work (e.g. brew adds optional `gh release list` timing) and
+never reads `~/basic-memory/`. The agent collects BM-side data (documented
+versions per note) via MCP and pipes names to the script.
+
+**Step 5b-i. Enumerate documented notes (per cohort):**
+```
+list_directory(dir_name="<cohort BM dir>", depth=1)
+```
+From the returned listing, **keep only titles that start with the cohort
+prefix** (filter out any stray drafts or non-prefixed notes). If a cohort's
+directory is empty or missing, skip that cohort silently — the user hasn't
+documented any of its notes yet.
+
+**Step 5b-ii. Extract `bm_version` (+ `bm_tap` for brew) and recover the
+upstream name per note via MCP:** For each filtered title, call:
 ```
 read_note(identifier="<title>", include_frontmatter=true, output_format="json")
 ```
 Issue up to 5 concurrent `read_note` calls per turn to keep latency bounded.
-Then reason about the `content` field to extract two values:
+Then reason about the `content` field.
 
-*Documented version (`bm_version`).* Three formats currently coexist in the
-corpus (a corpus-quality issue worth surfacing separately):
+*Documented version (`bm_version`).* The corpus is heterogeneous across
+`*-intel` template eras. Match these patterns in **priority order, first hit
+wins** — this is the **same set the `/knowledge-gaps --stale` reference
+(`staleness-detection.md` S2) uses; keep the two in sync**:
 
-| Priority | Pattern | Example | Where seen |
-|---|---|---|---|
-| 1 | Formula Details table row | `\| Version \| 0.26.1 \|` | older /tool-intel output (brew-bat, brew-ripgrep) |
-| 2 | Inline header pipe | `Homepage: ... \| v1.39.0 \| <license>` | newer /tool-intel output (brew-fnm, brew-ast-grep) |
-| 3 | Registry Metadata bullet | `- **Version**: 0.11.13 (Homebrew, ...)` | brew-uv style |
+| Priority | Pattern | Example |
+|---|---|---|
+| 1 | Inline header pipe | `Homepage: ... \| v1.39.0 \| <license>` |
+| 2 | `\| Version \| <value> \|` table row | `\| Version \| 0.26.1 \|` |
+| 3 | Frontmatter `version:` | `version: 12.4.0` |
+| 4 | Registry/prose fallback | `- **Version**: 0.11.13 (…)` / `Current: v3.2.4 (…)` |
 
-If multiple patterns match in the same note, **use the lowest-priority-number
-match (table row wins over inline header, which wins over bullet).** If
-none match, record the note's `bm_version` as `unparseable`.
+Strip a leading `v` (`v1.39.0` ≡ `1.39.0`). If none match, record
+`bm_version = unparseable` (a corpus-quality finding worth surfacing).
 
-*Recorded tap (`bm_tap`).* Inspect the `observations` array for any item
-whose category is `[tap]` (e.g., `[tap] codescene-oss/tap`). Also accept a
-plain `Tap: <name>` row in the Formula Details table as a fallback. If
-the note records a tap path other than `homebrew/core` (or omits the tap
-entirely while `bm_version` is wildcard/range-shaped like `8.x` or
-`~0.15.x`), mark the note as `bm_tap_present=true`. This signal is used
-in 5b-iv to route tap-only formulae before falling through to
-`Unparseable` — many tap-distributed formulae have a recorded tap but no
-parseable version row, and they must not land in the `Unparseable`
-bucket.
+*Upstream name recovery.* The name piped to the fetch script in 5b-iii is not
+always the title minus the prefix:
+- **npm** — read `frontmatter.packages[0]` (scoped notes like
+  `npm-@fastify-postgres` and non-prefixed titles like `@sentry-node` exist;
+  **never prefix-strip**). A title that is neither `npm-*` nor has a usable
+  `packages[0]` is a corpus-quality finding — report it, don't silently skip.
+- **brew/cask/crate/vscode** — strip the anchored leading `<prefix>-`
+  (internal hyphens and dots preserved: `cask-font-fira-code` → `font-fira-code`,
+  `vscode-esbenp.prettier-vscode` → `esbenp.prettier-vscode`).
 
-**Step 5b-iii. Pipe names to the upstream API script:** **Strip the
-`brew-` prefix** from each note title before piping — the script expects
-bare formula names (e.g., `bat`, not `brew-bat`):
+*Recorded tap (`bm_tap`) — brew cohort ONLY.* Inspect the `observations` array
+for any `[tap]` item (e.g., `[tap] codescene-oss/tap`); accept a plain
+`Tap: <name>` table row as fallback. If the note records a tap other than
+`homebrew/core` (or omits the tap while `bm_version` is wildcard/range-shaped
+like `8.x` or `~0.15.x`), mark `bm_tap_present=true`. This routes tap-only
+formulae before they fall through to `Unparseable` in 5b-iv. **All other
+cohorts have no tap dimension — treat `bm_tap_present=false` always.**
+
+**Step 5b-iii. Pipe recovered names to the cohort's fetch script:** Use the
+names recovered in 5b-ii (npm via `packages[0]`, others prefix-stripped):
 ```
-Bash("printf '%s\\n' <bare-name1> <bare-name2> ... | bash scripts/fetch-brew-upstream.sh")
+Bash("printf '%s\\n' <name1> <name2> ... | bash scripts/fetch-<eco>-upstream.sh")
 ```
-The script emits NDJSON per name with fields `upstream_version`, `homepage`,
-`deprecated`, `disabled`, `tier`, `days_stale`, and `upstream_state`
-(`ok` | `deprecated` | `disabled` | `not-in-api` | `api-unavailable`). The
-script's `upstream_state` describes the *upstream fact* only — drift is
-computed by this step, in-context, by comparing the script's
-`upstream_version` against the per-note `bm_version` collected in 5b-ii.
+Each script emits NDJSON per name with core fields `upstream_version`,
+`homepage`, `deprecated`, `disabled`, `tier`, `days_stale`, and
+`upstream_state` (`ok` | `deprecated` | `disabled` | `not-in-api` |
+`api-unavailable`); the **vscode** script adds `openvsx_version` +
+`marketplace_version` (drift is judged on Open VSX; a Marketplace-ahead value
+is an annotation only). **brew/cask are bulk** (one curl failure is
+cohort-wide `api-unavailable`); **npm/crate/vscode are per-name** (a 404 is
+that note's `not-in-api`, a 5xx/timeout that note's `api-unavailable`; the rest
+of the cohort still reports). `upstream_state` describes the *upstream fact*
+only — drift is computed by this step by comparing `upstream_version` against
+the per-note `bm_version` from 5b-ii.
 
 **Step 5b-iv. Classify and bucket (two-dimensional):** For each note,
 combine its `bm_version` and `bm_tap_present` (from MCP) with the script's
@@ -490,8 +520,8 @@ canonical names below are character-exact.
 
 Apply rules in order; first match wins.
 
-1. `bm_tap_present == true` **AND** script `upstream_state ∈ {"not-in-api", "api-unavailable"}` → **`Tap-only`** *(checked before `Unparseable` — a tap-distributed formula naturally 404s on `formulae.brew.sh` and that is not a parse failure)*
-2. script `upstream_state == "not-in-api"` AND `bm_tap_present == false` AND `bm_version == "unparseable"` → **`Tap-only`** *(no tap recorded but the 404 + unparseable combination still strongly suggests tap/renamed/removed — same actionable advice: re-run `/tool-intel`)*
+1. `bm_tap_present == true` **AND** script `upstream_state ∈ {"not-in-api", "api-unavailable"}` → **`Not in registry`** *(checked before `Unparseable` — a tap-distributed formula naturally 404s on `formulae.brew.sh` and that is not a parse failure)*
+2. script `upstream_state == "not-in-api"` AND `bm_tap_present == false` AND `bm_version == "unparseable"` → **`Not in registry`** *(no tap recorded but the 404 + unparseable combination still strongly suggests tap/renamed/removed — same actionable advice: re-run `/tool-intel`)*
 3. script `upstream_state ∈ {"deprecated", "disabled"}` → **`Archive candidates`**
 4. `bm_version == "unparseable"` (and rule 1/2 did not fire) → **`Unparseable`**
 5. versions differ AND **distance is `semver-major`** → **`Drifted >30d`** *(semver-major **escalates** regardless of `days_stale` — a major-version gap is forward-compatibility risk that the age axis hides. Document the actual `days_stale` value in the bullet so the maintainer knows the escalation was distance-driven.)*
@@ -503,6 +533,20 @@ Apply rules in order; first match wins.
 Notes where `bm_version == upstream_version` and `upstream_state == "ok"` are
 current and need no report entry.
 
+*Per-cohort application of this one model (do not fork a simplified variant):*
+- **brew / npm / crate / vscode** are clean semver — the distance dimension
+  applies directly.
+- **cask** versions are comma-mangled; the fetch script emits only the leading
+  comma-segment. If that segment is not clean semver, distance resolves to
+  `distance-unknown` (never a false `semver-major`).
+- **Tap routing (rules 1–2's `bm_tap_present` path) is brew-only.** For other
+  cohorts `bm_tap_present=false`, so rule 1 never fires; rule 2 (404 +
+  `unparseable`) still correctly routes any cohort's missing-from-registry
+  notes to `Not in registry`.
+- **`Archive candidates` (rule 3)** fires only where the registry exposes a
+  deprecation flag — brew, cask, npm. crate and vscode never populate it; its
+  absence is expected by both this step and the maintainer.
+
 *Why this matters for the maintainer.* The maintainer's Section 3b
 auto-batch fires on the **`Drifted >30d`** bucket only. The escalation
 rule (5) is the mechanism that lifts semver-major risks into that bucket
@@ -511,18 +555,26 @@ note where 2.0.1 shipped 4 days ago would otherwise sit in `Drifted <30d`
 indefinitely. The maintainer should weight any bullet annotated
 `[semver-major]` as the highest-priority refresh in its batch.
 
-**Step 5b-v. Emit the report subsection.** The gardener report is structured
+**Step 5b-v. Emit the report subsection(s).** The gardener report is structured
 with top-level `### Critical`, `### Warning`, `### Info`, `### Graph
-Statistics` sections. Add **one new top-level section** at the
-peer level:
+Statistics` sections. Add **one new top-level section per cohort that has
+findings**, at the peer level, named for the cohort:
 
 ```
-### Brew Version Drift
+### Version Drift — brew
+### Version Drift — npm
+### Version Drift — cask
+### Version Drift — crate
+### Version Drift — vscode
 ```
 
-Inside it, emit a `####` sub-heading for every non-empty canonical bucket,
-using the exact bucket names from 5b-iv. The maintainer's Section 3b
-auto-fix logic keys off these strings.
+Inside each, emit a `####` sub-heading for every non-empty canonical bucket,
+using the exact bucket names from 5b-iv. The maintainer's Section 3b auto-fix
+logic keys off these strings. The refresh command in each bullet follows the
+note prefix: `brew`/`cask`/`vscode` → `/tool-intel <prefix>:<name>`; `npm` →
+`/package-intel npm:<name>`; `crate` → `/package-intel crate:<name>` (use the
+recovered upstream name — `packages[0]` for npm). The bullet examples below are
+shown for the brew cohort; substitute the prefix and refresh command per cohort.
 
 Bullet formats per bucket:
 
@@ -554,7 +606,7 @@ needed).
 - brew-<name1>, brew-<name2>, ... — version not extractable from note content; run `/tool-intel brew:<name>` to restore the metadata layer
 ```
 
-`Tap-only` (one bullet listing all — covers formulae routed here by
+`Not in registry` (one bullet listing all — covers formulae routed here by
 either rule 1 or rule 2 in 5b-iv, i.e. tap-distributed, renamed, or
 removed from the core API):
 ```
@@ -568,7 +620,7 @@ removed from the core API):
 
 If all notes resolve to current+OK, emit only:
 ```
-### Brew Version Drift
+### Version Drift — brew
 
 All N documented brew notes are current with upstream — no action needed.
 ```
@@ -807,10 +859,14 @@ with a `/schema-evolve` suggestion.)*
 *(Emitted by Step 11. Aggregate, NOT per-note. Omit entirely if no note has a `## Sources` section citing in bare text.)*
 - N notes have a `## Sources`/`## Key Sources` section citing sources as bare text (no resolvable URL) — e.g. [note-a], [note-b]. Convert those citations to markdown links `[title](url)` (or set a `source:` frontmatter URL). Informational only — a systematic backfill is a separate human-confirmed decision; the gardener never resolves URLs itself.
 
-### Brew Version Drift
-*(Emitted by Step 5b. Omit this section entirely if `brew/` directory is
-empty or absent. The maintainer's Section 3b text-searches for this heading
-and the canonical `#### <bucket>` sub-headings — keep them character-exact.)*
+### Version Drift — brew
+*(Emitted by Step 5b — one `### Version Drift — <eco>` section per cohort with
+findings (npm/cask/crate/vscode follow the same shape; substitute the prefix
+and the refresh command per the 5b-v prefix map; vscode may add a
+"Marketplace ahead of Open VSX" annotation). Omit a cohort's section entirely
+if its directory is empty or absent. The maintainer's Section 3b text-searches
+for these headings and the canonical `#### <bucket>` sub-headings — keep them
+character-exact.)*
 
 #### Drifted >30d
 - **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago) [<distance-class>] — refresh via `/tool-intel brew:<name>`
@@ -828,7 +884,7 @@ and the canonical `#### <bucket>` sub-headings — keep them character-exact.)*
 #### Unparseable
 - brew-<name1>, brew-<name2> — version not extractable from note content; run `/tool-intel brew:<name>` to restore the metadata layer
 
-#### Tap-only
+#### Not in registry
 - brew-<name1>, brew-<name2> — tap-installed formulae (or renamed/removed) not in central API; drift check skipped
 
 ### Graph Statistics

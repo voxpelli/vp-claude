@@ -2,201 +2,293 @@
 
 Use this reference when `/knowledge-gaps` is invoked with the `--stale` flag.
 The mode replaces the normal manifest-driven coverage workflow with a focused
-upstream-drift check for documented Homebrew formulae. Other ecosystems
-(npm, crates, actions, docker, vscode, gh) are Phase 2.
+upstream-drift check: it compares the version recorded in a Basic Memory note
+against the current upstream version and buckets the notes.
 
-**BM access is via MCP only.** The script `scripts/fetch-brew-upstream.sh`
-does the *external* API work (formulae.brew.sh + optional `gh release list`)
-and never reads `~/basic-memory/`. This skill collects BM-side data via the
-MCP tools and pipes formula names to the script.
+`--stale` takes an optional ecosystem token: `--stale [brew|npm|cask|crate|vscode]`.
+A bare `--stale` checks **all** supported cohorts. Drift detection is only valid
+for registry-backed, single-canonical-latest, stable-channel ecosystems — these
+five qualify. `action`, `gh`, `go`, and `docker` are deliberately excluded
+(floating-major pins, HEAD-installs, module-path majors, mutable tags — no
+canonical comparable version); reject those tokens with an error listing the
+valid set.
 
-The bucket names in S4/S6 below are the same canonical strings the
-`knowledge-gardener` Step 5b-iv uses, so a user-invoked staleness report and
-an autonomous gardener report are interchangeable as input to the
-`knowledge-maintainer` Section 3b.
+**BM access is via MCP only.** The per-ecosystem `scripts/fetch-<eco>-upstream.sh`
+scripts do the *external* API work and never read `~/basic-memory/`. This skill
+collects BM-side data via the MCP tools and pipes names to the scripts.
+
+The bucket names below are the same canonical strings the `knowledge-gardener`
+Step 5b-iv uses, so a user-invoked staleness report and an autonomous gardener
+report are interchangeable as input to the `knowledge-maintainer` Section 3b.
+
+## Cohort configuration
+
+Each supported ecosystem maps a note-title prefix to a BM directory, a fetch
+script, and the upstream version field the script returns:
+
+| Token | Prefix | BM directory | Fetch script | Upstream version | Deprecation? |
+|-------|--------|--------------|--------------|------------------|--------------|
+| `brew` | `brew-` | `brew/` | `fetch-brew-upstream.sh` | `.versions.stable` | yes |
+| `npm` | `npm-` | `npm/` | `fetch-npm-upstream.sh` | `dist-tags.latest` | yes |
+| `cask` | `cask-` | `casks/` | `fetch-cask-upstream.sh` | `.version` (leading comma-segment) | yes |
+| `crate` | `crate-` | `crates/` | `fetch-crate-upstream.sh` | `.crate.max_stable_version` | no |
+| `vscode` | `vscode-` | `vscode/` | `fetch-vscode-upstream.sh` | Open VSX `.version` | no |
+
+Run the workflow below **once per selected cohort**, emitting one
+`### Version Drift — <eco>` section per cohort.
 
 ## Workflow
 
-### S1. Enumerate documented brew notes (MCP)
+### S1. Enumerate documented notes (MCP)
+
+For each selected cohort:
 
 ```
-list_directory(dir_name="brew", depth=1)
+list_directory(dir_name="<directory>", depth=1)
 ```
 
-From the returned listing, **keep only titles starting with `brew-`** (filter
-out drafts and non-prefixed notes).
+From the returned listing, **keep only titles starting with the cohort prefix**
+(filter out drafts and non-prefixed notes).
 
-If the filtered list is empty, report "No brew notes documented in Basic
-Memory yet — nothing to check" and stop. Suggest the user run
-`/tool-intel brew:<name>` to seed at least one note first.
+If a cohort's filtered list is empty, skip that cohort silently (or, for an
+explicit single-ecosystem `--stale <eco>`, report "No `<prefix>` notes
+documented in Basic Memory yet — nothing to check" and suggest seeding one via
+`/tool-intel` or `/package-intel`).
 
-### S2. Extract documented version per note (MCP)
+### S2. Extract documented version per note (MCP, multi-pattern)
 
-For each filtered title (e.g., `brew-bat`), call:
+For each filtered title, call:
 
 ```
 read_note(identifier="<title>", include_frontmatter=true, output_format="json")
 ```
 
 Issue up to 5 concurrent `read_note` calls per turn to keep latency bounded.
-Reason about the `content` field to extract the documented version. Three
-formats currently coexist in the corpus:
+**The corpus is heterogeneous** — the recorded version lives in different places
+in different notes (different `*-intel` template eras). Match these patterns in
+**priority order, first hit wins**:
 
-| Priority | Pattern | Example | Cohort |
-|---|---|---|---|
-| 1 | Formula Details table row | `\| Version \| 0.26.1 \|` | older /tool-intel output |
-| 2 | Inline header pipe | `Homepage: ... \| v1.39.0 \| <license>` | newer /tool-intel output |
-| 3 | Registry Metadata bullet | `- **Version**: 0.11.13 (Homebrew, ...)` | brew-uv style |
-
-If multiple patterns match in the same note, **use the lowest-priority-number
-match.** If none match, record `bm_version="<unparseable>"` and continue.
-
-### S3. Fetch upstream facts via the script
-
-**Strip the `brew-` prefix** from each filtered title before piping — the
-script expects bare formula names:
-
-```
-Bash("printf '%s\\n' <bare-name1> <bare-name2> ... | bash scripts/fetch-brew-upstream.sh")
-```
-
-The script emits NDJSON per name with these fields:
-
-| Field | Type | Meaning |
+| Priority | Pattern | Example |
 |---|---|---|
-| `name` | string | Formula name (matches input) |
-| `upstream_version` | string | `.versions.stable` from formulae.brew.sh; `""` if not in API |
-| `homepage` | string | Upstream homepage URL |
-| `deprecated` | bool | `true` if formulae.brew.sh marks the formula deprecated |
-| `disabled` | bool | `true` if formulae.brew.sh marks the formula disabled |
-| `tier` | `"1"` \| `"2"` | API-only vs API + GitHub release timing |
-| `days_stale` | int \| null | Days since latest GitHub release (Tier 2 only) |
-| `upstream_state` | enum | `ok` \| `deprecated` \| `disabled` \| `not-in-api` \| `api-unavailable` |
+| 1 | Inline header pipe | `Homepage: … \| v1.39.0 \| <license>` |
+| 2 | `\| Version \| <value> \|` table row | `\| Version \| 0.26.1 \|` |
+| 3 | Frontmatter `version:` | `version: 12.4.0` |
+| 4 | Registry/prose fallback | `- **Version**: 0.11.13 (…)` / `Current: v3.2.4 (…)` |
 
-`upstream_state` describes the *upstream fact* only — drift is computed by
-this skill, in S4, by comparing `upstream_version` against `bm_version`.
+**Strip a leading `v`** from the extracted value (`v1.39.0` ≡ `1.39.0`). If no
+pattern matches, record `bm_version="<unparseable>"` and continue — that is a
+genuine corpus-quality finding, not a parser miss.
 
-### S4. Compute drift and bucket
+> **Coverage gate:** before trusting bucket counts, sanity-check that the
+> extractor parses ≥95% of each cohort. A higher `Unparseable` rate means the
+> patterns need tuning for that cohort's template era, not that the notes are
+> all stale. Report residual `Unparseable` as a corpus-quality finding.
 
-For each filtered note, combine its `bm_version` (from MCP) with the
-script's NDJSON record. **Strip a leading `v`** from either value before
-comparison (`v1.39.0` and `1.39.0` are equivalent). Assign to one of these
-canonical buckets (same names as gardener Step 5b-iv):
+### S3. Recover the real package name, then fetch upstream facts
+
+The upstream name is not always the title minus the prefix:
+
+- **npm — always read `frontmatter.packages[0]`** (never prefix-strip). The
+  vault has scoped notes (`npm-@fastify-postgres`) and non-prefixed titles
+  (`@sentry-node`, whose package is `@sentry/node`); only `packages[0]` is
+  reliable. A title that is neither `npm-*` nor has a usable `packages[0]` is a
+  corpus-quality finding — report it, don't silently skip.
+- **brew / cask / crate / vscode — strip the anchored leading `<prefix>-`**
+  (single leading occurrence only; internal hyphens and dots are preserved:
+  `cask-font-fira-code` → `font-fira-code`, `crate-async-trait` →
+  `async-trait`, `vscode-esbenp.prettier-vscode` → `esbenp.prettier-vscode`).
+
+Pipe the recovered names (one per line) to the cohort's fetch script:
+
+```
+Bash("printf '%s\\n' <name1> <name2> … | bash scripts/fetch-<eco>-upstream.sh")
+```
+
+Each script emits NDJSON per name. Core fields (identical across scripts):
+`name`, `upstream_version`, `homepage`, `deprecated`, `disabled`, `tier`,
+`days_stale`, `upstream_state` (`ok` | `deprecated` | `disabled` |
+`not-in-api` | `api-unavailable`). The vscode script adds `openvsx_version`
+and `marketplace_version`.
+
+Join each NDJSON row back to its source note via the `name` field — it equals
+the recovered name you piped in (npm `packages[0]` or the prefix-stripped
+name). S4 then keys the bucket back to the note's full title (e.g. join
+`fastify` → `npm-fastify`), since the report and refresh commands use titles.
+
+`upstream_state` describes the *upstream fact* only — drift is computed by this
+skill, in S4, by comparing `upstream_version` against `bm_version`.
+
+**Per-cohort fetch shape:**
+
+- **brew / cask** are **bulk** (one blob fetch, indexed) — a single curl
+  failure is cohort-wide `api-unavailable`.
+- **npm / crate / vscode** are **per-name** — a 404 is that one note's
+  `not-in-api`; a 5xx/timeout is that one note's `api-unavailable` (the rest of
+  the cohort still reports normally).
+- **crate** rate-limits (1 s between calls); large cohorts serialize.
+- **vscode** queries **both** Open VSX (authoritative — the drift verdict) and
+  the VS Marketplace (best-effort annotation). Compute drift against
+  `openvsx_version`. When `marketplace_version` is *ahead* of Open VSX, surface
+  it as an annotation only — never the verdict, never a bucket.
+
+### S4. Compute drift and bucket (two-dimensional)
+
+**Strip a leading `v`** from both `bm_version` and `upstream_version` before
+comparing. Then resolve each note into a canonical bucket using the **same
+2-dimensional (age × semver-distance) model the `knowledge-gardener` Step 5b-iv
+defines** — that agent file is the canonical full ruleset (9 ordered rules);
+the summary here must stay in lockstep with it.
+
+**Canonical buckets:**
 
 | Canonical bucket | Trigger |
 |---|---|
-| `Drifted >30d` | versions differ, `days_stale > 30` |
-| `Archive candidates` | script `upstream_state="deprecated"` or `"disabled"` |
+| `Drifted >30d` | versions differ, `days_stale > 30` **or** semver-major escalation |
 | `Drifted <30d` | versions differ, `days_stale ≤ 30` |
 | `Drifted, age unknown` | versions differ, `days_stale == null` |
+| `Archive candidates` | `upstream_state` is `deprecated`/`disabled` (npm, cask, brew only) |
 | `Unparseable` | `bm_version == "<unparseable>"` (S2 found no pattern) |
-| `Tap-only` | script `upstream_state="not-in-api"` |
+| `Not in registry` | `upstream_state == "not-in-api"` |
+| `API unavailable` | `upstream_state == "api-unavailable"` |
 
-Within `Drifted >30d` and `Drifted <30d`, sub-sort by `days_stale`
-descending so the most overdue refreshes surface first. Records in
-`Drifted, age unknown` sort to the end of the drifted section.
+**Dimension 2 — semver distance** between `bm_version` and `upstream_version`,
+annotated inline so the maintainer can prioritize:
+
+| Distance class | Meaning |
+|---|---|
+| `semver-major` | leading major differs (`1.84.0` → `2.0.1`); for `0.x` any minor bump qualifies (pre-1.0 minor is breaking) |
+| `semver-minor-multi` | major matches, minor jumped by ≥3 |
+| `patch` | trailing-component change |
+| `distance-unknown` | either version not cleanly semver-splittable |
+
+**Escalation rule (preserved verbatim from the gardener):** a `semver-major`
+gap forces `Drifted >30d` **regardless of `days_stale`** — a major-version gap
+is forward-compatibility risk the age axis hides. Annotate the bullet with the
+`[<distance-class>]` tag; the `knowledge-maintainer` Section 3b batch ordering
+keys off `[semver-major]` > `[semver-minor-multi]` > `[patch]`.
+
+**Per-cohort distance notes:**
+
+- **brew / npm / crate / vscode** are clean semver → the model applies directly.
+- **cask** versions are comma-mangled; after taking the leading comma-segment,
+  if it is not clean semver it resolves to **`distance-unknown`** (never a false
+  `semver-major`).
+
+Within `Drifted >30d` and `Drifted <30d`, sub-sort by `days_stale` descending so
+the most overdue refreshes surface first. `Drifted, age unknown` sorts to the
+end of the drifted section.
 
 ### S5. Handle edge cases
 
-- If the script's only NDJSON line has `upstream_state="api-unavailable"`,
-  report "Could not reach `formulae.brew.sh` — staleness check skipped" and
-  stop.
-- If every note resolves to current+OK (no entries in any bucket), report
-  "All N documented brew notes are current with upstream." and skip S6.
+- **Bulk cohort (brew/cask) unreachable** — if the only NDJSON line has
+  `upstream_state="api-unavailable"`, report "Could not reach the `<eco>` API —
+  staleness check skipped for this cohort" and omit that cohort's section.
+- **Per-name cohort (npm/crate/vscode)** — individual `api-unavailable` rows are
+  listed under the `API unavailable` bucket; they do not abort the cohort.
+- **All current** — if every note in a cohort resolves to current+OK, report
+  "All N documented `<eco>` notes are current with upstream." and skip that
+  cohort's S6 section.
 
 ### S6. Render the report
 
-The bucket names below match the gardener's canonical names exactly. Use
-them as `####` sub-headings under a `## Brew Note Staleness` top-level
-section:
+Emit one `### Version Drift — <eco>` section per checked cohort, using canonical
+`####` sub-headings (these match the gardener's names exactly — keep them
+character-exact; the maintainer Section 3b text-searches for them):
 
 ````markdown
-## Brew Note Staleness — N documented notes checked
+### Version Drift — npm — N documented notes checked
 
 #### Drifted >30d (M notes — refresh recommended)
 
-| Note | Documented | Upstream | Released | Refresh command |
-|------|-----------|----------|----------|-----------------|
-| brew-bat | 0.24.0 | 0.25.1 | 47d ago | `/tool-intel brew:bat` |
-| brew-deno | 1.45.5 | 2.4.1 | 31d ago | `/tool-intel brew:deno` |
+| Note | Documented | Upstream | Released | Distance | Refresh command |
+|------|-----------|----------|----------|----------|-----------------|
+| npm-fastify | 4.28.1 | 5.8.5 | 410d ago | `[semver-major]` | `/package-intel npm:fastify` |
 
 #### Drifted <30d (P notes — recent upstream release)
 
-| Note | Documented | Upstream | Released | Refresh command |
-|------|-----------|----------|----------|-----------------|
-| brew-uv | 0.11.13 | 0.11.14 | 1d ago | `/tool-intel brew:uv` |
+| Note | Documented | Upstream | Released | Distance | Refresh command |
+|------|-----------|----------|----------|----------|-----------------|
+| npm-pino | 9.5.0 | 9.5.1 | 4d ago | `[patch]` | `/package-intel npm:pino` |
 
 #### Drifted, age unknown (Q notes)
 
-| Note | Documented | Upstream | Refresh command |
-|------|-----------|----------|-----------------|
-| brew-eza | 0.18.0 | 0.20.5 | `/tool-intel brew:eza` |
+| Note | Documented | Upstream | Distance | Refresh command |
+|------|-----------|----------|----------|-----------------|
+| cask-eza | 0.18.0 | 0.20.5 | `[distance-unknown]` | `/tool-intel cask:eza` |
 
 #### Archive candidates (R notes)
 
 | Note | Documented | Upstream status | Suggested action |
 |------|-----------|-----------------|------------------|
-| brew-foo | 1.2.3 | deprecated | `move_note(identifier="brew-foo", new_path="archive/brew-foo")` |
+| npm-request | 2.88.2 | deprecated | `move_note(identifier="npm-request", new_path="archive/npm-request")` |
 
 #### Unparseable (S notes)
 
-These notes don't match any of the three known version patterns. Run
-`/tool-intel brew:<name>` to refresh and restore the metadata layer.
+These notes don't match any known version pattern. Run the cohort's refresh
+command to restore the metadata layer.
 
-- brew-bar
-- brew-baz
+- npm-foo, npm-bar
 
-#### Tap-only (T notes — drift check skipped)
+#### Not in registry (T notes — drift check skipped)
 
-These are tap-installed formulae not present in the central Homebrew API.
-Drift cannot be checked automatically.
+No comparable upstream version in the registry API — unpublished, renamed, or
+removed; for brew, tap-distributed; for vscode, present only on the VS
+Marketplace (not Open VSX); for crate, published but with no stable release yet
+(prerelease-only — the crate exists, so this is not literal absence, but there
+is nothing stable to compare). Drift cannot be checked automatically. For
+vscode, show the Marketplace version as an annotation when available.
 
-- brew-arm-none-eabi-gcc (likely armmbed tap)
-- brew-mcp-netutils (likely patrickdappollonio tap)
+- vscode-ms-something (Marketplace 1.2.3 — not on Open VSX)
 
 #### Summary
 
-- Drifted >30d: M notes — top 5 by overdue days: brew-bat (47d), brew-deno (31d), ...
+- Drifted >30d: M notes — top 5 by overdue days: …
 - Drifted <30d: P notes
 - Drifted, age unknown: Q notes
 - Archive candidates: R notes
 - Unparseable: S notes
-- Tap-only: T notes
+- Not in registry: T notes
+- API unavailable: U notes
 - Current (no action needed): K notes
 ````
 
+For cohorts whose ecosystem has no deprecation flag (`crate`, `vscode`), the
+`Archive candidates` bucket is omitted — its absence is expected by both this
+report and the maintainer.
+
 ### S7. Offer batched refresh
 
-If 2 or more notes are in the `Drifted >30d` bucket, offer to run
-`/tool-intel` against the top 5 in parallel:
+If 2 or more notes are in a cohort's `Drifted >30d` bucket, offer to refresh the
+top 5 in parallel via the cohort's routed command (prefix → skill):
+`brew-`/`cask-`/`vscode-` → `/tool-intel <prefix>:<name>`; `npm-` →
+`/package-intel npm:<name>`; `crate-` → `/package-intel crate:<name>`.
 
 > Want me to refresh the top 5 stale notes (released >30 days ago) now?
-> I can run them as parallel `/tool-intel` calls — they're file-disjoint
-> so this is safe.
+> I can run them as parallel calls — they're file-disjoint so this is safe.
 
 For notes in `Drifted <30d` or `Drifted, age unknown`, ask which to refresh
-individually rather than auto-batching — recent releases may be pre-stable
-or short-lived. This matches the `knowledge-maintainer` Section 3b routing.
+individually rather than auto-batching — recent releases may be pre-stable or
+short-lived. This matches the `knowledge-maintainer` Section 3b routing.
 
-If the user accepts the batch:
+Example accepted batch (single turn, names recovered per S3):
+
 ```
-Skill(skill: "tool-intel", args: "brew:bat")
-Skill(skill: "tool-intel", args: "brew:deno")
-Skill(skill: "tool-intel", args: "brew:eza")
-Skill(skill: "tool-intel", args: "brew:jq")
-Skill(skill: "tool-intel", args: "brew:difftastic")
+Skill(skill: "package-intel", args: "npm:fastify")
+Skill(skill: "package-intel", args: "npm:pino")
+Skill(skill: "tool-intel", args: "cask:warp")
 ```
 
-For more than 5 `Drifted >30d` items, ask which to prioritize rather than
-launching a larger fan-out. Track partial failures: if any `tool-intel`
-invocation fails, report which succeeded vs failed in the summary rather
-than claiming the whole batch succeeded.
+For more than 5 `Drifted >30d` items, prioritize `[semver-major]` first, then
+`[semver-minor-multi]`, then `[patch]`, and ask which to launch rather than a
+larger fan-out. Track partial failures: if any refresh invocation fails, report
+which succeeded vs failed rather than claiming the whole batch succeeded.
 
-### S8. Phase 2 cross-ecosystem note
+### S8. Scope footnote
 
 After the report, include a one-line footnote acknowledging scope:
 
-> *Staleness detection currently covers Homebrew formulae only. npm, crates,
-> Go modules, GitHub Actions, Docker images, and VSCode extensions are
-> Phase 2 — they'll plug into the same `--stale` flag once their upstream
-> registries are wired up.*
+> *Staleness detection covers registry-backed, stable-channel ecosystems: brew,
+> npm, cask, crate, and vscode (vscode checks both Open VSX and the VS
+> Marketplace). `action`, `gh`, `go`, and `docker` are excluded by construction
+> — they have no single canonical comparable version. `pypi`, `gem`, and
+> `composer` are deferred until their cohorts grow.*

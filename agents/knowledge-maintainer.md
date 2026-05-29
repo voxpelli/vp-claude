@@ -519,20 +519,32 @@ If the user's project has undocumented Tier 1 packages:
 
 6. Report what was created, grouped by ecosystem and tool type.
 
-### 3b. Refresh drifted brew notes
+### 3b. Refresh drifted notes
 
-If a gardener report contains a `### Brew Version Drift` section, act on its
-findings. Drift refresh is conceptually similar to Section 3's "undocumented
-package" workflow — both delegate to `/tool-intel` via the Skill tool —
-except this targets *existing* notes whose recorded version has fallen
-behind upstream.
+If a gardener report (or a `/knowledge-gaps --stale` run) contains one or more
+`### Version Drift — <eco>` sections, act on their findings. Drift refresh is
+conceptually similar to Section 3's "undocumented package" workflow — both
+delegate to a research skill via the Skill tool — except this targets
+*existing* notes whose recorded version has fallen behind upstream.
 
-**Mandatory behavior — full `/tool-intel` enrichment, NOT minimal version bumps**
+**Refresh command and upstream name by note prefix.** The bucket→action rules
+further below are ecosystem-agnostic — only the refresh command and the
+re-read/refresh *name* vary by prefix:
 
-Every refresh action in this section MUST go through the full five-source
-`/tool-intel` skill via the Skill tool. Do NOT shortcut to a single
-`edit_note` appending a `[release] vX.Y.Z` observation — that path
-demonstrably loses security signal.
+| Prefix | Refresh command | Upstream name |
+|--------|-----------------|---------------|
+| `brew-` | `/tool-intel brew:<name>` | strip leading `brew-` |
+| `cask-` | `/tool-intel cask:<name>` | strip leading `cask-` |
+| `vscode-` | `/tool-intel vscode:<name>` | strip leading `vscode-` |
+| `npm-` | `/package-intel npm:<name>` | frontmatter `packages[0]` (NOT prefix-strip — scoped/non-prefixed titles exist) |
+| `crate-` | `/package-intel crate:<name>` | strip leading `crate-` |
+
+**Mandatory behavior — full research-skill enrichment, NOT minimal version bumps**
+
+Every refresh action in this section MUST go through the full research skill
+(`/tool-intel` for `brew`/`cask`/`vscode`, `/package-intel` for `npm`/`crate`)
+via the Skill tool. Do NOT shortcut to a single `edit_note` appending a
+`[release] vX.Y.Z` observation — that path demonstrably loses security signal.
 
 Empirical motivation (Sprint 23 field-test of v0.29.3): when this section
 was previously executed as "auto-batch up to 5 minimal version bumps", a
@@ -556,9 +568,11 @@ note between gardener and maintainer. Before acting on each Drifted-target
 entry, re-read the target and re-confirm the audit input still holds:
 
 ```
-read_note(identifier="brew-<name>", output_format="json")
+read_note(identifier="<prefix>-<name>", output_format="json")
+# (identifier is the BM note TITLE — the prefixed form, e.g. brew-bat,
+#  npm-fastify, vscode-esbenp.prettier-vscode — NOT the upstream name)
 # → locate the most recent [version] observation
-# → compare against the gardener report's recorded version
+# → compare against the report's recorded version
 # → if they no longer match (drift already resolved), skip the action
 #   with a "stale audit input" annotation in the Step 6 summary
 ```
@@ -574,11 +588,12 @@ sub-headings exactly — load-bearing strings to search for):
 
 - **`Drifted >30d`** → auto-refresh tier. After the pre-action re-read
   confirms drift still exists, batch up to 5 entries in a single parallel
-  turn of `/tool-intel brew:<name>` Skill invocations. The `tool-intel`
-  skill is idempotent — it detects an existing note and runs in refresh
-  mode, appending new observations rather than overwriting. This matches
-  the existing parallel-research pattern used in Section 3 for new tool
-  notes. **Always full pipeline, never a minimal version-only edit.**
+  turn of the prefix's refresh command (per the table above) Skill
+  invocations. Both `tool-intel` and `package-intel` are idempotent — they
+  detect an existing note and run in refresh mode, appending new
+  observations rather than overwriting. This matches the existing
+  parallel-research pattern used in Section 3 for new notes. **Always full
+  pipeline, never a minimal version-only edit.**
   When the bucket has more than 5 entries, prioritize bullets annotated
   `[semver-major]` first, then `[semver-minor-multi]`, then `[patch]` —
   the gardener emits these distance-class annotations in Step 5b-iv
@@ -586,47 +601,52 @@ sub-headings exactly — load-bearing strings to search for):
   regardless of age.
 - **Security-sensitive override (applies to ALL buckets):** if the
   target note has any prior `[security]` observation (check during the
-  pre-action re-read), it ALWAYS gets a full `/tool-intel` refresh
+  pre-action re-read), it ALWAYS gets a full research-skill refresh
   regardless of age bucket — including `Drifted <30d` and
   `Drifted, age unknown`. Patch-level bumps on security tools routinely
   ship CVE fixes (the cosign case above). Do NOT defer security tools
   to Section 4 approval.
-- **`Archive candidates`** (formula deprecated or disabled upstream) →
-  surface under Section 4 "Needs Your Approval" with the suggested
-  `move_note` call. Never auto-archive — deprecation reversals do happen,
-  and archival is a content-level decision.
+- **`Archive candidates`** (deprecated or disabled upstream — emitted for
+  `brew`/`cask`/`npm`; `crate`/`vscode` have no deprecation flag so never
+  populate it) → surface under Section 4 "Needs Your Approval" with the
+  suggested `move_note` call. Never auto-archive — deprecation reversals do
+  happen, and archival is a content-level decision.
 - **`Drifted <30d`** or **`Drifted, age unknown`** → surface under Section 4
   "Needs Your Approval" rather than auto-refresh (UNLESS the
-  security-sensitive override applies — then auto-refresh via full
-  `/tool-intel`). A very recent upstream release may not yet be the
+  security-sensitive override applies — then auto-refresh via the full
+  research skill). A very recent upstream release may not yet be the
   version the user wants documented (pre-release, unstable, or
   rolling-back-soon).
-- **`Unparseable`** → surface under Section 4 "Needs Your Approval" with a
-  suggested `/tool-intel brew:<name>` per entry to restore the version
-  metadata. Don't auto-refresh — the underlying note may have structural
-  issues that warrant inspection first.
-- **`Tap-only`** → ignore. The gardener flagged these as informational; no
-  action is available because tap-installed formulae aren't in the central
-  formulae.brew.sh API.
+- **`Unparseable`** → surface under Section 4 "Needs Your Approval" with the
+  prefix's refresh command per entry to restore the version metadata. Don't
+  auto-refresh — the underlying note may have structural issues that warrant
+  inspection first.
+- **`Not in registry`** → ignore. Flagged as informational; no action is
+  available because the target isn't in its registry API — tap-distributed
+  brew formulae, unpublished/renamed/removed packages, or extensions present
+  only on the VS Marketplace (not Open VSX). An auto-refresh would itself
+  404, so this is surfaced, never auto-acted.
 
 Example parallel batch (single assistant turn, after pre-action re-reads
-confirm drift still exists):
+confirm drift still exists). The refresh command is chosen per the prefix
+table above, so a mixed-cohort batch interleaves `/tool-intel` and
+`/package-intel` calls (use the upstream name — `packages[0]` for npm):
 ```
 Skill(skill: "tool-intel", args: "brew:bat")
 Skill(skill: "tool-intel", args: "brew:deno")
-Skill(skill: "tool-intel", args: "brew:eza")
-Skill(skill: "tool-intel", args: "brew:jq")
-Skill(skill: "tool-intel", args: "brew:difftastic")
+Skill(skill: "package-intel", args: "npm:fastify")
+Skill(skill: "package-intel", args: "crate:serde")
+Skill(skill: "tool-intel", args: "cask:warp")
 ```
 
 **Partial-failure handling:** Track each Skill invocation's result. If any
-`/tool-intel` call fails (network, schema mismatch, tool-intel internal
-error), do NOT claim the whole batch succeeded. Report which entries
-succeeded and which failed, with the failure reason. Example summary:
-"Refreshed 3 of 5 drifted brew notes — bat, deno, eza succeeded; jq failed
-(network), difftastic failed (tool-intel schema error). Re-run for jq and
-difftastic to retry. Skipped tailscale (stale audit input — already
-current at 1.96.4 on re-read)."
+research-skill call fails (network, schema mismatch, internal error), do NOT
+claim the whole batch succeeded. Report which entries succeeded and which
+failed, with the failure reason. Example summary: "Refreshed 3 of 5 drifted
+notes — brew:bat, brew:deno, npm:fastify succeeded; crate:serde failed
+(network), cask:warp failed (schema error). Re-run for serde and warp to
+retry. Skipped tailscale (stale audit input — already current at 1.96.4 on
+re-read)."
 
 After a successful refresh batch, optionally suggest re-running the gardener
 audit to confirm the entries have flipped to `Drifted` removed / current.

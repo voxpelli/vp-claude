@@ -54,7 +54,7 @@ fi
 # Defensive: validate the downloaded payload is valid JSON before building the
 # index. Without this check, a CDN returning malformed JSON (200 status, bad
 # body) would silently produce an empty index, making every formula look like
-# `not-in-api` — which the gardener then mislabels as "Tap-only" for the whole
+# `not-in-api` — which the gardener then mislabels as "Not in registry" for the whole
 # vault. Emit the api-unavailable sentinel and exit so callers see a clean
 # error path instead.
 if ! jq empty "$API_CACHE" >/dev/null 2>&1; then

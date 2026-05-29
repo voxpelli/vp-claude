@@ -3,6 +3,12 @@
 Use this reference file during Step 2 (Fetch registry data) when the detected
 ecosystem is `cask`.
 
+> **Canonical version for staleness (`--stale`):** record the cask API's
+> `.version` as this note's version — comparison uses only the **leading
+> comma-segment** (`3.39.5,hash,rev` → `3.39.5`), since a suffix-only change is
+> not drift. `scripts/fetch-cask-upstream.sh` normalizes the same way, so
+> `/knowledge-gaps --stale` and a subsequent `/tool-intel` refresh converge.
+
 ## Fetch Cask Metadata
 
 Use `tavily_extract` on the formulae.brew.sh cask JSON API:

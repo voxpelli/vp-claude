@@ -4,6 +4,8 @@ import { join, relative } from 'node:path'
 
 import yaml from 'js-yaml'
 
+import { checkStalenessEmit, checkStalenessConsume } from './lib/staleness-contract.mjs'
+
 const ROOT = new URL('.', import.meta.url).pathname.replace(/\/$/, '')
 
 /** @type {string[]} */
@@ -344,6 +346,38 @@ if (existsSync(agentsDir)) {
       }
     }
   }
+}
+
+// --- Staleness drift bucket contract (emit ↔ consume) ---
+//
+// The version-drift detection feature is a cross-file string contract: the
+// knowledge-gardener and the /knowledge-gaps staleness reference EMIT report
+// sections whose `#### <bucket>` sub-headings the knowledge-maintainer
+// Section 3b text-searches to route auto-fixes. If either side drifts (a
+// renamed bucket, a typo), the maintainer silently fails to act. The contract
+// logic lives in ./lib/staleness-contract.mjs (pure, unit-tested by
+// scripts/check-staleness-contract.mjs); here we apply it to the real files
+// and attribute any violations. The ">=1 bucket matched" guard makes a future
+// refactor that hides the headings fail loudly instead of passing empty.
+
+const stalenessEmitFiles = [
+  join(ROOT, 'agents', 'knowledge-gardener.md'),
+  join(ROOT, 'skills', 'knowledge-gaps', 'references', 'staleness-detection.md'),
+]
+let stalenessBucketsSeen = 0
+for (const file of stalenessEmitFiles) {
+  if (!existsSync(file)) continue
+  const { bucketCount, errors: emitErrors } = checkStalenessEmit(await readFile(file, 'utf8'))
+  for (const message of emitErrors) error(file, message)
+  stalenessBucketsSeen += bucketCount
+}
+const maintainerPath = join(ROOT, 'agents', 'knowledge-maintainer.md')
+if (existsSync(maintainerPath)) {
+  const { errors: consumeErrors } = checkStalenessConsume(await readFile(maintainerPath, 'utf8'))
+  for (const message of consumeErrors) error(maintainerPath, message)
+}
+if (stalenessBucketsSeen === 0) {
+  error(stalenessEmitFiles[0], 'Staleness contract check matched zero canonical bucket headings across emit files — the heading regex or fences likely changed; refusing to pass vacuously')
 }
 
 // --- Report ---

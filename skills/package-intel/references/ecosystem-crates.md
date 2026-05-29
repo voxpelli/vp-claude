@@ -3,6 +3,12 @@
 Use this reference file during Step 2 (Resolve repository) when the detected
 ecosystem is `crate`.
 
+> **Canonical version for staleness (`--stale`):** record
+> `.crate.max_stable_version` (prerelease-safe) as this note's version.
+> `scripts/fetch-crate-upstream.sh` compares against the same field, so
+> `/knowledge-gaps --stale` and a subsequent `/package-intel` refresh converge
+> on the same value.
+
 ## Resolve Crate Metadata
 
 crates.io provides a free JSON API. **A `User-Agent` header is required** — the

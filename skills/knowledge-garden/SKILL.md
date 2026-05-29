@@ -45,8 +45,9 @@ This is the first and most important step. Classify the request:
 - The argument is a whole-graph phrase: "my knowledge graph", "the whole
   graph", "everything", "all notes", "full audit", "--full", "graph health".
 - The request implies graph-wide checks the inline path cannot do efficiently:
-  schema drift across a whole type, brew version drift, cross-project scope
-  leak, orphan detection across the entire graph, tag alignment.
+  schema drift across a whole type, version drift across ecosystems,
+  cross-project scope leak, orphan detection across the entire graph, tag
+  alignment.
 
 To delegate, launch the read-only auditor and stop:
 
@@ -191,5 +192,5 @@ Then, if any note has actionable fixes, suggest the handoff:
 - **Cite specifics** — every finding references the note and the offending
   line/section, with a copy-paste remediation where possible.
 - **Don't duplicate the agent** — the graph-wide 10-step sweep (schema drift,
-  brew drift, scope leak, tag alignment) lives in the agent; delegate to it
+  version drift, scope leak, tag alignment) lives in the agent; delegate to it
   rather than reimplementing those checks here.
