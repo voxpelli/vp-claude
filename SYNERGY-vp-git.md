@@ -32,19 +32,29 @@ tooling that vp-claude could adopt.
   extraction candidate alongside vp-beads's mirror entry — see
   `SYNERGY-vp-beads.md` Extraction Candidates ("Paired bundle:
   `@voxpelli/claude-plugin-tools`").
-  Status: drifting · Last verified: 2026-05-04
+  Status: accept-difference (was drifting) · Last verified: 2026-05-29
+  Note (2026-05-29 /sibling-sync): aligned to vp-git's 2026-05-21 reassessment —
+  they refuted extraction as premature (the shared core is shrinking as a
+  fraction; each plugin's extensions dominate) and reclassified
+  `KNOWN_MCP_PREFIXES` as accept-difference, not drift (each plugin allowlists
+  only the MCP servers its own skills reference). Revival trigger: shared core
+  stable 2+ sprints AND a 3rd plugin needs a core-level change. NB: the
+  vp-beads mirror still carries `drifting` — that pairing has genuinely
+  drifting copies (358 vs 333 + this sprint's phantom-subagent and
+  staleness-contract checks); the accept-difference verdict is vp-git-specific.
 
 ## Divergences
 
 - **Hooks/agents/skills scope** (2026-05-19) — vp-claude has 14 skills, 4
-  agents, 5 hooks. vp-git has 2 skills (`rebase-validate`, `stack-cascade`),
-  0 agents, 0 hooks. Domain choice — vp-git is a focused git-safety-skill
-  plugin with no runtime intervention surface; vp-claude is a multi-skill
-  BM platform.
+  agents, 5 hooks. vp-git has 3 skills (`rebase-validate`, `stack-cascade`,
+  `tag-audit`), 0 agents, 0 hooks. Domain choice — vp-git is a focused
+  git-safety-skill plugin with no runtime intervention surface; vp-claude is
+  a multi-skill BM platform.
   Convergence path: accept-difference · Reason: different plugin domains
   justify different scope.
-  Note: `stack-cascade` added in vp-git 0.6.0 (2026-05-19). Re-verified
-  during the marketplace bump that landed today.
+  Note: `stack-cascade` added in vp-git 0.6.0 (2026-05-19); `tag-audit` added
+  2026-05-27. Skill count refreshed 2→3 during the 2026-05-29 /sibling-sync
+  pass (vp-git's reciprocal row already listed all three).
 
 ## Extraction Candidates
 
