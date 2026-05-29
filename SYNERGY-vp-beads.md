@@ -95,8 +95,8 @@ of maintaining both halves catches drift cases a single-source record misses.
 
 ## Divergences
 
-- **npm-run-all2 parallel check stages** (2026-05-19) — _(Converged
-  2026-05-29)_ vp-claude adopted `npm-run-all2@^7.0.0` + `run-p check:*`,
+- **npm-run-all2 parallel check stages** (2026-05-19) — *(Converged
+  2026-05-29)* vp-claude adopted `npm-run-all2@^7.0.0` + `run-p check:*`,
   matching vp-beads and vp-git exactly. Its `package.json` "check" script is
   now `run-p check:*` (was sequential `&&` chaining across 5 sub-checks);
   the 5th sub-check (`check:contract`, added in the v0.31.0 staleness work)
