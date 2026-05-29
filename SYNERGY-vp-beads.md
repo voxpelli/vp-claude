@@ -95,19 +95,18 @@ of maintaining both halves catches drift cases a single-source record misses.
 
 ## Divergences
 
-- **npm-run-all2 parallel check stages** (2026-05-19) — vp-beads and
-  vp-git both use `run-p check:*` for parallel CI execution; vp-claude
-  still uses sequential `&&` chaining in its `package.json` "check"
-  script. Convergence is a one-line edit on this side.
-  Convergence path: adopt-theirs · Last verified: 2026-05-19
-  Note: Re-filed from Shared Patterns 2026-05-19 — the entry had been
-  carrying `Status: diverging` which is not a valid Shared Patterns
-  value (only `aligned | drifting`). Sprint 19's reciprocation pass
-  falsely claimed vp-claude had converged; vp-beads's re-verification
-  (2026-05-04) and Sprint 20's /sibling-sync run (2026-05-06) both
-  re-confirmed vp-claude remains sequential. Reciprocate on vp-beads's
-  `SYNERGY-vp-knowledge.md` (their row carries the same
-  misclassification).
+- **npm-run-all2 parallel check stages** (2026-05-19) — _(Converged
+  2026-05-29)_ vp-claude adopted `npm-run-all2@^7.0.0` + `run-p check:*`,
+  matching vp-beads and vp-git exactly. Its `package.json` "check" script is
+  now `run-p check:*` (was sequential `&&` chaining across 5 sub-checks);
+  the 5th sub-check (`check:contract`, added in the v0.31.0 staleness work)
+  was the tipping incentive. `npm run check` verified green in parallel.
+  Convergence path: adopt-theirs · Status: converged · Last verified: 2026-05-29
+  Note: Sprint 19's reciprocation pass falsely claimed convergence; it was
+  finally real on 2026-05-29 after three sibling-sync passes flagged
+  vp-claude as the lone sequential holdout. vp-beads's `SYNERGY-vp-knowledge.md`
+  still carries `Status: diverging` (with the invalid-Shared-Patterns-value
+  misclassification) — reciprocate on their side to mark converged.
 
 - **PreCompact hook retired in v0.28.0** (2026-05-04) — vp-claude retired
   its PreCompact hook in v0.28.0 (commit `624e3df`, 2026-04-29) per the

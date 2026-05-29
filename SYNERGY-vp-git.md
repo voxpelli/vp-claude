@@ -17,11 +17,13 @@ tooling that vp-claude could adopt.
   MIT license, `voxpelli` author, identical remark devDeps stack
   (`remark-cli`, `remark-frontmatter`, `remark-preset-lint-consistent`,
   `remark-preset-lint-recommended`, `js-yaml`, `npm-run-all2`).
-  Status: aligned · Last verified: 2026-05-06
-  Note: Both have `npm-run-all2` as a devDep; vp-git uses `run-p check:*`
-  for parallel orchestration, vp-claude uses sequential `&&` chaining.
-  Tracked as drift on vp-beads's side (`SYNERGY-vp-beads.md` "npm-run-all2
-  parallel check stages") rather than duplicated here as a Divergence.
+  Status: aligned · Last verified: 2026-05-29
+  Note: As of 2026-05-29 both genuinely share `npm-run-all2@^7.0.0` and the
+  `run-p check:*` orchestrator — vp-claude adopted it this date (it had
+  previously used sequential `&&` chaining despite this note's earlier claim
+  of a shared devDep, which was aspirational). The convergence is tracked on
+  vp-beads's side (`SYNERGY-vp-beads.md` "npm-run-all2 parallel check stages",
+  now `Status: converged`).
 
 - **`validate-plugin.mjs` tool-reference audit** (2026-05-04) — Both
   plugins maintain a root-level `validate-plugin.mjs` that audits
