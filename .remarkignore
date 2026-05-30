@@ -9,3 +9,6 @@ RETRO-*.md
 # Swarm-wave sprint state — gitignored, ephemeral scratch; agent-assignment lines
 # use [P1]/[P2]/[P3] priority tags that remark reads as undefined link references.
 SWARM-*.md
+
+# Plan / design working drafts — gitignored, local-only; same bracket-prose hazard.
+PLAN-*.md
