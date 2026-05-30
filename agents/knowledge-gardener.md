@@ -443,12 +443,31 @@ Then reason about the `content` field.
 wins** — this is the **same set the `/knowledge-gaps --stale` reference
 (`staleness-detection.md` S2) uses; keep the two in sync**:
 
+<!-- Version-extraction patterns mirrored in skills/knowledge-gaps/references/staleness-detection.md S2 — update both in lockstep (no machine contract couples them) -->
+
 | Priority | Pattern | Example |
 |---|---|---|
 | 1 | Inline header pipe | `Homepage: ... \| v1.39.0 \| <license>` |
 | 2 | `\| Version \| <value> \|` table row | `\| Version \| 0.26.1 \|` |
-| 3 | Frontmatter `version:` | `version: 12.4.0` |
-| 4 | Registry/prose fallback | `- **Version**: 0.11.13 (…)` / `Current: v3.2.4 (…)` |
+| 3 | `[version]` / `[version-range]` observation | `- [version] 5.8.5` / `- [version-range] ^9.0.0` |
+| 4 | Frontmatter `version:` | `version: 12.4.0` |
+| 5 | `## Release Highlights` / `## Version History` newest entry | `## Release Highlights` → `- **v5.8.5** (…)` |
+| 6 | Registry/prose fallback | `- **Version**: 0.11.13 (…)` / `Current: v3.2.4 (…)` |
+
+Pattern 3 reads the version straight from the note's `observations` array — the
+canonical `[version]` slot proposed for the package schemas (bead `f3zx` / Wave
+3); **not yet emitted by the default `/package-intel` templates**, but present
+in some hand-edited notes, so check it before the curated prose. Accept
+`[version]` or `[version-range]`; for a range take the first concrete version
+token (strip a leading range operator: `^`, `~`, `>=`, `>`, `<=`, `<`, `=`).
+Pattern 5 takes the **highest semver** among the versions referenced in the
+`## Release Highlights` / `## Version History` list (linked or bold) — do
+**not** assume the top bullet is newest; these blocks are grouped by change-type
+(breaking/feature/fix), not version order. **Release Highlights ranks last on
+purpose** — the list is hand-curated and may lag the real latest release, so
+trusting it risks a false "current", worse than an honest `unparseable`; reach
+it only when patterns 1–4 and the prose fallback all miss. Until `f3zx` lands
+the `[version]` slot, Pattern 5 is what recovers most notes.
 
 Strip a leading `v` (`v1.39.0` ≡ `1.39.0`). If none match, record
 `bm_version = unparseable` (a corpus-quality finding worth surfacing).

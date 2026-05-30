@@ -68,12 +68,32 @@ Issue up to 5 concurrent `read_note` calls per turn to keep latency bounded.
 in different notes (different `*-intel` template eras). Match these patterns in
 **priority order, first hit wins**:
 
+<!-- Version-extraction patterns mirrored in agents/knowledge-gardener.md Step 5b-ii — update both in lockstep (no machine contract couples them) -->
+
 | Priority | Pattern | Example |
 |---|---|---|
 | 1 | Inline header pipe | `Homepage: … \| v1.39.0 \| <license>` |
 | 2 | `\| Version \| <value> \|` table row | `\| Version \| 0.26.1 \|` |
-| 3 | Frontmatter `version:` | `version: 12.4.0` |
-| 4 | Registry/prose fallback | `- **Version**: 0.11.13 (…)` / `Current: v3.2.4 (…)` |
+| 3 | `[version]` / `[version-range]` observation | `- [version] 5.8.5` / `- [version-range] ^9.0.0` |
+| 4 | Frontmatter `version:` | `version: 12.4.0` |
+| 5 | `## Release Highlights` / `## Version History` newest entry | `## Release Highlights\n- **v5.8.5** (2026-05-…) — …` |
+| 6 | Registry/prose fallback | `- **Version**: 0.11.13 (…)` / `Current: v3.2.4 (…)` |
+
+Pattern 3 reads the version directly from the note's `observations` array — the
+canonical `[version]` slot proposed for the package schemas (bead `f3zx` / Wave
+3). It is **not yet emitted by the default `/package-intel` templates**, but it
+appears in some hand-edited notes, so check it before the curated prose. Accept
+either `[version]` or `[version-range]`; for a range, take the first concrete
+version token (strip a leading range operator: `^`, `~`, `>=`, `>`, `<=`, `<`,
+`=`). Pattern 5 takes the **highest semver** among the versions referenced in
+the `## Release Highlights` or `## Version History` list (linked or bold) — do
+**not** assume the top bullet is newest; these blocks are grouped by change-type
+(breaking/feature/fix), not version order. **Release Highlights ranks last on
+purpose:** the list is hand-curated and may lag the real latest release, so
+trusting it risks a false "current" — worse than an honest `<unparseable>`. Only
+fall to it when patterns 1–4 and the prose fallback all miss. Until `f3zx` lands
+the `[version]` slot, Pattern 5 is what actually recovers most
+otherwise-`<unparseable>` package notes.
 
 **Strip a leading `v`** from the extracted value (`v1.39.0` ≡ `1.39.0`). If no
 pattern matches, record `bm_version="<unparseable>"` and continue — that is a

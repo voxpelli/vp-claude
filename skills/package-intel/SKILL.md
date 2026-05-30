@@ -369,6 +369,16 @@ you last read it. Re-run `read_note`, re-derive the anchor, and retry once.
 If the second attempt also fails, stop and report the error to the user — do
 not loop.
 
+**Trust `schema_validate` and the file, not the inline count.** When verifying an
+edit, the `edit_note` inline observation-count echo can transiently double or
+triple — a BM index re-parse artifact on notes with `###` subsections inside
+`## Observations` (observed 2026-05-30: `--stale` refresh edits showed inflated
+counts while the files were correct and `schema_validate` stayed clean). Confirm
+against `schema_validate` and the actual file contents (re-read the note), not
+that echo. Do NOT delete "duplicate" observations on the strength of the inline
+count alone — first confirm the duplication exists in the file itself (re-read /
+grep); a re-sync clears the phantom while the file was always correct.
+
 When updating an existing note that has a `[popularity]` observation, use
 `find_replace` to replace the old line with the current count rather than
 appending a second popularity line.
