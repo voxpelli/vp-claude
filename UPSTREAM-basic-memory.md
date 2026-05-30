@@ -33,6 +33,7 @@ These local entries have no upstream issue/PR despite being clear friction. Cand
 - LinkResolver should resolve wiki-links against aliases/metadata — design proposal
 - Phased Obsidian colon-compatibility — Upstream Opportunity, **Merge readiness: needs-redesign**, no PR submitted
 - Markdown link + trailing parenthetical inside an observation silently drops the whole observation — clear bug, high-value filing
+- No bulk metadata/version projection — cohort `--stale` must `read_note` every entity (388 npm notes = 388 round-trips) — feature request (high-value; candidate home: `.md-wiki-vec` committable index)
 
 ## Open items
 
@@ -262,3 +263,12 @@ Severity: degraded · Ownership: upstream-by-design · Workaround: full — sepa
 **Discovered:** 2026-05-20 (v0.21.x, Simon Willison note source-URL backfill)
 **Impact:** Medium — an observation line of the form `- [category] … [text](url) … (trailing parenthetical)` is silently dropped from the parsed observation index. `schema_validate` still reports a clean pass, so the loss is invisible without a before/after observation count. Reproduced on an `engineering` note: a `## Key Sources` block of 8 `[source]` lines parsed as 7 — the one line carrying an inline markdown link followed by a trailing `(link post …)` aside vanished, while its 7 siblings parsed. Likely the inline-link/observation exclusion ([#247](https://github.com/basicmachines-co/basic-memory/issues/247)) interacting with the observation `(context)` suffix parser when both appear on the same line.
 Severity: degraded · Ownership: upstream · Workaround: full — keep source URLs in the note body (a `## Sources` markdown list) or in `source:`/`url:` frontmatter, never inside a `[category]` observation. Bare URLs with no `[]()` syntax are also safe inside observations.
+
+---
+
+### No bulk metadata/version extraction — `--stale` must `read_note` every entity (Feature Request)
+
+**Discovered:** 2026-05-30 (`/knowledge-gaps --stale npm` run)
+**Impact:** High — there is no MCP/CLI way to project a few frontmatter/metadata fields (e.g. `permalink`, `version`, `packages[0]`) across a directory of notes in one call. `list_directory` returns titles + dates only; `search_notes` returns matched chunks, not reliable full metadata. So a cohort-wide version-drift check (`/knowledge-gaps --stale <eco>`) must call `read_note` on **every** note to extract its recorded version and package name — for the npm cohort that is ~388 full-note round-trips (each multi-KB), infeasible in a single pass and forcing delegation to parallel subagents purely to keep the orchestrator's context from overflowing. The recorded version also lives in heterogeneous places across template eras, so even with the notes in hand the extraction is bespoke.
+**Desired:** a bulk projection API — e.g. `list_directory` (or a new query) returning a selected frontmatter subset per entry, or an indexed columnar read exposed by the `.md-wiki-vec` committable-index layer (`/Users/pelle/basic-memory-worktrees/claude-index-committable/.md-wiki-vec`). The index already materializes per-note metadata; surfacing `{permalink, frontmatter subset}` for a directory would turn cohort staleness from O(N) round-trips into a single indexed read, and would also let the extractor normalize the version field once instead of per-template-era.
+Severity: degraded · Ownership: upstream · Workaround: partial — fan out `read_note` across parallel extraction subagents that return only `{title, version, package}`, keeping bulk note bodies out of the caller's context; still O(N) round-trips and subagent-token cost.
