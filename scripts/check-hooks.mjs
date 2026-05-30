@@ -5,13 +5,15 @@
 // undetected in session-start.sh for 3 releases (v0.15.0–v0.16.0).
 
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs'
+import { mkdtempSync, writeFileSync, mkdirSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const HOOKS_DIR = join(__dirname, '..', 'hooks')
+const ROOT_HOOKS_JSON = join(__dirname, '..', 'hooks.json')
+const NESTED_HOOKS_JSON = join(HOOKS_DIR, 'hooks.json')
 
 // --- Helpers ---
 
@@ -36,13 +38,32 @@ function makeTempPluginRoot () {
 /**
  * @param {string} script
  * @param {string} stdinJson
- * @param {{ args?: string[], cwd?: string }} [opts]
+ * @param {{ args?: string[], cwd?: string, env?: NodeJS.ProcessEnv }} [opts]
  */
-function runHook (script, stdinJson, { args = [], cwd = process.cwd() } = {}) {
+function runHook (script, stdinJson, { args = [], cwd = process.cwd(), env = process.env } = {}) {
   const result = spawnSync('bash', [script, ...args], {
     input: stdinJson,
     cwd,
-    env: { ...process.env },
+    env: { ...env },
+    encoding: 'utf8'
+  })
+  return {
+    stdout: result.stdout ?? '',
+    stderr: result.stderr ?? '',
+    status: result.status ?? 1
+  }
+}
+
+/**
+ * @param {string} command
+ * @param {string} stdinJson
+ * @param {{ cwd?: string, env?: NodeJS.ProcessEnv }} [opts]
+ */
+function runHookCommand (command, stdinJson, { cwd = process.cwd(), env = process.env } = {}) {
+  const result = spawnSync('bash', ['-lc', command], {
+    input: stdinJson,
+    cwd,
+    env: { ...env },
     encoding: 'utf8'
   })
   return {
@@ -69,6 +90,37 @@ function parseJsonObjects (stdout) {
     }
     return { count: 0, objects: [], parseError: `Invalid JSON: ${trimmed.slice(0, 120)}` }
   }
+}
+
+/** @param {string} file */
+function parseHookConfig (file) {
+  return /** @type {{ hooks?: Record<string, Array<{ matcher?: string, hooks?: Array<{ type?: string }> }> > }} */ (
+    JSON.parse(readFileSync(file, 'utf8'))
+  )
+}
+
+/** @param {ReturnType<typeof parseHookConfig>} config */
+function hookSignature (config) {
+  return Object.entries(config.hooks ?? {}).flatMap(([event, entries]) =>
+    entries.map((entry) => ({
+      event,
+      matcher: String(entry.matcher ?? ''),
+      hookTypes: (entry.hooks ?? []).map((hook) => String(hook.type ?? ''))
+    }))
+  )
+}
+
+/**
+ * @param {ReturnType<typeof parseHookConfig>} config
+ * @param {string} event
+ * @param {number} index
+ */
+function configuredCommand (config, event, index) {
+  const entry = config.hooks?.[event]?.[index]
+  const hook = entry?.hooks?.[0]
+  const command = hook?.type === 'command' ? /** @type {{ command?: string }} */ (hook).command : undefined
+  if (typeof command !== 'string') throw new Error(`missing command for ${event}[${index}]`)
+  return command
 }
 
 // --- Test runner ---
@@ -104,6 +156,46 @@ if (jqCheck.status !== 0) {
   console.error('FATAL: jq not found — all hook scripts require it')
   process.exit(1)
 }
+
+console.log('\nhooks.json compatibility')
+
+test('root hooks.json matches hooks/hooks.json coverage', () => {
+  const rootSignature = JSON.stringify(hookSignature(parseHookConfig(ROOT_HOOKS_JSON)))
+  const nestedSignature = JSON.stringify(hookSignature(parseHookConfig(NESTED_HOOKS_JSON)))
+  if (rootSignature !== nestedSignature) {
+    return { ok: false, reason: 'root hooks.json drifted from hooks/hooks.json' }
+  }
+  return { ok: true }
+})
+
+test('root hooks.json BM write hook emits schema_validate guidance', () => {
+  const config = parseHookConfig(ROOT_HOOKS_JSON)
+  const command = configuredCommand(config, 'PostToolUse', 0)
+  const { stdout } = runHookCommand(command,
+    JSON.stringify({ tool_response: { permalink: 'npm/my-package' } }))
+  const { count, objects, parseError } = parseJsonObjects(stdout)
+  if (parseError) return { ok: false, reason: parseError }
+  if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count}` }
+  const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
+  if (!ctx.includes('schema_validate')) return { ok: false, reason: 'missing schema_validate instruction' }
+  return { ok: true }
+})
+
+test('root hooks.json file-edit hook emits schema sync reminder', () => {
+  const config = parseHookConfig(ROOT_HOOKS_JSON)
+  const command = configuredCommand(config, 'PostToolUse', 1)
+  const pluginRoot = makeTempPluginRoot()
+  const filePath = join(pluginRoot, 'schemas', 'npm_package.md')
+  const { stdout } = runHookCommand(command,
+    JSON.stringify({ tool_input: { file_path: filePath } }),
+    { env: { ...process.env, CLAUDE_PLUGIN_ROOT: pluginRoot } })
+  const { count, objects, parseError } = parseJsonObjects(stdout)
+  if (parseError) return { ok: false, reason: parseError }
+  if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count}` }
+  const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
+  if (!ctx.includes('Schema file edited')) return { ok: false, reason: 'missing schema sync reminder' }
+  return { ok: true }
+})
 
 // --- session-start.sh ---
 console.log('\nsession-start.sh')

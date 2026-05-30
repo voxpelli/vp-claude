@@ -6,6 +6,7 @@
     "name": "Pelle Wessman",
     "url": "https://github.com/voxpelli"
   },
+  "hooks": "hooks.json",
   "repository": "https://github.com/voxpelli/vp-claude",
   "license": "MIT",
   "keywords": ["basic-memory", "knowledge-graph", "npm", "research", "crates", "pypi", "go-modules", "composer", "rubygems", "multi-ecosystem", "homebrew", "github-actions", "docker", "vscode", "tool-intel"]

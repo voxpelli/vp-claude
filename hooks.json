@@ -1,0 +1,63 @@
+{
+  "description": "Copilot-compatible hook shim: inline critical hooks, soft-fail optional helper-script hooks.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -lc 'set -eo pipefail; ROOT=\"${CLAUDE_PLUGIN_ROOT}\"; [ -n \"$ROOT\" ] || ROOT=\"${PLUGIN_ROOT:-}\"; [ -n \"$ROOT\" ] || exit 0; SCRIPT=\"$ROOT/hooks/pre-bash-no-python.sh\"; [ -f \"$SCRIPT\" ] || exit 0; exec bash \"$SCRIPT\"'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__basic-memory__write_note|mcp__basic-memory__edit_note",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -lc 'set -euo pipefail; INPUT=$(cat); PERMALINK=$(printf \"%s\" \"$INPUT\" | jq -r \".tool_response.permalink // .tool_result.permalink // empty\" 2>/dev/null || true); if [ -z \"$PERMALINK\" ]; then RAW=$(printf \"%s\" \"$INPUT\" | jq -r \".tool_response // .tool_result // empty\" 2>/dev/null || true); if [ -n \"$RAW\" ]; then PERMALINK=$(printf \"%s\" \"$RAW\" | jq -r \".permalink // empty\" 2>/dev/null || true); fi; fi; [ -n \"$PERMALINK\" ] || exit 0; case \"$PERMALINK\" in */schema/*) exit 0 ;; esac; jq -n --arg p \"$PERMALINK\" \"{additionalContext: (\\\"A note was just written/edited (permalink: \\\" + \\$p + \\\"). Call mcp__basic-memory__schema_validate with that identifier. If validation reports errors, surface them. If the note type has no schema or validation passes, do nothing.\\\")}\"'",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -lc 'set -eo pipefail; INPUT=$(cat); FILE_PATH=$(printf \"%s\" \"$INPUT\" | jq -r \".tool_input.file_path // empty\" 2>/dev/null || true); [ -n \"$FILE_PATH\" ] || exit 0; ROOT=\"${CLAUDE_PLUGIN_ROOT}\"; [ -n \"$ROOT\" ] || ROOT=\"${PLUGIN_ROOT:-}\"; [ -n \"$ROOT\" ] || exit 0; case \"$FILE_PATH\" in \"$ROOT\"/hooks/*.sh|\"$ROOT\"/scripts/*.sh) if command -v shfmt >/dev/null 2>&1; then DIFF=$(shfmt -d \"$FILE_PATH\" 2>/dev/null || true); if [ -n \"$DIFF\" ]; then jq -n --arg diff \"$DIFF\" --arg f \"$FILE_PATH\" \"{additionalContext: (\\\"shfmt detected formatting drift in \\\" + \\$f + \\\":\\\\n\\\\n\\\" + \\$diff + \\\"\\\\n\\\\nAuto-fixed in place.\\\")}\"; shfmt -w \"$FILE_PATH\"; exit 0; fi; fi ;; esac; case \"$FILE_PATH\" in \"$ROOT\"/schemas/*.md) BASENAME=$(basename \"$FILE_PATH\" .md); jq -n --arg b \"$BASENAME\" \"{additionalContext: (\\\"Schema file edited: \\\" + \\$b + \\\". Remember to also update the corresponding Basic Memory schema note via edit_note (identifier: main/schema/\\\" + \\$b + \\\"), or use /schema-evolve for automated dual-sync.\\\")}\" ;; esac'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "mcp__basic-memory__write_note|mcp__basic-memory__edit_note|mcp__basic-memory__schema_validate|mcp__basic-memory__schema_diff|mcp__basic-memory__schema_infer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -lc 'set -eo pipefail; ROOT=\"${CLAUDE_PLUGIN_ROOT}\"; [ -n \"$ROOT\" ] || ROOT=\"${PLUGIN_ROOT:-}\"; [ -n \"$ROOT\" ] || exit 0; SCRIPT=\"$ROOT/hooks/post-bm-failure-classify.sh\"; [ -f \"$SCRIPT\" ] || exit 0; exec bash \"$SCRIPT\"'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -lc 'set -eo pipefail; ROOT=\"${CLAUDE_PLUGIN_ROOT}\"; [ -n \"$ROOT\" ] || ROOT=\"${PLUGIN_ROOT:-}\"; [ -n \"$ROOT\" ] || exit 0; SCRIPT=\"$ROOT/hooks/session-start.sh\"; [ -f \"$SCRIPT\" ] || exit 0; exec bash \"$SCRIPT\"'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

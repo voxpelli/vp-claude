@@ -306,14 +306,14 @@ Five hooks run automatically in the background:
 
 ## Installation
 
-### Via slash commands
+### Claude Code via slash commands
 
 ```bash
 /plugin marketplace add voxpelli/vp-claude
 /plugin install vp-knowledge@vp-plugins
 ```
 
-### Manual settings.json
+### Claude Code via manual settings.json
 
 Add to `~/.claude/settings.json`:
 
@@ -329,6 +329,41 @@ Add to `~/.claude/settings.json`:
   }
 }
 ```
+
+### GitHub Copilot CLI / VS Code agent mode (experimental)
+
+Copilot CLI recognizes the plugin manifests in this repository, but hook behavior
+is only partially symmetrical with Claude Code. The plugin manifest explicitly
+points at the root-level `/tmp/workspace/voxpelli/vp-claude/hooks.json`
+compatibility shim so Copilot installs can keep working even if helper scripts
+under `hooks/` are not preserved in the installed plugin cache.
+
+```bash
+copilot plugin marketplace add voxpelli/vp-claude
+copilot plugin install vp-knowledge@vp-plugins
+```
+
+If Copilot-installed hooks behave oddly, inspect the installed plugin copy and
+confirm whether the helper scripts survived packaging:
+
+```bash
+ls -la ~/.copilot/installed-plugins/vp-plugins/vp-knowledge
+ls -la ~/.copilot/installed-plugins/vp-plugins/vp-knowledge/hooks
+```
+
+### Agent Skills compatibility
+
+The `skills/` tree is written to stay close to the open [Agent Skills
+standard](https://agentskills.io). The portable core is the skill markdown;
+plugin-only extras live around it:
+
+- `skills/` — portable skill definitions
+- `agents/`, `hooks*.json`, `.claude-plugin/marketplace.json` — plugin/runtime
+  glue that not every agent host preserves or understands
+
+That split mirrors the recent `voxpelli/claude-git` cleanup: keep the skill
+content broadly reusable, and treat hook/marketplace behavior as a thin
+runtime-specific layer.
 
 ## Prerequisites
 
@@ -404,6 +439,7 @@ claude mcp add homebrew -- brew mcp-server
 ```
 .claude-plugin/plugin.json             Plugin manifest
 .claude-plugin/marketplace.json        Marketplace listing for vp-plugins
+hooks.json                             Copilot-compatible hook shim (root-level)
 skills/
   package-intel/
     SKILL.md                           Seven-source research workflow
@@ -509,6 +545,40 @@ lib/
 validate-plugin.mjs                    Plugin validator (color enum, frontmatter, MCP prefixes, staleness-bucket contract)
 VOICE.md                               Plugin identity, agent colors, description-tone conventions
 ```
+
+## Hook runtime compatibility
+
+`vp-knowledge` stays Claude-first, but now ships two hook config entrypoints:
+
+- `hooks/hooks.json` — Claude-native source layout
+- `/tmp/workspace/voxpelli/vp-claude/hooks.json` — Copilot-compatible shim for
+  runtimes that prefer a root hook manifest or install only canonical assets
+
+Hook expectations by runtime:
+
+| Hook | Role | Cross-runtime expectation |
+|------|------|---------------------------|
+| PostToolUse (BM writes) | Ask main session to run `schema_validate` | **Must keep** |
+| PostToolUse (Edit\|Write) | `shfmt` drift notice + schema sync reminder | **Keep when possible**, soft-fail in Copilot |
+| PreToolUse (gardener Bash) | Read-only guardrail | Claude-optimized, soft-fail in Copilot if helper assets are missing |
+| PostToolUseFailure | BM error classifier | Optional in Copilot |
+| SessionStart | Priming hint + audit reminder | Optional in Copilot |
+
+The root shim inlines the two critical PostToolUse behaviors and soft-fails the
+more Claude-specific hooks. That keeps Copilot installs quiet if helper scripts
+under `hooks/` are omitted by marketplace packaging, while preserving the full
+Claude behavior when those scripts are present.
+
+### Compatibility smoke checks
+
+Use this matrix after any hook-related change:
+
+| Scenario | What to verify |
+|----------|----------------|
+| Source tree / repo checkout | `npm run check:plugin && npm run check:hooks` |
+| Claude Code install | Hooks fire once, no duplicate output, helper scripts available under plugin root |
+| Copilot direct install | Root `hooks.json` is used and PostToolUse hooks do not emit missing-file warnings |
+| Copilot marketplace install | `~/.copilot/installed-plugins/.../hooks` contains expected helper scripts, or root shim degrades silently |
 
 ## How it fits together
 
