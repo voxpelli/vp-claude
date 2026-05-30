@@ -380,6 +380,24 @@ if (stalenessBucketsSeen === 0) {
   error(stalenessEmitFiles[0], 'Staleness contract check matched zero canonical bucket headings across emit files — the heading regex or fences likely changed; refusing to pass vacuously')
 }
 
+// --- CLAUDE.md size guard ---
+// Claude Code warns ("Large CLAUDE.md will impact performance") and degrades
+// instruction adherence once CLAUDE.md passes ~40k characters loaded at session
+// start. Fail CI 1k below that so a regression is caught here, not at the user's
+// prompt. Deep, file-type-specific reference is kept off the always-loaded budget
+// in path-scoped .claude/rules/*.md instead — see
+// .claude/rules/scripts-and-validation.md. Measure with String.length (UTF-16
+// code units == char count for the BMP glyphs used here), matching how Claude
+// Code counts — not byte length, which would over-count multibyte UTF-8.
+const CLAUDE_MD_CHAR_LIMIT = 39_000
+const claudeMdPath = join(ROOT, 'CLAUDE.md')
+if (existsSync(claudeMdPath)) {
+  const chars = (await readFile(claudeMdPath, 'utf8')).length
+  if (chars >= CLAUDE_MD_CHAR_LIMIT) {
+    error(claudeMdPath, `${chars} chars ≥ ${CLAUDE_MD_CHAR_LIMIT} limit — Claude Code warns past ~40k. Move bulk reference into path-scoped .claude/rules/*.md (loads on demand, off the session-start budget) rather than inlining it here.`)
+  }
+}
+
 // --- Report ---
 
 if (warnings.length > 0) {

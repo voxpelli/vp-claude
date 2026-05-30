@@ -1,0 +1,93 @@
+---
+paths:
+  - "skills/**/*.md"
+  - ".claude-plugin/plugin.json"
+---
+
+# Skill development rules
+
+Loads when editing a `skills/**` file or the plugin manifest. These are the
+conventions and the full per-skill inventory that the root `CLAUDE.md` keeps only
+a one-line index of.
+
+## Skill inventory (full detail)
+
+The 14 skills, with the behaviour the `CLAUDE.md` index summarises:
+
+- **package-intel** — Researches a package via seven enrichment sources (DeepWiki, Context7, Tavily, Raindrop, Readwise, changelog, Socket) and writes/updates a structured prefixed note with post-write cross-linking. Supports npm, Rust crates, Go modules, PHP Composer, Python PyPI, and Ruby gems. Socket supply-chain scoring covers npm/pypi/cargo/gem (go/composer skip silently). The changelog source falls back to git tags + commit history (recorded in `## Release Highlights`) when the GitHub release list lags the registry version. User-invocable as `/package-intel <pkg>`.
+- **tool-intel** — Researches a developer environment or CI/CD tool via five sources (Basic Memory, DeepWiki for actions/docker and conditional for gh, Tavily, Raindrop, Readwise) and writes/updates a structured prefixed note with post-write cross-linking. Supports Homebrew formulae (`brew:`), casks (`cask:`), GitHub Actions (`action:`), Docker images (`docker:`), VSCode extensions (`vscode:`), and GitHub CLI extensions (`gh:`). For `brew:`/`cask:` an optional sixth source — the local Homebrew MCP (`mcp__homebrew__info`) — supplies install analytics as `[popularity]` observations when the server is reachable, and skips silently otherwise. For `gh:`, `runtime_shape` (binary/script/local) drives upgrade-path expectations; DeepWiki runs only when `gh release list` returns ≥1 release. For `action:`/`gh:`/`brew:`, the changelog step falls back to git tags + commit history when the GitHub release list lags the newest tag (a tag pushed without a published Release); `references/gh-api-fallback.md` documents the API footguns (tags are not semver-sorted, `compare` truncates at 250 commits and reports `.status`, a suppressed error reads as empty). For `vscode:`, it also records an **Open VSX trust signal** as a `[security]` observation — a 4-state ladder (verified-restricted / public-namespace / marketplace-only=squattable / not-published-anywhere) plus a `relates_to [[Publisher Verification Gradient]]` link; a Marketplace-only extension has an unclaimed, squattable Open VSX namespace that fork-IDEs (Cursor/Windsurf/Codium) resolve installs against (see `references/ecosystem-vscode.md` "Open VSX Trust Signal"). User-invocable as `/tool-intel <prefix>:<name>`.
+- **knowledge-gaps** — Parses code manifest files (`package.json`, `Cargo.toml`, etc.) and tool manifests (`Brewfile`, `.github/workflows/*.yml`, `Dockerfile`, `.vscode/extensions.json`), checks BM coverage, tiers package gaps by import frequency, lists all undocumented tools, and detects concept-level hub gaps via graph analysis and Readwise reading signals. Also supports `--stale [brew|npm|cask|crate|vscode]`: `/knowledge-gaps --stale` runs an MCP-first version-drift check against documented notes, comparing recorded versions to upstream registries via per-ecosystem `fetch-<eco>-upstream.sh` scripts (bare `--stale` checks all five cohorts; an ecosystem token scopes it to one; `action`/`gh`/`go`/`docker` are rejected as having no canonical comparable version). Delegates to `references/staleness-detection.md`. User-invocable as `/knowledge-gaps` (standard mode) or `/knowledge-gaps --stale [<ecosystem>]` (drift mode).
+- **knowledge-prime** — Surfaces project-relevant Basic Memory knowledge on demand. Detects the project stack, cross-references deps against BM notes, scores relevance, loads critical observations (`[gotcha]`, `[breaking]`, `[limitation]`), and produces a concise context brief. Supports `--deep` for extended output. User-invocable as `/knowledge-prime`.
+- **schema-evolve** — Detects drift between BM schema definitions and actual note usage via `schema_diff`/`schema_infer`, proposes frequency-driven field additions/removals, and dual-syncs BM notes + local `schemas/` files after approval. User-invocable as `/schema-evolve <type>`.
+- **session-reflect** — Reviews the current conversation, extracts durable insights, finds target notes in Basic Memory, shows a grouped preview, and writes only what the user approves. User-invocable as `/session-reflect`.
+- **knowledge-ask** — Answers freeform questions by searching Basic Memory, loading relevant notes, traversing the graph, and synthesizing a cited answer with confidence tiers (Direct/Partial/No Coverage). Read-only — suggests `/package-intel` or `/tool-intel` for coverage gaps. User-invocable as `/knowledge-ask <question>`.
+- **knowledge-garden** — Read-only audit of a bounded set of named notes (schema, structure, relations, orphan, fourth-wall), run inline in the main session, producing copy-paste remediation. The scoped, interactive sibling of the `knowledge-gardener` agent: graph-wide requests delegate to the agent via `Agent` for context isolation; named-note requests stay inline. **Explicit `/command` only (`disable-model-invocation: true`)** — the agent owns automatic graph-wide routing. Suggests `/knowledge-maintain` for fixes. User-invocable as `/knowledge-garden [note ...]`.
+- **knowledge-maintain** — Applies targeted fixes to a bounded set of named notes (missing sections, relation-verb drift, trailing-observation tidies, archival via `move_note`) inline so the user confirms each edit. The scoped, interactive sibling of the `knowledge-maintainer` agent: heavy/autonomous remediation delegates to the agent via `Agent`. **Explicit `/command` only (`disable-model-invocation: true`).** Shares the agent's write discipline — `find_replace` only (never `append`+`section`), read-before-edit, insert-then-strip moves with an `N_before`/`N_after` survival check, `schema_validate` after, `write_note`/`delete_note` excluded. User-invocable as `/knowledge-maintain [note ...]`.
+- **vp-note-quality** — Reference checklist preventing the fourth-wall anti-pattern (self-referential content in subject-domain notes). Not user-invocable — preloaded into knowledge-maintainer and knowledge-gardener agents via the `skills` frontmatter field.
+- **tag-sync** — Fetches tags from Raindrop, curates the top N by usage count, adds one-line characterizations, groups by cluster, and writes/syncs the vocabulary file at `~/.claude/references/raindrop-tags.md`. Follows the vendor-sync pattern. User-invocable as `/tag-sync [count|--reset]`.
+- **session-bookmarks** — Scans the current conversation for high-signal URLs, suggests 1-3 as Raindrop bookmarks in the AI-bookmarked collection (discovered via `find_collections`, not hardcoded), and creates them after user approval. Auto-delegated from `/session-reflect` or invocable standalone. User-invocable as `/session-bookmarks`.
+- **raindrop-triage** — Interactive triage of unsorted Raindrop bookmarks: deduplicates by normalized URL, detects research bursts (temporal clusters), clusters by theme, proposes vocabulary-grounded tags (blocklist, context tags, conventions all read from vocabulary file frontmatter), and moves approved bookmarks to AI-triaged. A `--promote` pass classifies AI-triaged items into AI-sorted (default), AI-gems (golden), AI-archive, or AI-attention. Supports `--source` to override the promote source collection. User-invocable as `/raindrop-triage`.
+- **people-intel** — Researches a person via five enrichment sources (Basic Memory deep graph traversal, Raindrop, Readwise, Tavily, DeepWiki) and writes/updates a structured person note with post-write bidirectional cross-linking. Includes fourth-wall guardrail and anti-hagiography measures. DeepWiki is conditional (developer profiles only). User-invocable as `/people-intel <name>`.
+
+## Skill frontmatter
+
+Required fields: `name`, `description`, `user-invocable`, `allowed-tools`. The `description` is a trigger phrase list — write it so Claude picks the right skill when a user says something relevant. The `allowed-tools` list is an allowlist; only include tools the skill actually calls. Skills with `user-invocable: false` are valid for reference/context-injection purposes (e.g., `vp-note-quality`) — they can be preloaded into agents via the `skills` frontmatter field and have `allowed-tools: []` when they contain no workflow steps. Non-user-invocable skills use the `vp-` prefix followed by a descriptive kebab-case name (e.g., `vp-note-quality`). The `vp-` prefix signals plugin-internal ownership and avoids collision with upstream `memory-*` skills.
+
+## Skill interaction conventions
+
+Never add `AskUserQuestion` to a skill's `allowed-tools` — it auto-approves the interaction, bypassing the UI prompt and returning empty answers (bug anthropics/claude-code#29547, fixed v2.1.69, but auto-approving defeats the tool's purpose even post-fix). Reference `AskUserQuestion` by name in workflow prose or use generic phrasing ("Wait for user response before proceeding"). For write/batch operations, follow the preview-approve-execute pattern: present a summary table of proposed changes, wait for user response, execute only approved items. For progress feedback in multi-step skills, use `TodoWrite` — it is the only progress tool available.
+
+## Content conventions
+
+All plugin content (schemas, skills, agents) must be **domain-generic** — no hardcoded directory paths, domain-specific examples, or topic-specific trigger phrases. Schema conventions should say "organized by domain" rather than prescribing specific directories. Examples in schemas should use broadly recognizable names (e.g. `HTTP/2`, `Vercel`) not niche domain terms. Tag blocklists, conventions, and context tags must be read from the vocabulary file frontmatter (`~/.claude/references/raindrop-tags.md`), never hardcoded in skill prose.
+
+## Tool list hygiene
+
+Every tool in `allowed-tools` (skills) or `tools` (agents) must be called in the workflow prose. Phantom tools (listed but never used) accumulate silently — run a periodic tool reference audit across all components. When creating a skill/agent pair that shares a workflow, keep tool lists identical and remove tools the agent doesn't need (e.g., `Bash` for git operations the agent can't perform).
+
+**New MCP server prefixes** — when a skill references a tool from a new MCP
+server (e.g., `mcp__socket-mcp__*`), add the prefix to `KNOWN_MCP_PREFIXES`
+in `validate-plugin.mjs`. Otherwise `npm run check:plugin` fails with
+"Unknown MCP prefix". The allowlist is a deliberate safety net against
+typos and undocumented MCP dependencies — update it, don't disable it.
+
+`allowed-tools` **pre-approves, does not restrict** — listing a tool grants it
+without a prompt; omitting a write tool does NOT make a skill read-only (every
+tool stays callable, gated only by permission settings). For hard read-only use
+permission `deny` rules, not omission. (The read-only *agents* are enforced by
+their `tools` allowlist + the PreToolUse hook, not by skills' `allowed-tools`.)
+
+Launch a subagent via the **`Agent`** tool: `Agent(subagent_type="<name>", ...)`.
+`Task` is the pre-v2.1.63 alias — prefer `Agent`. The validator's phantom-subagent
+check keys on `subagent_type=`, so it's rename-safe.
+
+## Output template conventions
+
+Every section in an output template (skill synthesize step or agent output step) must have a corresponding workflow step that loads data for it. Sections without a data source produce empty or hallucinated content. Treat output templates as contracts: every field needs a provider.
+
+## Three-level invocation pattern
+
+Features that benefit from progressive disclosure can be offered at three levels: (1) SessionStart hook hint (passive, ~1 sentence `additionalContext`), (2) on-demand skill (user-invocable, full workflow), (3) autonomous agent (same workflow, runs as subagent). Not all features need all three levels — use the knowledge-prime/knowledge-primer pair as the reference implementation. `/session-reflect` is skill-only because its source of truth (the conversation transcript) requires main-session context that agents cannot access.
+
+**Scope-partitioned variant (skill + agent, not duplicates):** when a feature's cost scales with scope, the skill and agent can partition by scope rather than mirror the same workflow. `/knowledge-garden` ↔ `knowledge-gardener` and `/knowledge-maintain` ↔ `knowledge-maintainer` are the reference pairs: the **skill** owns the bounded case (audit/fix a handful of named notes inline — cheap, interactive, shares context with the next step), the **agent** owns the graph-wide case (full sweep / autonomous remediation — context-isolated in a subagent). The skill's first workflow step is a venue decision that delegates to the agent via the `Agent` tool (`Agent(subagent_type=...)`) when the request is graph-wide. This avoids the prime/primer duplication-and-drift cost because the scoped audit is a genuinely shorter procedure than the agent's 10-step sweep, not a copy of it. Choose this over pure mirroring when the agent's workflow is large. **To prevent the skill from competing with its delegate-target agent on trigger phrases, both skills set `disable-model-invocation: true` (explicit `/command` only) so the agent owns automatic graph-wide routing while the skill is reached deliberately for scoped work.**
+
+## Prefix convention: colons in commands, hyphens in titles
+
+Users type colon-delimited prefixes in commands (`/package-intel npm:fastify`,
+`/tool-intel brew:ripgrep`). The colon is an unambiguous delimiter — even with
+scoped packages like `npm:@scope/pkg`. Skills parse the colon, then construct
+the BM title by replacing all `:` and `/` with `-` (preserving `@` and `.`).
+This matches the filename BM generates and enables native Obsidian wiki-link
+resolution. Examples: `npm:fastify` → `npm-fastify`,
+`action:actions/checkout` → `action-actions-checkout`,
+`npm:@fastify/postgres` → `npm-@fastify-postgres`.
+
+**Migration (v0.22.0+):** Existing vault notes need a one-time rename — see
+`TODO-obsidian-migration.md`. New notes emitted by the plugin use hyphen
+titles automatically.
+
+## See also
+
+- Note-output conventions (what intel skills write into BM) → `schema-and-notes.md`
+- Agent-specific frontmatter and the agent inventory → `agent-development.md`
+- The skill-routing table (which skill for which user signal) stays in `CLAUDE.md`.
