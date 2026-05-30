@@ -5,3 +5,7 @@ schemas/
 # Sprint retrospectives — gitignored, local-only, use BM-style [category] prose
 # and >NN constructs that trip no-undefined-references / no-blockquote-without-marker.
 RETRO-*.md
+
+# Swarm-wave sprint state — gitignored, ephemeral scratch; agent-assignment lines
+# use [P1]/[P2]/[P3] priority tags that remark reads as undefined link references.
+SWARM-*.md
