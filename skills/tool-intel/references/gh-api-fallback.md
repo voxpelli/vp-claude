@@ -17,6 +17,15 @@ cutting a Release — the `brew:sem` shape). In that case
 that the release list omits. The `brew:` changelog step (Step 3d) points
 here for exactly this case.
 
+## Contents
+
+- [When to Reach for This](#when-to-reach-for-this)
+- [Endpoints](#endpoints)
+- [Recovering a Version/Changelog from Tags](#recovering-a-versionchangelog-from-tags)
+- [Per-Prefix Notes](#per-prefix-notes)
+- [Verification Rule](#verification-rule)
+- [Cross-Link](#cross-link)
+
 ## When to Reach for This
 
 Trigger conditions:

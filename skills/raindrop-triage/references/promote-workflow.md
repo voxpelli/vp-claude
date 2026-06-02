@@ -3,6 +3,18 @@
 Classifies AI-triaged bookmarks into AI-sorted, AI-gems, AI-archive, or
 AI-attention. Invoked via `/raindrop-triage --promote`.
 
+## Contents
+
+- [Step 0: Parse source override](#step-0-parse-source-override)
+- [Step 0.5: Create progress checklist](#step-05-create-progress-checklist)
+- [Step 1: Discover AI-managed collections](#step-1-discover-ai-managed-collections)
+- [Step 2: Fetch source bookmarks](#step-2-fetch-source-bookmarks)
+- [Step 3: Present classification batches](#step-3-present-classification-batches)
+- [Step 4: Append AI-attention notes](#step-4-append-ai-attention-notes)
+- [Step 5: Move to target collections](#step-5-move-to-target-collections)
+- [Step 5.5: Count verification](#step-55-count-verification)
+- [Step 6: Report](#step-6-report)
+
 ## Step 0: Parse source override
 
 Accept optional `--source <collection>` to override the default AI-triaged

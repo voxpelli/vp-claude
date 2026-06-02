@@ -3,6 +3,11 @@
 Use this reference during Steps 14–15 of the knowledge-gaps workflow to
 detect concept-level hub gaps and reading-signal gaps.
 
+## Contents
+
+- [14. Detect concept-level gaps](#14-detect-concept-level-gaps)
+- [15. Add concept gaps to report](#15-add-concept-gaps-to-report)
+
 ### 14. Detect concept-level gaps
 
 Concept hubs are topics referenced across multiple package/tool notes that

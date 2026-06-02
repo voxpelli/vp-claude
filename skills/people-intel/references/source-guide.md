@@ -2,6 +2,15 @@
 
 Source-specific research guidance for the five-source enrichment pipeline.
 
+## Contents
+
+- [Source a: Basic Memory context](#source-a-basic-memory-context)
+- [Source b: Raindrop bookmarks](#source-b-raindrop-bookmarks)
+- [Source c: Readwise highlights](#source-c-readwise-highlights)
+- [Framing extracted observations around the subject](#framing-extracted-observations-around-the-subject)
+- [Source d: Tavily web search](#source-d-tavily-web-search)
+- [Source e: DeepWiki (conditional)](#source-e-deepwiki-conditional)
+
 ## Source a: Basic Memory context
 
 Always run. Never skip.

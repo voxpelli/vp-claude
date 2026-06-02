@@ -3,6 +3,15 @@
 Shared reference for `package-intel` and `tool-intel`. Both skills point here
 via `${CLAUDE_PLUGIN_ROOT}/skills/package-intel/references/forge-fallback.md`.
 
+## Contents
+
+- [When to use this file](#when-to-use-this-file)
+- [Codeberg / Forgejo REST API](#codeberg--forgejo-rest-api)
+- [sourcehut (git.sr.ht) — Phase 2](#sourcehut-gitsrht--phase-2)
+- [tangled.org / AT Protocol forges — deferred (Phase 3)](#tangledorg--at-protocol-forges--deferred-phase-3)
+- [Unknown forge fallback](#unknown-forge-fallback)
+- [Mirror / canonical-home ambiguity](#mirror--canonical-home-ambiguity)
+
 ## When to use this file
 
 Step 2 of either skill resolves a `repository.url` (npm `repository.url`,

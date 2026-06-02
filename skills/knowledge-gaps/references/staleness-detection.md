@@ -21,6 +21,19 @@ The bucket names below are the same canonical strings the `knowledge-gardener`
 Step 5b-iv uses, so a user-invoked staleness report and an autonomous gardener
 report are interchangeable as input to the `knowledge-maintainer` Section 3b.
 
+## Contents
+
+- [Cohort configuration](#cohort-configuration)
+- [Workflow](#workflow)
+  - [S1. Enumerate documented notes (MCP)](#s1-enumerate-documented-notes-mcp)
+  - [S2. Extract documented version per note (MCP, multi-pattern)](#s2-extract-documented-version-per-note-mcp-multi-pattern)
+  - [S3. Recover the real package name, then fetch upstream facts](#s3-recover-the-real-package-name-then-fetch-upstream-facts)
+  - [S4. Compute drift and bucket (two-dimensional)](#s4-compute-drift-and-bucket-two-dimensional)
+  - [S5. Handle edge cases](#s5-handle-edge-cases)
+  - [S6. Render the report](#s6-render-the-report)
+  - [S7. Offer batched refresh](#s7-offer-batched-refresh)
+  - [S8. Scope footnote](#s8-scope-footnote)
+
 ## Cohort configuration
 
 Each supported ecosystem maps a note-title prefix to a BM directory, a fetch

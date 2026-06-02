@@ -10,6 +10,16 @@ ecosystem is `vscode`.
 > `/tool-intel` refresh converge. The Marketplace version is recorded as an
 > annotation only.
 
+## Contents
+
+- [Extension Identifier Format](#extension-identifier-format)
+- [Primary Source: Open VSX Registry](#primary-source-open-vsx-registry)
+- [Fallback: VS Marketplace](#fallback-vs-marketplace)
+- [Open VSX Trust Signal](#open-vsx-trust-signal)
+- [Resolve GitHub Repository](#resolve-github-repository)
+- [Extension Contribution Points](#extension-contribution-points)
+- [Companion CLI Tools](#companion-cli-tools)
+
 ## Extension Identifier Format
 
 VSCode extensions are identified as `<publisher>.<extension-id>` (dot-separated).

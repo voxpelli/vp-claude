@@ -3,6 +3,17 @@
 Use this reference file during Step 2 (Fetch registry data) when the detected
 ecosystem is `gh`.
 
+## Contents
+
+- [Identifier Format](#identifier-format)
+- [No Formal Registry API](#no-formal-registry-api)
+- [Required Fields to Extract](#required-fields-to-extract)
+- [How to Find the Upstream GitHub Repo](#how-to-find-the-upstream-github-repo)
+- [Detecting runtime_shape](#detecting-runtime_shape)
+- [Source Behaviour for gh:](#source-behaviour-for-gh)
+- [Security Notes](#security-notes)
+- [Common Misclassifications](#common-misclassifications)
+
 ## Identifier Format
 
 Input pattern: `gh:<owner>/<repo>` (e.g. `gh:meiji163/gh-notify`).
