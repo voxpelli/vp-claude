@@ -7,6 +7,7 @@
     "check:contract": "node scripts/check-staleness-contract.mjs",
     "check:distance": "node scripts/check-version-distance.mjs",
     "check:fourthwall": "node scripts/check-fourthwall.mjs",
+    "check:release-counts": "node scripts/check-release-counts.mjs",
     "check:plugin": "node validate-plugin.mjs",
     "check:md": "remark . --quiet --frail",
     "check:sh": "shellcheck hooks/*.sh scripts/*.sh && shfmt -d hooks/*.sh scripts/*.sh"
