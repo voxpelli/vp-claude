@@ -790,7 +790,10 @@ search_notes(search_type="text", query="zero presence in", page_size=20)
 search_notes(search_type="text", query="not yet in Basic Memory", page_size=20)
 search_notes(search_type="text", query="absent from the knowledge graph", page_size=20)
 search_notes(search_type="text", query="most significant gap", page_size=20)
+search_notes(search_type="text", query="most important connection", page_size=20)
 search_notes(search_type="text", query="no presence in Raindrop", page_size=20)
+search_notes(search_type="text", query="Connection to the Knowledge Graph", page_size=20)
+search_notes(search_type="text", query="fills_gap_in", page_size=20)
 ```
 
 For each hit, read the note and classify:
