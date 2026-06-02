@@ -65,7 +65,39 @@ tooling, discovered while building vp-knowledge.
   significant ceremony per audit (~40 tool calls for vp-knowledge's
   16-entry pass; an automated skill would compress to ~10).
 
-## Bugs
+- **sibling-sync + synergy-tracker: `.local.md` SYNERGY variant for proprietary↔public boundaries** (2026-05-31) —
+  Add support for gitignored `SYNERGY-<name>.local.md` files that hold local-only
+  synergy content for siblings where the relationship crosses a trust/visibility
+  boundary (e.g., `relationship: open-core-partner` where one project is
+  public/MIT and the other is proprietary). The `.local.md` suffix mirrors the
+  existing `.local.json` convention for machine-specific overrides. Motivation:
+  the 2026-05-29 near-miss (BM note `sibling-sync-proprietary-public-licensing-classification-gap`)
+  showed that reciprocation writes can leak proprietary-adjacent information
+  (sprint references, bd issue IDs, internal paths, deprecation signals) into a
+  public repo. The `open-core-partner` relationship marker already signals this
+  boundary — the skill should protect it at the file level. Current workaround:
+  set `file: "SYNERGY-<name>.local.md"` directly in the committed
+  `synergy-registry.json` entry (pointing to the local variant) and add
+  `SYNERGY-*.local.md` to `.gitignore`. This works today because skills read
+  the `file` field as-is. But skills have no `.local.md` awareness — they read
+  the file if it exists, but won't create it, won't surface local-only entries
+  separately, and won't exclude them from bilateral comparison. Proposed changes:
+  (1) `synergy-entry-format.md` — Document the `.local.md` convention: suffix
+  for local-only SYNERGY files (gitignored, not shared with siblings, not
+  promoted to BM). Add `local-file` as an optional registry field or document
+  that `file` can point to a `.local.md` variant. (2) `synergy-tracker`
+  workflow 1 (Log) — When logging an entry for a sibling with
+  `relationship: open-core-partner`, offer "shared" vs "local-only" choice.
+  Default to local-only. (3) `sibling-sync` workflow 2 (Sync) — Exclude
+  `.local.md` entries from bilateral comparison; surface existence
+  informatively. (4) `sibling-sync` workflow 4 (Apply reciprocation batch) —
+  Never write reciprocal entries to `.local.md` files. (5) `validate-plugin.mjs`
+  — Accept `.local.md` filenames in the `file` field; recommend
+  `SYNERGY-*.local.md` in gitignore patterns.
+  Ownership: upstream · Workaround: partial — `file` field override in
+  `synergy-registry.json` works for reading, but no skill creates or surfaces
+  `.local.md` files; local-only entries are silently included in bilateral
+  comparison rather than excluded.
 
 - **`bd close` persistence broken when `.beads/` is gitignored** (2026-05-18) — Regular `bd close <id>` reports `✓ Closed` success but state reverts to `IN_PROGRESS` on next `bd show`/`bd stats`/`bd blocked`. Auto-export step emits warning `Warning: auto-export: git add failed: ... .beads ignored by gitignore`, which seems to roll back the JSONL write. `bd close --force` succeeds in-memory and the success message persists in that invocation, but the close ALSO doesn't reliably persist across subsequent `bd` invocations in this configuration. Reproduced 2x on Sprint 24 (vp-claude-lgb + vp-claude-cuz). Both issues continue to appear in `bd blocked` and `bd stats` as `IN_PROGRESS` despite multiple `--force` closes. This is a data-integrity issue: closed work appears unfinished, leading to false-positive blocked-dependency reports and incorrect sprint-tracking metrics.
   Severity: degraded · Ownership: upstream · Workaround: partial — `--force` succeeds in the current shell invocation but doesn't persist; verify every close with `bd show <id>` and accept some closes won't stick. Tracked locally as bd `vp-claude-syw`.

@@ -5,6 +5,7 @@ node_modules/
 RETRO-*.md
 SWARM-*.md
 PLAN-*.md
+SYNERGY-*.local.md
 
 # Beads / Dolt files — entire .beads/ directory is local-only
 .beads/
