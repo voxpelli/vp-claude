@@ -218,6 +218,24 @@ lines. BM's parser treats any `[[` as a relation boundary — the text before it
 becomes the `relation_type` field (max 200 chars), causing validation failures.
 Put all wiki-links in `## Relations` only.
 
+**Verify before capture (deep tier).** When Step 1's freshness check selected the
+full pipeline (note missing or more than 180 days old), or for any low-evidence
+person, confirm load-bearing claims — current role/affiliation, authorship and
+project attribution, and any biographical assertion — against a primary or
+authoritative source before writing. A wrong note compounds via citation and
+cross-project reciprocation, so a persisted claim carries a higher bar than a
+passing remark. If a claim cannot be confirmed, weaken it to a hedged statement
+("appears to", "is associated with") and date-qualify uncertain facts (e.g. "as
+of 2026-05") instead of asserting them outright — and never fabricate; if a fact
+is unknown, say so or omit it. This complements the anti-hagiography and
+fourth-wall guardrails above.
+
+**Record contradictions, do not resolve them silently.** When two sources
+disagree on a load-bearing fact (role, affiliation, attribution), record both
+values with their provenance as a `[gotcha]` observation — prefer the more
+recent or authoritative source and name which — rather than silently picking
+one.
+
 ### Step 4: Write or update the note
 
 <!-- This pattern is mirrored in package-intel and tool-intel — update all when changing -->

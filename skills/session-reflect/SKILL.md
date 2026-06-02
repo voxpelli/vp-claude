@@ -100,6 +100,18 @@ Classify each finding:
 - **Not generalizable** → drop the observation and note in the preview
   ("Dropped: too project-specific")
 
+**Verify before capture.** Separately, scan each candidate for non-trivial
+**mechanism or attribution claims** — assertions about _how_ something works,
+_what_ caused a behavior, or _who_ authored or originated something. These are
+the claims most likely to be confidently wrong and most damaging once persisted
+(a wrong note compounds via citation and cross-project reciprocation). For each
+such claim, check whether a primary source was actually read this session
+(source code, official docs, the changelog, an authoritative API). If not,
+either (a) verify it now against a primary source, or (b) mark it in the preview
+as **unverified** and weaken it to a hedged form ("appears to", "designed to")
+so the user can confirm or downgrade before it is written. Routine observations
+(preferences, decisions, recapping what was done) skip this scan.
+
 Show a grouped preview before writing anything:
 
 ````markdown
