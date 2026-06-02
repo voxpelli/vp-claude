@@ -17,9 +17,9 @@ belong in `SYNERGY-vp-git.md`.
   list 3. Surfaced by the 2026-06-02 sibling teardown. This is exactly the
   drift class a `check:release-counts` assertion (assert component counts
   match across plugin.json / README / CLAUDE.md / marketplace) would catch —
-  vp-git has no such gate (neither does vp-knowledge yet; tracked as a shared
-  extraction in `SYNERGY-vp-git.md` and the `@voxpelli/claude-plugin-tools`
-  bundle).
+  vp-git has no such gate (vp-knowledge added `check:release-counts` on the
+  self-improvement-roadmap branch; extraction to the shared
+  `@voxpelli/claude-plugin-tools` bundle is tracked in `SYNERGY-vp-git.md`).
   Ownership: upstream (vp-git) · Workaround: n/a — cosmetic doc drift; the
   plugin loads all 3 skills correctly from `plugin.json`.
 

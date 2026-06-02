@@ -42,6 +42,17 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
 - **`check:md` / `check:sh`** — remark `--frail` (markdown, including these
   `.claude/rules/*.md` files) and shellcheck + `shfmt -d` (all `hooks/*.sh` and
   `scripts/*.sh`).
+- **`check:fourthwall` (`check-fourthwall.mjs`)** — fixture self-test of the
+  fourth-wall rule registry (`lib/fourth-wall-rules.mjs`): every deterministic
+  `detect` fires on a planted violation and stays silent on near-misses, the
+  vp-note-quality SKILL.md documents every rule id, and its Rule-Registry table's
+  deterministic/judgment column matches the registry flags. The gardener/maintainer
+  `search_notes` scans align by convention (markdown agents — not contract-checked).
+- **`check:release-counts` (`check-release-counts.mjs`)** — live + fixture check
+  that CLAUDE.md's `### Skills/Agents/Hooks (N)` headings match on-disk counts
+  (`lib/release-counts.mjs`); fixtures prove the parser is heading-anchored and a
+  count mismatch fails. CLAUDE.md only — other release surfaces stay in sync via
+  the release checklist.
 
 When adding a new "X must agree with Y" invariant, follow this family: a hard
 `error()` for mechanically-unambiguous checks (counts, sizes), a `warn()` for
