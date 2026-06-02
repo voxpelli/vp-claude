@@ -1,6 +1,6 @@
 ---
 name: knowledge-gaps
-description: "This skill should be used when the user asks about 'knowledge gaps', 'package coverage', 'which packages need notes', 'undocumented dependencies', 'dependency audit', 'missing documentation', 'tool coverage', 'undocumented tools', 'brew/action/docker/vscode coverage', 'standard coverage', 'protocol coverage', 'domain standards', 'concept gaps', 'missing hub notes', 'undocumented concepts', 'topics without notes', 'what should have its own note', 'stale brew notes', 'outdated brew formulae', 'stale npm notes', 'stale crate notes', 'outdated vscode extensions', 'outdated packages', 'drifted notes', 'version drift', or 'which tools/packages need updating'. Cross-references project dependencies, tool manifests, and domain standards against Basic Memory notes to find undocumented packages, tools, standards, and concept-level hub gaps via relation graph analysis and Readwise reading signals. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, Ruby gems, Homebrew formulae/casks, GitHub Actions, Docker images, and VSCode extensions. (gh CLI extensions have no manifest and are user-invoked via /tool-intel gh:owner/repo — not auto-detected here.) When invoked with the `--stale` flag (`/knowledge-gaps --stale [brew|npm|cask|crate|vscode]`), runs an alternative workflow that detects documented notes whose recorded version has drifted from upstream registry releases. A bare `--stale` checks all supported cohorts (brew, npm, cask, crate, vscode); an ecosystem token scopes it to one."
+description: "This skill should be used when the user asks about 'knowledge gaps', 'package coverage', 'which packages need notes', 'undocumented dependencies', 'dependency audit', 'missing documentation', 'tool coverage', 'undocumented tools', 'brew/action/docker/vscode coverage', 'standard coverage', 'protocol coverage', 'domain standards', 'concept gaps', 'missing hub notes', 'undocumented concepts', 'topics without notes', 'what should have its own note', 'stale/outdated/drifted notes', 'version drift', or 'which tools/packages need updating' (across brew, npm, cask, crate, vscode). Cross-references project dependencies, tool manifests, and domain standards against Basic Memory notes to find undocumented packages, tools, standards, and concept-level hub gaps via relation graph analysis and Readwise reading signals. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, Ruby gems, Homebrew formulae/casks, GitHub Actions, Docker images, and VSCode extensions. (gh CLI extensions have no manifest and are user-invoked via /tool-intel gh:owner/repo — not auto-detected here.) When invoked with the `--stale` flag (`/knowledge-gaps --stale [brew|npm|cask|crate|vscode]`), runs an alternative workflow that detects documented notes whose recorded version has drifted from upstream registry releases. A bare `--stale` checks all supported cohorts (brew, npm, cask, crate, vscode); an ecosystem token scopes it to one."
 user-invocable: true
 argument-hint: "[--stale [brew|npm|cask|crate|vscode]]"
 paths:
@@ -247,45 +247,12 @@ Classify:
 
 #### 4. Generate gap report
 
-Present a structured report with a section per ecosystem:
-
-```
-## Knowledge Gap Report — <project-name>
-
-### npm Coverage: X/Y packages documented (Z%)
-
-#### Tier 1 — Must Document (3+ imports)
-| Package | Import Count |
-|---------|-------------|
-| fastify | 12 |
-
-#### Tier 2 — Should Document (1-2 imports)
-...
-
-#### Tier 3 — Optional (dev only)
-...
-
-#### Already Documented
-...
-
----
-
-### crates Coverage: X/Y packages documented (Z%)
-
-#### Tier 1 — Must Document (3+ imports)
-| Package | Import Count |
-|---------|-------------|
-| serde   | 28 |
-
-...
-
----
-
-### Overall Summary
-- Total packages across all ecosystems: N
-- Documented: M (Z%)
-- Undocumented Tier 1: P packages
-```
+Present a structured report with a section per ecosystem. See
+`${CLAUDE_PLUGIN_ROOT}/skills/knowledge-gaps/references/report-templates.md`
+("Package coverage report") for the full format: a
+`## Knowledge Gap Report — <project>` header, one `### <eco> Coverage: X/Y (Z%)`
+section per ecosystem (each with Tier 1 / Tier 2 / Tier 3 / Already Documented
+subsections, packages ranked by import count), then an `### Overall Summary`.
 
 #### 5. Offer enrichment
 
@@ -446,56 +413,13 @@ Cross-reference against the parsed identifiers to classify each tool:
 
 #### 9. Add tools section to gap report
 
-Append a tools section to the gap report after the package sections:
-
-```
----
-
-## Tool Coverage Report
-
-### Homebrew Formulae: X/Y documented
-| Tool | Status |
-|------|--------|
-| brew-ripgrep | ✓ documented |
-| brew-jq | ✗ undocumented |
-
-#### Brewfile ↔ installed reconciliation
-
-Include this sub-section only when Step 7b ran successfully (the `brew leaves`
-command was available).
-
-##### Installed but not Brewfile-declared (silent leaves worth documenting)
-| Formula | BM coverage |
-|---------|-------------|
-| jq      | ✗ undocumented |
-| fd      | ✓ documented |
-
-##### Brewfile-declared but not installed (dead declarations)
-| Formula | BM coverage |
-|---------|-------------|
-| pandoc  | ✓ documented |
-
-If `brew leaves` was unavailable, omit the reconciliation sub-section and add
-the note "Brewfile-only mode — `brew` CLI not available; install reconciliation
-skipped" below the Homebrew Formulae table.
-
-### Homebrew Casks: X/Y documented
-...
-
-### GitHub Actions: X/Y documented
-...
-
-### Docker Images: X/Y documented
-...
-
-### VSCode Extensions: X/Y documented
-...
-
-### Tool Summary
-- Total tools across all types: N
-- Documented: M (Z%)
-- Undocumented: P
-```
+Append a tools section to the gap report after the package sections. See
+`${CLAUDE_PLUGIN_ROOT}/skills/knowledge-gaps/references/report-templates.md`
+("Tool coverage report") for the full format: one `### <type>: X/Y documented`
+section per tool type (no import-count tiering — group by type, documented vs
+undocumented), with a Brewfile ↔ installed reconciliation sub-section under
+Homebrew Formulae only when Step 7b ran (`brew leaves` available; otherwise the
+"Brewfile-only mode" note), then a `### Tool Summary`.
 
 No import-count tiering for tools — all manifest entries are equally "used".
 Group by type, show documented vs undocumented count per type.
