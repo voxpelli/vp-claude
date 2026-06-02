@@ -72,7 +72,7 @@ read_note(identifier="<title>", include_frontmatter=true, output_format="json")
 | 60–180 days | All except Raindrop | Raindrop |
 | <60 days | Tavily bio + DeepWiki only | Raindrop, Readwise |
 
-Note any previous `[gotcha]` or `[controversy]` observations — these guide
+Note any previous `[controversy]` observations — these guide
 what to look for in new research.
 
 Append new observations rather than overwriting.
@@ -232,9 +232,10 @@ fourth-wall guardrails above.
 
 **Record contradictions, do not resolve them silently.** When two sources
 disagree on a load-bearing fact (role, affiliation, attribution), record both
-values with their provenance as a `[gotcha]` observation — prefer the more
-recent or authoritative source and name which — rather than silently picking
-one.
+values with their provenance as a `[controversy]` observation (the person-schema
+category for disputes, criticisms, and unresolved source conflicts) — prefer the
+more recent or authoritative source and name which — rather than silently
+picking one.
 
 ### Step 4: Write or update the note
 

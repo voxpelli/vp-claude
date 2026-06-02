@@ -12,6 +12,7 @@ schema:
   pattern?(array): string, working patterns
   connection?(array): string, cross-person contextual links and biographical connections
   influence?(array): string, intellectual or technical influence on the field
+  controversy?(array): string, legitimate disagreements, criticisms, or unresolved source conflicts (always cite provenance)
   note?: string, additional context
   created?(array): Note, projects or protocols they created
   founded?: Note, organization or movement they founded
