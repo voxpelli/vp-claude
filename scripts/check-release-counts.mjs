@@ -67,6 +67,7 @@ for (const label of COUNTED_COMPONENTS) {
   check(`${label}: disk ${actual[label]} == CLAUDE.md ${stated[label] ?? '(missing)'}`, stated[label] === actual[label])
 }
 check('CLAUDE.md component counts all match disk', liveErrors.length === 0)
+console.log('  note: only CLAUDE.md is gated here — README.md, MEMORY.md, marketplace.json counts stay in sync via the release checklist (no footgun-free heading anchor).')
 
 console.log('\nrelease-counts: fixture self-test')
 const FIX = '## Components\n\n### Skills (3)\n\nfoo\n\n### Agents (2)\n\n### Hooks (1)\n'
@@ -81,6 +82,7 @@ check('non-canonical label "Schemas" does not parse (alternation derived from ar
 check('level-1 heading ignored (out-of-range)', parseStatedCounts('# Skills (14)\n').Skills === undefined)
 check('level-5 heading ignored (out-of-range)', parseStatedCounts('##### Skills (14)\n').Skills === undefined)
 check('duplicate headings: last value wins (documented behavior)', parseStatedCounts('### Skills (3)\n### Skills (99)\n').Skills === 99)
+check('count heading inside a fenced block is NOT matched (mdast skips code nodes)', parseStatedCounts('```\n### Skills (99)\n```\n').Skills === undefined)
 
 console.log(`\n${passed}/${passed + failed} passed`)
 if (failed > 0) process.exit(1)
