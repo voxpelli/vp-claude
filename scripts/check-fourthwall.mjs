@@ -70,6 +70,15 @@ const ALT_FIXTURES = [
   { id: 'fw-session-boundary', text: 'Undocumented prior to this note.' },
   { id: 'fw-relation-type', text: '- adds_coverage_for [[Some Topic]]' },
   { id: 'fw-relation-type', text: '- documents_gap_in [[Some Hub]]' },
+  // fw-inventory-claim: the three "zero presence in <source>" arms beyond Raindrop.
+  { id: 'fw-inventory-claim', text: 'This API has zero presence in Readwise.' },
+  { id: 'fw-inventory-claim', text: 'This concept has zero presence in basic memory.' },
+  { id: 'fw-inventory-claim', text: 'This pattern has zero presence in the knowledge graph.' },
+  // fw-self-ref-section: the heading arms beyond "Connection to the Knowledge Graph",
+  // incl. a bare "## Graph Coverage" followed by body (proves the same-line-lookahead fix).
+  { id: 'fw-self-ref-section', text: '## Graph Coverage\n\nDepth-first search is standard.' },
+  { id: 'fw-self-ref-section', text: '## Significance to the Graph\n\nx' },
+  { id: 'fw-self-ref-section', text: '## Why This Note Exists\n\nx' },
 ]
 for (const { id, text } of ALT_FIXTURES) {
   check(`${id} alternation fires: "${text.slice(0, 44)}"`, detectFourthWallViolations(text).some((h) => h.id === id))
@@ -102,6 +111,18 @@ if (missing.length) console.log(`    missing ids: ${missing.join(', ')}`)
 const { mismatches } = checkDetectionColumnParity(skillMd)
 check('SKILL.md Rule-Registry Detection column matches registry flags', mismatches.length === 0)
 for (const mm of mismatches) console.log(`    ${mm.id}: table says "${mm.found}", registry expects "${mm.expected}"`)
+
+console.log('\nfourth-wall: parity machinery catches PLANTED drift (negative fixtures)')
+// The live checks above only prove doc+registry AGREE today. These prove the parity
+// functions actually FAIL on planted drift — otherwise the anti-honor-system
+// machinery is itself on the honor system (the HIGH-B review finding).
+const FLIP = '| 2. No inventory claims | `fw-inventory-claim` | judgment |'
+check('parity catches a deterministic→judgment flip', checkDetectionColumnParity(FLIP).mismatches.some((m) => m.id === 'fw-inventory-claim' && m.expected === 'deterministic'))
+const GHOST = '| 13. Ghost rule | `fw-ghost-rule` | deterministic |'
+check('parity catches a ghost table id absent from the registry', checkDetectionColumnParity(GHOST).mismatches.some((m) => m.id === 'fw-ghost-rule'))
+check('parity flags every registry rule when the table is absent', checkDetectionColumnParity('no table here').mismatches.length === CANONICAL_FOURTH_WALL_RULES.length)
+check('checklistMissingRuleIds catches an omitted id', checklistMissingRuleIds(skillMd.split('fw-session-boundary').join('')).missing.includes('fw-session-boundary'))
+check('checklistMissingRuleIds reports all ids on empty content', checklistMissingRuleIds('').missing.length === CANONICAL_FOURTH_WALL_RULES.length)
 
 console.log(`\n${passed}/${passed + failed} passed`)
 if (failed > 0) process.exit(1)
