@@ -321,7 +321,7 @@ lines. BM's parser treats any `[[` as a relation boundary — the text before it
 becomes the `relation_type` field (max 200 chars), causing validation failures.
 Put all wiki-links in `## Relations` only.
 
-<!-- mirror:start research-verify-capture -->
+<!-- This verify-before-capture block is byte-identical with tool-intel — update both when changing. -->
 **Verify before capture (mandatory self-check — not CI-enforced).** This step is
 required for the conditions below — not enforced by CI, but the same class of
 obligation as the LLM-judgment fourth-wall rules. Unlike the Step 1 freshness
@@ -345,8 +345,6 @@ disagree on a load-bearing fact (version, maintainer, license, behavior), record
 both values with their provenance as a `[gotcha]` observation — prefer the more
 recent or authoritative source and name which — rather than silently picking
 one.
-<!-- mirror:end research-verify-capture -->
-
 ### Step 5: Write or update the note
 
 <!-- This pattern is mirrored in tool-intel — update both when changing -->

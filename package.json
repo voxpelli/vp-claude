@@ -8,7 +8,6 @@
     "check:distance": "node scripts/check-version-distance.mjs",
     "check:fourthwall": "node scripts/check-fourthwall.mjs",
     "check:release-counts": "node scripts/check-release-counts.mjs",
-    "check:mirror": "node scripts/check-mirror.mjs",
     "check:mdast": "node scripts/check-mdast.mjs",
     "check:plugin": "node validate-plugin.mjs",
     "check:md": "remark . --quiet --frail",

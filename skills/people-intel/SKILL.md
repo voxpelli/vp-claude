@@ -218,7 +218,7 @@ lines. BM's parser treats any `[[` as a relation boundary — the text before it
 becomes the `relation_type` field (max 200 chars), causing validation failures.
 Put all wiki-links in `## Relations` only.
 
-<!-- people-intel's verify/contradiction block intentionally DIVERGES from the package-intel/tool-intel `research-verify-capture` mirror group (person claims + [controversy] category), so it carries no mirror:start/end markers — keep its SHAPE aligned by review, it is not byte-mirrored. -->
+<!-- people-intel's verify/contradiction block is the shaped (non-byte-identical) variant of the package-intel/tool-intel verify-before-capture block — it diverges on person claims + the [controversy] category, so keep its SHAPE aligned by review (it is not byte-mirrored). -->
 **Verify before capture (mandatory self-check — not CI-enforced).** This step is
 required for the conditions below — not enforced by CI, but the same class of
 obligation as the LLM-judgment fourth-wall rules. Unlike the Step 1 freshness

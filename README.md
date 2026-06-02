@@ -513,7 +513,6 @@ scripts/
   check-version-distance.mjs           Version-distance classifier tests (npm run check:distance)
   check-fourthwall.mjs                 Fourth-wall rule registry tests (npm run check:fourthwall)
   check-release-counts.mjs             Component-count contract: CLAUDE.md ↔ disk (npm run check:release-counts)
-  check-mirror.mjs                     Mirror-block byte-identity contract (npm run check:mirror)
   check-mdast.mjs                      mdast prose/fenced split tests (npm run check:mdast)
   fetch-brew-upstream.sh               API-only upstream facts for brew formulae (stdin: names; never reads ~/basic-memory)
   fetch-cask-upstream.sh               API-only upstream facts for casks (bulk cask.json; comma-segment version)
@@ -525,7 +524,6 @@ lib/
   version-distance.mjs                 Semver↔calver version-distance classifier (check:distance)
   fourth-wall-rules.mjs                Fourth-wall rule registry + parity contracts (check:fourthwall)
   release-counts.mjs                   Component-count parse/compare (check:release-counts)
-  mirror-contract.mjs                  Mirror-block extract/compare (check:mirror)
   mdast.mjs                            Shared mdast prose/heading collectors (check:mdast; used by validate-plugin)
 validate-plugin.mjs                    Plugin validator (color enum, frontmatter, MCP prefixes, staleness-bucket contract)
 VOICE.md                               Plugin identity, agent colors, description-tone conventions
