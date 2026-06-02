@@ -106,7 +106,16 @@ function auditToolReferences (file, content, declaredTools, fieldName) {
   // fence-masking leaked — tilde fences and 4-backtick-nested fences.
   const toolSet = new Set(declaredTools)
   const seen = new Set()
-  for (const text of collectScannableText(content)) {
+  const segments = collectScannableText(content)
+  // Guard against a silent vacuous pass: an unclosed fence makes remark absorb the
+  // rest of the file into one opaque `code` node, so collectScannableText returns []
+  // even for a file full of tool refs (and remark --frail does NOT flag unclosed
+  // fences). If the AST saw nothing but the raw bytes carry a tool token, fail loudly.
+  if (segments.length === 0 && /mcp__[a-zA-Z0-9_-]+__[a-zA-Z0-9_-]+/.test(content)) {
+    error(file, `${fieldName}: no scannable prose but raw content has mcp__ tokens — likely an unclosed code fence; fix the markdown`)
+    return
+  }
+  for (const text of segments) {
     for (const match of text.matchAll(/mcp__[a-zA-Z0-9_-]+__[a-zA-Z0-9_-]+/g)) {
       const tool = match[0]
       if (!seen.has(tool) && !toolSet.has(tool)) {
@@ -136,7 +145,7 @@ const marketplacePath = join(ROOT, '.claude-plugin', 'marketplace.json')
 if (existsSync(marketplacePath)) {
   const marketplace = await readJson(marketplacePath)
 
-  // Shape validation: required top-level fields + per-entry required fields
+  // Shape validation + version consistency, sharing one marketplace-defined guard.
   if (marketplace !== undefined) {
     const m = /** @type {Record<string, unknown>} */ (marketplace)
     for (const field of ['name', 'owner', 'plugins']) {
@@ -145,23 +154,19 @@ if (existsSync(marketplacePath)) {
     if ('plugins' in m && !Array.isArray(m.plugins)) {
       error(marketplacePath, '"plugins" must be an array')
     }
-    for (const entry of Array.isArray(m.plugins) ? m.plugins : []) {
+    const entries = Array.isArray(m.plugins) ? m.plugins : []
+    for (const entry of entries) {
       const e = /** @type {Record<string, unknown>} */ (entry)
       for (const field of ['name', 'source', 'description']) {
         if (!(field in e)) error(marketplacePath, `Plugin entry "${String(e.name ?? '?')}" missing required field: ${field}`)
       }
     }
-  }
-
-  // Version consistency: local ./ entry must match plugin.json version
-  if (marketplace !== undefined && plugin !== undefined) {
-    const m = /** @type {Record<string, unknown>} */ (marketplace)
-    const pluginVersion = /** @type {Record<string, unknown>} */ (plugin).version
-    const entries = Array.isArray(m.plugins) ? m.plugins : []
-    for (const entry of entries) {
-      const e = /** @type {Record<string, unknown>} */ (entry)
-      if (e.source === './') {
-        if (e.version !== pluginVersion) {
+    // Version consistency: a local "./" entry must match plugin.json version.
+    if (plugin !== undefined) {
+      const pluginVersion = /** @type {Record<string, unknown>} */ (plugin).version
+      for (const entry of entries) {
+        const e = /** @type {Record<string, unknown>} */ (entry)
+        if (e.source === './' && e.version !== pluginVersion) {
           error(
             marketplacePath,
             `Local "./" entry version "${String(e.version)}" does not match plugin.json version "${String(pluginVersion)}"`,

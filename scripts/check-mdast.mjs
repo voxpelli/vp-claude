@@ -39,6 +39,12 @@ check('prose token survives while a fenced one is masked', (() => {
   const segs = scan(`Prose uses ${TOKEN}.\n\n\`\`\`\nmcp__hidden__tool\n\`\`\``)
   return segs.includes(TOKEN) && !segs.includes('mcp__hidden__tool')
 })())
+check('indented-code token is NOT collected', !scan('    ' + TOKEN).includes(TOKEN))
+// An unclosed fence makes remark absorb the rest of the file into one opaque `code`
+// node → no segments. auditToolReferences cross-checks the raw bytes so this can't
+// pass vacuously; these two pin the behavior that guard relies on.
+check('unclosed fence with a token yields no segments', collectScannableText('```\n' + TOKEN + '\nno closing fence\n').length === 0)
+check('unclosed fence without a token also yields no segments', collectScannableText('```\njust prose\nno closing fence\n').length === 0)
 
 console.log(`\n${passed}/${passed + failed} passed`)
 if (failed > 0) process.exit(1)
