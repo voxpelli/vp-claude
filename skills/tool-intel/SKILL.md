@@ -314,11 +314,12 @@ becomes the `relation_type` field (max 200 chars), causing validation failures.
 Put all wiki-links in `## Relations` only.
 
 <!-- mirror:start research-verify-capture -->
-**Verify before capture (self-check — no CI gate).** This is due-diligence
-guidance, not an enforced tier: unlike the Step 1 freshness table (enforced by
-*which sources actually run*), nothing mechanically checks that this step
-happened — treat it as a self-check, the same class as the LLM-judgment
-fourth-wall rules. For any note Step 1 did not put on the fast path — missing,
+**Verify before capture (mandatory self-check — not CI-enforced).** This step is
+required for the conditions below — not enforced by CI, but the same class of
+obligation as the LLM-judgment fourth-wall rules. Unlike the Step 1 freshness
+table (enforced by *which sources actually run*), no mechanical gate checks it;
+treat that as a reason to self-enforce, not permission to skip. For any note
+Step 1 did not put on the fast path — missing,
 60+ days old, or a security-sensitive or thin-evidence subject — confirm
 load-bearing claims (version, maintainer/owner, license, security posture, and
 any "does X" capability claim) against the sources already fetched in this run

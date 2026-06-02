@@ -9,9 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Research-quality: verify-before-capture tier.** `package-intel` / `tool-intel`
-  / `people-intel` gained a stakes-tiered verify-before-capture + contradiction-record
-  + hedging step (gated on the Step 1 freshness tier); `session-reflect` gained a
+- **Research-quality: verify-before-capture step.** `package-intel` / `tool-intel`
+  / `people-intel` gained a mandatory (not CI-enforced) verify-before-capture +
+  contradiction-record + hedging step, applied when Step 1 does not fast-path the
+  note (missing, 60+ days old, or security-sensitive); `session-reflect` gained a
   mechanism/attribution verification scan. Addresses the weft-ai feature request.
 - **Fourth-wall rule registry + `check:fourthwall`.** The `vp-note-quality` checklist
   is now an ID'd registry (`lib/fourth-wall-rules.mjs`) with a per-rule
@@ -23,9 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and skills.sh skill bundles (SKILL.md + tree + install counts) into `claude_plugin`
   notes carrying a 4-state publisher trust ladder.
 - **`controversy` observation category** added to the `person` schema.
-- **New drift guards:** `check:release-counts` (CLAUDE.md component counts vs disk),
-  `check:mirror` (mirrored prose blocks stay byte-identical), `check:mdast` (the
-  mdast prose/fenced split powering `auditToolReferences`).
+- **New drift guards:** `check:release-counts` (CLAUDE.md component counts vs disk)
+  and `check:mdast` (the mdast prose/fenced split powering `auditToolReferences`).
 
 ### Changed
 
