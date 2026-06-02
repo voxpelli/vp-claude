@@ -99,8 +99,16 @@ function validateMcpPrefixes (file, tools) {
  * @param {string} fieldName
  */
 function auditToolReferences (file, content, declaredTools, fieldName) {
-  // Strip YAML frontmatter to avoid matching the allowlist itself
-  const prose = content.replace(/^---\n[\s\S]*?\n---/, '')
+  // Strip YAML frontmatter (avoids matching the allowlist itself) and mask
+  // fenced code blocks (``` … ```) — an mcp__ token shown in an example block
+  // is a mention, not a declared-tool use. Inline backtick spans are left
+  // visible on purpose: a backticked `mcp__x__y` in prose is normally a real
+  // use, so masking it would risk hiding an undeclared-tool phantom (the rarer
+  // backtick-mention false positive is handled by rephrasing — see the BM
+  // tool-catalog gotcha).
+  const prose = content
+    .replace(/^---\n[\s\S]*?\n---/, '')
+    .replace(/```[\s\S]*?```/g, '')
   const toolSet = new Set(declaredTools)
   // Match mcp__<server>__<tool> patterns in prose
   const refs = prose.matchAll(/mcp__[a-zA-Z0-9_-]+__[a-zA-Z0-9_-]+/g)
@@ -132,6 +140,23 @@ if (plugin !== undefined) {
 const marketplacePath = join(ROOT, '.claude-plugin', 'marketplace.json')
 if (existsSync(marketplacePath)) {
   const marketplace = await readJson(marketplacePath)
+
+  // Shape validation: required top-level fields + per-entry required fields
+  if (marketplace !== undefined) {
+    const m = /** @type {Record<string, unknown>} */ (marketplace)
+    for (const field of ['name', 'owner', 'plugins']) {
+      if (!(field in m)) error(marketplacePath, `Missing required field: ${field}`)
+    }
+    if ('plugins' in m && !Array.isArray(m.plugins)) {
+      error(marketplacePath, '"plugins" must be an array')
+    }
+    for (const entry of Array.isArray(m.plugins) ? m.plugins : []) {
+      const e = /** @type {Record<string, unknown>} */ (entry)
+      for (const field of ['name', 'source', 'description']) {
+        if (!(field in e)) error(marketplacePath, `Plugin entry "${String(e.name ?? '?')}" missing required field: ${field}`)
+      }
+    }
+  }
 
   // Version consistency: local ./ entry must match plugin.json version
   if (marketplace !== undefined && plugin !== undefined) {
