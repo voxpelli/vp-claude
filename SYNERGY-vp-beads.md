@@ -104,9 +104,14 @@ of maintaining both halves catches drift cases a single-source record misses.
   Convergence path: adopt-theirs · Status: converged · Last verified: 2026-05-29
   Note: Sprint 19's reciprocation pass falsely claimed convergence; it was
   finally real on 2026-05-29 after three sibling-sync passes flagged
-  vp-claude as the lone sequential holdout. vp-beads's `SYNERGY-vp-knowledge.md`
-  still carries `Status: diverging` (with the invalid-Shared-Patterns-value
-  misclassification) — reciprocate on their side to mark converged.
+  vp-claude as the lone sequential holdout. **Bilaterally reciprocated** — the
+  2026-06-02 /sibling-sync pass found vp-beads's `SYNERGY-vp-knowledge.md`
+  now records `Status: converged` (uncommitted in their working tree at pass
+  time); the reciprocation gap is closed. Residual sub-check divergence their
+  row flags: vp-claude runs **6** sub-checks (adds `check:contract` +
+  `check:distance`) vs vp-beads's 4, and our `check:md` lacks
+  `--ignore-path .gitignore` — the `run-p check:*` pattern converged, the
+  sub-check sets did not.
 
 - **PreCompact hook retired in v0.28.0** (2026-05-04) — vp-claude retired
   its PreCompact hook in v0.28.0 (commit `624e3df`, 2026-04-29) per the
