@@ -363,5 +363,8 @@ After the report, include a one-line footnote acknowledging scope:
 > *Staleness detection covers registry-backed, stable-channel ecosystems: brew,
 > npm, cask, crate, and vscode (vscode checks both Open VSX and the VS
 > Marketplace). `action`, `gh`, `go`, and `docker` are excluded by construction
-> — they have no single canonical comparable version. `pypi`, `gem`, and
-> `composer` are deferred until their cohorts grow.*
+> — they have no single canonical comparable version. `plugin` is deferred (no
+> central registry API; many plugins SHA-track without bumping version) and
+> `skill` is unsupported (no comparable version — ships off a moving `main`);
+> both are covered by `/knowledge-gaps --plugins` (coverage, not drift). `pypi`,
+> `gem`, and `composer` are deferred until their cohorts grow.*

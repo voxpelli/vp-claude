@@ -1,8 +1,8 @@
 ---
 name: knowledge-gaps
-description: "This skill should be used when the user asks about 'knowledge gaps', 'package coverage', 'which packages need notes', 'undocumented dependencies', 'dependency audit', 'missing documentation', 'tool coverage', 'undocumented tools', 'brew/action/docker/vscode coverage', 'standard coverage', 'protocol coverage', 'domain standards', 'concept gaps', 'missing hub notes', 'undocumented concepts', 'topics without notes', 'what should have its own note', 'stale/outdated/drifted notes', 'version drift', or 'which tools/packages need updating' (across brew, npm, cask, crate, vscode). Cross-references project dependencies, tool manifests, and domain standards against Basic Memory notes to find undocumented packages, tools, standards, and concept-level hub gaps via relation graph analysis and Readwise reading signals. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, Ruby gems, Homebrew formulae/casks, GitHub Actions, Docker images, and VSCode extensions. (gh CLI extensions have no manifest and are user-invoked via /tool-intel gh:owner/repo — not auto-detected here.) When invoked with the `--stale` flag (`/knowledge-gaps --stale [brew|npm|cask|crate|vscode]`), runs an alternative workflow that detects documented notes whose recorded version has drifted from upstream registry releases. A bare `--stale` checks all supported cohorts (brew, npm, cask, crate, vscode); an ecosystem token scopes it to one."
+description: "This skill should be used when the user asks about 'knowledge gaps', 'package coverage', 'which packages need notes', 'undocumented dependencies', 'dependency audit', 'missing documentation', 'tool coverage', 'undocumented tools', 'installed plugins', 'plugin coverage', 'undocumented plugins', 'skill coverage', 'undocumented skills', 'which plugins are documented', 'brew/action/docker/vscode coverage', 'standard coverage', 'protocol coverage', 'domain standards', 'concept gaps', 'missing hub notes', 'undocumented concepts', 'topics without notes', 'what should have its own note', 'stale/outdated/drifted notes', 'version drift', or 'which tools/packages need updating' (across brew, npm, cask, crate, vscode). Cross-references project dependencies, tool manifests, and domain standards against Basic Memory notes to find undocumented packages, tools, standards, and concept-level hub gaps via relation graph analysis and Readwise reading signals. Supports npm, Rust crates, Go modules, PHP Composer packages, Python PyPI packages, Ruby gems, Homebrew formulae/casks, GitHub Actions, Docker images, and VSCode extensions. (Claude Code plugins and skills.sh bundles ARE auto-detected via the `--plugins` flag — unlike gh, they have install manifests; gh CLI extensions have no manifest and stay user-invoked via /tool-intel gh:owner/repo — not auto-detected.) When invoked with the `--stale` flag (`/knowledge-gaps --stale [brew|npm|cask|crate|vscode]`), runs an alternative workflow that detects documented notes whose recorded version has drifted from upstream registry releases. A bare `--stale` checks all supported cohorts (brew, npm, cask, crate, vscode); an ecosystem token scopes it to one."
 user-invocable: true
-argument-hint: "[--stale [brew|npm|cask|crate|vscode]]"
+argument-hint: "[--stale [brew|npm|cask|crate|vscode]] [--plugins]"
 paths:
   - "package.json"
   - "Cargo.toml"
@@ -67,6 +67,12 @@ upstream — not a coverage audit.
   Brewfile-vs-installed reconciliation silently and report brew coverage in
   Brewfile-only mode. This is the expected fallback for auditing a remote
   machine's declared deps from a different host.
+- **`--plugins` manifest absent** — if `~/.claude/plugins/installed_plugins.json`
+  (plugins) or `~/.agents/.skill-lock.json` (skills) is missing/unreadable in
+  Step 7c, skip that population silently and note it; the other still runs. These
+  are user-global, so a CI host without `~/.claude` simply yields nothing.
+- **`--plugins` + `--stale` together** — reject; they are separate modes
+  (coverage vs drift). Run one at a time.
 
 ## Workflow
 
@@ -89,6 +95,8 @@ need updating".
 - **any other token** (e.g. `action`, `gh`, `go`, `docker`, `pypi`, `gem`,
   `composer`) → reject with: "`--stale` supports brew, npm, cask, crate, vscode.
   `action`/`gh`/`go`/`docker` have no single canonical comparable version;
+  `plugin` is deferred (no central registry API; many plugins SHA-track without
+  bumping version) and `skill` is unsupported (no comparable version);
   `pypi`/`gem`/`composer` are deferred." Do NOT silently fall back to all.
 
 **What to do:** load and follow the staleness-detection reference file in
@@ -107,6 +115,11 @@ section per checked cohort.
 The remaining steps below (numbered 0 through 15) describe this mode only.
 **Skip them entirely when `--stale` is present** — Mode A is a complete
 alternative workflow.
+
+The `--plugins` flag is a Mode B addition: when present, it activates **Step 7c**
+(user-global installed-plugin / skill coverage) alongside the project-manifest
+steps. `--plugins` and `--stale` are mutually exclusive — if both appear, reject
+with "`--plugins` (coverage) and `--stale` (drift) are separate modes; run one."
 
 #### 0. Detect project ecosystems
 
@@ -284,8 +297,10 @@ Glob(pattern="Dockerfile.*")
 Read("./.vscode/extensions.json")
 ```
 
-Announce which manifests are found. If none are found, skip Steps 7–9 and
-note "No tool manifests detected" in the report.
+Announce which manifests are found. If none are found AND `--plugins` was not
+passed, skip Steps 7–9 and note "No tool manifests detected" in the report. If
+`--plugins` was passed, still run **Step 7c** — it reads user-global manifests
+independent of any project tool manifest.
 
 #### 7. Parse tool manifests
 
@@ -394,6 +409,60 @@ If `brew leaves` was unavailable, the set used in Step 8 is just
 `brewfile_declared`, and Step 9 reports brew coverage in Brewfile-only mode
 without the diff buckets.
 
+#### 7c. Detect installed plugins and skills (user-global; `--plugins` only)
+
+**When to run:** only when invoked with `--plugins`. Reads USER-GLOBAL manifests
+at fixed `~/.claude` / `~/.agents` paths — not the project — so the Step 9 report
+section is labelled "user-global". If a manifest is absent (fresh install, CI
+host), skip that population silently. Unlike `gh:` (excluded from auto-detection
+because it has *no* manifest), plugins and skills DO have install manifests — that
+is precisely why they are detectable here.
+
+**Plugins** — ground truth is `~/.claude/plugins/installed_plugins.json`:
+
+```
+Read("~/.claude/plugins/installed_plugins.json")   # plugins: { "<name>@<marketplace>": [ { version, installPath, ... } ] }
+Read("~/.claude/plugins/known_marketplaces.json")  # "<marketplace>": { source: { repo: "<owner>/<repo>" }, installLocation }
+```
+
+For each `<name>@<marketplace>` key, resolve `owner/repo`:
+
+1. Read the marketplace's `marketplace.json` at
+   `<installLocation>/.claude-plugin/marketplace.json` and find the `plugins[]`
+   entry where `name == <name>`.
+2. From that entry's `source`:
+   - `"./"` or absent (LOCAL source) → use the marketplace's own
+     `source.repo` from `known_marketplaces.json`, plus a `#<name>`
+     disambiguator (e.g. `voxpelli/vp-claude#vp-knowledge`).
+   - `{ source: "github", repo: "<o>/<r>" }` → `<o>/<r>` directly.
+   - `{ source: "git-subdir", url: "https://github.com/<o>/<r>.git", ... }` →
+     parse `<o>/<r>` from the url (strip `https://github.com/` and `.git`).
+   - marketplace.json unreadable → record `plugin:<name>@<marketplace>`
+     (source unresolved) and flag it "resolve manually" in the report.
+
+Presence in `installed_plugins.json` = installed; there is no enabled flag, and
+`blocklist.json` is exclude-only and polluted with stale test entries — ignore it.
+
+**Skills** — ground truth is `~/.agents/.skill-lock.json` (the skills.sh lockfile;
+`~/.claude/skills/*` are symlinks into `~/.agents/skills/`, and SKILL.md
+frontmatter carries NO provenance, so the lockfile is the only source):
+
+```
+Read("~/.agents/.skill-lock.json")   # skills: { "<dir>": { source: "<owner>/<repo>", skillPath, ... } }
+```
+
+`source` is already `owner/repo`. **Group skills sharing a `source`** — many map
+to one repo (all `memory-*` → `basicmachines-co/basic-memory-skills`) and thus to
+ONE `claude_plugin` note. A skill dir absent from the lockfile → name-only (no
+owner/repo). **No catalog dedup needed:** the lockfile records only standalone
+`npx skills add` installs — plugin-bundled skills (a plugin's own `skills/`) never
+appear here.
+
+Carry both installed sets (`installed_plugins`, `installed_skills`) forward to
+Step 8. The note-title convention (for Step 8 matching) is the `/tool-intel`
+identifier with `:`/`/`/`#` replaced by `-`: `plugin:voxpelli/vp-claude#vp-knowledge`
+→ `plugin-voxpelli-vp-claude-vp-knowledge`; `skill:owner/repo` → `skill-owner-repo`.
+
 #### 8. Check Basic Memory coverage for tools
 
 For each tool type with detected entries, get all documented tools in one call:
@@ -410,6 +479,21 @@ Only query directories for tool types that had manifest entries detected.
 Cross-reference against the parsed identifiers to classify each tool:
 - **Documented** — a `<prefix>-<name>` note exists
 - **Undocumented** — no dedicated note
+
+When Step 7c ran (`--plugins`), get the documented plugin/skill set. Both write
+`claude_plugin` notes, but coverage is matched by NOTE TYPE, not directory —
+legacy notes may live outside `plugins/` (the convention is `plugins/`, but
+retyped notes can sit elsewhere):
+
+```
+list_directory(dir_name="plugins", depth=1)
+search_notes(query="plugin skill", note_types=["claude_plugin"], page_size=100)
+```
+
+Match each installed plugin/skill against a `claude_plugin` note by its computed
+title (`plugin-<owner>-<repo>` / `skill-<owner>-<repo>`); for a near-miss, fall
+back to a name `search_notes` (catches legacy-titled notes). Classify Documented
+/ Undocumented as above.
 
 #### 9. Add tools section to gap report
 
@@ -431,6 +515,12 @@ For the top undocumented tools, offer `/tool-intel` invocations:
 - action: `/tool-intel action:actions/checkout`
 - docker: `/tool-intel docker:node`
 - vscode: `/tool-intel vscode:esbenp.prettier-vscode`
+
+When Step 7c ran, append a **Plugin/Skill Coverage** section (template in
+`report-templates.md`, labelled user-global) and offer:
+
+- plugin: `/tool-intel plugin:<owner>/<repo>` (add `#<name>` for a multi-plugin marketplace)
+- skill: `/tool-intel skill:<owner>/<repo>`
 
 ---
 

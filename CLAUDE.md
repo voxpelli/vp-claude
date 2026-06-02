@@ -19,7 +19,7 @@ skills/
     references/                      # 14 files: 6 ecosystem + 6 note templates + gh-api-fallback + forge-fallback
   tool-intel/SKILL.md                # Five-source dev-tool research (brew/cask/action/docker/vscode/gh)
     references/                      # 16 files: 8 ecosystem + 7 note templates + gh-api-fallback
-  knowledge-gaps/SKILL.md            # Cross-reference deps + tool manifests vs BM coverage; --stale flag for version drift (brew/npm/cask/crate/vscode)
+  knowledge-gaps/SKILL.md            # Cross-reference deps + tool manifests vs BM coverage; --stale for version drift (brew/npm/cask/crate/vscode); --plugins for installed plugin/skill coverage
     references/                      # 4 files: standard-detection, concept-detection, staleness-detection, report-templates
   knowledge-prime/SKILL.md           # On-demand project context priming from BM
   schema-evolve/SKILL.md             # Frequency-driven schema drift detection and dual-sync
@@ -59,7 +59,7 @@ component type — see [Detailed conventions](#detailed-conventions).
 
 - **package-intel** — seven-source package research (npm/crate/go/composer/pypi/gem) → BM note. `/package-intel <pkg>`
 - **tool-intel** — five-source dev-tool research (brew/cask/action/docker/vscode/gh/plugin/skill) → BM note. `/tool-intel <prefix>:<name>`
-- **knowledge-gaps** — dep + tool-manifest coverage audit; `--stale [brew|npm|cask|crate|vscode]` for version drift. `/knowledge-gaps`
+- **knowledge-gaps** — dep + tool-manifest coverage audit; `--stale [brew|npm|cask|crate|vscode]` for version drift; `--plugins` for installed plugin/skill coverage. `/knowledge-gaps`
 - **knowledge-prime** — on-demand project context brief from BM. `/knowledge-prime`
 - **schema-evolve** — schema-drift detection + dual-sync. `/schema-evolve <type>`
 - **session-reflect** — conversation → BM capture with preview/approve. `/session-reflect`
@@ -187,6 +187,7 @@ When the user asks about knowledge or packages, choose the right skill:
 | "research \[pkg\]", "document \[pkg\]", needs external sources | `/package-intel [pkg]` |
 | "gaps", "undocumented", "audit coverage" | `/knowledge-gaps` |
 | "stale", "drifted", "outdated notes", "which tools/packages need updating" | `/knowledge-gaps --stale [<ecosystem>]` |
+| "installed plugins", "which plugins/skills are documented", "plugin/skill coverage" | `/knowledge-gaps --plugins` |
 | "research person", "who is \[X\]", "person intel", "people intel" | `/people-intel [name]` |
 | "audit these notes", "check note health", "fourth-wall check \[note\]" (named notes) | `/knowledge-garden [note ...]` |
 | "audit my knowledge graph", "full audit", "graph health" (graph-wide) | `knowledge-gardener` agent |

@@ -9,6 +9,7 @@ produces these; the verbose format lives here so the body stays lean
 
 - [Package coverage report](#package-coverage-report) — emitted by Step 4
 - [Tool coverage report](#tool-coverage-report) — appended by Step 9
+- [Plugin/skill coverage report](#pluginskill-coverage-report) — appended by Step 9 under `--plugins`
 
 ## Package coverage report
 
@@ -112,3 +113,38 @@ skipped" below the Homebrew Formulae table.
 - Documented: M (Z%)
 - Undocumented: P
 ```
+
+## Plugin/skill coverage report
+
+Appended after the Tool Coverage Report only when Step 7c ran (`--plugins`). Both
+populations are USER-GLOBAL (the operator's machine, not the project) — label the
+section so. Plugins and skill-bundles both resolve to `claude_plugin` notes: one
+note per plugin, and one note per skill-bundle SOURCE REPO (many skill dirs from
+one repo share a note). No tiering — every installed item is equally "used".
+
+```
+---
+
+## Plugin/Skill Coverage Report (user-global)
+
+### Claude Code Plugins: X/Y documented
+| Plugin | /tool-intel address | BM coverage |
+|--------|---------------------|-------------|
+| vp-knowledge (voxpelli/vp-claude) | plugin:voxpelli/vp-claude#vp-knowledge | ✓ documented |
+| context7 (anthropics/claude-plugins-official) | plugin:anthropics/claude-plugins-official#context7 | ✗ undocumented |
+| code-review@claude-plugins-official | resolve manually (source unresolved) | ✗ undocumented |
+
+### Agent Skills (skills.sh): X/Y documented
+One row per source repo (skill dirs sharing a repo collapse to one note).
+| Skill bundle | /tool-intel address | Skills installed | BM coverage |
+|--------------|---------------------|------------------|-------------|
+| basicmachines-co/basic-memory-skills | skill:basicmachines-co/basic-memory-skills | memory-research, memory-notes (+7) | ✗ undocumented |
+| vercel-labs/skills | skill:vercel-labs/skills | find-skills | ✓ documented |
+
+### Plugin/Skill Summary
+- Installed plugins: N total, M documented (Z%)
+- Installed skill bundles: P total, Q documented (Z%)
+```
+
+`--stale plugin` is deferred (no registry API); `--stale skill` is unsupported
+(no comparable version) — this section is coverage-only.
