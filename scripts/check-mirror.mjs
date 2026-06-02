@@ -45,8 +45,13 @@ console.log('\nmirror: live blocks (skills/ + agents/)')
 /** @type {{ file: string, id: string, text: string }[]} */
 const collected = []
 for (const file of [...walkMd(join(ROOT, 'skills')), ...walkMd(join(ROOT, 'agents'))]) {
-  for (const [id, text] of extractMirrorBlocks(readFileSync(file, 'utf8'))) {
-    collected.push({ file: relative(ROOT, file), id, text })
+  try {
+    for (const [id, text] of extractMirrorBlocks(readFileSync(file, 'utf8'))) {
+      collected.push({ file: relative(ROOT, file), id, text })
+    }
+  } catch (err) {
+    console.log(`    ${relative(ROOT, file)}: ${/** @type {Error} */ (err).message}`)
+    failed++
   }
 }
 const liveErrors = compareMirrorGroups(collected)
@@ -55,6 +60,13 @@ const groupIds = new Set(collected.map((c) => c.id))
 console.log(`  found ${collected.length} mirror block(s) across ${groupIds.size} group(s): ${[...groupIds].join(', ') || '(none)'}`)
 check('all mirror groups are byte-identical across their files', liveErrors.length === 0)
 check('at least one mirror group is defined', groupIds.size >= 1)
+// A block silently dropped on BOTH sides (mangled/whitespace-broken markers, CRLF,
+// id mismatch) becomes a 0-member group compareMirrorGroups never sees — the >=1
+// guard wouldn't catch the loss of one of N groups. Assert each known group survived.
+const EXPECTED_MIRROR_IDS = ['research-verify-capture']
+for (const id of EXPECTED_MIRROR_IDS) {
+  check(`expected mirror group "${id}" is present`, groupIds.has(id))
+}
 
 console.log('\nmirror: fixture self-test')
 const BLOCK = '<!-- mirror:start g -->\nhello\nworld\n<!-- mirror:end g -->'
@@ -68,6 +80,9 @@ const t3 = extractMirrorBlocks(DIFF).get('g') ?? ''
 check('identical members → no error', compareMirrorGroups([{ file: 'a', id: 'g', text: t1 }, { file: 'b', id: 'g', text: t2 }]).length === 0)
 check('divergent members → error', compareMirrorGroups([{ file: 'a', id: 'g', text: t1 }, { file: 'c', id: 'g', text: t3 }]).some((e) => e.includes('diverged')))
 check('lonely group (1 member) → error', compareMirrorGroups([{ file: 'a', id: 'g', text: t1 }]).some((e) => e.includes('only 1')))
+check('duplicate id in one file → throws', (() => {
+  try { extractMirrorBlocks(BLOCK + '\n' + BLOCK); return false } catch { return true }
+})())
 
 console.log(`\n${passed}/${passed + failed} passed`)
 if (failed > 0) process.exit(1)
