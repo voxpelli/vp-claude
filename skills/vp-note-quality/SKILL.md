@@ -75,6 +75,11 @@ would every sentence make sense?" If no — it is harmful self-reference.
     describe graph topology and are fourth-wall violations. Replace with a
     subject-appropriate relation type.
 
+12. **No session-boundary references.** Never reference the note-creation
+    session boundary — phrases like "prior to this session" or "prior to this
+    note" describe when the note was written, not the subject. State the
+    subject fact directly, with a date if the timing matters.
+
 ## Rule Registry
 
 The rules above are the human-readable form of the canonical registry in
@@ -98,6 +103,7 @@ violation on a fixture.
 | 9. Lede is subject-first | `fw-lede-subject-first` | judgment |
 | 10. Session observations go in session notes | `fw-session-obs` | judgment |
 | 11. Relation types describe subject relationships | `fw-relation-type` | deterministic |
+| 12. No session-boundary references | `fw-session-boundary` | deterministic |
 
 ## Exception: Meta-Notes
 
