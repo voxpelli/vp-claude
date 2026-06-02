@@ -19,8 +19,14 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
 
 - **`check:plugin` (`validate-plugin.mjs`)** — structural validation of skills,
   agents, hooks. Notable assertions:
-  - `auditToolReferences()` — every tool in a component's `allowed-tools`/`tools`
-    must actually be referenced in its prose (catches phantom tools).
+  - `auditToolReferences()` — every `mcp__*` tool *referenced in prose* (incl.
+    inline-backtick spans, via the `lib/mdast.mjs` AST walk that skips fenced
+    blocks + frontmatter) must be declared in `allowed-tools`/`tools` — catches a
+    used-but-undeclared tool. It does NOT flag the reverse (a declared-but-unused
+    phantom tool); that stays a manual periodic audit (see the skill-development
+    rule's tool-list hygiene). It fails loudly if the AST yields no scannable prose
+    yet the raw bytes carry `mcp__` tokens (an unclosed fence — would otherwise
+    pass vacuously).
   - `validateMcpPrefixes()` — every `mcp__<server>__*` prefix used must be in
     `KNOWN_MCP_PREFIXES` (catches typos / undocumented MCP deps).
   - phantom-subagent check — keys on `subagent_type=` so it survives the
