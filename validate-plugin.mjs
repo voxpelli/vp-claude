@@ -63,6 +63,23 @@ function extractFrontmatter (content) {
 
 const VALID_HOOK_TYPES = new Set(['prompt', 'command', 'agent', 'http'])
 
+// Known Claude Code hook event names. A typo'd event key passes structural
+// validation but silently never fires — warn() (not error()) because the upstream
+// set grows; an unknown key is a strong typo signal, not proof of breakage.
+const VALID_HOOK_EVENTS = new Set([
+  'PreToolUse', 'PostToolUse', 'PostToolUseFailure', 'PostToolBatch',
+  'UserPromptSubmit', 'UserPromptExpansion',
+  'Stop', 'StopFailure', 'Notification', 'MessageDisplay',
+  'SessionStart', 'SessionEnd', 'Setup',
+  'SubagentStart', 'SubagentStop', 'TeammateIdle',
+  'TaskCreated', 'TaskCompleted',
+  'PermissionRequest', 'PermissionDenied',
+  'InstructionsLoaded', 'ConfigChange', 'CwdChanged', 'FileChanged',
+  'WorktreeCreate', 'WorktreeRemove',
+  'PreCompact', 'PostCompact',
+  'Elicitation', 'ElicitationResult',
+])
+
 const VALID_AGENT_COLORS = new Set(['blue', 'cyan', 'green', 'yellow', 'magenta', 'red'])
 
 const VALID_AGENT_MODELS = new Set(['inherit', 'sonnet', 'opus', 'haiku'])
@@ -189,6 +206,9 @@ if (existsSync(hooksPath)) {
     } else {
       const hooks = /** @type {Record<string, unknown>} */ (h.hooks)
       for (const [event, entries] of Object.entries(hooks)) {
+        if (!VALID_HOOK_EVENTS.has(event)) {
+          warn(hooksPath, `Unknown hook event "${event}" — typo? A hook under an unrecognized event silently never fires. Known events: ${[...VALID_HOOK_EVENTS].join(', ')}`)
+        }
         if (!Array.isArray(entries)) {
           error(hooksPath, `hooks.${event} must be an array`)
           continue
@@ -271,6 +291,13 @@ for (const file of skillFiles) {
     if (!SKILL_KNOWN_FIELDS.has(field)) {
       warn(file, `Unknown skill frontmatter field: "${field}" — typo?`)
     }
+  }
+  // Claude Code truncates very long descriptions when routing — warn before the
+  // tail (e.g. flag mechanics) is at risk. Threshold sits above the current
+  // legitimately-detailed descriptions (tool-intel, the longest, is ~1.1k); the
+  // exact CC truncation limit is unconfirmed (bd vp-claude — tune down if found lower).
+  if (typeof fm.description === 'string' && fm.description.length > 1400) {
+    warn(file, `description is ${fm.description.length} chars — Claude Code may truncate it for routing; move capability detail into the body`)
   }
   if ('allowed-tools' in fm && !Array.isArray(fm['allowed-tools'])) {
     error(file, 'allowed-tools must be an array')

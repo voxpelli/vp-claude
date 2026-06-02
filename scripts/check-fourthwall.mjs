@@ -92,6 +92,8 @@ const NEAR_MISS = [
   { id: 'fw-inventory-claim', text: 'CSS `transform` has zero presence in Internet Explorer 9.' },
   { id: 'fw-significance-ranking', text: 'This was the most common gap in early TLS implementations.' },
   { id: 'fw-self-ref-section', text: '## Graph Coverage Algorithms\n\nDepth-first search is standard.' },
+  { id: 'fw-self-ref-section', text: '## Graph Coverage  Metrics\n\nDouble-space-separated legit subject heading.' },
+  { id: 'fw-self-ref-section', text: '## Graph Coverage\tMetrics\n\nTab-separated legit subject heading.' },
   { id: 'fw-session-boundary', text: 'The release prior to this one fixed the regression.' },
   { id: 'fw-relation-type', text: 'The module fills_gap_in_understanding by adding hooks.' },
 ]
