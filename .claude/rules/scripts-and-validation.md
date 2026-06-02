@@ -59,6 +59,13 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
   honor-system "mirrored — update both" comments; the first group is
   `research-verify-capture` (package-intel ↔ tool-intel). Add a block to a group
   by wrapping it in same-`<id>` markers in 2+ files.
+- **`check:mdast` (`check-mdast.mjs`)** — fixture self-test for `lib/mdast.mjs`
+  `collectScannableText`, which `validate-plugin.mjs` `auditToolReferences` uses
+  to scan prose + inline-code for `mcp__*` tokens while skipping fenced blocks
+  (any depth) + frontmatter via an AST walk (robust where regex fence-masking
+  leaked: tilde fences, 4-backtick nesting). NOTE the boundary: AST is the wrong
+  tool for `staleness-contract` (its target headings live INSIDE fenced blocks —
+  an AST sees opaque `code` and would pass vacuously), which stays line-regex.
 
 When adding a new "X must agree with Y" invariant, follow this family: a hard
 `error()` for mechanically-unambiguous checks (counts, sizes), a `warn()` for

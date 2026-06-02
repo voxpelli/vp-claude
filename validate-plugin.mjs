@@ -5,6 +5,7 @@ import { join, relative } from 'node:path'
 import yaml from 'js-yaml'
 
 import { checkStalenessEmit, checkStalenessConsume } from './lib/staleness-contract.mjs'
+import { collectScannableText } from './lib/mdast.mjs'
 
 const ROOT = new URL('.', import.meta.url).pathname.replace(/\/$/, '')
 
@@ -99,25 +100,19 @@ function validateMcpPrefixes (file, tools) {
  * @param {string} fieldName
  */
 function auditToolReferences (file, content, declaredTools, fieldName) {
-  // Strip YAML frontmatter (avoids matching the allowlist itself) and mask
-  // fenced code blocks (``` … ```) — an mcp__ token shown in an example block
-  // is a mention, not a declared-tool use. Inline backtick spans are left
-  // visible on purpose: a backticked `mcp__x__y` in prose is normally a real
-  // use, so masking it would risk hiding an undeclared-tool phantom (the rarer
-  // backtick-mention false positive is handled by rephrasing — see the BM
-  // tool-catalog gotcha).
-  const prose = content
-    .replace(/^---\n[\s\S]*?\n---/, '')
-    .replace(/```[\s\S]*?```/g, '')
+  // Collect scannable text via mdast (lib/mdast.mjs): prose + inline backtick
+  // spans (a backticked `mcp__x__y` is a real use here), minus fenced code
+  // blocks at any depth and YAML frontmatter. Robust where the prior regex
+  // fence-masking leaked — tilde fences and 4-backtick-nested fences.
   const toolSet = new Set(declaredTools)
-  // Match mcp__<server>__<tool> patterns in prose
-  const refs = prose.matchAll(/mcp__[a-zA-Z0-9_-]+__[a-zA-Z0-9_-]+/g)
   const seen = new Set()
-  for (const match of refs) {
-    const tool = match[0]
-    if (!seen.has(tool) && !toolSet.has(tool)) {
-      seen.add(tool)
-      error(file, `Tool "${tool}" referenced in prose but missing from ${fieldName}`)
+  for (const text of collectScannableText(content)) {
+    for (const match of text.matchAll(/mcp__[a-zA-Z0-9_-]+__[a-zA-Z0-9_-]+/g)) {
+      const tool = match[0]
+      if (!seen.has(tool) && !toolSet.has(tool)) {
+        seen.add(tool)
+        error(file, `Tool "${tool}" referenced in prose but missing from ${fieldName}`)
+      }
     }
   }
 }
