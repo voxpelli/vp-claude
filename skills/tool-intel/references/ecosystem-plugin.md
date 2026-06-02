@@ -24,7 +24,8 @@ gh api repos/<src-owner>/<src-repo>/contents/<path>/.claude-plugin/plugin.json -
 Extract: `name`, `version`, `description`, `author`, `repository`, `license`,
 `keywords`, the declared component surfaces, and the `name@marketplace` install
 string. Record components as one `[components]` observation (counts + names) —
-individual skills are NOT separate notes.
+individual skills are NOT separate notes. For `[popularity]`, read repo stars
+via `gh api repos/<owner>/<repo> --jq .stargazers_count` (date-qualify it).
 
 ## Trust ladder (security)
 

@@ -432,12 +432,16 @@ skills/
     references/note-template-vscode.md vscode_extension note template
     references/ecosystem-gh.md         gh CLI extension API + classification ladder
     references/note-template-gh.md     gh_extension note template
+    references/ecosystem-plugin.md     Claude plugin manifest (marketplace.json + plugin.json) + trust ladder
+    references/ecosystem-skill.md      skills.sh bundle (SKILL.md + tree + install counts)
+    references/note-template-plugin.md claude_plugin note template (plugin + skill)
     references/gh-api-fallback.md      GitHub API fallback for unindexed/wrong-repo cases
   knowledge-gaps/
     SKILL.md                           Package + tool + concept coverage analysis; --stale flag dispatches to Mode A
     references/concept-detection.md    Concept-level hub gap detection
     references/standard-detection.md   Domain standard coverage detection
     references/staleness-detection.md  Version-drift check across ecosystems (Mode A workflow)
+    references/report-templates.md     Knowledge-gap + tool-coverage report templates
   knowledge-prime/
     SKILL.md                           Project context priming from BM
   schema-evolve/
@@ -489,6 +493,7 @@ schemas/
   docker_image.md                      Docker image schema (docker_image type)
   vscode_extension.md                  VSCode extension schema (vscode_extension type)
   gh_extension.md                      gh CLI extension schema (gh_extension type)
+  claude_plugin.md                     Claude plugin / skills.sh bundle schema (claude_plugin type)
   engineering.md                       Engineering knowledge schema (engineering type)
   pattern.md                           Cross-domain structural insight schema (pattern type)
   reference.md                         Lookup document schema (reference type)
@@ -498,11 +503,17 @@ schemas/
   service.md                           Service/product schema (service type)
   person.md                            Person schema (person type)
   project.md                           Project schema (project type)
+  git_builtin.md                       git built-in command schema (git_builtin type)
 scripts/
   audit-helpers.sh                     Audit subcommands: bm-stats, scope-leak summary/detail
   audit-scope-leak.sh                  Project-specific content detection in cross-project notes
   check-hooks.mjs                      Hook integration tests (npm run check:hooks)
   check-staleness-contract.mjs         Staleness drift-bucket contract tests (npm run check:contract)
+  check-version-distance.mjs           Version-distance classifier tests (npm run check:distance)
+  check-fourthwall.mjs                 Fourth-wall rule registry tests (npm run check:fourthwall)
+  check-release-counts.mjs             Component-count contract: CLAUDE.md ↔ disk (npm run check:release-counts)
+  check-mirror.mjs                     Mirror-block byte-identity contract (npm run check:mirror)
+  check-mdast.mjs                      mdast prose/fenced split tests (npm run check:mdast)
   fetch-brew-upstream.sh               API-only upstream facts for brew formulae (stdin: names; never reads ~/basic-memory)
   fetch-cask-upstream.sh               API-only upstream facts for casks (bulk cask.json; comma-segment version)
   fetch-npm-upstream.sh                API-only upstream facts for npm packages (abbreviated packument)
@@ -510,6 +521,11 @@ scripts/
   fetch-vscode-upstream.sh             API-only upstream facts for VSCode exts (Open VSX + VS Marketplace)
 lib/
   staleness-contract.mjs               Pure emit↔consume bucket-contract logic (imported by validate-plugin.mjs + check:contract)
+  version-distance.mjs                 Semver↔calver version-distance classifier (check:distance)
+  fourth-wall-rules.mjs                Fourth-wall rule registry + parity contracts (check:fourthwall)
+  release-counts.mjs                   Component-count parse/compare (check:release-counts)
+  mirror-contract.mjs                  Mirror-block extract/compare (check:mirror)
+  mdast.mjs                            Shared mdast prose/heading collectors (check:mdast; used by validate-plugin)
 validate-plugin.mjs                    Plugin validator (color enum, frontmatter, MCP prefixes, staleness-bucket contract)
 VOICE.md                               Plugin identity, agent colors, description-tone conventions
 ```

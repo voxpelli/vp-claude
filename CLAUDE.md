@@ -90,7 +90,7 @@ component type — see [Detailed conventions](#detailed-conventions).
 ## Schemas
 
 The `schemas/` directory in the plugin root is the version-controlled source of truth for all Basic Memory note schemas. It contains twenty-three files mirroring the schema notes in BM:
-<!-- schema-count: 22 — keep in sync with `ls schemas/*.md | wc -l` -->
+<!-- schema-count: 23 — keep in sync with `ls schemas/*.md | wc -l` -->
 
 **Package types:**
 - `schemas/npm_package.md` — npm package notes (`npm_package` type)
