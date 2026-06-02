@@ -38,7 +38,11 @@ function countSkills () {
     .length
 }
 function countAgents () {
-  return readdirSync(join(ROOT, 'agents')).filter((f) => f.endsWith('.md')).length
+  // Mirror countSkills's structure check: isFile() + exclude README so a
+  // documentation-only .md (e.g. agents/README.md) cannot inflate the count.
+  return readdirSync(join(ROOT, 'agents'), { withFileTypes: true })
+    .filter((d) => d.isFile() && d.name.endsWith('.md') && d.name !== 'README.md')
+    .length
 }
 function countHooks () {
   const cfg = JSON.parse(readFileSync(join(ROOT, 'hooks/hooks.json'), 'utf8'))
@@ -71,6 +75,12 @@ check('parses all 3 stated counts from headings', fixStated.Skills === 3 && fixS
 check('prose "9 skills" does not match (heading-anchored)', parseStatedCounts('This plugin ships 9 skills.').Skills === undefined)
 check('catches a planted count mismatch', compareCounts(fixStated, { Skills: 3, Agents: 9, Hooks: 1 }).some((e) => e.includes('Agents')))
 check('flags a missing count heading', compareCounts({ Skills: 3, Agents: 2 }, { Skills: 3, Agents: 2, Hooks: 1 }).some((e) => e.includes('Hooks')))
+check('parses ALL counted labels (parser-failure guard)', COUNTED_COMPONENTS.every((l) => l in fixStated))
+check('compareCounts({}, actual) errors for all 3 labels — not a vacuous pass', compareCounts({}, { Skills: 14, Agents: 4, Hooks: 5 }).length === 3)
+check('non-canonical label "Schemas" does not parse (alternation derived from array)', parseStatedCounts('### Schemas (7)\n').Schemas === undefined)
+check('level-1 heading ignored (out-of-range)', parseStatedCounts('# Skills (14)\n').Skills === undefined)
+check('level-5 heading ignored (out-of-range)', parseStatedCounts('##### Skills (14)\n').Skills === undefined)
+check('duplicate headings: last value wins (documented behavior)', parseStatedCounts('### Skills (3)\n### Skills (99)\n').Skills === 99)
 
 console.log(`\n${passed}/${passed + failed} passed`)
 if (failed > 0) process.exit(1)
