@@ -218,7 +218,7 @@ lines. BM's parser treats any `[[` as a relation boundary — the text before it
 becomes the `relation_type` field (max 200 chars), causing validation failures.
 Put all wiki-links in `## Relations` only.
 
-<!-- Verify-before-capture + Record-contradictions blocks are mirrored in package-intel, tool-intel, and people-intel — update all three when changing (people-intel intentionally differs: person claims + [controversy] category) -->
+<!-- people-intel's verify/contradiction block intentionally DIVERGES from the package-intel/tool-intel `research-verify-capture` mirror group (person claims + [controversy] category), so it carries no mirror:start/end markers — keep its SHAPE aligned by review, it is not byte-mirrored. -->
 **Verify before capture (deep tier).** For any note Step 1 did not put on the
 fast path — missing, 60+ days old, or a low-evidence person — confirm
 load-bearing claims (current role/affiliation, authorship and project

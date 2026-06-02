@@ -304,7 +304,7 @@ lines. BM's parser treats any `[[` as a relation boundary — the text before it
 becomes the `relation_type` field (max 200 chars), causing validation failures.
 Put all wiki-links in `## Relations` only.
 
-<!-- Verify-before-capture + Record-contradictions blocks are mirrored in package-intel, tool-intel, and people-intel — update all three when changing (people-intel intentionally differs: person claims + [controversy] category) -->
+<!-- mirror:start research-verify-capture -->
 **Verify before capture (deep tier).** For any note Step 1 did not put on the
 fast path — missing, 60+ days old, or a security-sensitive or thin-evidence
 subject — confirm load-bearing claims (version, maintainer/owner, license,
@@ -323,6 +323,7 @@ disagree on a load-bearing fact (version, maintainer, license, behavior), record
 both values with their provenance as a `[gotcha]` observation — prefer the more
 recent or authoritative source and name which — rather than silently picking
 one.
+<!-- mirror:end research-verify-capture -->
 
 ### Step 5: Write or update the note
 
