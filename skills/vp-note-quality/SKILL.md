@@ -75,6 +75,30 @@ would every sentence make sense?" If no — it is harmful self-reference.
     describe graph topology and are fourth-wall violations. Replace with a
     subject-appropriate relation type.
 
+## Rule Registry
+
+The rules above are the human-readable form of the canonical registry in
+`lib/fourth-wall-rules.mjs`; each carries a stable `fw-*` id. Rules marked
+**deterministic** have a grep-able `detect` pattern in the registry (the basis
+of the "Red Flags" scan below and the knowledge-gardener Step 10 audit); the
+rest require judgment. `npm run check:fourthwall` asserts this checklist
+documents every registry id and that each `detect` pattern catches a planted
+violation on a fixture.
+
+| Rule | ID | Detection |
+|------|----|-----------|
+| 1. Subject test | `fw-subject-test` | judgment |
+| 2. No inventory claims | `fw-inventory-claim` | deterministic |
+| 3. No significance rankings | `fw-significance-ranking` | deterministic |
+| 4. Firewall graph-fitting analysis | `fw-graph-fitting` | judgment |
+| 5. `[gap]` means subject gap | `fw-gap-is-subject` | judgment |
+| 6. `[raindrop]`/`[readwise]` must cite artifacts | `fw-provenance-cite` | judgment |
+| 7. No self-referential sections | `fw-self-ref-section` | deterministic |
+| 8. Export test | `fw-export-test` | judgment |
+| 9. Lede is subject-first | `fw-lede-subject-first` | judgment |
+| 10. Session observations go in session notes | `fw-session-obs` | judgment |
+| 11. Relation types describe subject relationships | `fw-relation-type` | deterministic |
+
 ## Exception: Meta-Notes
 
 These rules apply to **subject-domain notes** — people, patterns, history,
