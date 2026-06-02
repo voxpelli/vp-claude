@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.2][] - 2026-06-02
+
+### Added
+
+- **Research-quality: verify-before-capture tier.** `package-intel` / `tool-intel`
+  / `people-intel` gained a stakes-tiered verify-before-capture + contradiction-record
+  + hedging step (gated on the Step 1 freshness tier); `session-reflect` gained a
+  mechanism/attribution verification scan. Addresses the weft-ai feature request.
+- **Fourth-wall rule registry + `check:fourthwall`.** The `vp-note-quality` checklist
+  is now an ID'd registry (`lib/fourth-wall-rules.mjs`) with a per-rule
+  deterministic/judgment flag; `check:fourthwall` fixture-tests every deterministic
+  pattern, the checklist id-coverage, and the Detection-column parity. New
+  `fw-session-boundary` rule.
+- **`plugin:` and `skill:` prefixes for `/tool-intel`** + a new `claude_plugin`
+  schema. Researches Claude Code plugins (marketplace.json + plugin.json + git tags)
+  and skills.sh skill bundles (SKILL.md + tree + install counts) into `claude_plugin`
+  notes carrying a 4-state publisher trust ladder.
+- **`controversy` observation category** added to the `person` schema.
+- **New drift guards:** `check:release-counts` (CLAUDE.md component counts vs disk),
+  `check:mirror` (mirrored prose blocks stay byte-identical), `check:mdast` (the
+  mdast prose/fenced split powering `auditToolReferences`).
+
+### Changed
+
+- `auditToolReferences` now walks an mdast AST (`lib/mdast.mjs`) instead of regex
+  fence-masking — robust at any fence depth (tilde, 4-backtick nesting). Adds
+  `unified` + `remark-parse` devDeps.
+- `validate-plugin.mjs` gained `marketplace.json` shape validation.
+- `knowledge-gaps` report templates extracted to a reference; navigational reference
+  files gained Contents TOCs; `session-bookmarks` and `session-reflect` trigger
+  descriptions disambiguated.
+
 ## [0.31.1][] - 2026-05-29
 
 ### Added
@@ -1490,6 +1522,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.31.2]: https://github.com/voxpelli/vp-claude/compare/v0.31.1...v0.31.2
 [0.31.1]: https://github.com/voxpelli/vp-claude/compare/v0.31.0...v0.31.1
 [0.31.0]: https://github.com/voxpelli/vp-claude/compare/v0.30.1...v0.31.0
 [0.30.1]: https://github.com/voxpelli/vp-claude/compare/v0.30.0...v0.30.1

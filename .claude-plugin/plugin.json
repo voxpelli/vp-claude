@@ -1,12 +1,12 @@
 {
   "name": "vp-knowledge",
-  "version": "0.31.1",
-  "description": "Basic Memory power tools: multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), developer tool research (Homebrew, GitHub Actions, Docker, VSCode, gh CLI extensions), person research, knowledge gap analysis, project context priming, knowledge exploration, Readwise integration, schema evolution, tag alignment, graph maintenance, and automated quality hooks.",
+  "version": "0.31.2",
+  "description": "Basic Memory power tools: multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby), developer tool research (Homebrew, GitHub Actions, Docker, VSCode, gh CLI extensions, Claude Code plugins, skills.sh bundles), person research, knowledge gap analysis, project context priming, knowledge exploration, Readwise integration, schema evolution, tag alignment, graph maintenance, and automated quality hooks.",
   "author": {
     "name": "Pelle Wessman",
     "url": "https://github.com/voxpelli"
   },
   "repository": "https://github.com/voxpelli/vp-claude",
   "license": "MIT",
-  "keywords": ["basic-memory", "knowledge-graph", "npm", "research", "crates", "pypi", "go-modules", "composer", "rubygems", "multi-ecosystem", "homebrew", "github-actions", "docker", "vscode", "tool-intel"]
+  "keywords": ["basic-memory", "knowledge-graph", "npm", "research", "crates", "pypi", "go-modules", "composer", "rubygems", "multi-ecosystem", "homebrew", "github-actions", "docker", "vscode", "tool-intel", "claude-plugin", "skills"]
 }

@@ -38,7 +38,7 @@ Plus changelog analysis via GitHub releases — with a git-tag fallback when the
 
 ### `/tool-intel <prefix>:<name>` — Research any dev tool
 
-Queries five sources in parallel, synthesizes a structured note, and cross-links existing notes. Supports six tool categories:
+Queries five sources in parallel, synthesizes a structured note, and cross-links existing notes. Supports eight tool categories:
 
 | Form | Category | Example |
 |------|----------|---------|
@@ -48,6 +48,8 @@ Queries five sources in parallel, synthesizes a structured note, and cross-links
 | `docker:<image>` | Docker Hub image | `docker:node` |
 | `vscode:<publisher>.<ext>` | VSCode extension | `vscode:esbenp.prettier-vscode` |
 | `gh:<owner>/<repo>` | GitHub CLI extension | `gh:meiji163/gh-notify` |
+| `plugin:<owner>/<repo>` | Claude Code plugin | `plugin:voxpelli/vp-claude#vp-knowledge` |
+| `skill:<owner>/<repo>` | Agent skill bundle (skills.sh) | `skill:obra/superpowers` |
 
 ```
 /tool-intel brew:ripgrep
@@ -55,6 +57,8 @@ Queries five sources in parallel, synthesizes a structured note, and cross-links
 /tool-intel docker:node
 /tool-intel vscode:esbenp.prettier-vscode
 /tool-intel gh:meiji163/gh-notify
+/tool-intel plugin:voxpelli/vp-claude#vp-knowledge
+/tool-intel skill:obra/superpowers
 ```
 
 | Source | What it finds |

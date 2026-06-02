@@ -18,7 +18,7 @@ skills/
   package-intel/SKILL.md             # Seven-source multi-ecosystem package research
     references/                      # 14 files: 6 ecosystem + 6 note templates + gh-api-fallback + forge-fallback
   tool-intel/SKILL.md                # Five-source dev-tool research (brew/cask/action/docker/vscode/gh)
-    references/                      # 13 files: 6 ecosystem + 6 note templates + gh-api-fallback
+    references/                      # 16 files: 8 ecosystem + 7 note templates + gh-api-fallback
   knowledge-gaps/SKILL.md            # Cross-reference deps + tool manifests vs BM coverage; --stale flag for version drift (brew/npm/cask/crate/vscode)
     references/                      # 4 files: standard-detection, concept-detection, staleness-detection, report-templates
   knowledge-prime/SKILL.md           # On-demand project context priming from BM
@@ -41,7 +41,7 @@ agents/
   raindrop-gardener.md               # Read-only Raindrop tag auditor
 hooks/
   hooks.json                         # PreToolUse, PostToolUse, PostToolUseFailure, SessionStart
-schemas/                             # 22 BM note-schema definitions — source of truth (see ## Schemas)
+schemas/                             # 23 BM note-schema definitions — source of truth (see ## Schemas)
 scripts/                             # CLI-first audit + npm-run-check utilities (see ## Scripts)
 lib/                                 # JS modules imported by check scripts (staleness-contract, version-distance, fourth-wall-rules, release-counts, mirror-contract, mdast)
 .claude/rules/                       # Path-scoped dev conventions, load on edit of matching files (see ## Detailed conventions)
@@ -58,7 +58,7 @@ component type — see [Detailed conventions](#detailed-conventions).
 ### Skills (14)
 
 - **package-intel** — seven-source package research (npm/crate/go/composer/pypi/gem) → BM note. `/package-intel <pkg>`
-- **tool-intel** — five-source dev-tool research (brew/cask/action/docker/vscode/gh) → BM note. `/tool-intel <prefix>:<name>`
+- **tool-intel** — five-source dev-tool research (brew/cask/action/docker/vscode/gh/plugin/skill) → BM note. `/tool-intel <prefix>:<name>`
 - **knowledge-gaps** — dep + tool-manifest coverage audit; `--stale [brew|npm|cask|crate|vscode]` for version drift. `/knowledge-gaps`
 - **knowledge-prime** — on-demand project context brief from BM. `/knowledge-prime`
 - **schema-evolve** — schema-drift detection + dual-sync. `/schema-evolve <type>`
@@ -89,7 +89,7 @@ component type — see [Detailed conventions](#detailed-conventions).
 
 ## Schemas
 
-The `schemas/` directory in the plugin root is the version-controlled source of truth for all Basic Memory note schemas. It contains twenty-two files mirroring the schema notes in BM:
+The `schemas/` directory in the plugin root is the version-controlled source of truth for all Basic Memory note schemas. It contains twenty-three files mirroring the schema notes in BM:
 <!-- schema-count: 22 — keep in sync with `ls schemas/*.md | wc -l` -->
 
 **Package types:**
@@ -107,6 +107,7 @@ The `schemas/` directory in the plugin root is the version-controlled source of 
 - `schemas/docker_image.md` — Docker image notes (`docker_image` type)
 - `schemas/vscode_extension.md` — VSCode extension notes (`vscode_extension` type)
 - `schemas/gh_extension.md` — GitHub CLI extension notes (`gh_extension` type)
+- `schemas/claude_plugin.md` — Claude Code plugin / skills.sh bundle notes (`claude_plugin` type)
 
 **Knowledge types:**
 - `schemas/engineering.md` — engineering knowledge notes (`engineering` type)
