@@ -219,8 +219,12 @@ becomes the `relation_type` field (max 200 chars), causing validation failures.
 Put all wiki-links in `## Relations` only.
 
 <!-- people-intel's verify/contradiction block intentionally DIVERGES from the package-intel/tool-intel `research-verify-capture` mirror group (person claims + [controversy] category), so it carries no mirror:start/end markers — keep its SHAPE aligned by review, it is not byte-mirrored. -->
-**Verify before capture (deep tier).** For any note Step 1 did not put on the
-fast path — missing, 60+ days old, or a low-evidence person — confirm
+**Verify before capture (self-check — no CI gate).** This is due-diligence
+guidance, not an enforced tier: unlike the Step 1 freshness table (enforced by
+*which sources actually run*), nothing mechanically checks that this step
+happened — treat it as a self-check, the same class as the LLM-judgment
+fourth-wall rules. For any note Step 1 did not put on the fast path — missing,
+60+ days old, or a low-evidence person — confirm
 load-bearing claims (current role/affiliation, authorship and project
 attribution, and any biographical assertion) against the sources already fetched
 in this run before writing. Do NOT make new source calls — Step 1's freshness

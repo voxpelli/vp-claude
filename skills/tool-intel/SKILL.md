@@ -314,11 +314,15 @@ becomes the `relation_type` field (max 200 chars), causing validation failures.
 Put all wiki-links in `## Relations` only.
 
 <!-- mirror:start research-verify-capture -->
-**Verify before capture (deep tier).** For any note Step 1 did not put on the
-fast path — missing, 60+ days old, or a security-sensitive or thin-evidence
-subject — confirm load-bearing claims (version, maintainer/owner, license,
-security posture, and any "does X" capability claim) against the sources already
-fetched in this run before writing. Do NOT make new source calls — Step 1's
+**Verify before capture (self-check — no CI gate).** This is due-diligence
+guidance, not an enforced tier: unlike the Step 1 freshness table (enforced by
+*which sources actually run*), nothing mechanically checks that this step
+happened — treat it as a self-check, the same class as the LLM-judgment
+fourth-wall rules. For any note Step 1 did not put on the fast path — missing,
+60+ days old, or a security-sensitive or thin-evidence subject — confirm
+load-bearing claims (version, maintainer/owner, license, security posture, and
+any "does X" capability claim) against the sources already fetched in this run
+before writing. Do NOT make new source calls — Step 1's
 freshness tiers deliberately pruned sources; verify against what was fetched. A
 wrong note compounds via citation and cross-project reciprocation, so a persisted
 claim carries a higher bar than a passing remark. If a claim cannot be confirmed
