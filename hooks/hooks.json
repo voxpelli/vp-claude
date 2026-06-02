@@ -1,5 +1,5 @@
 {
-  "description": "Basic Memory quality hooks: schema validation after writes, file edit quality checks, graph summary at session start, Python-script prevention.",
+  "description": "Basic Memory quality hooks: schema validation after writes, file edit quality checks, graph summary at session start, post-compaction recovery, Python-script prevention.",
   "hooks": {
     "PreToolUse": [
       {
@@ -54,6 +54,18 @@
           {
             "type": "command",
             "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/post-compact.sh",
             "timeout": 5
           }
         ]

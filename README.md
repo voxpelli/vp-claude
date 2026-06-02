@@ -306,6 +306,7 @@ Five hooks run automatically in the background:
 - **PostToolUse** (file edits) — After editing shell scripts, detects formatting drift with `shfmt -d`, surfaces the diff, and auto-fixes with `shfmt -w`. After editing schema files, reminds to sync Basic Memory.
 - **PostToolUseFailure** — Classifies Basic Memory write and schema tool failures into five categories with actionable recovery guidance.
 - **SessionStart** — Injects a knowledge graph status summary and suggests `/knowledge-prime` for project context or `/knowledge-ask` for topic-specific questions.
+- **PostCompact** — After a compaction, re-injects a condensed graph-recovery context so the continuing session still knows the Basic Memory tools and research skills exist.
 - **PreToolUse** (gardener Bash) — Blocks Python and Node.js script execution when running as the knowledge-gardener agent (via `permissionDecision: "deny"`), enforcing read-only discipline.
 
 ## Installation
@@ -473,8 +474,8 @@ agents/
   knowledge-primer.md                  Autonomous project context priming
   raindrop-gardener.md                 Read-only Raindrop tag auditor
 hooks/
-  hooks.json                           PreToolUse, PostToolUse x2,
-                                       PostToolUseFailure, SessionStart
+  hooks.json                           PreToolUse, PostToolUse x2, PostToolUseFailure,
+                                       SessionStart, PostCompact
   pre-bash-no-python.sh                Python/Node.js blocker for gardener agent
   post-bm-write-validate.sh            Schema validation after BM writes
   post-bm-failure-classify.sh          Error classification for BM failures
