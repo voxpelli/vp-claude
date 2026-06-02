@@ -66,6 +66,13 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
   leaked: tilde fences, 4-backtick nesting). NOTE the boundary: AST is the wrong
   tool for `staleness-contract` (its target headings live INSIDE fenced blocks —
   an AST sees opaque `code` and would pass vacuously), which stays line-regex.
+- **`check:installed-plugins` (`check-list-installed-plugins.mjs`)** — fixture
+  self-test for `lib/installed-plugins.mjs`, the pure resolver that `/knowledge-gaps
+  --plugins` Step 7c delegates to (via the `scripts/list-installed-plugins.mjs` CLI).
+  Covers every per-plugin `source` shape (`"./"`/`"./sub"` local-string → marketplace
+  repo + `#name`; `{github,repo}` → dedicated repo; `{git-subdir,url}` → parsed
+  owner/repo + `#name`; unresolved → `name@marketplace` fallback) + skill
+  grouping-by-`source`. The CLI's file I/O stays live-only (like `fetch-*-upstream.sh`).
 
 When adding a new "X must agree with Y" invariant, follow this family: a hard
 `error()` for mechanically-unambiguous checks (counts, sizes), a `warn()` for
