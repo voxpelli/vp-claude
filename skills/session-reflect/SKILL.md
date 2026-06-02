@@ -8,6 +8,7 @@ allowed-tools:
   - mcp__basic-memory__write_note
   - mcp__basic-memory__edit_note
   - mcp__basic-memory__build_context
+  - Skill
 ---
 
 # Session Reflect
@@ -134,7 +135,9 @@ Wait for user response before proceeding.
 
 ### 4. Write approved captures
 
-After approval, apply each capture:
+After approval, apply each capture (if the preview flagged an observation as
+**unverified**, strip that label first — persist only the hedged observation
+text, never the literal word "unverified"):
 
 **Appending to existing note** — use `edit_note` with `find_replace` targeting
 the last line of the `## Observations` section:

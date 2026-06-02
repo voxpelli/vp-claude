@@ -218,17 +218,20 @@ lines. BM's parser treats any `[[` as a relation boundary — the text before it
 becomes the `relation_type` field (max 200 chars), causing validation failures.
 Put all wiki-links in `## Relations` only.
 
-**Verify before capture (deep tier).** When Step 1's freshness check selected the
-full pipeline (note missing or more than 180 days old), or for any low-evidence
-person, confirm load-bearing claims — current role/affiliation, authorship and
-project attribution, and any biographical assertion — against a primary or
-authoritative source before writing. A wrong note compounds via citation and
-cross-project reciprocation, so a persisted claim carries a higher bar than a
-passing remark. If a claim cannot be confirmed, weaken it to a hedged statement
-("appears to", "is associated with") and date-qualify uncertain facts (e.g. "as
-of 2026-05") instead of asserting them outright — and never fabricate; if a fact
-is unknown, say so or omit it. This complements the anti-hagiography and
-fourth-wall guardrails above.
+<!-- Verify-before-capture + Record-contradictions blocks are mirrored in package-intel, tool-intel, and people-intel — update all three when changing (people-intel intentionally differs: person claims + [controversy] category) -->
+**Verify before capture (deep tier).** For any note Step 1 did not put on the
+fast path — missing, 60+ days old, or a low-evidence person — confirm
+load-bearing claims (current role/affiliation, authorship and project
+attribution, and any biographical assertion) against the sources already fetched
+in this run before writing. Do NOT make new source calls — Step 1's freshness
+tiers deliberately pruned sources; verify against what was fetched. A wrong note
+compounds via citation and cross-project reciprocation, so a persisted claim
+carries a higher bar than a passing remark. If a claim cannot be confirmed from
+this run's sources, weaken it to a hedged statement ("appears to", "is associated
+with") and date-qualify uncertain facts (e.g. "as of 2026-05") — never fabricate;
+if a fact is unknown, say so or omit it. Routine refreshes (note under 60 days)
+skip this step. This complements the anti-hagiography and fourth-wall guardrails
+above.
 
 **Record contradictions, do not resolve them silently.** When two sources
 disagree on a load-bearing fact (role, affiliation, attribution), record both
