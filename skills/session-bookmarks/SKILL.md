@@ -1,6 +1,6 @@
 ---
 name: session-bookmarks
-description: "This skill should be used when the user asks to 'bookmark URLs from this session', 'save links we found', 'bookmark discoveries', 'save notable URLs to Raindrop', 'bookmark what we discovered', 'save session URLs', 'raindrop bookmarks from session'. Scans the current conversation for high-signal URLs discovered during research, previews 1-3 bookmark candidates, and creates them in the AI-bookmarked Raindrop collection after user approval."
+description: "This skill should be used to save URLs or links found this session as Raindrop bookmarks — triggers: 'bookmark URLs from this session', 'save links we found', 'save notable URLs to Raindrop', 'save session URLs', 'raindrop bookmarks from session'. Scans the current conversation for high-signal URLs discovered during research, previews 1-3 bookmark candidates, and creates them in the AI-bookmarked Raindrop collection after user approval. This is URL/link bookmarking to Raindrop — to capture insights, decisions, or lessons into the Basic Memory knowledge graph instead, use session-reflect."
 user-invocable: true
 allowed-tools:
   - Read

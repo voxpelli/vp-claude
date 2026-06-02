@@ -1,6 +1,6 @@
 ---
 name: session-reflect
-description: "This skill should be used when the user asks to 'reflect on this session', 'save insights to memory', 'capture what we learned', 'commit this to memory', 'save decisions to Basic Memory', 'write up what we did', 'preserve what we found', 'save insights from this conversation', 'save what was discovered', 'capture session learnings', 'session reflection'. Reviews the current conversation, extracts durable insights (decisions, lessons, gotchas, patterns), previews proposed captures grouped by target note, and writes to Basic Memory after user approval."
+description: "This skill should be used when the user asks to 'reflect on this session', 'save insights to memory', 'capture what we learned', 'commit this to memory', 'save decisions to Basic Memory', 'write up what we did', 'preserve what we found', 'save insights from this conversation', 'save what was discovered', 'capture session learnings', 'session reflection'. Reviews the current conversation, extracts durable insights (decisions, lessons, gotchas, patterns), previews proposed captures grouped by target note, and writes to Basic Memory after user approval. This captures durable insights as Basic Memory notes — to save URLs or links found this session as Raindrop bookmarks instead, use session-bookmarks."
 user-invocable: true
 allowed-tools:
   - mcp__basic-memory__search_notes
