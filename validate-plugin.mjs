@@ -128,8 +128,15 @@ function auditToolReferences (file, content, declaredTools, fieldName) {
   // rest of the file into one opaque `code` node, so collectScannableText returns []
   // even for a file full of tool refs (and remark --frail does NOT flag unclosed
   // fences). If the AST saw nothing but the raw bytes carry a tool token, fail loudly.
-  if (segments.length === 0 && /mcp__[a-zA-Z0-9_-]+__[a-zA-Z0-9_-]+/.test(content)) {
-    error(file, `${fieldName}: no scannable prose but raw content has mcp__ tokens — likely an unclosed code fence; fix the markdown`)
+  // Test the frontmatter-STRIPPED body: a frontmatter-only mcp__ reference (in the
+  // `allowed-tools` list) plus an all-fenced/empty body must not false-fire here.
+  // NOTE: this only catches a fence opening BEFORE all prose (segments===0); the
+  // realistic prose-then-unclosed-fence case needs a structural fence-balance check
+  // (beaded) — a per-token "raw must be in segments" cross-check is infeasible
+  // because legitimate CLOSED fenced examples are also raw-but-not-collected.
+  const body = content.replace(/^---\n[\s\S]*?\n---\n?/, '')
+  if (segments.length === 0 && /mcp__[a-zA-Z0-9_-]+__[a-zA-Z0-9_-]+/.test(body)) {
+    error(file, `${fieldName}: no scannable prose but the body has mcp__ tokens — likely an unclosed code fence; fix the markdown`)
     return
   }
   for (const text of segments) {
