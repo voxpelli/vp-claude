@@ -53,6 +53,12 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
   (`lib/release-counts.mjs`); fixtures prove the parser is heading-anchored and a
   count mismatch fails. CLAUDE.md only — other release surfaces stay in sync via
   the release checklist.
+- **`check:mirror` (`check-mirror.mjs`)** — asserts prose blocks deliberately
+  duplicated across files (wrapped in paired `<!-- mirror:start <id> -->` /
+  `<!-- mirror:end <id> -->` markers) stay byte-identical per group. Replaces the
+  honor-system "mirrored — update both" comments; the first group is
+  `research-verify-capture` (package-intel ↔ tool-intel). Add a block to a group
+  by wrapping it in same-`<id>` markers in 2+ files.
 
 When adding a new "X must agree with Y" invariant, follow this family: a hard
 `error()` for mechanically-unambiguous checks (counts, sizes), a `warn()` for

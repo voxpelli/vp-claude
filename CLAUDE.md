@@ -43,7 +43,7 @@ hooks/
   hooks.json                         # PreToolUse, PostToolUse, PostToolUseFailure, SessionStart
 schemas/                             # 22 BM note-schema definitions — source of truth (see ## Schemas)
 scripts/                             # CLI-first audit + npm-run-check utilities (see ## Scripts)
-lib/                                 # JS modules imported by check scripts (staleness-contract, version-distance, fourth-wall-rules, release-counts)
+lib/                                 # JS modules imported by check scripts (staleness-contract, version-distance, fourth-wall-rules, release-counts, mirror-contract)
 .claude/rules/                       # Path-scoped dev conventions, load on edit of matching files (see ## Detailed conventions)
 ```
 
@@ -139,7 +139,7 @@ Skills and agents reference tools from multiple MCP servers. When editing, use e
 
 ## Validation
 
-`npm run check` — runs `check:plugin` (validate-plugin.mjs, incl. the CLAUDE.md size guard) + `check:contract` (staleness drift-bucket contract self-test) + `check:md` (remark) + `check:sh` (shellcheck + shfmt) + `check:hooks` (hook integration tests) + `check:distance` (version-distance classifier self-test) + `check:fourthwall` (fourth-wall rule-registry self-test) + `check:release-counts` (CLAUDE.md component counts ↔ disk).
+`npm run check` — runs `check:plugin` (validate-plugin.mjs, incl. the CLAUDE.md size guard) + `check:contract` (staleness drift-bucket contract self-test) + `check:md` (remark) + `check:sh` (shellcheck + shfmt) + `check:hooks` (hook integration tests) + `check:distance` (version-distance classifier self-test) + `check:fourthwall` (fourth-wall rule-registry self-test) + `check:release-counts` (CLAUDE.md component counts ↔ disk) + `check:mirror` (mirrored-block byte-identity).
 Shell scripts are validated with `shellcheck` (linting) and `shfmt -d`
 (format verification). Requires `brew install shfmt` if not already present.
 
@@ -165,6 +165,7 @@ full drift-guard picture live in `.claude/rules/scripts-and-validation.md`.
 | `check-version-distance.mjs` | Fixture tests for the semver↔calver version-distance classifier (imports `lib/version-distance.mjs`) — proves the scheme-mismatch guard and version-zero rule hold | `npm run check:distance` |
 | `check-fourthwall.mjs` | Fixture tests for the fourth-wall rule registry (imports `lib/fourth-wall-rules.mjs`) — every deterministic `detect` fires on a planted violation + stays silent on near-misses; vp-note-quality documents every rule id + its Detection column matches the registry | `npm run check:fourthwall` |
 | `check-release-counts.mjs` | Live + fixture check: CLAUDE.md `### Skills/Agents/Hooks (N)` headings match on-disk counts (imports `lib/release-counts.mjs`) | `npm run check:release-counts` |
+| `check-mirror.mjs` | Live + fixture check: prose blocks wrapped in paired `mirror:start`/`mirror:end` markers stay byte-identical across files (imports `lib/mirror-contract.mjs`) | `npm run check:mirror` |
 
 ### bd CLI quirks
 
