@@ -9,6 +9,7 @@
     "check:fourthwall": "node scripts/check-fourthwall.mjs",
     "check:release-counts": "node scripts/check-release-counts.mjs",
     "check:mdast": "node scripts/check-mdast.mjs",
+    "check:installed-plugins": "node scripts/check-list-installed-plugins.mjs",
     "check:plugin": "node validate-plugin.mjs",
     "check:md": "remark . --quiet --frail",
     "check:sh": "shellcheck hooks/*.sh scripts/*.sh && shfmt -d hooks/*.sh scripts/*.sh"

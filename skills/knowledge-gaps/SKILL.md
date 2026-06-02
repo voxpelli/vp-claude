@@ -412,56 +412,39 @@ without the diff buckets.
 #### 7c. Detect installed plugins and skills (user-global; `--plugins` only)
 
 **When to run:** only when invoked with `--plugins`. Reads USER-GLOBAL manifests
-at fixed `~/.claude` / `~/.agents` paths — not the project — so the Step 9 report
-section is labelled "user-global". If a manifest is absent (fresh install, CI
-host), skip that population silently. Unlike `gh:` (excluded from auto-detection
-because it has *no* manifest), plugins and skills DO have install manifests — that
-is precisely why they are detectable here.
+(`~/.claude/plugins/*`, `~/.agents/.skill-lock.json`) — not the project — so the
+Step 9 report section is labelled "user-global". Unlike `gh:` (excluded from
+auto-detection because it has *no* manifest), plugins and skills DO have install
+manifests — that is precisely why they are detectable here.
 
-**Plugins** — ground truth is `~/.claude/plugins/installed_plugins.json`:
-
-```
-Read("~/.claude/plugins/installed_plugins.json")   # plugins: { "<name>@<marketplace>": [ { version, installPath, ... } ] }
-Read("~/.claude/plugins/known_marketplaces.json")  # "<marketplace>": { source: { repo: "<owner>/<repo>" }, installLocation }
-```
-
-For each `<name>@<marketplace>` key, resolve `owner/repo`:
-
-1. Read the marketplace's `marketplace.json` at
-   `<installLocation>/.claude-plugin/marketplace.json` and find the `plugins[]`
-   entry where `name == <name>`.
-2. From that entry's `source`:
-   - `"./"` or absent (LOCAL source) → use the marketplace's own
-     `source.repo` from `known_marketplaces.json`, plus a `#<name>`
-     disambiguator (e.g. `voxpelli/vp-claude#vp-knowledge`).
-   - `{ source: "github", repo: "<o>/<r>" }` → `<o>/<r>` directly.
-   - `{ source: "git-subdir", url: "https://github.com/<o>/<r>.git", ... }` →
-     parse `<o>/<r>` from the url (strip `https://github.com/` and `.git`).
-   - marketplace.json unreadable → record `plugin:<name>@<marketplace>`
-     (source unresolved) and flag it "resolve manually" in the report.
-
-Presence in `installed_plugins.json` = installed; there is no enabled flag, and
-`blocklist.json` is exclude-only and polluted with stale test entries — ignore it.
-
-**Skills** — ground truth is `~/.agents/.skill-lock.json` (the skills.sh lockfile;
-`~/.claude/skills/*` are symlinks into `~/.agents/skills/`, and SKILL.md
-frontmatter carries NO provenance, so the lockfile is the only source):
+The resolution (the `<name>@<marketplace>` → `owner/repo` join across
+`installed_plugins.json` + `known_marketplaces.json` + each marketplace's
+`marketplace.json`, the four `source` shapes, and skill grouping-by-source) is
+deterministic, so it lives in a script — not in this prose:
 
 ```
-Read("~/.agents/.skill-lock.json")   # skills: { "<dir>": { source: "<owner>/<repo>", skillPath, ... } }
+Bash: node ${CLAUDE_PLUGIN_ROOT}/scripts/list-installed-plugins.mjs
 ```
 
-`source` is already `owner/repo`. **Group skills sharing a `source`** — many map
-to one repo (all `memory-*` → `basicmachines-co/basic-memory-skills`) and thus to
-ONE `claude_plugin` note. A skill dir absent from the lockfile → name-only (no
-owner/repo). **No catalog dedup needed:** the lockfile records only standalone
-`npx skills add` installs — plugin-bundled skills (a plugin's own `skills/`) never
-appear here.
+It reads no stdin and emits one NDJSON record per installed plugin / skill-bundle:
 
-Carry both installed sets (`installed_plugins`, `installed_skills`) forward to
-Step 8. The note-title convention (for Step 8 matching) is the `/tool-intel`
-identifier with `:`/`/`/`#` replaced by `-`: `plugin:voxpelli/vp-claude#vp-knowledge`
-→ `plugin-voxpelli-vp-claude-vp-knowledge`; `skill:owner/repo` → `skill-owner-repo`.
+```
+{"identifier":"plugin:voxpelli/vp-claude#vp-knowledge","title":"plugin-voxpelli-vp-claude-vp-knowledge","installedAt":"…","members":[],"sourceResolved":true}
+{"identifier":"skill:basicmachines-co/basic-memory-skills","title":"skill-basicmachines-co-basic-memory-skills","installedAt":"…","members":["memory-notes","memory-research"],"sourceResolved":true}
+```
+
+- `identifier` is the `/tool-intel plugin:`/`skill:` address; `title` is the
+  pre-normalized BM-note title Step 8 matches on; `members` is the grouped
+  skill-dir roster (the report's "Skills installed" column); `installedAt` drives
+  the Step 9 recency cap.
+- `sourceResolved: false` means owner/repo could not be determined (no
+  `marketplace.json` / unknown source shape) — always Undocumented, shown as
+  "resolve manually".
+- A **non-zero exit or empty output** → skip that population silently and note it
+  (a fresh machine / CI host with no `~/.claude` is normal — mirrors the
+  `command -v brew` fallback in Step 7b). Do NOT abort the audit.
+
+Carry the parsed records forward to Step 8.
 
 #### 8. Check Basic Memory coverage for tools
 
@@ -480,20 +463,20 @@ Cross-reference against the parsed identifiers to classify each tool:
 - **Documented** — a `<prefix>-<name>` note exists
 - **Undocumented** — no dedicated note
 
-When Step 7c ran (`--plugins`), get the documented plugin/skill set. Both write
-`claude_plugin` notes, but coverage is matched by NOTE TYPE, not directory —
-legacy notes may live outside `plugins/` (the convention is `plugins/`, but
-retyped notes can sit elsewhere):
+When Step 7c ran (`--plugins`), get the documented `claude_plugin` set — matched by
+NOTE TYPE, not directory, since legacy notes may live outside `plugins/`:
 
 ```
 list_directory(dir_name="plugins", depth=1)
 search_notes(query="plugin skill", note_types=["claude_plugin"], page_size=100)
 ```
 
-Match each installed plugin/skill against a `claude_plugin` note by its computed
-title (`plugin-<owner>-<repo>` / `skill-<owner>-<repo>`); for a near-miss, fall
-back to a name `search_notes` (catches legacy-titled notes). Classify Documented
-/ Undocumented as above.
+Match each Step 7c record's `title` against a `claude_plugin` note. For a miss,
+fall back to `search_notes(query="<bare-name>", note_types=["claude_plugin"], page_size=5)`
+where `<bare-name>` is the last `/`- or `#`-segment of the identifier — this catches
+legacy-titled notes (e.g. a note titled "beads-marketplace" for an installed beads
+plugin). Classify Documented / Undocumented as above; `sourceResolved:false` records
+are always Undocumented.
 
 #### 9. Add tools section to gap report
 
@@ -517,9 +500,15 @@ For the top undocumented tools, offer `/tool-intel` invocations:
 - vscode: `/tool-intel vscode:esbenp.prettier-vscode`
 
 When Step 7c ran, append a **Plugin/Skill Coverage** section (template in
-`report-templates.md`, labelled user-global) and offer:
+`report-templates.md`, labelled user-global). The coverage TABLE lists ALL
+installed plugins/skills (the `X/Y documented` count needs the full denominator),
+but the actionable `/tool-intel` OFFER below it is capped to the **top 5
+undocumented by `installedAt`** (most recent first), with "…and N more — re-run to
+see all" when truncated. When **0** `claude_plugin` notes match, lead the section
+with "No plugin/skill notes yet — here are the 5 most-recently-installed to start"
+rather than an all-red wall. Offer (use each record's `identifier` verbatim):
 
-- plugin: `/tool-intel plugin:<owner>/<repo>` (add `#<name>` for a multi-plugin marketplace)
+- plugin: `/tool-intel plugin:<owner>/<repo>` (with `#<name>` when the record has it)
 - skill: `/tool-intel skill:<owner>/<repo>`
 
 ---
