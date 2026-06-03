@@ -6,6 +6,36 @@ tooling, discovered while building vp-knowledge.
 
 ## Feature Requests
 
+- **synergy-registry: support local-only sibling entries (private sibling, zero committed footprint)** (2026-06-03) —
+  The `PRIVATE-SYNERGY-<project>.md` overlay (v0.17.0) makes a sibling's synergy
+  *content* private, but registry resolution still forces the sibling's
+  *existence* to be public: `.claude/synergy-registry.local.json` only
+  **overrides** fields of an entry that already exists in the committed
+  `synergy-registry.json`; an entry whose `name` is absent from the committed
+  base is **ignored** (`sibling-sync/SKILL.md:106-107`;
+  `synergy-entry-format.md:180` scopes `.local.json` to `local-path` only). So a
+  fully-private sibling — e.g. `relationship: open-core-partner`, a proprietary
+  partner whose existence shouldn't appear in a public OSS repo — cannot be
+  registered without committing a base entry that names it and its relationship.
+  PRIVATE-SYNERGY closed the *content* half of the proprietary↔public boundary;
+  this is the *registration* half. Concrete change: let
+  `.claude/synergy-registry.local.json` **add** local-only entries (not just
+  override) — a local-only entry (name not in the committed base) registers a
+  recognized, sibling-syncable sibling whose `name`, `file`, `bm-entity`, and
+  `relationship` live in `.local.json`, with zero committed footprint; such
+  entries are local-only by construction (never reciprocated or promoted — the
+  same guarantee as PRIVATE-SYNERGY content). Affected: sibling-sync registry
+  merge rule (resolution step 2), synergy-tracker workflow 1 step 1b (already
+  writes `local-path` to `.local.json` — extend it to write the full entry there
+  for private siblings), and `validate-plugin.mjs` registry validation (accept
+  local-only entries).
+  Ownership: upstream · Workaround: partial — either keep the sibling entirely
+  outside the registry machinery (a hand-maintained `PRIVATE-SYNERGY-<name>.md`
+  doc, no `/sibling-sync` automation), or accept the public committed entry (the
+  relationship's existence becomes public, content stays private). Neither
+  delivers private-registration plus automation. This is the exact tradeoff
+  vp-claude faces for a proprietary open-core-partner sibling.
+
 - *(Resolved 2026-06-02, vp-beads `upstream-tracker/SKILL.md:86` — the carve-out now reads "Sibling projects that ship upstream artifacts (skills, hooks, agents) can still receive upstream-tracker entries…")* **upstream-tracker: clarify redirect rule for sibling projects with shipped skill code** (2026-05-04) —
   Workflow 1 step 1 currently says "If the observation is about a sibling
   project rather than an upstream package or tool, redirect to

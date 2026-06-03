@@ -220,17 +220,32 @@ of maintaining both halves catches drift cases a single-source record misses.
   (2026-06-03) — Both plugins protect proprietary↔public synergy content from
   bilateral comparison and BM promotion, but via different file conventions.
   vp-claude uses a `SYNERGY-<name>.local.md` file pointed to by the registry
-  `file:` field, gitignored via `SYNERGY-*.local.md` (in use for
-  `SYNERGY-weft-ai.local.md`). vp-beads v0.17.0 shipped a first-class
+  `file:` field, gitignored via `SYNERGY-*.local.md` (in use for a proprietary
+  open-core-partner sibling). vp-beads v0.17.0 shipped a first-class
   `PRIVATE-SYNERGY-<project>.md` overlay (a separate `PRIVATE-`-prefixed file
   alongside the shared one, gitignored, skill-aware). This shipped design
   resolves vp-claude's `UPSTREAM-vp-beads.md` `.local.md` feature request — but
   with a different shape than proposed.
   Convergence path: evaluate · Status: drifting · Last verified: 2026-06-03
   Reason: decide whether to adopt vp-beads's `PRIVATE-SYNERGY-` convention
-  (migrating `SYNERGY-weft-ai.local.md` → `PRIVATE-SYNERGY-weft-ai.md`) or keep
-  the `.local.md` workaround. Adoption would re-converge the marketplace on one
-  private-overlay mechanism.
+  (migrating the gitignored `.local.md` file to a `PRIVATE-SYNERGY-` overlay) or
+  keep the `.local.md` workaround. Adoption would re-converge the marketplace on
+  one private-overlay mechanism.
+
+- **Private sibling registration requires a committed entry (no local-only siblings)**
+  (2026-06-03) — vp-beads's `synergy-registry.local.json` only *overrides* fields
+  of an entry that already exists in the committed `synergy-registry.json`; a
+  `.local.json`-only entry (name absent from the committed base) is ignored
+  (`sibling-sync/SKILL.md:106-107`). So a fully-private proprietary
+  (open-core-partner) sibling cannot be a recognized, sibling-syncable sibling
+  without a committed entry naming it — `PRIVATE-SYNERGY-` made the *content*
+  private, but *registration* (the relationship's existence) is still forced
+  public. vp-claude wants local-only registration for proprietary partners.
+  Convergence path: propose-shared · Status: drifting · Last verified: 2026-06-03
+  Reason: filed as a feature request in `UPSTREAM-vp-beads.md` ("synergy-registry:
+  support local-only sibling entries"). Until shipped, the workaround is either a
+  committed entry (public footprint) or a hand-maintained
+  `PRIVATE-SYNERGY-<sibling>.md` doc kept outside the registry machinery.
 
 ## Extraction Candidates
 
