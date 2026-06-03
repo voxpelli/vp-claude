@@ -82,9 +82,8 @@ resolution. Examples: `npm:fastify` → `npm-fastify`,
 `action:actions/checkout` → `action-actions-checkout`,
 `npm:@fastify/postgres` → `npm-@fastify-postgres`.
 
-**Migration (v0.22.0+):** Existing vault notes need a one-time rename — see
-`TODO-obsidian-migration.md`. New notes emitted by the plugin use hyphen
-titles automatically.
+**Migration (v0.22.0+):** Existing vault notes needed a one-time rename when
+this shipped; new notes emitted by the plugin use hyphen titles automatically.
 
 ## See also
 

@@ -590,7 +590,7 @@ These are scoped out of current releases but worth tracking:
 
 ### v0.22.0 — Hyphen-delimited note titles and wiki-links
 
-Note titles and wiki-links use **hyphen delimiters** (`npm-fastify`, `[[npm-fastify]]`) instead of colons (`npm:fastify`, `[[npm:fastify]]`). User command syntax is unchanged (`/package-intel npm:fastify`). Vaults populated before v0.22.0 need a one-time migration — see [TODO-obsidian-migration.md](TODO-obsidian-migration.md).
+Note titles and wiki-links use **hyphen delimiters** (`npm-fastify`, `[[npm-fastify]]`) instead of colons (`npm:fastify`, `[[npm:fastify]]`). User command syntax is unchanged (`/package-intel npm:fastify`). Vaults populated before v0.22.0 needed a one-time title rename when this shipped.
 
 ## License
 
