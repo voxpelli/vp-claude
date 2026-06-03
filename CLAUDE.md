@@ -40,7 +40,7 @@ agents/
   knowledge-primer.md                # Autonomous project context priming
   raindrop-gardener.md               # Read-only Raindrop tag auditor
 hooks/
-  hooks.json                         # PreToolUse, PostToolUse, PostToolUseFailure, SessionStart, PostCompact
+  hooks.json                         # PreToolUse, PostToolUse, PostToolUseFailure, SessionStart
 schemas/                             # 23 BM note-schema definitions — source of truth (see ## Schemas)
 scripts/                             # CLI-first audit + npm-run-check utilities (see ## Scripts)
 lib/                                 # JS modules imported by check scripts (staleness-contract, version-distance, fourth-wall-rules, release-counts, mdast, installed-plugins)
@@ -79,13 +79,12 @@ component type — see [Detailed conventions](#detailed-conventions).
 - **knowledge-primer** — read-only "before work" BM context briefer.
 - **raindrop-gardener** — read-only Raindrop tag auditor.
 
-### Hooks (6)
+### Hooks (5)
 
 - **PostToolUse** (`write_note`/`edit_note`) — emits a `schema_validate` reminder via `additionalContext`.
 - **PostToolUse** (`Edit`/`Write`) — `shfmt` drift detect + auto-fix; schema-sync reminder.
 - **PostToolUseFailure** — classifies BM write-tool errors into five recovery categories.
-- **SessionStart** — graph guidance + skill suggestions + 4th-sprint audit reminder.
-- **PostCompact** — re-injects condensed graph-recovery context after a compaction.
+- **SessionStart** — graph guidance + skill suggestions + 4th-sprint audit reminder; on `source=compact` also re-injects condensed graph-recovery context (migrated from a former PostCompact hook — that event can't inject `additionalContext`).
 - **PreToolUse** (`Bash`) — blocks Python/Node in the gardener agent (read-only enforcement).
 
 ## Schemas

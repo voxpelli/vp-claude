@@ -6,7 +6,7 @@ paths:
 # Hook development rules
 
 Loads when editing anything under `hooks/`. The root `CLAUDE.md` keeps only a
-one-line index of the six hooks; the full detail and the hook-authoring
+one-line index of the five hooks; the full detail and the hook-authoring
 conventions live here.
 
 ## Hook inventory (full detail)
@@ -14,8 +14,7 @@ conventions live here.
 - **PostToolUse** (`write_note`/`edit_note` matcher) — Command hook that emits `additionalContext` instructing the main session to call `schema_validate` on the written note. Skips schema definition notes (`/schema/` permalinks).
 - **PostToolUse** (`Edit`/`Write` matcher) — Detects shell-script formatting drift via `shfmt -d`, emits the diff in `additionalContext`, then auto-fixes with `shfmt -w`. Reminds to sync BM when editing schema files.
 - **PostToolUseFailure** (`write_note`/`edit_note`/`schema_validate`/`schema_diff`/`schema_infer` matcher) — Command hook that pattern-matches BM write-tool errors into five categories (server-unavailable, note-not-found, invalid-argument, permission-error, unknown) and emits `additionalContext` with recovery guidance.
-- **SessionStart** — Emits a single `additionalContext` JSON object with knowledge graph guidance, skill suggestions (`/knowledge-prime`, `/knowledge-ask`, `/knowledge-gaps`, `/schema-evolve`, and the explicit-only `/knowledge-garden`/`/knowledge-maintain`), and conditional graph-audit cycle reminders on every 4th sprint.
-- **PostCompact** (`post-compact.sh`, matcher `""`) — Command hook that re-injects a single condensed `additionalContext` recovery block after a compaction (the SessionStart graph guidance can fall out of the window when context is summarized). Adopted from vp-beads' PostCompact pattern (bd `vp-claude-1oah`); the bead's SessionStart security-signal half was intentionally dropped — vp-knowledge has no Dependabot-style alert analog.
+- **SessionStart** (`session-start.sh`, matcher `""`) — Emits a single `additionalContext` JSON object with knowledge graph guidance, skill suggestions (`/knowledge-prime`, `/knowledge-ask`, `/knowledge-gaps`, `/schema-evolve`, and the explicit-only `/knowledge-garden`/`/knowledge-maintain`), and conditional graph-audit cycle reminders on every 4th sprint. It reads `source` from stdin and, on `source=compact`, appends a condensed graph-recovery block (the graph guidance can fall out of the window when context is summarized). This recovery payload was migrated here from a former `PostCompact` hook: `PreCompact`/`PostCompact` `additionalContext` never reaches the resumed, tool-capable agent (Claude Code docs — those events are observability-only / fire pre-compaction), so `SessionStart` `source=compact` is the only slot that injects post-compaction context. Adopted from vp-beads' v0.17.0 migration (bd `vp-claude-1oah`); the bead's SessionStart security-signal half was intentionally dropped — vp-knowledge has no Dependabot-style alert analog.
 - **PreToolUse** (`Bash` matcher) — Blocks Python and Node.js script execution inside the knowledge-gardener agent via `permissionDecision: "deny"`, enforcing read-only discipline. Main session and other agents are unaffected.
 
 ## Hook conventions

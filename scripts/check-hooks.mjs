@@ -138,16 +138,23 @@ test('4 RETRO files → 1 object, contains audit sprint', () => {
   return { ok: true }
 })
 
-// --- post-compact.sh ---
-console.log('\npost-compact.sh')
+test('source=compact → 1 object, contains post-compaction recovery', () => {
+  const { stdout } = runHook(join(HOOKS_DIR, 'session-start.sh'), JSON.stringify({ source: 'compact' }), { cwd: makeTempDirWithRetros(0) })
+  const { count, objects, parseError } = parseJsonObjects(stdout)
+  if (parseError) return { ok: false, reason: parseError }
+  if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count} — multi-object bug!` }
+  const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
+  if (!ctx.includes('Post-compaction recovery')) return { ok: false, reason: 'missing recovery text on compact' }
+  return { ok: true }
+})
 
-test('PostCompact → 1 object with recovery additionalContext', () => {
-  const { stdout } = runHook(join(HOOKS_DIR, 'post-compact.sh'), '{}')
+test('source=startup → 1 object, recovery absent (gated)', () => {
+  const { stdout } = runHook(join(HOOKS_DIR, 'session-start.sh'), JSON.stringify({ source: 'startup' }), { cwd: makeTempDirWithRetros(0) })
   const { count, objects, parseError } = parseJsonObjects(stdout)
   if (parseError) return { ok: false, reason: parseError }
   if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count}` }
   const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
-  if (!ctx.includes('Post-compaction recovery')) return { ok: false, reason: 'missing recovery text' }
+  if (ctx.includes('Post-compaction recovery')) return { ok: false, reason: 'recovery text leaked on non-compact source' }
   return { ok: true }
 })
 
