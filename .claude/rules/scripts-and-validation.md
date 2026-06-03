@@ -68,7 +68,7 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
   an AST sees opaque `code` and would pass vacuously), which stays line-regex.
 - **`check:installed-plugins` (`check-list-installed-plugins.mjs`)** — fixture
   self-test for `lib/installed-plugins.mjs`, the pure resolver that `/knowledge-gaps
-  --plugins` Step 7c delegates to (via the `scripts/list-installed-plugins.mjs` CLI).
+  --global` Step 7c delegates to (via the `scripts/list-installed-plugins.mjs` CLI).
   Covers every per-plugin `source` shape (`"./"`/`"./sub"` local-string → marketplace
   repo + `#name`; `{github,repo}` → dedicated repo; `{git-subdir,url}` → parsed
   owner/repo + `#name`; unresolved → `name@marketplace` fallback) + skill

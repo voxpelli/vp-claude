@@ -515,7 +515,7 @@ scripts/
   check-release-counts.mjs             Component-count contract: CLAUDE.md ↔ disk (npm run check:release-counts)
   check-mdast.mjs                      mdast prose/fenced split tests (npm run check:mdast)
   check-list-installed-plugins.mjs     Installed-plugin/skill resolver tests (npm run check:installed-plugins)
-  list-installed-plugins.mjs           CLI: emit NDJSON of installed plugins/skills for /knowledge-gaps --plugins
+  list-installed-plugins.mjs           CLI: emit NDJSON of installed plugins/skills for /knowledge-gaps --global
   fetch-brew-upstream.sh               API-only upstream facts for brew formulae (stdin: names; never reads ~/basic-memory)
   fetch-cask-upstream.sh               API-only upstream facts for casks (bulk cask.json; comma-segment version)
   fetch-npm-upstream.sh                API-only upstream facts for npm packages (abbreviated packument)

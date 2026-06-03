@@ -1,8 +1,8 @@
 ---
 name: knowledge-gaps
-description: "This skill should be used when the user asks about 'knowledge gaps', 'tool coverage', 'undocumented dependencies', 'undocumented tools', 'concept gaps', 'installed plugins', 'plugin coverage', 'undocumented skills', 'stale/outdated/drifted notes', 'version drift', or 'which tools/packages need updating'. Audits project dependency and tool manifests — and installed Claude Code plugins + skills.sh bundles — against Basic Memory coverage, and detects concept-level hub gaps. Two flag modes: `--stale [brew|npm|cask|crate|vscode]` checks version drift instead of coverage; `--plugins` audits installed plugin/skill coverage (unlike gh, plugins/skills have install manifests). Supported ecosystems and full flag mechanics are documented in the skill body."
+description: "This skill should be used when the user asks about 'knowledge gaps', 'tool coverage', 'undocumented dependencies', 'undocumented tools', 'concept gaps', 'installed plugins', 'plugin coverage', 'undocumented skills', 'globally installed plugins/skills', 'what is installed on this machine', 'stale/outdated/drifted notes', 'version drift', or 'which tools/packages need updating'. Audits project dependency and tool manifests — and installed Claude Code plugins + skills.sh bundles — against Basic Memory coverage, and detects concept-level hub gaps. Two flag modes: `--stale [brew|npm|cask|crate|vscode]` checks version drift instead of coverage; `--global` audits what is installed on this machine — Claude Code plugins + skills.sh bundles today — against coverage. Supported ecosystems and full flag mechanics are documented in the skill body."
 user-invocable: true
-argument-hint: "[--stale [brew|npm|cask|crate|vscode]] [--plugins]"
+argument-hint: "[--stale [brew|npm|cask|crate|vscode]] [--global]"
 paths:
   - "package.json"
   - "Cargo.toml"
@@ -67,11 +67,11 @@ upstream — not a coverage audit.
   Brewfile-vs-installed reconciliation silently and report brew coverage in
   Brewfile-only mode. This is the expected fallback for auditing a remote
   machine's declared deps from a different host.
-- **`--plugins` manifest absent** — if `~/.claude/plugins/installed_plugins.json`
+- **`--global` manifest absent** — if `~/.claude/plugins/installed_plugins.json`
   (plugins) or `~/.agents/.skill-lock.json` (skills) is missing/unreadable in
   Step 7c, skip that population silently and note it; the other still runs. These
   are user-global, so a CI host without `~/.claude` simply yields nothing.
-- **`--plugins` + `--stale` together** — reject; they are separate modes
+- **`--global` + `--stale` together** — reject; they are separate modes
   (coverage vs drift). Run one at a time.
 
 ## Workflow
@@ -116,10 +116,10 @@ The remaining steps below (numbered 0 through 15) describe this mode only.
 **Skip them entirely when `--stale` is present** — Mode A is a complete
 alternative workflow.
 
-The `--plugins` flag is a Mode B addition: when present, it activates **Step 7c**
+The `--global` flag is a Mode B addition: when present, it activates **Step 7c**
 (user-global installed-plugin / skill coverage) alongside the project-manifest
-steps. `--plugins` and `--stale` are mutually exclusive — if both appear, reject
-with "`--plugins` (coverage) and `--stale` (drift) are separate modes; run one."
+steps. `--global` and `--stale` are mutually exclusive — if both appear, reject
+with "`--global` (coverage) and `--stale` (drift) are separate modes; run one."
 
 #### 0. Detect project ecosystems
 
@@ -297,9 +297,9 @@ Glob(pattern="Dockerfile.*")
 Read("./.vscode/extensions.json")
 ```
 
-Announce which manifests are found. If none are found AND `--plugins` was not
+Announce which manifests are found. If none are found AND `--global` was not
 passed, skip Steps 7–9 and note "No tool manifests detected" in the report. If
-`--plugins` was passed, still run **Step 7c** — it reads user-global manifests
+`--global` was passed, still run **Step 7c** — it reads user-global manifests
 independent of any project tool manifest.
 
 #### 7. Parse tool manifests
@@ -409,13 +409,19 @@ If `brew leaves` was unavailable, the set used in Step 8 is just
 `brewfile_declared`, and Step 9 reports brew coverage in Brewfile-only mode
 without the diff buckets.
 
-#### 7c. Detect installed plugins and skills (user-global; `--plugins` only)
+#### 7c. Detect host-installed sources (`--global`; plugins + skills today)
 
-**When to run:** only when invoked with `--plugins`. Reads USER-GLOBAL manifests
-(`~/.claude/plugins/*`, `~/.agents/.skill-lock.json`) — not the project — so the
-Step 9 report section is labelled "user-global". Unlike `gh:` (excluded from
-auto-detection because it has *no* manifest), plugins and skills DO have install
-manifests — that is precisely why they are detectable here.
+**When to run:** only when invoked with `--global`. `--global` audits what is
+INSTALLED ON THIS MACHINE (vs. what the project *declares*) against coverage —
+it reads USER-GLOBAL manifests in `$HOME` (`~/.claude/plugins/*`,
+`~/.agents/.skill-lock.json`), not the project. That is why it is opt-in (the
+result varies by machine and is not CI-reproducible) and why the Step 9 report
+section is labelled "user-global". Today it covers Claude Code plugins +
+skills.sh bundles; other host-installed sources (e.g. `brew leaves`, installed
+VSCode/`gh` extensions — bd `vp-claude-1u1` et al.) are candidate sub-steps under
+the same flag. This inverts the default's `gh:` handling: `gh:` has no *project*
+manifest, but it does have an installed list (`gh extension list`) — detecting
+that is a future `--global` sub-step, not a permanent exclusion.
 
 The resolution (the `<name>@<marketplace>` → `owner/repo` join across
 `installed_plugins.json` + `known_marketplaces.json` + each marketplace's
@@ -463,7 +469,7 @@ Cross-reference against the parsed identifiers to classify each tool:
 - **Documented** — a `<prefix>-<name>` note exists
 - **Undocumented** — no dedicated note
 
-When Step 7c ran (`--plugins`), get the documented `claude_plugin` set — matched by
+When Step 7c ran (`--global`), get the documented `claude_plugin` set — matched by
 NOTE TYPE, not directory, since legacy notes may live outside `plugins/`:
 
 ```

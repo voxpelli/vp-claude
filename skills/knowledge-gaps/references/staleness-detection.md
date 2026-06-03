@@ -366,5 +366,5 @@ After the report, include a one-line footnote acknowledging scope:
 > — they have no single canonical comparable version. `plugin` is deferred (no
 > central registry API; many plugins SHA-track without bumping version) and
 > `skill` is unsupported (no comparable version — ships off a moving `main`);
-> both are covered by `/knowledge-gaps --plugins` (coverage, not drift). `pypi`,
+> both are covered by `/knowledge-gaps --global` (coverage, not drift). `pypi`,
 > `gem`, and `composer` are deferred until their cohorts grow.*

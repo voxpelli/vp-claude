@@ -9,7 +9,7 @@ produces these; the verbose format lives here so the body stays lean
 
 - [Package coverage report](#package-coverage-report) — emitted by Step 4
 - [Tool coverage report](#tool-coverage-report) — appended by Step 9
-- [Plugin/skill coverage report](#pluginskill-coverage-report) — appended by Step 9 under `--plugins`
+- [Plugin/skill coverage report](#pluginskill-coverage-report) — appended by Step 9 under `--global`
 
 ## Package coverage report
 
@@ -116,7 +116,7 @@ skipped" below the Homebrew Formulae table.
 
 ## Plugin/skill coverage report
 
-Appended after the Tool Coverage Report only when Step 7c ran (`--plugins`). Both
+Appended after the Tool Coverage Report only when Step 7c ran (`--global`). Both
 populations are USER-GLOBAL (the operator's machine, not the project) — label the
 section so. Plugins and skill-bundles both resolve to `claude_plugin` notes: one
 note per plugin, and one note per skill-bundle SOURCE REPO (many skill dirs from

@@ -19,7 +19,7 @@ skills/
     references/                      # 14 files: 6 ecosystem + 6 note templates + gh-api-fallback + forge-fallback
   tool-intel/SKILL.md                # Five-source dev-tool research (brew/cask/action/docker/vscode/gh)
     references/                      # 16 files: 8 ecosystem + 7 note templates + gh-api-fallback
-  knowledge-gaps/SKILL.md            # Cross-reference deps + tool manifests vs BM coverage; --stale for version drift (brew/npm/cask/crate/vscode); --plugins for installed plugin/skill coverage
+  knowledge-gaps/SKILL.md            # Cross-reference deps + tool manifests vs BM coverage; --stale for version drift (brew/npm/cask/crate/vscode); --global for installed plugin/skill coverage
     references/                      # 4 files: standard-detection, concept-detection, staleness-detection, report-templates
   knowledge-prime/SKILL.md           # On-demand project context priming from BM
   schema-evolve/SKILL.md             # Frequency-driven schema drift detection and dual-sync
@@ -59,7 +59,7 @@ component type — see [Detailed conventions](#detailed-conventions).
 
 - **package-intel** — seven-source package research (npm/crate/go/composer/pypi/gem) → BM note. `/package-intel <pkg>`
 - **tool-intel** — five-source dev-tool research (brew/cask/action/docker/vscode/gh/plugin/skill) → BM note. `/tool-intel <prefix>:<name>`
-- **knowledge-gaps** — dep + tool-manifest coverage audit; `--stale [brew|npm|cask|crate|vscode]` for version drift; `--plugins` for installed plugin/skill coverage. `/knowledge-gaps`
+- **knowledge-gaps** — dep + tool-manifest coverage audit; `--stale [brew|npm|cask|crate|vscode]` for version drift; `--global` for installed plugin/skill coverage. `/knowledge-gaps`
 - **knowledge-prime** — on-demand project context brief from BM. `/knowledge-prime`
 - **schema-evolve** — schema-drift detection + dual-sync. `/schema-evolve <type>`
 - **session-reflect** — conversation → BM capture with preview/approve. `/session-reflect`
@@ -168,7 +168,7 @@ full drift-guard picture live in `.claude/rules/scripts-and-validation.md`.
 | `check-fourthwall.mjs` | Fixture tests for the fourth-wall rule registry (imports `lib/fourth-wall-rules.mjs`) — every deterministic `detect` fires on a planted violation + stays silent on near-misses; vp-note-quality documents every rule id + its Detection column matches the registry | `npm run check:fourthwall` |
 | `check-release-counts.mjs` | Live + fixture check: CLAUDE.md `### Skills/Agents/Hooks (N)` headings match on-disk counts (imports `lib/release-counts.mjs`) | `npm run check:release-counts` |
 | `check-mdast.mjs` | Fixture self-test for `lib/mdast.mjs` `collectScannableText` — proves prose + inline-code is collected while fenced blocks (any depth: tilde, 4-backtick nesting) + frontmatter are skipped (powers `auditToolReferences`) | `npm run check:mdast` |
-| `list-installed-plugins.mjs` | CLI for `/knowledge-gaps --plugins` Step 7c: reads `~/.claude/plugins/*` + `~/.agents/.skill-lock.json`, emits NDJSON `{identifier, title, installedAt, members, sourceResolved}` per installed plugin/skill (file I/O only — resolution in `lib/installed-plugins.mjs`) | `/knowledge-gaps --plugins` |
+| `list-installed-plugins.mjs` | CLI for `/knowledge-gaps --global` Step 7c: reads `~/.claude/plugins/*` + `~/.agents/.skill-lock.json`, emits NDJSON `{identifier, title, installedAt, members, sourceResolved}` per installed plugin/skill (file I/O only — resolution in `lib/installed-plugins.mjs`) | `/knowledge-gaps --global` |
 | `check-list-installed-plugins.mjs` | Fixture tests for `lib/installed-plugins.mjs` resolver — every owner/repo source shape (`./`, `./sub`, github, git-subdir, unresolved) + skill grouping-by-source | `npm run check:installed-plugins` |
 
 ### bd CLI quirks
@@ -189,7 +189,7 @@ When the user asks about knowledge or packages, choose the right skill:
 | "research \[pkg\]", "document \[pkg\]", needs external sources | `/package-intel [pkg]` |
 | "gaps", "undocumented", "audit coverage" | `/knowledge-gaps` |
 | "stale", "drifted", "outdated notes", "which tools/packages need updating" | `/knowledge-gaps --stale [<ecosystem>]` |
-| "installed plugins", "which plugins/skills are documented", "plugin/skill coverage" | `/knowledge-gaps --plugins` |
+| "installed plugins", "which plugins/skills are documented", "plugin/skill coverage" | `/knowledge-gaps --global` |
 | "research person", "who is \[X\]", "person intel", "people intel" | `/people-intel [name]` |
 | "audit these notes", "check note health", "fourth-wall check \[note\]" (named notes) | `/knowledge-garden [note ...]` |
 | "audit my knowledge graph", "full audit", "graph health" (graph-wide) | `knowledge-gardener` agent |
