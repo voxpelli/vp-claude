@@ -113,18 +113,30 @@ of maintaining both halves catches drift cases a single-source record misses.
   `--ignore-path .gitignore` — the `run-p check:*` pattern converged, the
   sub-check sets did not.
 
-- **PreCompact hook retired in v0.28.0** (2026-05-04) — vp-claude retired
-  its PreCompact hook in v0.28.0 (commit `624e3df`, 2026-04-29) per the
-  Sprint 18 hook audit, judged redundant with PostToolUse-driven
-  session-reflect propagation. vp-beads keeps PreCompact for
-  sprint-reflect-before-cliff semantics. Bilaterally reciprocated 2026-05-04:
-  vp-beads's `SYNERGY-vp-knowledge.md` now carries the matching "PreCompact
-  hook retired in vp-knowledge v0.28.0" divergence with `Convergence path:
-  accept-difference`.
-  Convergence path: accept-difference · Reason: vp-beads's
-  reflect-before-compact tier is sprint-cycle-specific; vp-claude reflects
-  via the on-demand `/session-reflect` skill instead. Different time-scales,
-  different optimal hook surfaces.
+- **PreCompact hook retired in v0.28.0** (2026-05-04) — *(Converged
+  2026-06-03)* vp-claude retired its PreCompact hook in v0.28.0 (commit
+  `624e3df`, 2026-04-29) per the Sprint 18 hook audit, judged redundant with
+  PostToolUse-driven session-reflect propagation. The 2026-06-03 /sibling-sync
+  pass found vp-beads retired BOTH its PreCompact and PostCompact hooks in
+  v0.17.0 — its `SYNERGY-vp-knowledge.md` now records this divergence as
+  `adopt-theirs · converged` ("Both sides are now PreCompact-free"). The
+  earlier `accept-difference` rationale ("vp-beads keeps PreCompact for
+  sprint-reflect-before-cliff semantics") is superseded: that premise no longer
+  holds now that vp-beads ships no PreCompact hook.
+  Convergence path: adopt-theirs · Status: converged · Last verified: 2026-06-03
+
+- **PostCompact hook is a dead letter for context injection** (2026-06-03) —
+  Reciprocates vp-beads's `SYNERGY-vp-knowledge.md` "Compaction-capture hook
+  slot" finding. Per vp-beads's 2026-06-03 verification against the live Claude
+  Code hooks docs, `PreCompact`/`PostCompact` `additionalContext` does not reach
+  the resumed, tool-capable agent — only `SessionStart` with `source="compact"`
+  injects post-compaction context. vp-claude's `hooks/hooks.json` still
+  registers a live `PostCompact` hook (`hooks/post-compact.sh`) emitting
+  `additionalContext` for graph recovery, so that payload appears to be dropped
+  on every compaction. vp-beads migrated its recovery payload to a
+  `SessionStart` `source=compact` branch in v0.17.0; vp-claude should verify the
+  docs claim first-hand, then do the same. Tracked locally as bd `vp-claude-1oah`.
+  Convergence path: adopt-theirs (vp-beads ahead) · Status: drifting · Last verified: 2026-06-03
 
 - **PostToolUse BM write-validation hook** (2026-04-05) — vp-claude
   provides `post-bm-write-validate.sh` (emits `additionalContext` with
@@ -200,6 +212,25 @@ of maintaining both halves catches drift cases a single-source record misses.
   than stacks with vp-claude's `.remarkignore`, re-exposing the committed
   `schemas/` BM bracket-prose that `.gitignore` cannot cover). The
   pinned-settings + two-plugin core is the converged surface.
+  Sibling-sync 2026-06-03: vp-beads's reciprocal row is still bare
+  `propose-shared` (no Status), not yet reflecting vp-claude's partial
+  convergence — reciprocation lag, re-check next pass.
+
+- **Private SYNERGY overlay: `.local.md` suffix vs `PRIVATE-SYNERGY-` prefix**
+  (2026-06-03) — Both plugins protect proprietary↔public synergy content from
+  bilateral comparison and BM promotion, but via different file conventions.
+  vp-claude uses a `SYNERGY-<name>.local.md` file pointed to by the registry
+  `file:` field, gitignored via `SYNERGY-*.local.md` (in use for
+  `SYNERGY-weft-ai.local.md`). vp-beads v0.17.0 shipped a first-class
+  `PRIVATE-SYNERGY-<project>.md` overlay (a separate `PRIVATE-`-prefixed file
+  alongside the shared one, gitignored, skill-aware). This shipped design
+  resolves vp-claude's `UPSTREAM-vp-beads.md` `.local.md` feature request — but
+  with a different shape than proposed.
+  Convergence path: evaluate · Status: drifting · Last verified: 2026-06-03
+  Reason: decide whether to adopt vp-beads's `PRIVATE-SYNERGY-` convention
+  (migrating `SYNERGY-weft-ai.local.md` → `PRIVATE-SYNERGY-weft-ai.md`) or keep
+  the `.local.md` workaround. Adoption would re-converge the marketplace on one
+  private-overlay mechanism.
 
 ## Extraction Candidates
 

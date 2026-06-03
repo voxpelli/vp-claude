@@ -32,7 +32,7 @@ tooling, discovered while building vp-knowledge.
   file exists despite the skill prose suggesting a redirect; the carve-out
   is exercised in practice but undocumented.
 
-- **/harden-memories: new skill to triage and prune persistent memories** (2026-05-05) —
+- *(Resolved 2026-06-03, vp-beads v0.17.0 — ships the `/harden-memories` read-only audit skill under the exact proposed name; commits `e8734c3` + `5ad8394`)* **/harden-memories: new skill to triage and prune persistent memories** (2026-05-05) —
   `bd prime` injects every `bd remember` entry in full at SessionStart
   and PreCompact (~1.5–2k tokens for a 16-entry set; scales linearly).
   Entries silently accumulate as conventions drift, skills ship, or facts
@@ -65,7 +65,7 @@ tooling, discovered while building vp-knowledge.
   significant ceremony per audit (~40 tool calls for vp-knowledge's
   16-entry pass; an automated skill would compress to ~10).
 
-- **sibling-sync + synergy-tracker: `.local.md` SYNERGY variant for proprietary↔public boundaries** (2026-05-31) —
+- *(Resolved 2026-06-03, vp-beads v0.17.0 — shipped as the `PRIVATE-SYNERGY-<project>.md` overlay, a different design than the proposed `.local.md` suffix; the proprietary↔public boundary is now protected upstream. Whether vp-claude adopts the `PRIVATE-SYNERGY-` convention is tracked as a Divergence in `SYNERGY-vp-beads.md`.)* **sibling-sync + synergy-tracker: `.local.md` SYNERGY variant for proprietary↔public boundaries** (2026-05-31) —
   Add support for gitignored `SYNERGY-<name>.local.md` files that hold local-only
   synergy content for siblings where the relationship crosses a trust/visibility
   boundary (e.g., `relationship: open-core-partner` where one project is
