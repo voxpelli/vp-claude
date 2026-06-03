@@ -179,6 +179,28 @@ of maintaining both halves catches drift cases a single-source record misses.
   adopt when a reference-only skill, preloading, or skill↔agent trigger-collision
   need surfaces — the collision-avoidance pattern is the newly relevant one.
 
+- **remark config richness: pinned settings, GFM, link and list-marker
+  enforcement** (2026-06-02) — vp-beads (v0.16.0 lint foundation) pins
+  `remarkConfig.settings` (bullet `-`, emphasis/strong `*`, rule `-`, fenced,
+  one-space list indent), adds `remark-gfm` (GFM table-cell + checkbox rules),
+  `remark-validate-links`, and `remark-lint-unordered-list-marker-style` (`-`),
+  and runs `check:md` with `--ignore-path .gitignore`. vp-claude runs the bare
+  two-preset config (consistent + recommended) with no pinned settings and no
+  `--ignore-path`. The pinned settings are what make `remark -o` a safe
+  autofixer (lint rules and stringify settings must be hand-synchronized).
+  Convergence path: propose-shared · Status: partially converged · Last verified: 2026-06-03
+  Reason: extract a shared remark preset (see Extraction Candidates) rather than
+  hand-syncing three partial configs. Reciprocates vp-beads's
+  `SYNERGY-vp-knowledge.md` entry of the same name.
+  Resolution (2026-06-03, bd vp-claude-veqf): vp-claude adopted the pinned
+  `settings` block + `remark-validate-links` + `remark-lint-unordered-list-marker-style`
+  (`-`). Two items are accept-difference carve-outs: `remark-gfm` (adds 424
+  table-cell-padding warnings — vp-claude tables are compact `|x|y|`; aligns with
+  bd `jzra`'s gfm-YAGNI gate) and `--ignore-path .gitignore` (it OVERRIDES rather
+  than stacks with vp-claude's `.remarkignore`, re-exposing the committed
+  `schemas/` BM bracket-prose that `.gitignore` cannot cover). The
+  pinned-settings + two-plugin core is the converged surface.
+
 ## Extraction Candidates
 
 - **validate-plugin.mjs** (2026-05-04) — Both plugins maintain independent
@@ -221,6 +243,18 @@ of maintaining both halves catches drift cases a single-source record misses.
   a manual negative-test. When the bundle is built, mirror this shape;
   `check-hooks.mjs` (already shared) + `check-staleness-contract.mjs` are the
   two worked examples of self-testing plugin tooling to generalize from.
+
+- **Shared `@voxpelli/remark-config` preset** (2026-06-02) — vp-beads's
+  `remarkConfig` (pinned `settings` plus the `remark-gfm`,
+  `remark-validate-links`, two-preset, and
+  `remark-lint-unordered-list-marker-style` plugin stack) is a reusable
+  lint+format contract vp-claude and vp-git could consume instead of each
+  maintaining a partial copy — eliminating the config drift tracked in
+  Divergences and making `remark -o` autofix behave identically across the
+  vp-plugins marketplace. Natural co-extraction with the
+  `@voxpelli/claude-plugin-tools` bundle.
+  Source: vp-beads `package.json` `remarkConfig` · Readiness: needs-cleanup
+  Effort: moderate · Reciprocates vp-beads's entry of the same name.
 
 ## They Have / We Don't
 

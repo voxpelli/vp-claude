@@ -6,7 +6,7 @@ tooling, discovered while building vp-knowledge.
 
 ## Feature Requests
 
-- **upstream-tracker: clarify redirect rule for sibling projects with shipped skill code** (2026-05-04) —
+- *(Resolved 2026-06-02, vp-beads `upstream-tracker/SKILL.md:86` — the carve-out now reads "Sibling projects that ship upstream artifacts (skills, hooks, agents) can still receive upstream-tracker entries…")* **upstream-tracker: clarify redirect rule for sibling projects with shipped skill code** (2026-05-04) —
   Workflow 1 step 1 currently says "If the observation is about a sibling
   project rather than an upstream package or tool, redirect to
   `/synergy-tracker` — this skill only tracks upstream dependency friction,
