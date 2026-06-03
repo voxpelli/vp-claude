@@ -126,17 +126,17 @@ of maintaining both halves catches drift cases a single-source record misses.
   Convergence path: adopt-theirs · Status: converged · Last verified: 2026-06-03
 
 - **PostCompact hook is a dead letter for context injection** (2026-06-03) —
-  Reciprocates vp-beads's `SYNERGY-vp-knowledge.md` "Compaction-capture hook
-  slot" finding. Per vp-beads's 2026-06-03 verification against the live Claude
-  Code hooks docs, `PreCompact`/`PostCompact` `additionalContext` does not reach
-  the resumed, tool-capable agent — only `SessionStart` with `source="compact"`
-  injects post-compaction context. vp-claude's `hooks/hooks.json` still
-  registers a live `PostCompact` hook (`hooks/post-compact.sh`) emitting
-  `additionalContext` for graph recovery, so that payload appears to be dropped
-  on every compaction. vp-beads migrated its recovery payload to a
-  `SessionStart` `source=compact` branch in v0.17.0; vp-claude should verify the
-  docs claim first-hand, then do the same. Tracked locally as bd `vp-claude-1oah`.
-  Convergence path: adopt-theirs (vp-beads ahead) · Status: drifting · Last verified: 2026-06-03
+  *(Converged 2026-06-03)* Reciprocates vp-beads's `SYNERGY-vp-knowledge.md`
+  "Compaction-capture hook slot" finding. Confirmed first-hand against the live
+  Claude Code hooks docs (adversarially verified): `PreCompact`/`PostCompact` do
+  not support `additionalContext` at all (observability-only / fire
+  pre-compaction), so only `SessionStart` with `source="compact"` injects
+  post-compaction context into the resumed, tool-capable agent. vp-claude's
+  former `PostCompact` hook (`post-compact.sh`) was therefore a dead letter; its
+  recovery payload has been migrated into `session-start.sh`'s `source=compact`
+  branch and the PostCompact hook removed (hooks 6→5), matching vp-beads's
+  v0.17.0 migration. Tracked as bd `vp-claude-1oah`.
+  Convergence path: adopt-theirs · Status: converged · Last verified: 2026-06-03
 
 - **PostToolUse BM write-validation hook** (2026-04-05) — vp-claude
   provides `post-bm-write-validate.sh` (emits `additionalContext` with
