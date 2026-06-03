@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   / `people-intel` gained a mandatory (not CI-enforced) verify-before-capture +
   contradiction-record + hedging step, applied when Step 1 does not fast-path the
   note (missing, 60+ days old, or security-sensitive); `session-reflect` gained a
-  mechanism/attribution verification scan. Addresses the weft-ai feature request.
+  mechanism/attribution verification scan. Addresses a proprietary open-core-partner sibling's feature request.
 - **Fourth-wall rule registry + `check:fourthwall`.** The `vp-note-quality` checklist
   is now an ID'd registry (`lib/fourth-wall-rules.mjs`) with a per-rule
   deterministic/judgment flag; `check:fourthwall` fixture-tests every deterministic
