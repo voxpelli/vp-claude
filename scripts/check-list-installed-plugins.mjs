@@ -45,28 +45,31 @@ const KNOWN = JSON.stringify({
   // 'vanished-marketplace' deliberately absent -> ghost plugin is unresolved.
 })
 const MP = new Map([
-  ['vp-plugins', JSON.stringify({ plugins: [
-    { name: 'vp-knowledge', source: './' }, // local string -> marketplace repo + #name
-    { name: 'vp-beads', source: { source: 'github', repo: 'voxpelli/claude-beads' } }, // dedicated repo
-  ] })],
+  ['vp-plugins', JSON.stringify({
+    plugins: [
+      { name: 'vp-knowledge', source: './' }, // local string -> marketplace repo + #name
+      { name: 'vp-beads', source: { source: 'github', repo: 'voxpelli/claude-beads' } }, // dedicated repo
+    ],
+  })],
   ['impeccable', JSON.stringify({ plugins: [{ name: 'impeccable', source: './plugin' }] })], // local subpath string
-  ['claude-plugins-official', JSON.stringify({ plugins: [
-    { name: 'agent-sdk-dev', source: './plugins/agent-sdk-dev' }, // local nested subpath
-    { name: 'api-security', source: { source: 'git-subdir', url: 'https://github.com/42Crunch-AI/claude-plugins.git', path: 'plugins/api-security' } },
-  ] })],
+  ['claude-plugins-official', JSON.stringify({
+    plugins: [
+      { name: 'agent-sdk-dev', source: './plugins/agent-sdk-dev' }, // local nested subpath
+      { name: 'api-security', source: { source: 'git-subdir', url: 'https://github.com/42Crunch-AI/claude-plugins.git', path: 'plugins/api-security' } },
+    ],
+  })],
 ])
 
 const plugins = resolveInstalledPlugins(INSTALLED, KNOWN, MP)
-/** @param {string} key */
 const find = (key) => plugins.find((p) => p.identifier === key || p.title === key)
 
 check('local "./" source -> marketplace repo + #name', !!find('plugin:voxpelli/vp-claude#vp-knowledge'))
 check('local "./" title normalizes : / # -> -', !!find('plugin-voxpelli-vp-claude-vp-knowledge'))
-check('github source -> dedicated repo, no #name', !!plugins.find((p) => p.identifier === 'plugin:voxpelli/claude-beads' && p.sourceResolved))
+check('github source -> dedicated repo, no #name', plugins.some((p) => p.identifier === 'plugin:voxpelli/claude-beads' && p.sourceResolved))
 check('local "./plugin" (string, not "./") resolves (the impeccable bug case)', !!find('plugin:pbakaus/impeccable#impeccable'))
 check('local "./plugins/x" nested subpath resolves', !!find('plugin:anthropics/claude-plugins-official#agent-sdk-dev'))
 check('git-subdir source -> owner/repo from url + #name', !!find('plugin:42Crunch-AI/claude-plugins#api-security'))
-check('unresolved (marketplace absent) -> name@marketplace fallback, sourceResolved:false', !!plugins.find((p) => p.identifier === 'plugin:ghost@vanished-marketplace' && p.sourceResolved === false))
+check('unresolved (marketplace absent) -> name@marketplace fallback, sourceResolved:false', plugins.some((p) => p.identifier === 'plugin:ghost@vanished-marketplace' && p.sourceResolved === false))
 check('version:"unknown" entries still resolve (majority live case)', !!find('plugin:pbakaus/impeccable#impeccable'))
 check('installedAt carried through', find('plugin:voxpelli/vp-claude#vp-knowledge')?.installedAt === '2026-03-09T00:00:00Z')
 check('plugins carry empty members[]', plugins.every((p) => Array.isArray(p.members) && p.members.length === 0))
@@ -88,9 +91,9 @@ const bm = skills.find((s) => s.identifier === 'skill:basicmachines-co/basic-mem
 check('many dirs sharing a source collapse to ONE record', skills.filter((s) => s.identifier === 'skill:basicmachines-co/basic-memory-skills').length === 1)
 check('grouped record lists all member dirs', !!bm && bm.members.includes('memory-research') && bm.members.includes('memory-notes'))
 check('grouped installedAt is the most recent member', bm?.installedAt === '2026-03-01T00:00:00Z')
-check('single-skill source resolves', !!skills.find((s) => s.identifier === 'skill:vercel-labs/skills'))
-check('skill title normalizes -> skill-<owner>-<repo>', !!skills.find((s) => s.title === 'skill-basicmachines-co-basic-memory-skills'))
-check('source-less dir -> name-only, sourceResolved:false', !!skills.find((s) => s.identifier === 'skill:hand-copied' && s.sourceResolved === false))
+check('single-skill source resolves', skills.some((s) => s.identifier === 'skill:vercel-labs/skills'))
+check('skill title normalizes -> skill-<owner>-<repo>', skills.some((s) => s.title === 'skill-basicmachines-co-basic-memory-skills'))
+check('source-less dir -> name-only, sourceResolved:false', skills.some((s) => s.identifier === 'skill:hand-copied' && s.sourceResolved === false))
 
 console.log(`\n${passed}/${passed + failed} passed`)
 if (failed > 0) process.exit(1)

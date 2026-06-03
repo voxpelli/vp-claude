@@ -4,13 +4,13 @@
 // fixture-tests the pure parse/compare functions so the guard is proven to
 // catch drift. Wired into `npm run check` via run-p check:*.
 
-import { readFileSync, readdirSync, existsSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
+  compareCounts,
   COUNTED_COMPONENTS,
   parseStatedCounts,
-  compareCounts,
 } from '../lib/release-counts.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')

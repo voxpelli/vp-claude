@@ -6,8 +6,8 @@
 
 import {
   CANONICAL_STALENESS_BUCKETS,
-  checkStalenessEmit,
   checkStalenessConsume,
+  checkStalenessEmit,
 } from '../lib/staleness-contract.mjs'
 
 let passed = 0
@@ -71,7 +71,7 @@ console.log('\nstaleness-contract: emit side')
     '',
     EMIT_OK,
   ].join('\n')
-  const { errors, bucketCount } = checkStalenessEmit(withOutsider)
+  const { bucketCount, errors } = checkStalenessEmit(withOutsider)
   check('non-canonical #### before the drift section → ignored', errors.length === 0)
   check('outsider does not inflate bucketCount', bucketCount === 3)
 }

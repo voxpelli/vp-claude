@@ -5,9 +5,9 @@
 // undetected in session-start.sh for 3 releases (v0.15.0–v0.16.0).
 
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, dirname } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -15,7 +15,10 @@ const HOOKS_DIR = join(__dirname, '..', 'hooks')
 
 // --- Helpers ---
 
-/** @param {number} n */
+/**
+ * @param {number} n
+ * @returns {string}
+ */
 function makeTempDirWithRetros (n) {
   const dir = mkdtempSync(join(tmpdir(), 'check-hooks-'))
   for (let i = 1; i <= n; i++) {
@@ -37,22 +40,26 @@ function makeTempPluginRoot () {
  * @param {string} script
  * @param {string} stdinJson
  * @param {{ args?: string[], cwd?: string }} [opts]
+ * @returns {{ stdout: string, stderr: string, status: number }}
  */
 function runHook (script, stdinJson, { args = [], cwd = process.cwd() } = {}) {
   const result = spawnSync('bash', [script, ...args], {
     input: stdinJson,
     cwd,
     env: { ...process.env },
-    encoding: 'utf8'
+    encoding: 'utf8',
   })
   return {
     stdout: result.stdout ?? '',
     stderr: result.stderr ?? '',
-    status: result.status ?? 1
+    status: result.status ?? 1,
   }
 }
 
-/** @param {string} stdout */
+/**
+ * @param {string} stdout
+ * @returns {{ count: number, objects: unknown[], parseError: string|null }}
+ */
 function parseJsonObjects (stdout) {
   const trimmed = stdout.trim()
   if (trimmed === '') return { count: 0, objects: [], parseError: null }
@@ -173,7 +180,7 @@ test('tool_response.permalink → 1 object with schema_validate', () => {
 })
 
 test('schema permalink → silent', () => {
-  const { stdout, status } = runHook(join(HOOKS_DIR, 'post-bm-write-validate.sh'),
+  const { status, stdout } = runHook(join(HOOKS_DIR, 'post-bm-write-validate.sh'),
     JSON.stringify({ tool_response: { permalink: 'main/schema/npm_package' } }))
   if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
   const { count } = parseJsonObjects(stdout)
@@ -182,7 +189,7 @@ test('schema permalink → silent', () => {
 })
 
 test('no permalink → silent', () => {
-  const { stdout, status } = runHook(join(HOOKS_DIR, 'post-bm-write-validate.sh'),
+  const { status, stdout } = runHook(join(HOOKS_DIR, 'post-bm-write-validate.sh'),
     JSON.stringify({ tool_response: {} }))
   if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
   const { count } = parseJsonObjects(stdout)
@@ -198,7 +205,7 @@ for (const [error, contains] of /** @type {const} */ ([
   ['note does not exist', '[note-not-found]'],
   ['missing required field', '[invalid-argument]'],
   ['permission denied', '[permission-error]'],
-  ['something unexpected', '[unknown-error]']
+  ['something unexpected', '[unknown-error]'],
 ])) {
   test(`"${error}" → ${contains}`, () => {
     const { stdout } = runHook(join(HOOKS_DIR, 'post-bm-failure-classify.sh'),
@@ -213,7 +220,7 @@ for (const [error, contains] of /** @type {const} */ ([
 }
 
 test('no error field → silent', () => {
-  const { stdout, status } = runHook(join(HOOKS_DIR, 'post-bm-failure-classify.sh'),
+  const { status, stdout } = runHook(join(HOOKS_DIR, 'post-bm-failure-classify.sh'),
     JSON.stringify({ tool_input: {} }))
   if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
   const { count } = parseJsonObjects(stdout)
@@ -227,7 +234,7 @@ console.log('\npost-file-edit.sh')
 const pluginRoot = makeTempPluginRoot()
 
 test('no PLUGIN_ROOT arg → silent', () => {
-  const { stdout, status } = runHook(join(HOOKS_DIR, 'post-file-edit.sh'),
+  const { status, stdout } = runHook(join(HOOKS_DIR, 'post-file-edit.sh'),
     JSON.stringify({ tool_input: { file_path: '/any/path' } }))
   if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
   const { count } = parseJsonObjects(stdout)
@@ -249,7 +256,7 @@ test('schema file → 1 object with additionalContext', () => {
 })
 
 test('non-matching path → silent', () => {
-  const { stdout, status } = runHook(join(HOOKS_DIR, 'post-file-edit.sh'),
+  const { status, stdout } = runHook(join(HOOKS_DIR, 'post-file-edit.sh'),
     JSON.stringify({ tool_input: { file_path: '/other/file.js' } }), { args: [pluginRoot] })
   if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
   const { count } = parseJsonObjects(stdout)
@@ -275,7 +282,7 @@ test('shell file already well-formatted → silent', () => {
   const shFile = join(pluginRoot, 'hooks', 'test-clean.sh')
   // shfmt canonical: spaces around then, newlines after each clause, tab indent
   writeFileSync(shFile, '#!/bin/bash\nif [ x ]; then\n\techo hi\nfi\n')
-  const { stdout, status } = runHook(join(HOOKS_DIR, 'post-file-edit.sh'),
+  const { status, stdout } = runHook(join(HOOKS_DIR, 'post-file-edit.sh'),
     JSON.stringify({ tool_input: { file_path: shFile } }), { args: [pluginRoot] })
   if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
   const { count } = parseJsonObjects(stdout)
@@ -287,7 +294,11 @@ test('shell file already well-formatted → silent', () => {
 console.log('\npre-bash-no-python.sh')
 
 // Helper: build stdin with optional agent_type
-/** @param {string} command @param {string} [agentType] */
+/**
+ * @param {string} command
+ * @param {string} [agentType]
+ * @returns {string}
+ */
 function bashInput (command, agentType) {
   /** @type {Record<string,unknown>} */
   const input = { tool_input: { command } }
@@ -298,7 +309,7 @@ function bashInput (command, agentType) {
 // --- Scoping tests: main session + other agents should pass through ---
 
 test('python3 from main session (no agent_type) → allowed', () => {
-  const { stdout, status } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+  const { status, stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
     bashInput('python3 -c "print(1)"'))
   if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
   const { count } = parseJsonObjects(stdout)
@@ -307,20 +318,20 @@ test('python3 from main session (no agent_type) → allowed', () => {
 })
 
 test('node from main session → allowed', () => {
-  const { stdout, status } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+  const { status, stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
     bashInput('node -e "console.log(1)"'))
   if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
   const { count } = parseJsonObjects(stdout)
-  if (count !== 0) return { ok: false, reason: `expected silent — main session should NOT be blocked` }
+  if (count !== 0) return { ok: false, reason: 'expected silent — main session should NOT be blocked' }
   return { ok: true }
 })
 
 test('python3 from other agent (knowledge-maintainer) → allowed', () => {
-  const { stdout, status } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+  const { status, stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
     bashInput('python3 script.py', 'knowledge-maintainer'))
   if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
   const { count } = parseJsonObjects(stdout)
-  if (count !== 0) return { ok: false, reason: `expected silent — other agents should NOT be blocked` }
+  if (count !== 0) return { ok: false, reason: 'expected silent — other agents should NOT be blocked' }
   return { ok: true }
 })
 
@@ -360,7 +371,7 @@ test('bash -c "python3 ..." from gardener → blocked (bypass vector)', () => {
 // --- Gardener-allowed commands ---
 
 test('jq from knowledge-gardener → allowed', () => {
-  const { stdout, status } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+  const { status, stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
     bashInput('bm project info main --json | jq .statistics', 'knowledge-gardener'))
   if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
   const { count } = parseJsonObjects(stdout)
@@ -369,7 +380,7 @@ test('jq from knowledge-gardener → allowed', () => {
 })
 
 test('bash script from gardener → allowed', () => {
-  const { stdout, status } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
+  const { status, stdout } = runHook(join(HOOKS_DIR, 'pre-bash-no-python.sh'),
     bashInput('bash scripts/audit-helpers.sh bm-stats', 'knowledge-gardener'))
   if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
   const { count } = parseJsonObjects(stdout)

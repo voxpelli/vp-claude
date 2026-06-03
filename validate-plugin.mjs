@@ -1,11 +1,11 @@
-import { readFile, readdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
+import { readdir, readFile } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 
 import yaml from 'js-yaml'
 
-import { checkStalenessEmit, checkStalenessConsume } from './lib/staleness-contract.mjs'
 import { collectScannableText } from './lib/mdast.mjs'
+import { checkStalenessConsume, checkStalenessEmit } from './lib/staleness-contract.mjs'
 
 const ROOT = new URL('.', import.meta.url).pathname.replace(/\/$/, '')
 
@@ -40,7 +40,6 @@ async function readJson (filePath) {
     return JSON.parse(raw)
   } catch {
     error(filePath, 'Invalid JSON')
-    return undefined
   }
 }
 
@@ -50,15 +49,13 @@ async function readJson (filePath) {
  */
 function extractFrontmatter (content) {
   const match = content.match(/^---\n([\s\S]*?)\n---/)
-  if (!match) return undefined
+  if (!match) return
   try {
     const parsed = yaml.load(match[1])
     return typeof parsed === 'object' && parsed !== null
       ? /** @type {Record<string, unknown>} */ (parsed)
       : undefined
-  } catch {
-    return undefined
-  }
+  } catch {}
 }
 
 const VALID_HOOK_TYPES = new Set(['prompt', 'command', 'agent', 'http'])
@@ -111,6 +108,7 @@ function validateMcpPrefixes (file, tools) {
 
 /**
  * Audit tool references in prose against declared tools list.
+ *
  * @param {string} file
  * @param {string} content
  * @param {string[]} declaredTools
@@ -135,12 +133,12 @@ function auditToolReferences (file, content, declaredTools, fieldName) {
   // (beaded) — a per-token "raw must be in segments" cross-check is infeasible
   // because legitimate CLOSED fenced examples are also raw-but-not-collected.
   const body = content.replace(/^---\n[\s\S]*?\n---\n?/, '')
-  if (segments.length === 0 && /mcp__[a-zA-Z0-9_-]+__[a-zA-Z0-9_-]+/.test(body)) {
+  if (segments.length === 0 && /mcp__[\w-]+__[\w-]+/.test(body)) {
     error(file, `${fieldName}: no scannable prose but the body has mcp__ tokens — likely an unclosed code fence; fix the markdown`)
     return
   }
   for (const text of segments) {
-    for (const match of text.matchAll(/mcp__[a-zA-Z0-9_-]+__[a-zA-Z0-9_-]+/g)) {
+    for (const match of text.matchAll(/mcp__[\w-]+__[\w-]+/g)) {
       const tool = match[0]
       if (!seen.has(tool) && !toolSet.has(tool)) {
         seen.add(tool)
@@ -193,7 +191,7 @@ if (existsSync(marketplacePath)) {
         if (e.source === './' && e.version !== pluginVersion) {
           error(
             marketplacePath,
-            `Local "./" entry version "${String(e.version)}" does not match plugin.json version "${String(pluginVersion)}"`,
+            `Local "./" entry version "${String(e.version)}" does not match plugin.json version "${String(pluginVersion)}"`
           )
         }
       }
@@ -211,6 +209,7 @@ if (existsSync(hooksPath)) {
     if (!h.hooks || typeof h.hooks !== 'object') {
       error(hooksPath, 'Missing top-level "hooks" object')
     } else {
+      // eslint-disable-next-line prefer-destructuring -- a type-cast assignment reads clearer than destructuring + a separate cast
       const hooks = /** @type {Record<string, unknown>} */ (h.hooks)
       for (const [event, entries] of Object.entries(hooks)) {
         if (!VALID_HOOK_EVENTS.has(event)) {
@@ -242,7 +241,8 @@ if (existsSync(hooksPath)) {
             }
             // Validate command hook paths
             if (hk.type === 'command' && typeof hk.command === 'string') {
-              const resolved = hk.command.replace(/\$\{CLAUDE_PLUGIN_ROOT\}/g, ROOT)
+              // eslint-disable-next-line no-template-curly-in-string -- literal placeholder text being substituted, not a template literal
+              const resolved = hk.command.replaceAll('${CLAUDE_PLUGIN_ROOT}', ROOT)
               // Extract the file path from the command (after "bash " or similar)
               const parts = resolved.split(/\s+/)
               const scriptPath = parts.find((p) => p.startsWith('/') || p.startsWith('./'))
@@ -259,7 +259,8 @@ if (existsSync(hooksPath)) {
 
 // --- Skills ---
 
-const skillFiles = (await readdir(join(ROOT, 'skills'), { recursive: true }))
+const skillEntries = await readdir(join(ROOT, 'skills'), { recursive: true })
+const skillFiles = skillEntries
   .filter((f) => f.endsWith('SKILL.md'))
   .map((f) => join(ROOT, 'skills', f))
 
@@ -335,7 +336,7 @@ for (const file of skillFiles) {
   // Skills that delegate to a subagent (e.g. /knowledge-garden) silently no-op
   // at runtime if the agent name is a typo or was renamed — mirror the agent→skill
   // phantom-reference check for the skill→agent direction.
-  for (const match of content.matchAll(/subagent_type\s*=\s*["']([a-zA-Z0-9_-]+)["']/g)) {
+  for (const match of content.matchAll(/subagent_type\s*=\s*["']([\w-]+)["']/g)) {
     const agentName = match[1]
     if (!existsSync(join(ROOT, 'agents', `${agentName}.md`))) {
       error(file, `Phantom subagent reference: "${agentName}" — no file at agents/${agentName}.md`)
@@ -347,7 +348,8 @@ for (const file of skillFiles) {
 
 const agentsDir = join(ROOT, 'agents')
 if (existsSync(agentsDir)) {
-  const agentFiles = (await readdir(agentsDir))
+  const agentEntries = await readdir(agentsDir)
+  const agentFiles = agentEntries
     .filter((f) => f.endsWith('.md'))
     .map((f) => join(agentsDir, f))
 
@@ -451,7 +453,8 @@ if (stalenessBucketsSeen === 0) {
 const CLAUDE_MD_CHAR_LIMIT = 39_000
 const claudeMdPath = join(ROOT, 'CLAUDE.md')
 if (existsSync(claudeMdPath)) {
-  const chars = (await readFile(claudeMdPath, 'utf8')).length
+  const claudeMd = await readFile(claudeMdPath, 'utf8')
+  const chars = claudeMd.length
   if (chars >= CLAUDE_MD_CHAR_LIMIT) {
     error(claudeMdPath, `${chars} chars ≥ ${CLAUDE_MD_CHAR_LIMIT} limit — Claude Code warns past ~40k. Move bulk reference into path-scoped .claude/rules/*.md (loads on demand, off the session-start budget) rather than inlining it here.`)
   }

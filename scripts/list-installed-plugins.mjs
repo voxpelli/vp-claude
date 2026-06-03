@@ -15,7 +15,10 @@ import { resolveInstalledPlugins, resolveInstalledSkills } from '../lib/installe
 
 const root = process.argv[2] || process.env.VPK_HOME || homedir()
 
-/** @param {string} p @returns {string|null} */
+/**
+ * @param {string} p
+ * @returns {string|null}
+ */
 function readOrNull (p) {
   try {
     return readFileSync(p, 'utf8')

@@ -24,7 +24,6 @@ function check (name, cond) {
   }
 }
 
-/** @param {string} s */
 const scan = (s) => collectScannableText(s).join('\n')
 const TOKEN = 'mcp__foo__bar'
 

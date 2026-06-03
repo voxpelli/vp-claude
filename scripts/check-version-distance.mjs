@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Fixture self-test for the version-distance classifier (`lib/version-distance.mjs`).
  *

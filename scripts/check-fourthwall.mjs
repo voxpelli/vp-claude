@@ -7,13 +7,13 @@
 // table's Detection column matches each rule's `deterministic` flag.
 
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   CANONICAL_FOURTH_WALL_RULES,
-  detectFourthWallViolations,
-  checklistMissingRuleIds,
   checkDetectionColumnParity,
+  checklistMissingRuleIds,
+  detectFourthWallViolations,
 } from '../lib/fourth-wall-rules.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
