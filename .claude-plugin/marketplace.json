@@ -8,14 +8,14 @@
     {
       "name": "vp-knowledge",
       "source": "./",
-      "description": "Multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby) with Socket supply-chain scoring, developer tool research (Homebrew with MCP analytics, GitHub Actions, Docker, VSCode, gh CLI extensions), multi-ecosystem version-drift detection (brew, npm, cask, crate, vscode), person research, knowledge gap analysis, scope-partitioned graph audit/fix skills, project context priming, Readwise integration, session bookmarking, tag vocabulary sync, graph maintenance agents, and quality hooks for Basic Memory",
+      "description": "Multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby) with Socket supply-chain scoring, developer tool research (Homebrew with MCP analytics, GitHub Actions, Docker, VSCode, gh CLI extensions, Claude Code plugins, skills.sh bundles), multi-ecosystem version-drift detection (brew, npm, cask, crate, vscode), person research, knowledge gap analysis (incl. host-installed plugin/skill coverage), scope-partitioned graph audit/fix skills, project context priming, Readwise integration, session bookmarking, tag vocabulary sync, graph maintenance agents, and quality hooks for Basic Memory",
       "version": "0.31.2"
     },
     {
       "name": "vp-beads",
       "source": { "source": "github", "repo": "voxpelli/claude-beads" },
       "description": "Sprint workflow automation: backlog grooming, retrospectives, upstream vendor tracking, cross-project synergy tracking, swarm wave orchestration, vendor sync, and bilateral sibling reconciliation for projects using beads and Basic Memory",
-      "version": "0.15.0"
+      "version": "0.17.0"
     },
     {
       "name": "vp-git",

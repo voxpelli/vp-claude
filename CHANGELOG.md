@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.31.2][] - 2026-06-02
+## [0.31.2][] - 2026-06-03
 
 ### Added
 
@@ -23,9 +23,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   schema. Researches Claude Code plugins (marketplace.json + plugin.json + git tags)
   and skills.sh skill bundles (SKILL.md + tree + install counts) into `claude_plugin`
   notes carrying a 4-state publisher trust ladder.
+- **`/knowledge-gaps --global`** audits host-installed Claude Code plugins +
+  skills.sh bundles (reads `~/.claude/plugins/` + `~/.agents/.skill-lock.json` via
+  `lib/installed-plugins.mjs` and the `scripts/list-installed-plugins.mjs` CLI)
+  against `claude_plugin` coverage, surfacing undocumented installs as gaps.
+- **Post-compaction recovery via SessionStart.** The SessionStart hook now
+  re-injects a condensed graph-recovery block on `source=compact` — the only hook
+  slot that injects `additionalContext` into the resumed, tool-capable agent
+  (`PreCompact`/`PostCompact` are observability-only and cannot inject).
 - **`controversy` observation category** added to the `person` schema.
-- **New drift guards:** `check:release-counts` (CLAUDE.md component counts vs disk)
-  and `check:mdast` (the mdast prose/fenced split powering `auditToolReferences`).
+- **New drift guards:** `check:release-counts` (CLAUDE.md component counts vs disk),
+  `check:mdast` (the mdast prose/fenced split powering `auditToolReferences`), and
+  `check:installed-plugins` (the host-installed plugin/skill resolver self-test).
 
 ### Changed
 
@@ -36,6 +45,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `knowledge-gaps` report templates extracted to a reference; navigational reference
   files gained Contents TOCs; `session-bookmarks` and `session-reflect` trigger
   descriptions disambiguated.
+- Adopted vp-beads's remark lint config (pinned `settings`, `remark-validate-links`,
+  and `remark-lint-unordered-list-marker-style`), so `remark -o` autofix behaves
+  identically across the vp-plugins marketplace.
+- `validate-plugin.mjs` gained a `VALID_HOOK_EVENTS` allowlist + a `description`-length
+  warning; the `knowledge-gaps` description was trimmed; the fourth-wall registry is
+  frozen with `@satisfies`/`@type {const}`, and redundant `{object}` annotations were
+  dropped from property-bearing `@typedef`s.
 
 ## [0.31.1][] - 2026-05-29
 
