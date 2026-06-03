@@ -93,6 +93,21 @@ of maintaining both halves catches drift cases a single-source record misses.
   hooks depend on it.
   Status: aligned · Last verified: 2026-04-05 (per vp-beads's record)
 
+- **ESLint via `@voxpelli/eslint-config` (neostandard)** (2026-06-03) — Both
+  plugins lint their `.mjs` validation tooling with the `voxpelli()` factory from
+  `@voxpelli/eslint-config` (vp-knowledge on `^25.1.0`), same knobs: `noMocha:
+  true`, `semi: false`, and `cliFiles` (relax `no-process-exit`/`no-console`/sync
+  I/O for `scripts/` + `validate-plugin.mjs`). Both adopted it 2026-06-03 and wire
+  `check:lint` into `run-p check:*`.
+  Status: aligned · Last verified: 2026-06-03
+  Note: deliberate divergence — vp-knowledge has a `lib/`, so `cliFiles` keeps
+  `lib/` library-strict and we disable `unicorn/no-null` (NDJSON wire format) plus
+  `security/detect-non-literal-fs-filename`/`-regexp` (self-file validation
+  tooling); vp-beads has no `lib/` (every `.mjs` is a CLI) and fixed its `null`s
+  to `undefined` instead. Both disable `unicorn/import-style` (uniform named
+  node-builtin imports). Reciprocates vp-beads's `SYNERGY-vp-knowledge.md` entry
+  of the same name (vp-knowledge adopted in commit `a7ad92d`).
+
 ## Divergences
 
 - **npm-run-all2 parallel check stages** (2026-05-19) — *(Converged
