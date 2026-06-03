@@ -157,8 +157,9 @@ If `find_replace` fails (no match found), the note may have been edited since
 you last read it. Fall back to `read_note` to fetch current content and retry
 with the actual last observation line.
 
-**New note** — use `write_note` with full structure (frontmatter + `## Observations`
-+ `## Relations`). Keep title generic enough to reuse across projects.
+**New note** — use `write_note` with full structure (frontmatter, plus the
+`## Observations` and `## Relations` sections). Keep title generic enough to
+reuse across projects.
 
 ### 5. Relation-count check
 
