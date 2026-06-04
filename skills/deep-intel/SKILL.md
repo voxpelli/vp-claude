@@ -151,10 +151,17 @@ observations by category, list relations by verb, put source URLs under
 Approve all, or specify which to drop.
 ```
 
-Label findings **"multi-source cross-checked"** — never "fact-checked". In
-`--quick` mode, state plainly that the note is single-pass and **not**
-cross-checked, and stamp `verification: quick-unverified` in the frontmatter.
-Write nothing the user has not approved.
+Render the returned structure faithfully: the proposed note's `disputed[]`,
+`dropped[]`, and `openQuestions[]` must be surfaced, never hidden. Show DISPUTED
+claims in their own block (the user decides keep-hedged / drop / override — they
+are never silently resolved); list what the verification topology `dropped` as
+refuted so the user sees what was removed; show any completeness `openQuestions`.
+
+Use the returned `verification` value as the label: **"multi-source
+cross-checked"** (standard/heavy) — never "fact-checked"; or, in `--quick` mode,
+state plainly that the note is single-pass and **not** cross-checked and stamp
+`verification: quick-unverified` in the frontmatter. Write nothing the user has
+not approved.
 
 ## Step 5 — Write or enrich
 

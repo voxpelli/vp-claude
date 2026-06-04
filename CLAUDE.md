@@ -35,7 +35,7 @@ skills/
   people-intel/SKILL.md              # Five-source person research
     references/                      # 2 files: note-template, source-guide
   deep-intel/SKILL.md                # Multi-angle Workflow research → schema-typed BM note
-    references/                      # 2 files: synthesis-profiles, research-workflow
+    references/                      # 3 files: synthesis-profiles, research-workflow, verification-topology
 agents/
   knowledge-gardener.md              # Read-only graph health auditor (incl. tag alignment)
   knowledge-maintainer.md            # All-in-one graph enhancer (writes, incl. tag fixes)
