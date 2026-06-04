@@ -60,7 +60,7 @@ console.log('\nstaleness-contract: emit side')
   const bad = EMIT_OK.replace('#### Drifted >30d', '#### Driftd >30d')
   const { errors } = checkStalenessEmit(bad)
   check('typo bucket heading → exactly 1 error', errors.length === 1)
-  check('typo error names the bad heading', errors[0].includes('Driftd >30d'))
+  check('typo error names the bad heading', errors[0]?.includes('Driftd >30d') ?? false)
 }
 {
   // A non-canonical `####` OUTSIDE any Version Drift section must be ignored
@@ -102,7 +102,7 @@ console.log('\nstaleness-contract: consume side')
   const bad = CONSUME_OK.replace('**`Not in registry`**', '**`Tap-only`**')
   const { errors } = checkStalenessConsume(bad)
   check('non-canonical routing bucket → exactly 1 error', errors.length === 1)
-  check('error names the stale bucket', errors[0].includes('Tap-only'))
+  check('error names the stale bucket', errors[0]?.includes('Tap-only') ?? false)
 }
 {
   // A doc with the section reference but no routing bullets → "found none".

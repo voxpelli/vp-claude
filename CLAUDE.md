@@ -34,6 +34,8 @@ skills/
     references/                      # 2 files: tag-selection, promote-workflow
   people-intel/SKILL.md              # Five-source person research
     references/                      # 2 files: note-template, source-guide
+  deep-intel/SKILL.md                # Multi-angle Workflow research → schema-typed BM note
+    references/                      # 3 files: synthesis-profiles, research-workflow, verification-topology
 agents/
   knowledge-gardener.md              # Read-only graph health auditor (incl. tag alignment)
   knowledge-maintainer.md            # All-in-one graph enhancer (writes, incl. tag fixes)
@@ -55,7 +57,7 @@ One-line index. Full per-component detail lives in the path-scoped dev rules
 (`.claude/rules/{skill,agent,hook}-development.md`) and loads when you edit that
 component type — see [Detailed conventions](#detailed-conventions).
 
-### Skills (14)
+### Skills (15)
 
 - **package-intel** — seven-source package research (npm/crate/go/composer/pypi/gem) → BM note. `/package-intel <pkg>`
 - **tool-intel** — five-source dev-tool research (brew/cask/action/docker/vscode/gh/plugin/skill) → BM note. `/tool-intel <prefix>:<name>`
@@ -71,6 +73,7 @@ component type — see [Detailed conventions](#detailed-conventions).
 - **session-bookmarks** — 1-3 high-signal session URLs → Raindrop AI-bookmarked. `/session-bookmarks`
 - **raindrop-triage** — unsorted-bookmark triage + `--promote` classification across the AI-* collections. `/raindrop-triage`
 - **people-intel** — five-source person research → BM person note. `/people-intel <name>`
+- **deep-intel** — multi-angle Workflow research → schema-typed BM note for the six knowledge types (service/concept/standard/milestone/project/engineering) behind pre-spend + pre-write gates. `/deep-intel <subject>`
 
 ### Agents (4)
 
@@ -190,6 +193,7 @@ When the user asks about knowledge or packages, choose the right skill:
 | "stale", "drifted", "outdated notes", "which tools/packages need updating" | `/knowledge-gaps --stale [<ecosystem>]` |
 | "installed plugins", "which plugins/skills are documented", "plugin/skill coverage" | `/knowledge-gaps --global` |
 | "research person", "who is \[X\]", "person intel", "people intel" | `/people-intel [name]` |
+| "deep research", "deep-dive", "document this service/standard/concept/milestone" | `/deep-intel [subject]` |
 | "audit these notes", "check note health", "fourth-wall check \[note\]" (named notes) | `/knowledge-garden [note ...]` |
 | "audit my knowledge graph", "full audit", "graph health" (graph-wide) | `knowledge-gardener` agent |
 | "fix these notes", "apply audit fixes", "tidy \[note\]" (named notes) | `/knowledge-maintain [note ...]` |
@@ -278,7 +282,7 @@ via the `vp-plugins` marketplace at `voxpelli/vp-claude`.
 
 ### Parallel agent orchestration
 
-Up to 10 background `/package-intel` + `/tool-intel` agents can run safely in parallel — notes are file-disjoint across ecosystems. The gardener→maintainer two-pass workflow (audit first, fix second) is the recommended approach for graph maintenance.
+`/package-intel` + `/tool-intel` agents are **write-safe** in parallel — notes are file-disjoint across ecosystems, so concurrent agents never corrupt each other's output. But file-disjointness does **not** imply *launch*-safety: bursting ~10 subagent launches at once trips an Anthropic API-side admission throttle (`Server is temporarily limiting requests (not your usage limit)`) that fails them near-instantly with zero writes — distinct from a 429/529 and from any upstream data-source limit. Cap concurrent *launches* to a handful (≈4–6 observed clean; the safe number is load-dependent, not fixed) or lower `CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY`. See BM note `engineering/agents/concurrent-subagent-launch-api-burst-throttle-not-file-safety`. The gardener→maintainer two-pass workflow (audit first, fix second) is the recommended approach for graph maintenance.
 
 - Static checks (`npm run check`, `validate-plugin.mjs`) validate *structure*, not
   logic — a new audit/check can pass every gate and still measure the wrong thing;

@@ -262,6 +262,23 @@ of maintaining both halves catches drift cases a single-source record misses.
   committed entry (public footprint) or a hand-maintained
   `PRIVATE-SYNERGY-<sibling>.md` doc kept outside the registry machinery.
 
+- **Multi-agent fan-out: native dynamic Workflows vs hand-rolled swarm-waves**
+  (2026-06-04) — Both plugins orchestrate dozens of parallel subagents, but via
+  different mechanisms: vp-knowledge's in-progress `deep-intel` (and this
+  session's review + architect rounds) use Claude Code's native **dynamic
+  Workflow** primitive (`Workflow({script})` — deterministic fan-out, structured
+  returns, background execution, per-stage model tiering); vp-beads's
+  **swarm-waves** are hand-rolled (bd issues as work units + manual wave
+  scheduling). The orchestration *need* is shared, so vp-beads could evaluate
+  embracing the Workflow primitive for its waves. **Caveat (likely blocker):**
+  dynamic workflows are single-session + ephemeral (the runtime restarts a
+  workflow fresh if you exit Claude Code) while swarm-waves are durable,
+  multi-session, bd-backed — the primitive may not fit wave durability unless
+  the orchestration state lives in bd, not the workflow. Evaluate, don't
+  adopt-blind.
+  Convergence path: propose-shared · Effort: significant (architecture question,
+  not a port). Reason: the actionable half is a vp-beads bd feature-request.
+
 ## Extraction Candidates
 
 - **validate-plugin.mjs** (2026-05-04) — Both plugins maintain independent

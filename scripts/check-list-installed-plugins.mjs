@@ -32,6 +32,7 @@ const INSTALLED = JSON.stringify({
   plugins: {
     'vp-knowledge@vp-plugins': [{ version: '0.31.2', installedAt: '2026-03-09T00:00:00Z' }],
     'vp-beads@vp-plugins': [{ version: '0.15.0', installedAt: '2026-03-10T00:00:00Z' }],
+    'malformed@vp-plugins': [{ version: 'unknown', installedAt: '2026-06-01T00:00:00Z' }],
     'impeccable@impeccable': [{ version: 'unknown', installedAt: '2026-04-01T00:00:00Z' }],
     'agent-sdk-dev@claude-plugins-official': [{ version: 'unknown', installedAt: '2026-02-01T00:00:00Z' }],
     'api-security@claude-plugins-official': [{ version: 'unknown', installedAt: '2026-05-01T00:00:00Z' }],
@@ -49,6 +50,7 @@ const MP = new Map([
     plugins: [
       { name: 'vp-knowledge', source: './' }, // local string -> marketplace repo + #name
       { name: 'vp-beads', source: { source: 'github', repo: 'voxpelli/claude-beads' } }, // dedicated repo
+      { name: 'malformed', source: { source: 'github' } }, // malformed github (no repo) -> must fall through, NOT emit plugin:undefined
     ],
   })],
   ['impeccable', JSON.stringify({ plugins: [{ name: 'impeccable', source: './plugin' }] })], // local subpath string
@@ -61,11 +63,13 @@ const MP = new Map([
 ])
 
 const plugins = resolveInstalledPlugins(INSTALLED, KNOWN, MP)
-const find = (key) => plugins.find((p) => p.identifier === key || p.title === key)
+const find = (/** @type {string} */ key) => plugins.find((p) => p.identifier === key || p.title === key)
 
 check('local "./" source -> marketplace repo + #name', !!find('plugin:voxpelli/vp-claude#vp-knowledge'))
 check('local "./" title normalizes : / # -> -', !!find('plugin-voxpelli-vp-claude-vp-knowledge'))
 check('github source -> dedicated repo, no #name', plugins.some((p) => p.identifier === 'plugin:voxpelli/claude-beads' && p.sourceResolved))
+check('malformed github source (no repo) -> name@marketplace fallback, sourceResolved:false (regression guard)', plugins.some((p) => p.identifier === 'plugin:malformed@vp-plugins' && p.sourceResolved === false))
+check('malformed github source never emits plugin:undefined', !plugins.some((p) => p.identifier.includes('undefined')))
 check('local "./plugin" (string, not "./") resolves (the impeccable bug case)', !!find('plugin:pbakaus/impeccable#impeccable'))
 check('local "./plugins/x" nested subpath resolves', !!find('plugin:anthropics/claude-plugins-official#agent-sdk-dev'))
 check('git-subdir source -> owner/repo from url + #name', !!find('plugin:42Crunch-AI/claude-plugins#api-security'))
