@@ -3,15 +3,14 @@ name: deep-intel
 description: "This skill should be used when the user explicitly runs `/deep-intel` to deeply research and document a service, platform, protocol, standard, concept, movement, historical milestone, project, or engineering pattern into the Basic Memory knowledge graph — 'deep research [subject]', 'deep-dive [topic]', 'research this service/platform', 'document this protocol/standard', 'research this concept/movement', 'document this milestone', 'engineering deep-dive', 'add [service/concept/standard] to the knowledge graph'. Runs a multi-angle research Workflow behind two human gates (pre-spend, pre-write) and writes a schema-typed note. NOT for a single software package (use /package-intel), NOT for a developer tool/CLI/action/image/extension (use /tool-intel), NOT for a person (use /people-intel), and NOT for freeform questions against existing notes (use /knowledge-ask). On a package/tool/person subject it detects and redirects to the right sibling."
 user-invocable: true
 disable-model-invocation: true
-argument-hint: "<subject> [--type <service|concept|standard|milestone|project|engineering>] [--quick]"
+argument-hint: "<subject> [--type <service|concept|standard|milestone|project|engineering>] [--quick|--heavy]"
 allowed-tools:
   - Read
+  - Workflow
   - mcp__basic-memory__search_notes
   - mcp__basic-memory__read_note
   - mcp__basic-memory__write_note
   - mcp__basic-memory__edit_note
-  - mcp__basic-memory__build_context
-  - mcp__basic-memory__list_directory
   - mcp__basic-memory__schema_validate
 ---
 
@@ -41,10 +40,11 @@ Workflow) and shares trigger-space with the sibling intel skills, so it runs
 
 ## Step 0 — Resolve type and redirect non-knowledge subjects
 
-Parse `subject`, optional `--type`, optional `--quick`. Derive `mode`:
-`--quick` → `quick`; otherwise the default is `standard` (full pipeline with
-verification gated to high-stakes claims). `heavy` (full topology on all tiers)
-is opt-in for the most consequential subjects.
+Parse `subject`, optional `--type`, optional `--quick` or `--heavy`. Derive
+`mode`: `--quick` → `quick` (skip verification + completeness); `--heavy` →
+`heavy` (full topology on all tiers); otherwise `standard` (the default —
+verification focused on high-stakes claims, the completeness gap recorded as an
+open question).
 
 **Redirect first (the anti-duplication gate).** This skill covers only the six
 knowledge types. If the subject is something a sibling already owns, do not
@@ -119,18 +119,23 @@ up front. Wait for the user's choice.
 
 Launch the deep-intel research Workflow. Its script and launch contract live in
 `${CLAUDE_PLUGIN_ROOT}/skills/deep-intel/references/research-workflow.md`; read
-that file and launch the script via the **Workflow** tool, passing
-`args = JSON.stringify({ subject, type, mode, existingTitle, today })`. Capture
-`today` as an ISO date in the foreground and pass it — the Workflow runtime has
-no `Date.now()`, so synthesis can only date the note from this argument. The Workflow's
-own agents reach web-search, DeepWiki, and Basic Memory via ToolSearch, so the
-deep graph reads (dedup, gap-targeting, contradiction detection) and source
-research all happen inside the Workflow.
+that file and launch the script via the **Workflow** tool, passing the
+**structured** args object `{ subject, type, mode, existingTitle, today }` (a
+Workflow receives `args` as structured data — pass the object, not a JSON
+string). Capture `today` as an ISO date in the foreground and pass it — the
+Workflow runtime has no `Date.now()`. The Workflow's own agents reach web-search,
+DeepWiki, and Basic Memory via ToolSearch.
 
-The Workflow runs in the background and **returns a structured proposed-note
-object** on completion — it does **not** write to Basic Memory. Capture that
-return value. **If the Workflow errors or returns an empty result, report it and
-STOP — do not write a malformed note.**
+A Workflow's child agents inherit your tool allowlist; if `mcp__tavily__*`,
+`mcp__deepwiki__*`, or `mcp__basic-memory__*` are not allowlisted they will prompt
+mid-run. Note at the pre-spend gate that the user may want to allowlist these
+before a long run.
+
+The Workflow runs in the background and **returns** `{ proposedNote, stats }` on
+completion — it does **not** write to Basic Memory. Capture that return value.
+**If the Workflow errors, returns `proposedNote: null`, or sets
+`throttleSuspected` (most search agents returned nothing — suggest retry / lower
+concurrency), report it and STOP — do not write a malformed or empty note.**
 
 ## Step 4 — PRE-WRITE gate (on the completion turn)
 
@@ -157,11 +162,13 @@ claims in their own block (the user decides keep-hedged / drop / override — th
 are never silently resolved); list what the verification topology `dropped` as
 refuted so the user sees what was removed; show any completeness `openQuestions`.
 
-Use the returned `verification` value as the label: **"multi-source
-cross-checked"** (standard/heavy) — never "fact-checked"; or, in `--quick` mode,
-state plainly that the note is single-pass and **not** cross-checked and stamp
-`verification: quick-unverified` in the frontmatter. Write nothing the user has
-not approved.
+Carry the returned `verification` value into the note's frontmatter verbatim and
+**never strengthen it** — it is weakest-wins: `multi-source cross-checked` (every
+persisted claim corroborated by an independent pair), `partial-cross-checked`
+(some claims hedged or single-source), `partial-unverified` (some claims could
+not be verified), or `quick-unverified` (`--quick`, single-pass). **Never relabel
+to "fact-checked."** State the label's meaning plainly in the preview, and write
+nothing the user has not approved.
 
 ## Step 5 — Write or enrich
 
