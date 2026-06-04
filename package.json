@@ -18,7 +18,7 @@
     "check:release-counts": "node scripts/check-release-counts.mjs",
     "check:sh": "shellcheck hooks/*.sh scripts/*.sh && shfmt -d hooks/*.sh scripts/*.sh",
     "check:tsc": "tsc",
-    "check:type-coverage": "type-coverage --at-least 97"
+    "check:type-coverage": "type-coverage --at-least 99"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
