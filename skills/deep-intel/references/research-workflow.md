@@ -39,7 +39,8 @@ export const meta = {
   ],
 }
 
-const cfg = JSON.parse(args || '{}')
+let cfg
+try { cfg = typeof args === 'string' ? JSON.parse(args || '{}') : (args || {}) } catch (e) { return { error: `deep-intel-research: args must be a JSON object or a JSON string (got ${typeof args})` } }
 const { subject, type, today } = cfg
 const mode = cfg.mode || 'standard'
 if (!subject || !type) return { error: 'deep-intel-research: subject and type are required in args.' }
@@ -117,10 +118,15 @@ const stakeOf = (o) => HIGH_TYPES.includes(o.claim_type) ? 'high' : (o.claim_typ
 function rollup(obs, adv, non, judge) {
   if (!adv || !non) return { id: obs.id, verdict: 'incomplete', disposition: 'write-hedged', hedged_text: `${obs.text} (unverified — verification incomplete)` }
   const advNeg = adv.outcome === 'CONTRADICTED' && !!adv.source // unfalsifiable (sourceless) refutation does not drop a claim
-  const advOk = adv.outcome === 'CORROBORATED' || adv.outcome === 'NO_EVIDENCE_FOUND'
+  const advCorrob = adv.outcome === 'CORROBORATED'
+  const advNoEv = adv.outcome === 'NO_EVIDENCE_FOUND'
   const nonOk = non.result === 'confirms'
   const nonNo = non.result === 'cannot-confirm'
-  if (advOk && nonOk) return { id: obs.id, verdict: 'confirmed', disposition: 'write-as-is', hedged_text: null }
+  // Both sides positively corroborate -> firm, cross-checkable
+  if (advCorrob && nonOk) return { id: obs.id, verdict: 'confirmed', disposition: 'write-as-is', hedged_text: null }
+  // Adversary found NO contradiction (weak evidence) and only the confirmer found support
+  // -> single-source confirm, capped at hedged; NEVER cross-checkable (NO_EVIDENCE_FOUND != CORROBORATED)
+  if (advNoEv && nonOk) return { id: obs.id, verdict: 'confirmed', disposition: 'write-hedged', hedged_text: `${obs.text} (single-source; an adversarial search found no independent corroboration)` }
   if (advNeg && (nonNo || non.result === 'partial')) return { id: obs.id, verdict: 'refuted', disposition: 'drop', hedged_text: null }
   // disagreement
   if (judge) {
@@ -142,11 +148,16 @@ log(`${scope.angles.length} angles`)
 // Phase Search -> Fetch (streaming, no barrier)
 phase('Search')
 const seen = new Set()
+let searchNulls = 0
 const extracted = await pipeline(
   scope.angles,
-  (angle) => agent(
-    `Use ToolSearch to load mcp__tavily__tavily_search. Search the web for: ${angle.query} (angle: ${angle.label}, subject: ${subject}). Up to 5 results ranked by relevance to the ORIGINAL subject, skip spam. Structured output only.`,
-    { label: `search:${angle.label}`, phase: 'Search', schema: SEARCH_SCHEMA }),
+  async (angle) => {
+    const s = await agent(
+      `Use ToolSearch to load mcp__tavily__tavily_search. Search the web for: ${angle.query} (angle: ${angle.label}, subject: ${subject}). Up to 5 results ranked by relevance to the ORIGINAL subject, skip spam. Structured output only.`,
+      { label: `search:${angle.label}`, phase: 'Search', schema: SEARCH_SCHEMA })
+    if (!s) searchNulls++
+    return s
+  },
   (search) => {
     const novel = (search?.results || []).filter((r) => {
       const k = normUrl(r.url)
@@ -161,7 +172,17 @@ const extracted = await pipeline(
 const sources = extracted.flat().filter(Boolean)
 const allClaims = sources.flatMap((s) => (s.claims || []).map((c) => ({ ...c, url: s.url, quality: s.sourceQuality })))
 log(`${sources.length} sources, ${allClaims.length} claims`)
-if (!allClaims.length) return { proposedNote: null, stats: { angles: scope.angles.length, sources: 0, claims: 0 }, note: 'no claims extracted' }
+if (!allClaims.length) {
+  // Distinguish a throttle cascade (most search agents returned null) from a genuine no-evidence subject.
+  const throttleSuspected = searchNulls >= Math.ceil(scope.angles.length / 2)
+  return {
+    proposedNote: null, throttleSuspected,
+    stats: { angles: scope.angles.length, sources: sources.length, claims: 0, searchNulls },
+    note: throttleSuspected
+      ? 'throttle-suspected: most search agents returned no result — retry or lower concurrency'
+      : 'no claims extracted (research found nothing for this subject)',
+  }
+}
 
 // Phase Draft — graph read + draft note with per-observation claim_type + sources
 phase('Draft')
@@ -190,7 +211,11 @@ if (mode !== 'quick') {
       () => agent(`Use ToolSearch to load mcp__tavily__tavily_search. Independently confirm this claim about ${subject}: "${obs.text}". Return confirms / partial / cannot-confirm with evidence. Structured output only.`, { label: `confirm:${obs.id}`, phase: 'Verify', schema: CONFIRM_SCHEMA }),
     ])
     let judge = null
-    const disagree = adv && non && ((adv.outcome === 'CONTRADICTED') !== (non.result === 'cannot-confirm' || non.result === 'partial'))
+    // Fire the judge only on genuine conflict, not on two-sided uncertainty (NO_EVIDENCE_FOUND cases are handled by rollup).
+    const disagree = !!adv && !!non && (
+      (adv.outcome === 'CORROBORATED' && (non.result === 'cannot-confirm' || non.result === 'partial')) ||
+      (adv.outcome === 'CONTRADICTED' && !!adv.source && non.result === 'confirms')
+    )
     if (disagree) {
       judge = await agent(`Two agents disagree on this claim about ${subject}: "${obs.text}". Adversarial said ${adv.outcome} (${adv.source || 'no source'}); confirmer said ${non.result}. Read both sides and decide: adversarial / nonadversarial / unresolved. Structured output only.`, { label: `judge:${obs.id}`, phase: 'Verify', schema: JUDGE_SCHEMA })
     }
@@ -232,10 +257,11 @@ if (mode !== 'quick') {
 // Phase Critic — one capped completeness wave on the top gap
 phase('Critic')
 let gapNote = null
-if (mode === 'heavy' && macro?.framing === 'missing-load-bearing' && macro.missing?.length) {
+if (mode !== 'quick' && macro?.framing === 'missing-load-bearing' && macro.missing?.length) {
   gapNote = macro.missing[0]
   log(`completeness gap: ${gapNote}`)
-  // A single targeted search is recorded as an open question rather than auto-asserted in v1.
+  // standard/heavy: record the gap as an open question (surfaced at the pre-write gate).
+  // A heavy-only second search wave on the gap is a deferred follow-up (bead B2).
 }
 
 // Phase Finalize — apply verdicts -> proposed note
@@ -243,14 +269,26 @@ phase('Finalize')
 const finalObs = []
 const dropped = []
 const disputed = []
+let strong = 0, hedged = 0, unverified = 0
 for (const o of draft.observations) {
   const v = verdicts[o.id]
   if (o.category === 'source') { finalObs.push({ category: o.category, text: o.text }); continue }
-  if (!v) { finalObs.push({ category: o.category, text: mode === 'quick' ? o.text : `${o.text} (unverified)` }); continue }
+  if (!v) { finalObs.push({ category: o.category, text: mode === 'quick' ? o.text : `${o.text} (unverified)` }); if (mode !== 'quick') unverified++; continue }
   if (v.disposition === 'drop') { dropped.push(o.text); continue }
-  if (v.disposition === 'write-hedged') { finalObs.push({ category: o.category, text: v.hedged_text }); if (v.verdict === 'disputed') disputed.push(o.text); continue }
-  finalObs.push({ category: o.category, text: o.text })
+  if (v.disposition === 'write-hedged') {
+    finalObs.push({ category: o.category, text: v.hedged_text })
+    if (v.verdict === 'disputed') disputed.push(o.text)
+    if (v.verdict === 'incomplete') unverified++; else hedged++
+    continue
+  }
+  finalObs.push({ category: o.category, text: o.text }); strong++ // write-as-is
 }
+// Weakest-wins label: never claim "cross-checked" over an unverified or hedged claim.
+const verification = mode === 'quick' ? 'quick-unverified'
+  : unverified > 0 ? 'partial-unverified'
+  : hedged > 0 ? 'partial-cross-checked'
+  : strong > 0 ? 'multi-source cross-checked'
+  : 'unverified'
 const proposedNote = {
   title: draft.title, overview: draft.overview,
   observations: finalObs,
@@ -258,7 +296,7 @@ const proposedNote = {
   sources: draft.sources,
   disputed, dropped,
   openQuestions: gapNote ? [`Possibly missing: ${gapNote}`] : [],
-  verification: mode === 'quick' ? 'quick-unverified' : 'multi-source cross-checked',
+  verification,
 }
 
 return {
