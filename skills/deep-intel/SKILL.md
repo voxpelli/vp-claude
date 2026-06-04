@@ -240,16 +240,31 @@ bounded, gated, and following the `/knowledge-maintain` write discipline:
   `/deep-intel <spoke>` run can deepen. First run an existence check
   (`search_notes`); if it is a near-duplicate of an existing note, skip it — do not
   create it.
-- **Neighbor enrichment** → on the named existing note, **append-only** via
-  `edit_note(find_replace)`: an `observation` anchors on the last `## Observations`
-  line, a `relation` on the last `## Relations` line. **Never** rewrite an existing
-  observation; for a contradiction, append a hedged `[gotcha]`/`[controversy]` per the
-  contradiction rule above. Read-before-edit, `N_before`/`N_after` survival check, and
-  `schema_validate` after each — exactly as `/knowledge-maintain` does.
+- **Neighbor enrichment** → append-only edits to a named EXISTING note, split by kind:
+  `neighborObservations[]` (`{targetTitle, category, text}`) and `neighborRelations[]`
+  (`{targetTitle, verb}` — target is the new note). These write into an **earned** note, so
+  the foreground MUST enforce what the schema cannot (the Workflow never knows the neighbor's
+  type). Apply these guards per item, in order — skip-and-report on any failure:
+  1. **Exact-title resolve.** Locate the neighbor by exact title. If it does not resolve
+     verbatim, SKIP and report (a paraphrase writes a dead edge). A `search_notes` miss or
+     error is **fail-closed** (skip + report) — never treated as "no conflict, write anyway".
+  2. **Neighbor-schema legality.** `read_note(output_format="json")` the neighbor for its
+     `note_type`, then read `${CLAUDE_PLUGIN_ROOT}/schemas/<note_type>.md`: **reject** a
+     `neighborObservation` whose `category` is not a valid `[category]` for *that* type, and a
+     `neighborRelation` whose `verb` is not in *that* type's relation vocabulary. A category/verb
+     valid on the new note can be illegal on the neighbor's type — validate against the neighbor's
+     own schema, not the new note's.
+  3. **Non-empty.** Skip any observation whose `category` or `text` is empty or whitespace-only
+     (the schema's `required` does not block `""`).
+  4. **Dedup.** Before appending a relation, scan the neighbor's `## Relations` for the same
+     `verb [[target]]` pair; skip if it already exists (a re-run must not double an edge).
+  Then append-only via `edit_note(find_replace)` — observation on the last `## Observations`
+  line, relation on the last `## Relations` line. **Never** rewrite an existing observation; for a
+  contradiction, append a hedged `[gotcha]`/`[controversy]` per the contradiction rule above.
+  Read-before-edit, `N_before`/`N_after` survival check, `schema_validate` after each — exactly
+  as `/knowledge-maintain` does.
 
-Resolve neighbor targets by **exact title only** (a paraphrase writes a dead edge); if
-one fails to resolve, skip it and report. Report landed counts: primary + N spokes +
-M neighbor edits.
+Report landed counts: primary + N spokes + M neighbor edits.
 
 ## Step 6 — Cross-link (exact-title only) and report
 
