@@ -9,6 +9,21 @@ import { checkStalenessConsume, checkStalenessEmit } from './lib/staleness-contr
 
 const ROOT = new URL('.', import.meta.url).pathname.replace(/\/$/, '')
 
+/**
+ * A plugin entry in marketplace.json — accessed across two loops (shape/required
+ * fields, then version consistency). Fields are optional because the validator's
+ * job is to flag when they're missing/wrong.
+ *
+ * @typedef {{ name?: unknown, source?: unknown, version?: unknown, description?: unknown }} MarketplaceEntry
+ */
+
+/**
+ * A single hook handler inside a hooks.json event entry — type/timeout/command
+ * interact across several branches below.
+ *
+ * @typedef {{ type?: unknown, timeout?: unknown, command?: unknown }} HookConfig
+ */
+
 /** @type {string[]} */
 const errors = []
 /** @type {string[]} */
@@ -58,8 +73,21 @@ function extractFrontmatter (content) {
   } catch {}
 }
 
-/** @type {Set<unknown>} */ // membership-checked against unknown parsed-YAML/JSON values
-const VALID_HOOK_TYPES = new Set(['prompt', 'command', 'agent', 'http'])
+/**
+ * Generic membership guard: narrows `value` to the set's element type `T` in the
+ * truthy branch, so a `!isMember(SET, x)` check leaves `x` widened to `T` on the
+ * valid path. Lets the VALID_* sets double as runtime validators AND type narrowers.
+ *
+ * @template T
+ * @param {ReadonlySet<T>} set
+ * @param {unknown} value
+ * @returns {value is T}
+ */
+const isMember = (set, value) => set.has(/** @type {T} */ (value))
+
+/** @typedef {'prompt' | 'command' | 'agent' | 'http'} HookType */
+/** @type {ReadonlySet<HookType>} */
+const VALID_HOOK_TYPES = new Set(/** @type {const} */ (['prompt', 'command', 'agent', 'http']))
 
 // Known Claude Code hook event names. A typo'd event key passes structural
 // validation but silently never fires — warn() (not error()) because the upstream
@@ -78,14 +106,17 @@ const VALID_HOOK_EVENTS = new Set([
   'Elicitation', 'ElicitationResult',
 ])
 
-/** @type {Set<unknown>} */ // membership-checked against unknown parsed-YAML values
-const VALID_AGENT_COLORS = new Set(['blue', 'cyan', 'green', 'yellow', 'magenta', 'red'])
+/** @typedef {'blue' | 'cyan' | 'green' | 'yellow' | 'magenta' | 'red'} AgentColor */
+/** @type {ReadonlySet<AgentColor>} */
+const VALID_AGENT_COLORS = new Set(/** @type {const} */ (['blue', 'cyan', 'green', 'yellow', 'magenta', 'red']))
 
-/** @type {Set<unknown>} */
-const VALID_AGENT_MODELS = new Set(['inherit', 'sonnet', 'opus', 'haiku'])
+/** @typedef {'inherit' | 'sonnet' | 'opus' | 'haiku'} AgentModel */
+/** @type {ReadonlySet<AgentModel>} */
+const VALID_AGENT_MODELS = new Set(/** @type {const} */ (['inherit', 'sonnet', 'opus', 'haiku']))
 
-/** @type {Set<unknown>} */
-const VALID_AGENT_EFFORTS = new Set(['low', 'medium', 'high', 'max'])
+/** @typedef {'low' | 'medium' | 'high' | 'max'} AgentEffort */
+/** @type {ReadonlySet<AgentEffort>} */
+const VALID_AGENT_EFFORTS = new Set(/** @type {const} */ (['low', 'medium', 'high', 'max']))
 
 const KNOWN_MCP_PREFIXES = [
   'mcp__basic-memory__',
@@ -182,7 +213,7 @@ if (existsSync(marketplacePath)) {
     }
     const entries = Array.isArray(m.plugins) ? m.plugins : []
     for (const entry of entries) {
-      const e = /** @type {Record<string, unknown>} */ (entry)
+      const e = /** @type {MarketplaceEntry} */ (entry)
       for (const field of ['name', 'source', 'description']) {
         if (!(field in e)) error(marketplacePath, `Plugin entry "${String(e.name ?? '?')}" missing required field: ${field}`)
       }
@@ -191,7 +222,7 @@ if (existsSync(marketplacePath)) {
     if (plugin !== undefined) {
       const pluginVersion = /** @type {Record<string, unknown>} */ (plugin).version
       for (const entry of entries) {
-        const e = /** @type {Record<string, unknown>} */ (entry)
+        const e = /** @type {MarketplaceEntry} */ (entry)
         if (e.source === './' && e.version !== pluginVersion) {
           error(
             marketplacePath,
@@ -233,8 +264,8 @@ if (existsSync(hooksPath)) {
             continue
           }
           for (const hook of e.hooks) {
-            const hk = /** @type {Record<string, unknown>} */ (hook)
-            if (!VALID_HOOK_TYPES.has(hk.type)) {
+            const hk = /** @type {HookConfig} */ (hook)
+            if (!isMember(VALID_HOOK_TYPES, hk.type)) {
               error(hooksPath, `hooks.${event}: hook type must be one of ${[...VALID_HOOK_TYPES].join(', ')}, got "${String(hk.type)}"`)
             }
             if (hk.type === 'prompt') {
@@ -323,7 +354,7 @@ for (const file of skillFiles) {
   if ('paths' in fm && !Array.isArray(fm.paths)) {
     error(file, 'paths must be an array of glob strings')
   }
-  if ('effort' in fm && !VALID_AGENT_EFFORTS.has(fm.effort)) {
+  if ('effort' in fm && !isMember(VALID_AGENT_EFFORTS, fm.effort)) {
     error(file, `Invalid skill effort "${String(fm.effort)}", must be one of: ${[...VALID_AGENT_EFFORTS].join(', ')}`)
   }
   if ('maxTurns' in fm && (typeof fm.maxTurns !== 'number' || fm.maxTurns < 1)) {
@@ -378,13 +409,13 @@ if (existsSync(agentsDir)) {
       validateMcpPrefixes(file, /** @type {string[]} */ (fm.tools))
       auditToolReferences(file, content, /** @type {string[]} */ (fm.tools), 'tools')
     }
-    if ('color' in fm && !VALID_AGENT_COLORS.has(fm.color)) {
+    if ('color' in fm && !isMember(VALID_AGENT_COLORS, fm.color)) {
       error(file, `Invalid agent color "${String(fm.color)}", must be one of: ${[...VALID_AGENT_COLORS].join(', ')}`)
     }
-    if ('model' in fm && !VALID_AGENT_MODELS.has(fm.model)) {
+    if ('model' in fm && !isMember(VALID_AGENT_MODELS, fm.model)) {
       error(file, `Invalid agent model "${String(fm.model)}", must be one of: ${[...VALID_AGENT_MODELS].join(', ')}`)
     }
-    if ('effort' in fm && !VALID_AGENT_EFFORTS.has(fm.effort)) {
+    if ('effort' in fm && !isMember(VALID_AGENT_EFFORTS, fm.effort)) {
       error(file, `Invalid agent effort "${String(fm.effort)}", must be one of: ${[...VALID_AGENT_EFFORTS].join(', ')}`)
     }
     if ('skills' in fm && !Array.isArray(fm.skills)) {
