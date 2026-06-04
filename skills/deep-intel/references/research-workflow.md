@@ -56,8 +56,10 @@ const normUrl = (u) => (u || '').trim().toLowerCase().replace(/^https?:\/\/(www\
 // economy is session-dependent (an Opus session runs every agent on Opus). deep-intel routes
 // EXPLICITLY so it stays economical regardless of session model. Haiku = high-volume mechanical
 // (search / fetch / curated / batched yes-no verify); Sonnet = judgment (scope / graph-read /
-// per-claim adversarial+confirm+judge / macro / extend); Opus = the one hard synthesis step
-// (`draft` omits `model` so it inherits the session's strongest model).
+// per-claim adversarial+confirm+judge / macro / extend); Opus = creative + synthesis judgment —
+// the divergent "free spirits" ideation (the genius must tame the nuts) and `draft` synthesis
+// (`draft` omits `model` so it inherits the session's strongest; the principle is mechanical=cheap,
+// judgment-or-creativity=top-tier, NOT sourcing=cheap).
 
 const SCOPE_SCHEMA = {
   type: 'object', additionalProperties: false, required: ['angles'],
@@ -121,6 +123,24 @@ const MACRO_SCHEMA = {
     missing: { type: 'array', items: { type: 'string' } } },
 }
 
+const EXTEND_SCHEMA = {
+  type: 'object', additionalProperties: false, required: ['spokes', 'neighborEdits'],
+  properties: {
+    spokes: { type: 'array', maxItems: 3, items: {
+      type: 'object', additionalProperties: false, required: ['title', 'type', 'reason', 'observations'],
+      properties: {
+        title: { type: 'string' }, reason: { type: 'string' },
+        type: { type: 'string', enum: ['service', 'concept', 'standard', 'milestone', 'project', 'engineering'] },
+        observations: { type: 'array', maxItems: 6, items: {
+          type: 'object', additionalProperties: false, required: ['category', 'text'],
+          properties: { category: { type: 'string' }, text: { type: 'string' } } } } } } },
+    neighborEdits: { type: 'array', maxItems: 5, items: {
+      type: 'object', additionalProperties: false, required: ['targetTitle', 'kind'],
+      properties: { targetTitle: { type: 'string' }, kind: { type: 'string', enum: ['observation', 'relation'] },
+        category: { type: ['string', 'null'] }, text: { type: ['string', 'null'] }, verb: { type: ['string', 'null'] } } } },
+  },
+}
+
 const stakeOf = (o) => HIGH_TYPES.includes(o.claim_type) ? 'high' : (o.claim_type === 'soft' ? 'low' : 'medium')
 
 // Build a discriminated-union-respecting verdict from a pair (+ optional judge).
@@ -160,10 +180,13 @@ if (!scope || !scope.angles?.length) return { error: 'deep-intel-research: scope
 // a nuts-and-genius connection that IS real surfaces sources the structured angles would never reach.
 let divergentAngles = []
 if (mode === 'heavy') {
-  const fs = await agent(
-    `You are 2 free spirits brainstorming about "${subject}" (a ${type}) like you are nuts and genius at once — wild, lateral, unexpected connections and framings. Emit 1-3 SEARCH ANGLES (label + query, stance "divergent") that a careful researcher would never think to run but that could surface non-obvious truth. Stay tethered to the subject. Structured output only.`,
-    { label: 'free-spirits', model: 'haiku', schema: SCOPE_SCHEMA })
-  divergentAngles = (fs?.angles || []).slice(0, 3).map((a) => ({ ...a, stance: 'divergent' }))
+  // A PAIR of SINGLE free spirits (two independent perspectives beat one agent role-playing two —
+  // one persona per agent stays coherent; the pair diverges). Each on Opus: lateral ideation needs
+  // the "genius" to make the "nuts" cohere — creative reasoning, not a mechanical stage.
+  const fsPair = await parallel([1, 2].map((n) => () => agent(
+    `You are a single free spirit brainstorming about "${subject}" (a ${type}) like you are nuts and genius at once — wild, lateral, unexpected connections and framings. You are free spirit #${n} of a pair: chase YOUR OWN angle, don't hedge toward the obvious or converge on your twin. Emit 1-2 SEARCH ANGLES (label + query, stance "divergent") a careful researcher would never think to run but that could surface non-obvious truth. Stay tethered to the subject. Structured output only.`,
+    { label: `free-spirit:${n}`, model: 'opus', schema: SCOPE_SCHEMA })))
+  divergentAngles = fsPair.filter(Boolean).flatMap((fs) => fs.angles || []).slice(0, 4).map((a) => ({ ...a, stance: 'divergent' }))
 }
 const angles = [...scope.angles, ...divergentAngles]
 log(`${angles.length} angles (${angles.filter((a) => a.stance === 'adversarial').length} adversarial, ${divergentAngles.length} divergent)`)
@@ -338,12 +361,24 @@ const proposedNote = {
   verification,
 }
 
+// Phase Extend — propose a BOUNDED graph-extension set (spokes + neighbor enrichments).
+// The Workflow still never writes; the foreground gates and applies each item per the pre-write gate.
+phase('Extend')
+let extensions = { spokes: [], neighborEdits: [] }
+if (mode !== 'quick') {
+  const ext = await agent(
+    `A verified ${type} note about "${subject}" has been drafted. From its observations and the graph briefing, propose a BOUNDED, non-duplicate set of graph extensions (return empty arrays if none is genuinely warranted):\n(1) SPOKES (<=3): distinct entities/concepts the research surfaced that warrant their OWN note — title, type (service|concept|standard|milestone|project|engineering), a one-line reason it is separable, and 2-6 observations drawn from the claims. A spoke must NOT be a near-duplicate of "${subject}" or of an existing note.\n(2) NEIGHBOR ENRICHMENTS (<=5): for an EXISTING note named VERBATIM in the briefing's hub list, an append-only addition — kind:"observation" with category+text, or kind:"relation" with a verb (target is the new "${draft.title}" note). Only where the insight genuinely belongs on that neighbor.\nStructured output only.\n\nNOTE OBSERVATIONS:\n${finalObs.map((o) => `- [${o.category}] ${o.text}`).join('\n')}\nGRAPH BRIEFING:\n${graph || '(none)'}`,
+    { label: 'extend', phase: 'Extend', model: 'sonnet', schema: EXTEND_SCHEMA })
+  if (ext) extensions = { spokes: (ext.spokes || []).slice(0, 3), neighborEdits: (ext.neighborEdits || []).slice(0, 5) }
+}
+
 return {
-  proposedNote,
+  proposedNote, extensions,
   stats: {
     angles: angles.length, sources: sources.length, claims: allClaims.length,
     observations: finalObs.length, dropped: dropped.length, disputed: disputed.length,
-    verified: Object.keys(verdicts).length, mode,
+    verified: Object.keys(verdicts).length,
+    spokes: extensions.spokes.length, neighborEdits: extensions.neighborEdits.length, mode,
   },
 }
 ```

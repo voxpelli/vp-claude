@@ -132,8 +132,8 @@ A Workflow's child agents inherit your tool allowlist; if `mcp__tavily__*`,
 mid-run. Note at the pre-spend gate that the user may want to allowlist these
 before a long run.
 
-The Workflow runs in the background and **returns** `{ proposedNote, stats }` on
-completion — it does **not** write to Basic Memory. Capture that return value.
+The Workflow runs in the background and **returns** `{ proposedNote, extensions, stats }`
+on completion — it does **not** write to Basic Memory. Capture that return value.
 **If the Workflow errors, returns `proposedNote: null`, or sets
 `throttleSuspected` (most search agents returned nothing — suggest retry / lower
 concurrency), report it and STOP — do not write a malformed or empty note.**
@@ -170,6 +170,24 @@ persisted claim corroborated by an independent pair), `partial-cross-checked`
 not be verified), `unverified` (no claim survived verification), or
 `quick-unverified` (`--quick`, single-pass). **Never relabel to "fact-checked."** State the label's meaning plainly in the preview, and write
 nothing the user has not approved.
+
+**Graph extensions.** The return also carries `extensions = { spokes, neighborEdits }` —
+a bounded set the Workflow *proposed* but did not write. Lead the gate with the
+**full write-set blast radius** (e.g. "1 note + 2 spokes + 3 neighbor edits") so the
+user sees the scope before approving, then preview each group:
+
+```text
+### Spokes (new notes)
+- [concept] CoALA — Cognitive Architectures for Language Agents  (reason: distinct framework)
+### Neighbor enrichments (append-only to existing notes)
+- [[Agent-Side Prompt Injection]] += [risk] memory poisoning persists in a frozen-weight store
+- [[RAG …]] += contrasts_with [[<this note>]]
+
+Approve all / per-item / none.
+```
+
+The user approves **per item** — spokes and neighbor edits are independently
+acceptable or droppable. Nothing here is written without explicit approval.
 
 ## Step 5 — Write or enrich
 
@@ -210,6 +228,28 @@ their sources, and tell the user to run `/knowledge-maintain` to reconcile.
 confirm the observation count matches what was written (`N_after` vs intended —
 do not trust the inline index echo), then `schema_validate(identifier=...)` and
 expect 0 errors. Report *landed* counts, not intended counts.
+
+### Write approved graph extensions
+
+After the primary note is written + validated, apply each **approved** extension —
+bounded, gated, and following the `/knowledge-maintain` write discipline:
+
+- **Spoke** → `write_note(note_type=<spoke.type>, directory=<type-dir>, …)` built like
+  the primary note (observations, relations including a `relates_to [[<primary title>]]`
+  backlink, a `## Sources` section). A spoke is an initial stub a later
+  `/deep-intel <spoke>` run can deepen. First run an existence check
+  (`search_notes`); if it is a near-duplicate of an existing note, skip it — do not
+  create it.
+- **Neighbor enrichment** → on the named existing note, **append-only** via
+  `edit_note(find_replace)`: an `observation` anchors on the last `## Observations`
+  line, a `relation` on the last `## Relations` line. **Never** rewrite an existing
+  observation; for a contradiction, append a hedged `[gotcha]`/`[controversy]` per the
+  contradiction rule above. Read-before-edit, `N_before`/`N_after` survival check, and
+  `schema_validate` after each — exactly as `/knowledge-maintain` does.
+
+Resolve neighbor targets by **exact title only** (a paraphrase writes a dead edge); if
+one fails to resolve, skip it and report. Report landed counts: primary + N spokes +
+M neighbor edits.
 
 ## Step 6 — Cross-link (exact-title only) and report
 
