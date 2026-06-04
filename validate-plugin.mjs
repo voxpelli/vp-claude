@@ -49,7 +49,7 @@ async function readJson (filePath) {
  */
 function extractFrontmatter (content) {
   const match = content.match(/^---\n([\s\S]*?)\n---/)
-  if (!match) return
+  if (!match || match[1] === undefined) return
   try {
     const parsed = yaml.load(match[1])
     return typeof parsed === 'object' && parsed !== null
@@ -58,6 +58,7 @@ function extractFrontmatter (content) {
   } catch {}
 }
 
+/** @type {Set<unknown>} */ // membership-checked against unknown parsed-YAML/JSON values
 const VALID_HOOK_TYPES = new Set(['prompt', 'command', 'agent', 'http'])
 
 // Known Claude Code hook event names. A typo'd event key passes structural
@@ -77,10 +78,13 @@ const VALID_HOOK_EVENTS = new Set([
   'Elicitation', 'ElicitationResult',
 ])
 
+/** @type {Set<unknown>} */ // membership-checked against unknown parsed-YAML values
 const VALID_AGENT_COLORS = new Set(['blue', 'cyan', 'green', 'yellow', 'magenta', 'red'])
 
+/** @type {Set<unknown>} */
 const VALID_AGENT_MODELS = new Set(['inherit', 'sonnet', 'opus', 'haiku'])
 
+/** @type {Set<unknown>} */
 const VALID_AGENT_EFFORTS = new Set(['low', 'medium', 'high', 'max'])
 
 const KNOWN_MCP_PREFIXES = [
@@ -421,8 +425,9 @@ if (existsSync(agentsDir)) {
 // and attribute any violations. The ">=1 bucket matched" guard makes a future
 // refactor that hides the headings fail loudly instead of passing empty.
 
+const gardenerStalenessPath = join(ROOT, 'agents', 'knowledge-gardener.md')
 const stalenessEmitFiles = [
-  join(ROOT, 'agents', 'knowledge-gardener.md'),
+  gardenerStalenessPath,
   join(ROOT, 'skills', 'knowledge-gaps', 'references', 'staleness-detection.md'),
 ]
 let stalenessBucketsSeen = 0
@@ -438,7 +443,7 @@ if (existsSync(maintainerPath)) {
   for (const message of consumeErrors) error(maintainerPath, message)
 }
 if (stalenessBucketsSeen === 0) {
-  error(stalenessEmitFiles[0], 'Staleness contract check matched zero canonical bucket headings across emit files — the heading regex or fences likely changed; refusing to pass vacuously')
+  error(gardenerStalenessPath, 'Staleness contract check matched zero canonical bucket headings across emit files — the heading regex or fences likely changed; refusing to pass vacuously')
 }
 
 // --- CLAUDE.md size guard ---

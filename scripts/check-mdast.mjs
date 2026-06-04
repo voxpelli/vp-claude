@@ -24,7 +24,7 @@ function check (name, cond) {
   }
 }
 
-const scan = (s) => collectScannableText(s).join('\n')
+const scan = (/** @type {string} */ s) => collectScannableText(s).join('\n')
 const TOKEN = 'mcp__foo__bar'
 
 console.log('\nmdast: collectScannableText prose/inline vs fenced/frontmatter')

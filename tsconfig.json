@@ -1,0 +1,8 @@
+{
+  "extends": "@voxpelli/tsconfig/node22.json",
+  "compilerOptions": {
+    "noPropertyAccessFromIndexSignature": false
+  },
+  "files": ["validate-plugin.mjs"],
+  "include": ["lib/**/*.mjs", "scripts/**/*.mjs"]
+}

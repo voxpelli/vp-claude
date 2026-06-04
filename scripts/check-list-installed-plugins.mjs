@@ -61,7 +61,7 @@ const MP = new Map([
 ])
 
 const plugins = resolveInstalledPlugins(INSTALLED, KNOWN, MP)
-const find = (key) => plugins.find((p) => p.identifier === key || p.title === key)
+const find = (/** @type {string} */ key) => plugins.find((p) => p.identifier === key || p.title === key)
 
 check('local "./" source -> marketplace repo + #name', !!find('plugin:voxpelli/vp-claude#vp-knowledge'))
 check('local "./" title normalizes : / # -> -', !!find('plugin-voxpelli-vp-claude-vp-knowledge'))
