@@ -41,10 +41,11 @@ Workflow) and shares trigger-space with the sibling intel skills, so it runs
 ## Step 0 — Resolve type and redirect non-knowledge subjects
 
 Parse `subject`, optional `--type`, optional `--quick` or `--heavy`. Derive
-`mode`: `--quick` → `quick` (skip verification + completeness); `--heavy` →
-`heavy` (full topology on all tiers); otherwise `standard` (the default —
-verification focused on high-stakes claims, the completeness gap recorded as an
-open question).
+`mode`: `--quick` → `quick` (skip verification + completeness); otherwise
+`standard` (the default — the full verification topology over all stake tiers,
+with any completeness gap recorded as an open question). `--heavy` → `heavy`
+behaves like `standard` today and additionally reserves a completeness second
+research wave (a deferred follow-up); use it for the most consequential subjects.
 
 **Redirect first (the anti-duplication gate).** This skill covers only the six
 knowledge types. If the subject is something a sibling already owns, do not
@@ -166,8 +167,8 @@ Carry the returned `verification` value into the note's frontmatter verbatim and
 **never strengthen it** — it is weakest-wins: `multi-source cross-checked` (every
 persisted claim corroborated by an independent pair), `partial-cross-checked`
 (some claims hedged or single-source), `partial-unverified` (some claims could
-not be verified), or `quick-unverified` (`--quick`, single-pass). **Never relabel
-to "fact-checked."** State the label's meaning plainly in the preview, and write
+not be verified), `unverified` (no claim survived verification), or
+`quick-unverified` (`--quick`, single-pass). **Never relabel to "fact-checked."** State the label's meaning plainly in the preview, and write
 nothing the user has not approved.
 
 ## Step 5 — Write or enrich
