@@ -1,12 +1,14 @@
 # deep-intel research Workflow
 
 Launch this script via the **Workflow** tool from Step 3 of the skill, passing
-the subject context as a JSON string:
+the subject context as a **structured** `args` object (a Workflow receives `args`
+as structured data — pass the object, not a JSON string; the script also tolerates
+a JSON string defensively):
 
 ```text
-Workflow({ script: <the script below>, args: JSON.stringify({
+Workflow({ script: <the script below>, args: {
   subject, type, mode, existingTitle, today
-}) })
+} })
 ```
 
 - `subject` — the thing to research.
@@ -48,6 +50,14 @@ if (!subject || !type) return { error: 'deep-intel-research: subject and type ar
 const MAX_FETCH = 15
 const HIGH_TYPES = ['date', 'number', 'version', 'attribution', 'license', 'security', 'capability']
 const normUrl = (u) => (u || '').trim().toLowerCase().replace(/^https?:\/\/(www\.)?/, '').replace(/\/+$/, '')
+
+// Model tiering (researched against the captured bundled deep-research script + BM 'Claude Code
+// Plugin Mechanics'): deep-research sets NO per-agent model — it inherits the session default, so its
+// economy is session-dependent (an Opus session runs every agent on Opus). deep-intel routes
+// EXPLICITLY so it stays economical regardless of session model. Haiku = high-volume mechanical
+// (search / fetch / curated / batched yes-no verify); Sonnet = judgment (scope / graph-read /
+// per-claim adversarial+confirm+judge / macro / extend); Opus = the one hard synthesis step
+// (`draft` omits `model` so it inherits the session's strongest model).
 
 const SCOPE_SCHEMA = {
   type: 'object', additionalProperties: false, required: ['angles'],
@@ -141,7 +151,7 @@ function rollup(obs, adv, non, judge) {
 phase('Scope')
 const scope = await agent(
   `Decompose research on "${subject}" (a ${type}) into 3-7 complementary angles derived from what a Basic Memory "${type}" note needs. Each angle: a short label + a web-search query. Structured output only.`,
-  { label: 'scope', schema: SCOPE_SCHEMA })
+  { label: 'scope', model: 'sonnet', schema: SCOPE_SCHEMA })
 if (!scope || !scope.angles?.length) return { error: 'deep-intel-research: scope agent returned no angles.' }
 log(`${scope.angles.length} angles`)
 
@@ -154,7 +164,7 @@ const extracted = await pipeline(
   async (angle) => {
     const s = await agent(
       `Use ToolSearch to load mcp__tavily__tavily_search. Search the web for: ${angle.query} (angle: ${angle.label}, subject: ${subject}). Up to 5 results ranked by relevance to the ORIGINAL subject, skip spam. Structured output only.`,
-      { label: `search:${angle.label}`, phase: 'Search', schema: SEARCH_SCHEMA })
+      { label: `search:${angle.label}`, phase: 'Search', model: 'haiku', schema: SEARCH_SCHEMA })
     if (!s) searchNulls++
     return s
   },
@@ -166,7 +176,7 @@ const extracted = await pipeline(
     })
     return parallel(novel.map((src) => () => agent(
       `Use ToolSearch to load mcp__tavily__tavily_extract (and mcp__deepwiki__ask_question for a GitHub repo). Fetch ${src.url} and extract 2-5 FALSIFIABLE claims about "${subject}" for a ${type} note — concrete, checkable, each with a verbatim quote. Rate source quality. Structured output only.`,
-      { label: `fetch:${normUrl(src.url).slice(0, 32)}`, phase: 'Fetch', schema: EXTRACT_SCHEMA }
+      { label: `fetch:${normUrl(src.url).slice(0, 32)}`, phase: 'Fetch', model: 'haiku', schema: EXTRACT_SCHEMA }
     ).then((ex) => ex && { url: src.url, title: src.title, ...ex })))
   })
 const sources = extracted.flat().filter(Boolean)
@@ -188,7 +198,7 @@ if (!allClaims.length) {
 phase('Draft')
 const graph = await agent(
   `Use ToolSearch to load mcp__basic-memory__search_notes and mcp__basic-memory__read_note. For "${subject}" (type ${type}): (1) summarize what any existing note already asserts; (2) list candidate cross-link hub titles VERBATIM; (3) flag existing observations that CONTRADICT the researched claims. Concise text, read-only.`,
-  { label: 'graph-read', phase: 'Draft' })
+  { label: 'graph-read', phase: 'Draft', model: 'sonnet' })
 const draft = await agent(
   `Draft a Basic Memory "${type}" note for "${subject}". Today is ${today}. Use ONLY observation categories + relation verbs valid for the ${type} schema; include a [source] observation. Each observation needs: id (e.g. "obs-1"), category, text, claim_type (one of date/number/version/attribution/license/security/capability/architecture/adoption/mechanism/compat/soft/other), and the sources (URLs) it rests on. No URLs in observation text, no wiki-links in observations. Relations: existsInGraph=true ONLY for an exact-title hub from the briefing.\n\nCLAIMS:\n${JSON.stringify(allClaims, null, 2)}\n\nGRAPH BRIEFING:\n${graph || '(none)'}`,
   { label: 'draft', phase: 'Draft', schema: DRAFT_SCHEMA })
@@ -207,8 +217,8 @@ if (mode !== 'quick') {
   // HIGH: pair + judge per claim (sources WITHHELD from the adversarial agent)
   const verifyHigh = async (obs) => {
     const [adv, non] = await parallel([
-      () => agent(`Use ToolSearch to load mcp__tavily__tavily_search. Find a CREDIBLE source that CONTRADICTS this claim about ${subject}: "${obs.text}". Its own sources are withheld — search independently for disconfirming evidence. Return CONTRADICTED (with source+quote), CORROBORATED, or NO_EVIDENCE_FOUND. Structured output only.`, { label: `adv:${obs.id}`, phase: 'Verify', schema: ADV_SCHEMA }),
-      () => agent(`Use ToolSearch to load mcp__tavily__tavily_search. Independently confirm this claim about ${subject}: "${obs.text}". Return confirms / partial / cannot-confirm with evidence. Structured output only.`, { label: `confirm:${obs.id}`, phase: 'Verify', schema: CONFIRM_SCHEMA }),
+      () => agent(`Use ToolSearch to load mcp__tavily__tavily_search. Find a CREDIBLE source that CONTRADICTS this claim about ${subject}: "${obs.text}". Its own sources are withheld — search independently for disconfirming evidence. Return CONTRADICTED (with source+quote), CORROBORATED, or NO_EVIDENCE_FOUND. Structured output only.`, { label: `adv:${obs.id}`, phase: 'Verify', model: 'sonnet', schema: ADV_SCHEMA }),
+      () => agent(`Use ToolSearch to load mcp__tavily__tavily_search. Independently confirm this claim about ${subject}: "${obs.text}". Return confirms / partial / cannot-confirm with evidence. Structured output only.`, { label: `confirm:${obs.id}`, phase: 'Verify', model: 'sonnet', schema: CONFIRM_SCHEMA }),
     ])
     let judge = null
     // Fire the judge only on genuine conflict, not on two-sided uncertainty (NO_EVIDENCE_FOUND cases are handled by rollup).
@@ -217,7 +227,7 @@ if (mode !== 'quick') {
       (adv.outcome === 'CONTRADICTED' && !!adv.source && non.result === 'confirms')
     )
     if (disagree) {
-      judge = await agent(`Two agents disagree on this claim about ${subject}: "${obs.text}". Adversarial said ${adv.outcome} (${adv.source || 'no source'}); confirmer said ${non.result}. Read both sides and decide: adversarial / nonadversarial / unresolved. Structured output only.`, { label: `judge:${obs.id}`, phase: 'Verify', schema: JUDGE_SCHEMA })
+      judge = await agent(`Two agents disagree on this claim about ${subject}: "${obs.text}". Adversarial said ${adv.outcome} (${adv.source || 'no source'}); confirmer said ${non.result}. Read both sides and decide: adversarial / nonadversarial / unresolved. Structured output only.`, { label: `judge:${obs.id}`, phase: 'Verify', model: 'sonnet', schema: JUDGE_SCHEMA })
     }
     return rollup(obs, adv, non, judge)
   }
@@ -236,8 +246,8 @@ if (mode !== 'quick') {
     if (!batch.length) continue
     const list = batch.map((o) => `${o.id}: ${o.text}`).join('\n')
     const [advB, nonB] = await parallel([
-      () => agent(`Use ToolSearch to load mcp__tavily__tavily_search. For each claim about ${subject}, hunt a contradicting source. Return per-claim {id, outcome: CONTRADICTED|CORROBORATED|NO_EVIDENCE_FOUND}.\n${list}\nStructured output only.`, { label: 'adv-batch', phase: 'Verify', schema: { type: 'object', additionalProperties: false, required: ['items'], properties: { items: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'outcome'], properties: { id: { type: 'string' }, outcome: { type: 'string', enum: ['CONTRADICTED', 'CORROBORATED', 'NO_EVIDENCE_FOUND'] } } } } } } }),
-      () => agent(`Use ToolSearch to load mcp__tavily__tavily_search. For each claim about ${subject}, independently confirm. Return per-claim {id, result: confirms|partial|cannot-confirm}.\n${list}\nStructured output only.`, { label: 'confirm-batch', phase: 'Verify', schema: { type: 'object', additionalProperties: false, required: ['items'], properties: { items: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'result'], properties: { id: { type: 'string' }, result: { type: 'string', enum: ['confirms', 'partial', 'cannot-confirm'] } } } } } } }),
+      () => agent(`Use ToolSearch to load mcp__tavily__tavily_search. For each claim about ${subject}, hunt a contradicting source. Return per-claim {id, outcome: CONTRADICTED|CORROBORATED|NO_EVIDENCE_FOUND}.\n${list}\nStructured output only.`, { label: 'adv-batch', phase: 'Verify', model: 'haiku', schema: { type: 'object', additionalProperties: false, required: ['items'], properties: { items: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'outcome'], properties: { id: { type: 'string' }, outcome: { type: 'string', enum: ['CONTRADICTED', 'CORROBORATED', 'NO_EVIDENCE_FOUND'] } } } } } } }),
+      () => agent(`Use ToolSearch to load mcp__tavily__tavily_search. For each claim about ${subject}, independently confirm. Return per-claim {id, result: confirms|partial|cannot-confirm}.\n${list}\nStructured output only.`, { label: 'confirm-batch', phase: 'Verify', model: 'haiku', schema: { type: 'object', additionalProperties: false, required: ['items'], properties: { items: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'result'], properties: { id: { type: 'string' }, result: { type: 'string', enum: ['confirms', 'partial', 'cannot-confirm'] } } } } } } }),
     ])
     const advMap = Object.fromEntries((advB?.items || []).map((x) => [x.id, x]))
     const nonMap = Object.fromEntries((nonB?.items || []).map((x) => [x.id, x]))
@@ -251,7 +261,7 @@ if (mode !== 'quick') {
   // MACRO: one pair over the whole draft
   macro = await agent(
     `Review this draft ${type} note about ${subject} as a whole. Is the framing accurate, does it cohere, and what load-bearing fact is MISSING? Return framing (coheres|overclaims|missing-load-bearing) + a list of missing facts.\n\n${draft.overview}\n${draft.observations.map((o) => `- [${o.category}] ${o.text}`).join('\n')}\nStructured output only.`,
-    { label: 'macro', phase: 'Verify', schema: MACRO_SCHEMA })
+    { label: 'macro', phase: 'Verify', model: 'sonnet', schema: MACRO_SCHEMA })
 }
 
 // Phase Critic — one capped completeness wave on the top gap
