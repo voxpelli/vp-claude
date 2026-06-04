@@ -41,7 +41,10 @@ Workflow) and shares trigger-space with the sibling intel skills, so it runs
 
 ## Step 0 — Resolve type and redirect non-knowledge subjects
 
-Parse `subject`, optional `--type`, optional `--quick`.
+Parse `subject`, optional `--type`, optional `--quick`. Derive `mode`:
+`--quick` → `quick`; otherwise the default is `standard` (full pipeline with
+verification gated to high-stakes claims). `heavy` (full topology on all tiers)
+is opt-in for the most consequential subjects.
 
 **Redirect first (the anti-duplication gate).** This skill covers only the six
 knowledge types. If the subject is something a sibling already owns, do not
@@ -117,7 +120,9 @@ up front. Wait for the user's choice.
 Launch the deep-intel research Workflow. Its script and launch contract live in
 `${CLAUDE_PLUGIN_ROOT}/skills/deep-intel/references/research-workflow.md`; read
 that file and launch the script via the **Workflow** tool, passing
-`args = JSON.stringify({ subject, type, mode, existingTitle })`. The Workflow's
+`args = JSON.stringify({ subject, type, mode, existingTitle, today })`. Capture
+`today` as an ISO date in the foreground and pass it — the Workflow runtime has
+no `Date.now()`, so synthesis can only date the note from this argument. The Workflow's
 own agents reach web-search, DeepWiki, and Basic Memory via ToolSearch, so the
 deep graph reads (dedup, gap-targeting, contradiction detection) and source
 research all happen inside the Workflow.
