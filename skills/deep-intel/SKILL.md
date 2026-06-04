@@ -171,6 +171,13 @@ service/standard/milestone; `status` for project), `## Observations` with
 `[category]` lines, `## Relations` with the schema's relation verbs, and a body
 `## Sources` section for citations.
 
+Build the note from the returned `proposedNote`: each observation →
+`- [category] text`; each relation → `- <verb> [[<target>]]` (include
+`existsInGraph: false` targets too — they are harmless forward-references that
+bind when the target note appears); each source → a markdown link under
+`## Sources`. Carry the returned `verification` value (`multi-source
+cross-checked` or `quick-unverified`) into the frontmatter.
+
 **Existing subject** → `edit_note(operation="find_replace")` per the sibling
 write-decision table:
 
