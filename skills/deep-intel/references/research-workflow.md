@@ -61,9 +61,10 @@ const normUrl = (u) => (u || '').trim().toLowerCase().replace(/^https?:\/\/(www\
 
 const SCOPE_SCHEMA = {
   type: 'object', additionalProperties: false, required: ['angles'],
-  properties: { angles: { type: 'array', minItems: 3, maxItems: 7, items: {
-    type: 'object', additionalProperties: false, required: ['label', 'query'],
-    properties: { label: { type: 'string' }, query: { type: 'string' } } } } },
+  properties: { angles: { type: 'array', minItems: 3, maxItems: 8, items: {
+    type: 'object', additionalProperties: false, required: ['label', 'query', 'stance'],
+    properties: { label: { type: 'string' }, query: { type: 'string' },
+      stance: { type: 'string', enum: ['corroborating', 'adversarial', 'divergent'] } } } } },
 }
 const SEARCH_SCHEMA = {
   type: 'object', additionalProperties: false, required: ['results'],
@@ -147,23 +148,35 @@ function rollup(obs, adv, non, judge) {
   return { id: obs.id, verdict: 'disputed', disposition: 'write-hedged', hedged_text: `${obs.text} — DISPUTED, unresolved.${both}` }
 }
 
-// Phase Scope
+// Phase Scope — corroborating + adversarial angles (and, in --heavy, a divergent pair)
 phase('Scope')
 const scope = await agent(
-  `Decompose research on "${subject}" (a ${type}) into 3-7 complementary angles derived from what a Basic Memory "${type}" note needs. Each angle: a short label + a web-search query. Structured output only.`,
+  `Decompose research on "${subject}" (a ${type}) into 4-8 angles derived from what a Basic Memory "${type}" note needs. Each angle: a short label, a web-search query, and a stance:\n- "corroborating" — establish what the subject is and how it works.\n- "adversarial" — REQUIRED: include AT LEAST 2. Actively hunt the counter-case — criticism, limitations, failure modes, disputes, contradicting evidence, vendor-claim scrutiny, "${subject} vs alternatives". This surfaces contrarian material at gather-time, not only at verification.\nStructured output only.`,
   { label: 'scope', model: 'sonnet', schema: SCOPE_SCHEMA })
 if (!scope || !scope.angles?.length) return { error: 'deep-intel-research: scope agent returned no angles.' }
-log(`${scope.angles.length} angles`)
+
+// Occasional divergent ("free spirits") ideation — bounded, --heavy only. It emits ANGLES, not
+// claims, so an off-topic leap simply finds no corroborating source and drops in the verify gauntlet;
+// a nuts-and-genius connection that IS real surfaces sources the structured angles would never reach.
+let divergentAngles = []
+if (mode === 'heavy') {
+  const fs = await agent(
+    `You are 2 free spirits brainstorming about "${subject}" (a ${type}) like you are nuts and genius at once — wild, lateral, unexpected connections and framings. Emit 1-3 SEARCH ANGLES (label + query, stance "divergent") that a careful researcher would never think to run but that could surface non-obvious truth. Stay tethered to the subject. Structured output only.`,
+    { label: 'free-spirits', model: 'haiku', schema: SCOPE_SCHEMA })
+  divergentAngles = (fs?.angles || []).slice(0, 3).map((a) => ({ ...a, stance: 'divergent' }))
+}
+const angles = [...scope.angles, ...divergentAngles]
+log(`${angles.length} angles (${angles.filter((a) => a.stance === 'adversarial').length} adversarial, ${divergentAngles.length} divergent)`)
 
 // Phase Search -> Fetch (streaming, no barrier)
 phase('Search')
 const seen = new Set()
 let searchNulls = 0
 const extracted = await pipeline(
-  scope.angles,
+  angles,
   async (angle) => {
     const s = await agent(
-      `Use ToolSearch to load mcp__tavily__tavily_search. Search the web for: ${angle.query} (angle: ${angle.label}, subject: ${subject}). Up to 5 results ranked by relevance to the ORIGINAL subject, skip spam. Structured output only.`,
+      `Use ToolSearch to load mcp__tavily__tavily_search. Search the web for: ${angle.query} (angle: ${angle.label}, stance: ${angle.stance}, subject: ${subject}). Up to 5 results ranked by relevance to the ORIGINAL subject${angle.stance === 'adversarial' ? ', prioritizing critical/contrarian/dissenting sources' : ''}, skip spam. Structured output only.`,
       { label: `search:${angle.label}`, phase: 'Search', model: 'haiku', schema: SEARCH_SCHEMA })
     if (!s) searchNulls++
     return s
@@ -179,15 +192,31 @@ const extracted = await pipeline(
       { label: `fetch:${normUrl(src.url).slice(0, 32)}`, phase: 'Fetch', model: 'haiku', schema: EXTRACT_SCHEMA }
     ).then((ex) => ex && { url: src.url, title: src.title, ...ex })))
   })
-const sources = extracted.flat().filter(Boolean)
+// Multi-source gather (additive): the user's curated reading (always) + domain-specific sources
+// (conditional). Same claim shape, merged into the same pool, so adversarial verification covers them too.
+const aiml = /\b(ai|ml|llm|agent|model|neural|embedding|transformer|inference|prompt|rag|memory|dataset)\b/i.test(`${subject} ${type}`)
+const domainish = ['service', 'standard', 'project'].includes(type)
+const curatedThunks = [
+  () => agent(`Use ToolSearch to load mcp__raindrop__find_bookmarks and mcp__raindrop__fetch_bookmark_content. Find the user's bookmarks about "${subject}", fetch the 2-3 most relevant, and extract 2-5 FALSIFIABLE claims for a ${type} note (each with a verbatim quote). These are the user's own curated reading — high signal. Rate source quality. Structured output only.`,
+    { label: 'curated:raindrop', phase: 'Search', model: 'haiku', schema: EXTRACT_SCHEMA }).then((ex) => ex && { url: 'raindrop:curated', title: 'Raindrop — curated reading', ...ex }),
+  () => agent(`Use ToolSearch to load mcp__readwise__readwise_search_highlights and mcp__readwise__reader_search_documents. Find highlights/documents about "${subject}" and extract 2-5 FALSIFIABLE claims for a ${type} note (each with a verbatim quote). Rate source quality. Structured output only.`,
+    { label: 'curated:readwise', phase: 'Search', model: 'haiku', schema: EXTRACT_SCHEMA }).then((ex) => ex && { url: 'readwise:highlights', title: 'Readwise — highlights', ...ex }),
+]
+if (aiml) curatedThunks.push(() => agent(`Use ToolSearch to load mcp__claude_ai_Hugging_Face__paper_search and mcp__claude_ai_Hugging_Face__hub_repo_search. Find papers/models/datasets about "${subject}" and extract 2-5 FALSIFIABLE, citable claims (titles, arXiv ids, authors, dates, benchmark numbers) for a ${type} note, each with a verbatim quote. Rate source quality. Structured output only.`,
+  { label: 'curated:huggingface', phase: 'Search', model: 'haiku', schema: EXTRACT_SCHEMA }).then((ex) => ex && { url: 'huggingface:papers', title: 'HuggingFace — papers/models', ...ex }))
+if (domainish) curatedThunks.push(() => agent(`Use ToolSearch to load mcp__plugin_context7_context7__resolve-library-id and mcp__plugin_context7_context7__query-docs. If "${subject}" maps to a library/framework/API, fetch authoritative docs and extract 2-5 FALSIFIABLE claims for a ${type} note, each with a verbatim quote; if it does not map, return empty claims. Rate source quality. Structured output only.`,
+  { label: 'curated:context7', phase: 'Search', model: 'haiku', schema: EXTRACT_SCHEMA }).then((ex) => ex && { url: 'context7:docs', title: 'Context7 — library docs', ...ex }))
+const curatedSources = (await parallel(curatedThunks)).filter(Boolean)
+
+const sources = [...extracted.flat(), ...curatedSources].filter(Boolean)
 const allClaims = sources.flatMap((s) => (s.claims || []).map((c) => ({ ...c, url: s.url, quality: s.sourceQuality })))
-log(`${sources.length} sources, ${allClaims.length} claims`)
+log(`${sources.length} sources (${curatedSources.length} curated/domain), ${allClaims.length} claims`)
 if (!allClaims.length) {
   // Distinguish a throttle cascade (most search agents returned null) from a genuine no-evidence subject.
-  const throttleSuspected = searchNulls >= Math.ceil(scope.angles.length / 2)
+  const throttleSuspected = searchNulls >= Math.ceil(angles.length / 2)
   return {
     proposedNote: null, throttleSuspected,
-    stats: { angles: scope.angles.length, sources: sources.length, claims: 0, searchNulls },
+    stats: { angles: angles.length, sources: sources.length, claims: 0, searchNulls },
     note: throttleSuspected
       ? 'throttle-suspected: most search agents returned no result — retry or lower concurrency'
       : 'no claims extracted (research found nothing for this subject)',
@@ -312,7 +341,7 @@ const proposedNote = {
 return {
   proposedNote,
   stats: {
-    angles: scope.angles.length, sources: sources.length, claims: allClaims.length,
+    angles: angles.length, sources: sources.length, claims: allClaims.length,
     observations: finalObs.length, dropped: dropped.length, disputed: disputed.length,
     verified: Object.keys(verdicts).length, mode,
   },
