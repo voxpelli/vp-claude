@@ -48,6 +48,7 @@ const mode = cfg.mode || 'standard'
 if (!subject || !type) return { error: 'deep-intel-research: subject and type are required in args.' }
 
 const MAX_FETCH = 15
+const MAX_DIVERGENT_SEARCH = 4 // free spirits ideate uncapped; only this many divergent angles are actually SEARCHED (launch-budget guard — keeps --heavy under the ~10-launch admission-throttle ceiling)
 const HIGH_TYPES = ['date', 'number', 'version', 'attribution', 'license', 'security', 'capability']
 const normUrl = (u) => (u || '').trim().toLowerCase().replace(/^https?:\/\/(www\.)?/, '').replace(/\/+$/, '')
 
@@ -124,20 +125,27 @@ const MACRO_SCHEMA = {
 }
 
 const EXTEND_SCHEMA = {
-  type: 'object', additionalProperties: false, required: ['spokes', 'neighborEdits'],
+  type: 'object', additionalProperties: false, required: ['spokes', 'neighborObservations', 'neighborRelations'],
   properties: {
     spokes: { type: 'array', maxItems: 3, items: {
       type: 'object', additionalProperties: false, required: ['title', 'type', 'reason', 'observations'],
       properties: {
         title: { type: 'string' }, reason: { type: 'string' },
         type: { type: 'string', enum: ['service', 'concept', 'standard', 'milestone', 'project', 'engineering'] },
-        observations: { type: 'array', maxItems: 6, items: {
+        observations: { type: 'array', minItems: 1, maxItems: 6, items: {
           type: 'object', additionalProperties: false, required: ['category', 'text'],
           properties: { category: { type: 'string' }, text: { type: 'string' } } } } } } },
-    neighborEdits: { type: 'array', maxItems: 5, items: {
-      type: 'object', additionalProperties: false, required: ['targetTitle', 'kind'],
-      properties: { targetTitle: { type: 'string' }, kind: { type: 'string', enum: ['observation', 'relation'] },
-        category: { type: ['string', 'null'] }, text: { type: ['string', 'null'] }, verb: { type: ['string', 'null'] } } } },
+    // Two TYPED arrays (was a weak `kind`-discriminated `neighborEdits` with all-nullable category/text/verb):
+    // an observation cannot ship without category+text, a relation cannot ship without a verb — a null
+    // payload appended to an EARNED note is now structurally unrepresentable (C1). The neighbor-side category/
+    // verb LEGALITY for the target's own schema is enforced at the foreground write step (the schema can't
+    // know the neighbor's type) — see SKILL.md Step 5.
+    neighborObservations: { type: 'array', maxItems: 5, items: {
+      type: 'object', additionalProperties: false, required: ['targetTitle', 'category', 'text'],
+      properties: { targetTitle: { type: 'string' }, category: { type: 'string' }, text: { type: 'string' } } } },
+    neighborRelations: { type: 'array', maxItems: 5, items: {
+      type: 'object', additionalProperties: false, required: ['targetTitle', 'verb'],
+      properties: { targetTitle: { type: 'string' }, verb: { type: 'string' } } } },
   },
 }
 
@@ -186,8 +194,12 @@ if (mode === 'heavy') {
   const fsPair = await parallel([1, 2].map((n) => () => agent(
     `You are a single free spirit brainstorming about "${subject}" (a ${type}) like you are nuts and genius at once. You are free spirit #${n} of a pair: chase YOUR OWN visions, don't hedge toward the obvious or converge on your twin, and DON'T hold back — emit as many wild SEARCH ANGLES (label + query, stance "divergent") as your imagination demands, using everything to chase the connections a careful researcher would never dare. Stay tethered to the subject — an off-topic angle simply finds nothing and drops in verification, so dream freely. Structured output only.`,
     { label: `free-spirit:${n}`, model: 'opus', schema: SCOPE_SCHEMA })))
-  // No artificial cap — let them be free; SCOPE_SCHEMA maxItems and the MAX_FETCH budget bound the run.
-  divergentAngles = fsPair.filter(Boolean).flatMap((fs) => fs.angles || []).map((a) => ({ ...a, stance: 'divergent' }))
+  const divergentEmitted = fsPair.filter(Boolean).flatMap((fs) => fs.angles || []).map((a) => ({ ...a, stance: 'divergent' }))
+  // Free spirits ideate UNCAPPED, but only the first MAX_DIVERGENT_SEARCH are actually SEARCHED —
+  // decouples imagination from the launch budget (uncapped angles would burst the search-agent launches
+  // past the ~10-launch admission-throttle ceiling). Full emission count is logged.
+  divergentAngles = divergentEmitted.slice(0, MAX_DIVERGENT_SEARCH)
+  if (divergentEmitted.length > divergentAngles.length) log(`free spirits emitted ${divergentEmitted.length} divergent angles; searching ${divergentAngles.length} (MAX_DIVERGENT_SEARCH)`)
 }
 const angles = [...scope.angles, ...divergentAngles]
 log(`${angles.length} angles (${angles.filter((a) => a.stance === 'adversarial').length} adversarial, ${divergentAngles.length} divergent)`)
@@ -237,7 +249,9 @@ const allClaims = sources.flatMap((s) => (s.claims || []).map((c) => ({ ...c, ur
 log(`${sources.length} sources (${curatedSources.length} curated/domain), ${allClaims.length} claims`)
 if (!allClaims.length) {
   // Distinguish a throttle cascade (most search agents returned null) from a genuine no-evidence subject.
-  const throttleSuspected = searchNulls >= Math.ceil(angles.length / 2)
+  // Denominator is the STRUCTURED angle count, not the divergent-padded total — the free-spirit overlay
+  // must not dilute (mask) a real structured-search throttle.
+  const throttleSuspected = searchNulls >= Math.ceil(scope.angles.length / 2)
   return {
     proposedNote: null, throttleSuspected,
     stats: { angles: angles.length, sources: sources.length, claims: 0, searchNulls },
@@ -280,7 +294,7 @@ if (mode !== 'quick') {
       (adv.outcome === 'CONTRADICTED' && !!adv.source && non.result === 'confirms')
     )
     if (disagree) {
-      judge = await agent(`Two agents disagree on this claim about ${subject}: "${obs.text}". Adversarial said ${adv.outcome} (${adv.source || 'no source'}); confirmer said ${non.result}. Read both sides and decide: adversarial / nonadversarial / unresolved. Structured output only.`, { label: `judge:${obs.id}`, phase: 'Verify', model: 'sonnet', schema: JUDGE_SCHEMA })
+      judge = await agent(`Two agents disagree on this claim about ${subject}: "${obs.text}". Adversarial said ${adv.outcome} (${adv.source || 'no source'}); confirmer said ${non.result}. Read both sides and decide: adversarial / nonadversarial / unresolved. Structured output only.`, { label: `judge:${obs.id}`, phase: 'Verify', model: 'opus', schema: JUDGE_SCHEMA })
     }
     return rollup(obs, adv, non, judge)
   }
@@ -365,12 +379,12 @@ const proposedNote = {
 // Phase Extend — propose a BOUNDED graph-extension set (spokes + neighbor enrichments).
 // The Workflow still never writes; the foreground gates and applies each item per the pre-write gate.
 phase('Extend')
-let extensions = { spokes: [], neighborEdits: [] }
+let extensions = { spokes: [], neighborObservations: [], neighborRelations: [] }
 if (mode !== 'quick') {
   const ext = await agent(
-    `A verified ${type} note about "${subject}" has been drafted. From its observations and the graph briefing, propose a BOUNDED, non-duplicate set of graph extensions (return empty arrays if none is genuinely warranted):\n(1) SPOKES (<=3): distinct entities/concepts the research surfaced that warrant their OWN note — title, type (service|concept|standard|milestone|project|engineering), a one-line reason it is separable, and 2-6 observations drawn from the claims. A spoke must NOT be a near-duplicate of "${subject}" or of an existing note.\n(2) NEIGHBOR ENRICHMENTS (<=5): for an EXISTING note named VERBATIM in the briefing's hub list, an append-only addition — kind:"observation" with category+text, or kind:"relation" with a verb (target is the new "${draft.title}" note). Only where the insight genuinely belongs on that neighbor.\nStructured output only.\n\nNOTE OBSERVATIONS:\n${finalObs.map((o) => `- [${o.category}] ${o.text}`).join('\n')}\nGRAPH BRIEFING:\n${graph || '(none)'}`,
+    `A verified ${type} note about "${subject}" has been drafted. From its observations and the graph briefing, propose a BOUNDED, non-duplicate set of graph extensions (return empty arrays if none is genuinely warranted):\n(1) SPOKES (<=3): distinct entities/concepts the research surfaced that warrant their OWN note — title, type (service|concept|standard|milestone|project|engineering), a one-line reason it is separable, and 2-6 observations drawn from the claims. A spoke must NOT be a near-duplicate of "${subject}" or of an existing note.\n(2) NEIGHBOR ENRICHMENTS for EXISTING notes named VERBATIM in the briefing's hub list (append-only): neighborObservations[] (<=5), each {targetTitle, category, text} — an observation that belongs on that neighbor; and neighborRelations[] (<=5), each {targetTitle, verb} — a relation FROM the neighbor TO the new "${draft.title}" note. Only where the insight genuinely belongs there, and use ONLY categories/verbs valid for the neighbor's own type.\nStructured output only.\n\nNOTE OBSERVATIONS:\n${finalObs.map((o) => `- [${o.category}] ${o.text}`).join('\n')}\nGRAPH BRIEFING:\n${graph || '(none)'}`,
     { label: 'extend', phase: 'Extend', model: 'sonnet', schema: EXTEND_SCHEMA })
-  if (ext) extensions = { spokes: (ext.spokes || []).slice(0, 3), neighborEdits: (ext.neighborEdits || []).slice(0, 5) }
+  if (ext) extensions = { spokes: (ext.spokes || []).slice(0, 3), neighborObservations: (ext.neighborObservations || []).slice(0, 5), neighborRelations: (ext.neighborRelations || []).slice(0, 5) }
 }
 
 return {
@@ -379,7 +393,7 @@ return {
     angles: angles.length, sources: sources.length, claims: allClaims.length,
     observations: finalObs.length, dropped: dropped.length, disputed: disputed.length,
     verified: Object.keys(verdicts).length,
-    spokes: extensions.spokes.length, neighborEdits: extensions.neighborEdits.length, mode,
+    spokes: extensions.spokes.length, neighborObservations: extensions.neighborObservations.length, neighborRelations: extensions.neighborRelations.length, mode,
   },
 }
 ```
