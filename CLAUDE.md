@@ -278,7 +278,7 @@ via the `vp-plugins` marketplace at `voxpelli/vp-claude`.
 
 ### Parallel agent orchestration
 
-Up to 10 background `/package-intel` + `/tool-intel` agents can run safely in parallel — notes are file-disjoint across ecosystems. The gardener→maintainer two-pass workflow (audit first, fix second) is the recommended approach for graph maintenance.
+`/package-intel` + `/tool-intel` agents are **write-safe** in parallel — notes are file-disjoint across ecosystems, so concurrent agents never corrupt each other's output. But file-disjointness does **not** imply *launch*-safety: bursting ~10 subagent launches at once trips an Anthropic API-side admission throttle (`Server is temporarily limiting requests (not your usage limit)`) that fails them near-instantly with zero writes — distinct from a 429/529 and from any upstream data-source limit. Cap concurrent *launches* to a handful (≈4–6 observed clean; the safe number is load-dependent, not fixed) or lower `CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY`. See BM note `engineering/agents/concurrent-subagent-launch-api-burst-throttle-not-file-safety`. The gardener→maintainer two-pass workflow (audit first, fix second) is the recommended approach for graph maintenance.
 
 - Static checks (`npm run check`, `validate-plugin.mjs`) validate *structure*, not
   logic — a new audit/check can pass every gate and still measure the wrong thing;
