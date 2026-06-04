@@ -116,7 +116,7 @@ const stakeOf = (o) => HIGH_TYPES.includes(o.claim_type) ? 'high' : (o.claim_typ
 //   refuted -> drop; disputed -> write-hedged (never write-as-is); incomplete -> write-hedged.
 function rollup(obs, adv, non, judge) {
   if (!adv || !non) return { id: obs.id, verdict: 'incomplete', disposition: 'write-hedged', hedged_text: `${obs.text} (unverified — verification incomplete)` }
-  const advNeg = adv.outcome === 'CONTRADICTED'
+  const advNeg = adv.outcome === 'CONTRADICTED' && !!adv.source // unfalsifiable (sourceless) refutation does not drop a claim
   const advOk = adv.outcome === 'CORROBORATED' || adv.outcome === 'NO_EVIDENCE_FOUND'
   const nonOk = non.result === 'confirms'
   const nonNo = non.result === 'cannot-confirm'
@@ -184,7 +184,7 @@ if (mode !== 'quick') {
   const low = factual.filter((o) => stakeOf(o) === 'low')
 
   // HIGH: pair + judge per claim (sources WITHHELD from the adversarial agent)
-  const highVerdicts = await parallel(high.map((obs) => async () => {
+  const verifyHigh = async (obs) => {
     const [adv, non] = await parallel([
       () => agent(`Use ToolSearch to load mcp__tavily__tavily_search. Find a CREDIBLE source that CONTRADICTS this claim about ${subject}: "${obs.text}". Its own sources are withheld — search independently for disconfirming evidence. Return CONTRADICTED (with source+quote), CORROBORATED, or NO_EVIDENCE_FOUND. Structured output only.`, { label: `adv:${obs.id}`, phase: 'Verify', schema: ADV_SCHEMA }),
       () => agent(`Use ToolSearch to load mcp__tavily__tavily_search. Independently confirm this claim about ${subject}: "${obs.text}". Return confirms / partial / cannot-confirm with evidence. Structured output only.`, { label: `confirm:${obs.id}`, phase: 'Verify', schema: CONFIRM_SCHEMA }),
@@ -195,8 +195,16 @@ if (mode !== 'quick') {
       judge = await agent(`Two agents disagree on this claim about ${subject}: "${obs.text}". Adversarial said ${adv.outcome} (${adv.source || 'no source'}); confirmer said ${non.result}. Read both sides and decide: adversarial / nonadversarial / unresolved. Structured output only.`, { label: `judge:${obs.id}`, phase: 'Verify', schema: JUDGE_SCHEMA })
     }
     return rollup(obs, adv, non, judge)
-  }))
-  highVerdicts.filter(Boolean).forEach((v) => { verdicts[v.id] = v })
+  }
+  // Batch HIGH claims into waves under the launch ceiling (≤3 agents per claim);
+  // a null wave result coerces to an explicit incomplete verdict — never a silent settle.
+  const CEIL = cfg.concurrency_ceiling || 6
+  const perWave = Math.max(1, Math.floor(CEIL / 3))
+  for (let i = 0; i < high.length; i += perWave) {
+    const slice = high.slice(i, i + perWave)
+    const wave = await parallel(slice.map((obs) => () => verifyHigh(obs)))
+    slice.forEach((obs, j) => { verdicts[obs.id] = wave[j] || rollup(obs, null, null, null) })
+  }
 
   // MEDIUM + LOW: one batched pair each (no judge; disagreement -> hedged)
   for (const batch of [mid, low]) {
@@ -237,7 +245,8 @@ const dropped = []
 const disputed = []
 for (const o of draft.observations) {
   const v = verdicts[o.id]
-  if (!v || o.category === 'source') { finalObs.push({ category: o.category, text: o.text }); continue }
+  if (o.category === 'source') { finalObs.push({ category: o.category, text: o.text }); continue }
+  if (!v) { finalObs.push({ category: o.category, text: mode === 'quick' ? o.text : `${o.text} (unverified)` }); continue }
   if (v.disposition === 'drop') { dropped.push(o.text); continue }
   if (v.disposition === 'write-hedged') { finalObs.push({ category: o.category, text: v.hedged_text }); if (v.verdict === 'disputed') disputed.push(o.text); continue }
   finalObs.push({ category: o.category, text: o.text })
