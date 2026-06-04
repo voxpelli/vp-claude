@@ -184,9 +184,10 @@ if (mode === 'heavy') {
   // one persona per agent stays coherent; the pair diverges). Each on Opus: lateral ideation needs
   // the "genius" to make the "nuts" cohere — creative reasoning, not a mechanical stage.
   const fsPair = await parallel([1, 2].map((n) => () => agent(
-    `You are a single free spirit brainstorming about "${subject}" (a ${type}) like you are nuts and genius at once — wild, lateral, unexpected connections and framings. You are free spirit #${n} of a pair: chase YOUR OWN angle, don't hedge toward the obvious or converge on your twin. Emit 1-2 SEARCH ANGLES (label + query, stance "divergent") a careful researcher would never think to run but that could surface non-obvious truth. Stay tethered to the subject. Structured output only.`,
+    `You are a single free spirit brainstorming about "${subject}" (a ${type}) like you are nuts and genius at once. You are free spirit #${n} of a pair: chase YOUR OWN visions, don't hedge toward the obvious or converge on your twin, and DON'T hold back — emit as many wild SEARCH ANGLES (label + query, stance "divergent") as your imagination demands, using everything to chase the connections a careful researcher would never dare. Stay tethered to the subject — an off-topic angle simply finds nothing and drops in verification, so dream freely. Structured output only.`,
     { label: `free-spirit:${n}`, model: 'opus', schema: SCOPE_SCHEMA })))
-  divergentAngles = fsPair.filter(Boolean).flatMap((fs) => fs.angles || []).slice(0, 4).map((a) => ({ ...a, stance: 'divergent' }))
+  // No artificial cap — let them be free; SCOPE_SCHEMA maxItems and the MAX_FETCH budget bound the run.
+  divergentAngles = fsPair.filter(Boolean).flatMap((fs) => fs.angles || []).map((a) => ({ ...a, stance: 'divergent' }))
 }
 const angles = [...scope.angles, ...divergentAngles]
 log(`${angles.length} angles (${angles.filter((a) => a.stance === 'adversarial').length} adversarial, ${divergentAngles.length} divergent)`)
