@@ -507,7 +507,9 @@ For the top undocumented tools, offer `/tool-intel` invocations:
 
 When Step 7c ran, append a **Plugin/Skill Coverage** section (template in
 `report-templates.md`, labelled user-global). The coverage TABLE lists ALL
-installed plugins/skills (the `X/Y documented` count needs the full denominator),
+installed plugins/skills (the `X/Y documented` count needs the full denominator;
+first **dedup the records by `title`** — the same plugin installed from two
+marketplaces resolves to one title and would otherwise inflate `Y`),
 but the actionable `/tool-intel` OFFER below it is capped to the **top 5
 undocumented by `installedAt`** (most recent first), with "…and N more — re-run to
 see all" when truncated. When **0** `claude_plugin` notes match, lead the section

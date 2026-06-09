@@ -50,7 +50,7 @@ One argument: the tool identifier with a required ecosystem prefix.
 - `docker:` — strip `:tag` suffix (e.g., `node:22-alpine` → `docker:node`)
 - `vscode:` — always `publisher.extension-id` dot-separated
 - `gh:` — strip `https://github.com/` if pasted, strip `@<tag>` suffix, require `owner/repo` form (e.g., `gh:meiji163/gh-notify`); error if no `/` is present
-- `plugin:` / `skill:` — strip `https://github.com/` if pasted; require `owner/repo`; an optional `#<name>` suffix selects one plugin/skill from a multi-artifact repo (a marketplace holding several plugins, or a multi-skill bundle); error if no `/` is present
+- `plugin:` / `skill:` — strip `https://github.com/` if pasted; require `owner/repo`; an optional `#<name>` suffix selects one plugin/skill from a multi-artifact repo (a marketplace holding several plugins, or a multi-skill bundle); error if no `/` is present. **Namesake collapse:** when `<name>` equals the repo's last path segment (e.g. `plugin:pbakaus/impeccable#impeccable`), drop the suffix so the title becomes `plugin-pbakaus-impeccable` — identical to the dedicated-repo form and to what `scripts/list-installed-plugins.mjs` emits, so it cannot fork a duplicate note. Collapse fires *only* on this exact-equality case; a suffix naming a *different* member of a multi-plugin repo (`plugin:owner/marketplace#some-plugin`) is preserved as a genuine selector.
 
 ## Ecosystem Dispatch
 
@@ -75,14 +75,17 @@ this skill covers tooling only.
 | `skill` | `plugins/` | `claude_plugin` | `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-skill.md` |
 
 **Title convention:** The user command uses a colon delimiter (`brew:ripgrep`),
-but the BM note title replaces all `:` and `/` with `-` (preserving `@` and
-`.`). This matches the filename BM generates and enables native Obsidian
+but the BM note title replaces all `:`, `/`, and `#` with `-` (preserving `@`
+and `.`). This matches the filename BM generates and enables native Obsidian
 wiki-link resolution. Examples: `brew:ripgrep` → `brew-ripgrep`,
 `action:actions/checkout` → `action-actions-checkout`,
 `docker:grafana/grafana` → `docker-grafana-grafana`,
 `gh:meiji163/gh-notify` → `gh-meiji163-gh-notify`,
 `plugin:voxpelli/vp-claude#vp-knowledge` → `plugin-voxpelli-vp-claude-vp-knowledge`,
-`skill:obra/superpowers` → `skill-obra-superpowers`.
+`skill:obra/superpowers` → `skill-obra-superpowers`. A `plugin:` namesake suffix
+(`<name>` equal to the repo's last path segment) collapses first, per the
+normalization note above: `plugin:pbakaus/impeccable#impeccable` →
+`plugin-pbakaus-impeccable` (not `-impeccable-impeccable`).
 
 ### Step 1: Check for existing note
 
