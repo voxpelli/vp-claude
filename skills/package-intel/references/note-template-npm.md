@@ -30,6 +30,7 @@ GitHub: [owner/repo](https://github.com/owner/repo) | v<version> | <license>
 
 ## Observations
 
+- [version] <version>
 - [pattern] How it's typically used / how we use it
 - [gotcha] What surprised us or could trip up new users
 - [benefit] Why choose this over alternatives

@@ -14,6 +14,7 @@ schema:
   api?(array): string, key API surface — method signatures, options, return shapes
   architecture?(array): string, internal design, module structure, and build approach
   popularity?(array): string, download counts and adoption signals (e.g., npm weekly downloads)
+  version?(array): string, current documented package version (e.g. 5.8.5) — the version this note's content reflects; the machine-stable slot /knowledge-gaps --stale compares against upstream (Pattern 3, checked before fragile prose extraction)
   relates_to?(array): Note, related knowledge notes
   depends_on?(array): Note, upstream package dependencies
   used_by?(array): Note, downstream consumers of this package (inverse of depends_on)

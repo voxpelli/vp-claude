@@ -316,6 +316,15 @@ Include the metric window (weekly vs total) and registry name — e.g.,
 `- [popularity] 2.1M downloads/week (npm, 2026-04)` or
 `- [popularity] 850M total downloads (crates.io, 2026-04)`. Omit for PyPI and Go.
 
+**For npm notes, add a `[version]` observation** recording the documented latest
+version as a clean leading token — e.g. `- [version] 5.8.5`. This is the
+machine-stable slot `/knowledge-gaps --stale npm` reads first (Pattern 3), before
+the fragile header/prose extraction, so a note whose subject involves version
+strings (e.g. `yaml`, `semver`) can't be misparsed. The same value goes in the
+header line (`| v<version> |`); keep them consistent. Only `npm_package` defines
+this slot today — the other cohort schemas don't, so omit `[version]` for
+crate/go/composer/pypi/gem until the slot is extended to them (bd vp-claude-f3zx).
+
 **No wiki-links in observations.** Never use `[[Target]]` syntax in observation
 lines. BM's parser treats any `[[` as a relation boundary — the text before it
 becomes the `relation_type` field (max 200 chars), causing validation failures.

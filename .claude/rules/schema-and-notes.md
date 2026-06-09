@@ -84,6 +84,7 @@ fragile:
 - Type: `npm_package` (snake_case — Basic Memory enforces snake_case for all type fields)
 - Three enrichment layers: frontmatter metadata, `## Observations` with `[category]` tags, `## Relations` with `[[wiki-links]]`
 - Schema-required fields (like `source` for service) must be `[field]` observations in the note body — YAML frontmatter fields are NOT checked by `schema_validate`
+- npm notes carry a machine-stable `[version]` observation (leading clean token, e.g. `- [version] 5.8.5`) — the canonical slot `/knowledge-gaps --stale npm` reads first (Pattern 3), before fragile header/prose extraction. Only `npm_package` defines it today; the other package schemas gain it via bd `vp-claude-f3zx`
 - Use `edit_note` with `find_replace` for updates — `append` with `section` goes to end of file, not end of section
 - Optional structured metadata on observations (following vp-beads convention):
   - `Ownership: upstream|us|shared` — distinguishes package bugs from integration choices
