@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.4][] - 2026-06-09
+
+### Added
+
+- **Machine-stable `[version]` observation slot for npm notes.** The
+  `npm_package` schema gains an optional `[version]` observation (dual-synced to
+  `schemas/npm_package.md` and the Basic Memory schema note) — the canonical slot
+  `/knowledge-gaps --stale npm` reads first (Pattern 3), ahead of the fragile
+  header/prose extraction that could misparse version-centric packages (the
+  `yaml` note's `1.1` spec reference and the `semver` note's range example were
+  both false positives caught while dogfooding). `/package-intel` now emits
+  `[version]` for new and refreshed npm notes (template + Step 4 write rule), and
+  71 existing npm notes were backfilled with their verified recorded version
+  (header-line-verified; `semver` dropped as unparseable, `yaml` corrected to
+  `2.7.0`). npm-cohort slice of bd `vp-claude-f3zx`; the other five package
+  cohorts (crate/go/composer/pypi/gem) gain the slot in follow-up work.
+
 ## [0.31.3][] - 2026-06-09
 
 ### Fixed
@@ -1567,6 +1584,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.31.4]: https://github.com/voxpelli/vp-claude/compare/v0.31.3...v0.31.4
 [0.31.3]: https://github.com/voxpelli/vp-claude/compare/v0.31.2...v0.31.3
 [0.31.2]: https://github.com/voxpelli/vp-claude/compare/v0.31.1...v0.31.2
 [0.31.1]: https://github.com/voxpelli/vp-claude/compare/v0.31.0...v0.31.1
