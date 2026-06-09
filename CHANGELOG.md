@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.3][] - 2026-06-09
+
+### Fixed
+
+- **Plugin namesake-collapse for `/knowledge-gaps --global`.** A single-plugin
+  self-hosted marketplace whose repo name equals the plugin name (e.g.
+  `pbakaus/impeccable`) now resolves to the collapsed identifier
+  `plugin:pbakaus/impeccable` (title `plugin-pbakaus-impeccable`), matching its
+  Basic Memory note by primary title instead of relying only on the bare-name
+  fallback. The collapse is scoped to the local-string source branch; git-subdir
+  sources always keep their `#<name>` suffix, so a namesake member of a
+  multi-plugin repo can never collide with a sibling or a dedicated-repo homonym
+  (`lib/installed-plugins.mjs`).
+- **`/tool-intel` builds `plugin:`/`skill:` titles literally.** The skill no
+  longer applies a namesake-collapse of its own (it cannot know the install's
+  source branch, so a branch-blind collapse would diverge from a git-subdir
+  namesake's resolver title). The `--global` offer hands over the canonical
+  identifier, and Step 1's existence check globs the leaf segment to avoid
+  forking a duplicate note on a manually-typed redundant suffix.
+- **Tighter local-string shape guard.** A marketplace `source.repo` must match
+  `owner/repo` exactly (`/^[^/\s]+\/[^/\s]+$/`); malformed values carrying a
+  stray slash or whitespace fall through to `sourceResolved:false` rather than
+  emitting a structurally-wrong identifier marked resolved.
+- Documented edges (deliberately not fixed): a *multi-plugin* local-string
+  marketplace with a member named after its repo also collapses (bd
+  `vp-claude-asmm`; gating on plugin-count was rejected as fragile to upstream
+  marketplace growth), and `toTitle` aliases distinct identifiers that share a
+  delimiter-normalized form (bd `vp-claude-xqqe`).
+
 ## [0.31.2][] - 2026-06-03
 
 ### Added
@@ -1538,6 +1567,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.31.3]: https://github.com/voxpelli/vp-claude/compare/v0.31.2...v0.31.3
 [0.31.2]: https://github.com/voxpelli/vp-claude/compare/v0.31.1...v0.31.2
 [0.31.1]: https://github.com/voxpelli/vp-claude/compare/v0.31.0...v0.31.1
 [0.31.0]: https://github.com/voxpelli/vp-claude/compare/v0.30.1...v0.31.0
