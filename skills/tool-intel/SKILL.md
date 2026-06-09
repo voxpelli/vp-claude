@@ -50,7 +50,7 @@ One argument: the tool identifier with a required ecosystem prefix.
 - `docker:` — strip `:tag` suffix (e.g., `node:22-alpine` → `docker:node`)
 - `vscode:` — always `publisher.extension-id` dot-separated
 - `gh:` — strip `https://github.com/` if pasted, strip `@<tag>` suffix, require `owner/repo` form (e.g., `gh:meiji163/gh-notify`); error if no `/` is present
-- `plugin:` / `skill:` — strip `https://github.com/` if pasted; require `owner/repo`; an optional `#<name>` suffix selects one plugin/skill from a multi-artifact repo (a marketplace holding several plugins, or a multi-skill bundle); error if no `/` is present. **Namesake collapse:** when `<name>` equals the repo's last path segment (e.g. `plugin:pbakaus/impeccable#impeccable`), drop the suffix so the title becomes `plugin-pbakaus-impeccable` — identical to the dedicated-repo form and to what `scripts/list-installed-plugins.mjs` emits, so it cannot fork a duplicate note. Collapse fires *only* on this exact-equality case; a suffix naming a *different* member of a multi-plugin repo (`plugin:owner/marketplace#some-plugin`) is preserved as a genuine selector.
+- `plugin:` / `skill:` — strip `https://github.com/` if pasted; require `owner/repo`; an optional `#<name>` suffix selects one plugin/skill from a multi-artifact repo (a marketplace holding several plugins, or a multi-skill bundle); error if no `/` is present. Build the title **literally** from the identifier you were given — do NOT drop a `#<name>` suffix even when it repeats the repo's last path segment. Whether that suffix is redundant depends on the install's source branch (a single-plugin self-hosted marketplace vs. a multi-plugin repo), which only the `/knowledge-gaps --global` resolver (`lib/installed-plugins.mjs`) can determine — and its offer already hands you the canonical, de-duplicated identifier verbatim. On a rare manual paste of a redundant suffix, Step 1's existence check (glob on the leaf `#`/`/`-segment) finds the canonical note so you update it instead of forking a duplicate.
 
 ## Ecosystem Dispatch
 
@@ -82,10 +82,10 @@ wiki-link resolution. Examples: `brew:ripgrep` → `brew-ripgrep`,
 `docker:grafana/grafana` → `docker-grafana-grafana`,
 `gh:meiji163/gh-notify` → `gh-meiji163-gh-notify`,
 `plugin:voxpelli/vp-claude#vp-knowledge` → `plugin-voxpelli-vp-claude-vp-knowledge`,
-`skill:obra/superpowers` → `skill-obra-superpowers`. A `plugin:` namesake suffix
-(`<name>` equal to the repo's last path segment) collapses first, per the
-normalization note above: `plugin:pbakaus/impeccable#impeccable` →
-`plugin-pbakaus-impeccable` (not `-impeccable-impeccable`).
+`skill:obra/superpowers` → `skill-obra-superpowers`. The mapping is purely
+literal — every `:`/`/`/`#` becomes `-`, including any `#<name>` suffix
+(`plugin:pbakaus/impeccable#impeccable` → `plugin-pbakaus-impeccable-impeccable`);
+the canonical de-duplicated address is supplied by `/knowledge-gaps --global`.
 
 ### Step 1: Check for existing note
 
@@ -95,6 +95,9 @@ Fast existence check first (no content loaded):
 ```
 list_directory(dir_name="<ecosystem-dir>", file_name_glob="*<sanitized-name>*")
 ```
+For `plugin:`/`skill:` two-part addresses, `<sanitized-name>` is the **leaf** segment —
+the last `/`- or `#`-segment (e.g. `impeccable` for `plugin:pbakaus/impeccable#impeccable`) —
+so the glob matches a note titled either with or without a namesake suffix.
 
 If found, read the existing note to understand what's already documented:
 ```

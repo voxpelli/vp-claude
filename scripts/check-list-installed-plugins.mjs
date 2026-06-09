@@ -39,6 +39,7 @@ const INSTALLED = JSON.stringify({
     'widgets@homonym-mkt': [{ version: 'unknown', installedAt: '2026-05-20T00:00:00Z' }], // dedicated-repo acme/widgets homonym of the git-subdir namesake
     'barewidget@slashless-mkt': [{ version: 'unknown', installedAt: '2026-05-21T00:00:00Z' }], // local-string, slash-less marketplace repo
     'acme@casemkt': [{ version: 'unknown', installedAt: '2026-05-22T00:00:00Z' }], // local-string, repo Acme/Acme vs name acme (case mismatch)
+    'mangled@badmkt': [{ version: 'unknown', installedAt: '2026-05-23T00:00:00Z' }], // local-string, KNOWN repo "a/b/c" has slashes but isn't owner/repo
     'ghost@vanished-marketplace': [{ version: 'unknown', installedAt: '2026-01-01T00:00:00Z' }],
   },
 })
@@ -49,6 +50,7 @@ const KNOWN = JSON.stringify({
   'homonym-mkt': { source: { source: 'github', repo: 'acme/widgets' }, installLocation: '/x/homonym' },
   'slashless-mkt': { source: { source: 'github', repo: 'noslash' }, installLocation: '/x/slashless' }, // slash-less repo (malformed) -> local-string shape guard rejects
   casemkt: { source: { source: 'github', repo: 'Acme/Acme' }, installLocation: '/x/case' },
+  badmkt: { source: { source: 'github', repo: 'a/b/c' }, installLocation: '/x/bad' }, // extra slash -> tightened shape regex rejects (includes('/') would have accepted)
   // 'vanished-marketplace' deliberately absent -> ghost plugin is unresolved.
 })
 const MP = new Map([
@@ -72,6 +74,7 @@ const MP = new Map([
   ['homonym-mkt', JSON.stringify({ plugins: [{ name: 'widgets', source: { source: 'github', repo: 'acme/widgets' } }] })],
   ['slashless-mkt', JSON.stringify({ plugins: [{ name: 'barewidget', source: './' }] })], // local string + slash-less KNOWN repo -> shape guard
   ['casemkt', JSON.stringify({ plugins: [{ name: 'acme', source: './' }] })], // local string, repo Acme/Acme vs name acme
+  ['badmkt', JSON.stringify({ plugins: [{ name: 'mangled', source: './' }] })], // local string + malformed KNOWN repo "a/b/c" -> tightened shape guard
 ])
 
 const plugins = resolveInstalledPlugins(INSTALLED, KNOWN, MP)
@@ -89,6 +92,7 @@ check('git-subdir namesake (repo==name) -> #name RETAINED, never collapsed (widg
 check('git-subdir namesake vs dedicated-repo homonym -> two DISTINCT records (no conflation)', plugins.some((p) => p.identifier === 'plugin:acme/widgets#widgets') && plugins.some((p) => p.identifier === 'plugin:acme/widgets'))
 check('local-string slash-less repo -> falls through to sourceResolved:false (shape guard)', plugins.some((p) => p.identifier === 'plugin:barewidget@slashless-mkt' && p.sourceResolved === false))
 check('local-string case-mismatch (Acme/Acme vs acme) -> #name kept, no collapse', !!find('plugin:Acme/Acme#acme'))
+check('local-string malformed-with-slash repo ("a/b/c") -> sourceResolved:false (tightened shape guard)', plugins.some((p) => p.identifier === 'plugin:mangled@badmkt' && p.sourceResolved === false))
 check('unresolved (marketplace absent) -> name@marketplace fallback, sourceResolved:false', plugins.some((p) => p.identifier === 'plugin:ghost@vanished-marketplace' && p.sourceResolved === false))
 check('version:"unknown" entries still resolve (majority live case)', !!find('plugin:pbakaus/impeccable'))
 check('installedAt carried through', find('plugin:voxpelli/vp-claude#vp-knowledge')?.installedAt === '2026-03-09T00:00:00Z')
