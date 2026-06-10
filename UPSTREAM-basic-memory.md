@@ -2,17 +2,17 @@
 
 Friction, limitations, and capability discoveries found while building vp-knowledge on top of Basic Memory.
 
-## Latest upstream activity (snapshot 2026-05-18)
+## Latest upstream activity (snapshot 2026-06-10)
 
-**Latest release:** [v0.21.1](https://github.com/basicmachines-co/basic-memory/releases/tag/v0.21.1) (2026-05-17, CI-only point release — see [v0.21.0](https://github.com/basicmachines-co/basic-memory/releases/tag/v0.21.0) (2026-05-16) for substantive changes).
-**Headline:** v0.21.0 reworked workspace/project routing across MCP + CLI, shipped breaking change [#824](https://github.com/basicmachines-co/basic-memory/pull/824) (relation parsing — bare prose wikilinks now index as `links_to`), added `bm orphan` CLI ([#816](https://github.com/basicmachines-co/basic-memory/pull/816)), made multi-project `search_notes` opt-in via `search_all_projects=True` ([#807](https://github.com/basicmachines-co/basic-memory/pull/807)), and introduced MCP parameter aliases ([#766](https://github.com/basicmachines-co/basic-memory/pull/766) — known regression [#818](https://github.com/basicmachines-co/basic-memory/issues/818) affects `write_note(overwrite=True)` from external clients; upstream fix branch exists).
-**Activity:** ~80 commits between v0.20.3 and v0.21.0. Post-v0.21.0 cluster (5+ open issues) concentrated in cloud/Postgres/pgvector paths — local SQLite users unaffected.
+**Latest release:** [v0.21.6](https://github.com/basicmachines-co/basic-memory/releases/tag/v0.21.6) (2026-06-05). Five releases since v0.21.1: v0.21.2/v0.21.3 (XDG_CONFIG_HOME + project-routing fixes, 2026-05-23), **v0.21.4 (2026-05-23 — ships the [#818](https://github.com/basicmachines-co/basic-memory/issues/818) fix via [PR #841](https://github.com/basicmachines-co/basic-memory/pull/841): `write_note(overwrite=True)` works from external MCP clients again)**, v0.21.5 (ASGI DB preinit, sqlite-vec load order, workspace-qualified write permalinks, 2026-05-26), v0.21.6 (workspace sync guards, Claude Code plugin v0.4 "memory bridge", picoschema enum YAML fix).
+**Headline:** maintainer attention is on cloud/teams plumbing (workspace-qualified permalinks, team sync), CI automation ("BM Bossbot" PR gate), and a fresh **index-integrity thread**: [#931](https://github.com/basicmachines-co/basic-memory/pull/931) (merged 2026-06-10 — observation-permalink truncation collisions silently dropped observations from the index while the file stayed correct) and [#940](https://github.com/basicmachines-co/basic-memory/issues/940) (open — relation batch-indexing timing races). [#933](https://github.com/basicmachines-co/basic-memory/pull/933) adds `read_note` pagination.
+**Activity:** very active — ~30 issues filed since 2026-05-17 (69 open), ~15 commits on 2026-06-08–10 alone. Local install: **0.21.6** (current; the Sprint-24 `write_note(overwrite=True)` workaround is obsolete).
 
 ### Open / in-progress upstream
 
 | Issue/PR | Effect on local entries |
 |---|---|
-| [#762](https://github.com/basicmachines-co/basic-memory/issues/762) (open feature) | "Show which entities do not have relations" — filed by maintainer; would **obsolete the two-pass orphan-detection workaround** in `build_context` entry below |
+| [#762](https://github.com/basicmachines-co/basic-memory/issues/762) (closed completed 2026-05-11) | "Show which entities do not have relations" — **implemented upstream**; verify the shipped capability covers zero-in + zero-out, then retire the two-pass orphan-detection workaround in `build_context` entry below |
 | [#763](https://github.com/basicmachines-co/basic-memory/issues/763) (closed not-a-bug 2026-04-29) | `write_note` / `edit_note` async vector indexing — maintainer ruled by design; see reframed entry below |
 | [#786](https://github.com/basicmachines-co/basic-memory/issues/786) (open enhancement) | MCP settings tool for active project/workspace context |
 | [#760](https://github.com/basicmachines-co/basic-memory/issues/760) (open) | Harden subprocess usage in `sync_service.py` and expand `SECURITY.md` |
@@ -33,7 +33,8 @@ These local entries have no upstream issue/PR despite being clear friction. Cand
 - LinkResolver should resolve wiki-links against aliases/metadata — design proposal
 - Phased Obsidian colon-compatibility — Upstream Opportunity, **Merge readiness: needs-redesign**, no PR submitted
 - Markdown link + trailing parenthetical inside an observation silently drops the whole observation — clear bug, high-value filing
-- No bulk metadata/version projection — cohort `--stale` must `read_note` every entity (388 npm notes = 388 round-trips) — feature request (high-value; candidate home: `.md-wiki-vec` committable index)
+- No bulk metadata/version projection — cohort `--stale` must `read_note` every entity (388 npm notes = 388 round-trips) — feature request (high-value; candidate home: `.md-wiki-vec` committable index; **verified novel upstream 2026-06-10** — nearest is #884 directory-index records and #933 read_note pagination, neither projects metadata)
+- `edit_note` response metadata transiently inflates/deflates observation/relation counts (index re-parse echo on `###`-subsectioned notes; file stays correct; self-clears on re-sync) — clear bug, high-value filing; **verified unreported upstream 2026-06-10** — cite [#763](https://github.com/basicmachines-co/basic-memory/issues/763) + [#940](https://github.com/basicmachines-co/basic-memory/issues/940) as likely shared async-indexing root; distinct from #931 (persistent silent drop, not transient inflation)
 
 ## Open items
 
@@ -60,8 +61,7 @@ are invisible to it.
 structured `relations` field to find zero-outbound candidates, then `build_context`
 on each candidate confirms zero-incoming. True orphans (zero in + zero out) are
 reliably detected this way.
-**Status:** Open — two-pass workaround documented; upstream API has no direct
-"find isolated nodes" capability (upstream: [#762](https://github.com/basicmachines-co/basic-memory/issues/762) — open feature request filed by maintainer would obsolete this workaround).
+**Status:** Open, likely obsoletable — [#762](https://github.com/basicmachines-co/basic-memory/issues/762) closed completed 2026-05-11 (orphan detection implemented upstream; `bm orphan` CLI landed earlier via #816). Verify the shipped capability detects zero-in + zero-out notes, then retire this workaround and update the gardener's orphan step.
 
 ---
 
@@ -272,3 +272,12 @@ Severity: degraded · Ownership: upstream · Workaround: full — keep source UR
 **Impact:** High — there is no MCP/CLI way to project a few frontmatter/metadata fields (e.g. `permalink`, `version`, `packages[0]`) across a directory of notes in one call. `list_directory` returns titles + dates only; `search_notes` returns matched chunks, not reliable full metadata. So a cohort-wide version-drift check (`/knowledge-gaps --stale <eco>`) must call `read_note` on **every** note to extract its recorded version and package name — for the npm cohort that is ~388 full-note round-trips (each multi-KB), infeasible in a single pass and forcing delegation to parallel subagents purely to keep the orchestrator's context from overflowing. The recorded version also lives in heterogeneous places across template eras, so even with the notes in hand the extraction is bespoke.
 **Desired:** a bulk projection API — e.g. `list_directory` (or a new query) returning a selected frontmatter subset per entry, or an indexed columnar read exposed by the `.md-wiki-vec` committable-index layer (`/Users/pelle/basic-memory-worktrees/claude-index-committable/.md-wiki-vec`). The index already materializes per-note metadata; surfacing `{permalink, frontmatter subset}` for a directory would turn cohort staleness from O(N) round-trips into a single indexed read, and would also let the extractor normalize the version field once instead of per-template-era.
 Severity: degraded · Ownership: upstream · Workaround: partial — fan out `read_note` across parallel extraction subagents that return only `{title, version, package}`, keeping bulk note bodies out of the caller's context; still O(N) round-trips and subagent-token cost.
+
+---
+
+### `edit_note` response metadata transiently inflates/deflates observation and relation counts
+
+**Discovered:** 2026-05-30 (`--stale` npm refresh edits); reproduced 2026-06-03 (`gh-cschleiden-gh-actionlint` class) and twice on 2026-06-10 (brew-glab relation count echoed 5→1; cask-1password observation counts echoed ×3)
+**Impact:** Medium — the `edit_note` response summary (and transiently the search index) reports wrong observation/relation counts immediately after an edit, most visibly on notes with `###` subsections inside `## Observations`. The file on disk is always correct and `schema_validate` stays clean; a later re-sync clears the phantom. The real risk is behavioral: an agent that trusts the echo "fixes" phantom duplicates — destructive edits against a correct file.
+**Workaround:** full — trust `schema_validate` + the file, never the inline echo (documented in tool-intel Step 5 and MEMORY gotchas); re-read the note before any duplicate-removal edit.
+**Status:** Open locally, **unreported upstream (verified 2026-06-10 — no matching issue exists)**. Nearest neighbors share the likely async-indexing root: [#763](https://github.com/basicmachines-co/basic-memory/issues/763) (write tools return inside the indexing window, ruled by-design) and [#940](https://github.com/basicmachines-co/basic-memory/issues/940) (relation batch-indexing races, open). [#931](https://github.com/basicmachines-co/basic-memory/pull/931) (merged 2026-06-10) is the opposite signature — persistent silent drop via permalink-dedup, not transient inflation — but proves the index layer dedups observations by permalink, the mechanism a double-parse would interact with. High-value filing citing all three.
