@@ -52,5 +52,11 @@ The only version surrogate is the folder tree SHA + last-commit date:
 gh api "repos/<owner>/<repo>/commits?path=<skill-path>" --jq '.[0].commit.committer.date'
 ```
 
+**Rename-blind caveat:** `commits?path=` returns only commits touching the path
+*as currently named* — a repo reorganization (directory move, sharding) truncates
+this history at the move date, making the migration commit the apparent
+last-touch. Treat an implausibly old result, or one coinciding with a known
+repo-wide migration, as "unknown" rather than the real last activity.
+
 `--stale skill` is NOT supported (no comparable version — same exclusion bucket
 as `action`/`gh`). Research only.

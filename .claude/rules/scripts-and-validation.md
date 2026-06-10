@@ -84,7 +84,7 @@ across prose sentences (the use/mention footgun).
 Scripts using the `bm` CLI must work around three asymmetries:
 
 - `bm tool search-notes` returns JSON by default — results array contains `title`, `permalink`, `content`, `matched_chunk`, `metadata`. Pipeable to `jq`.
-- `bm tool read-note` has NO `--output-format json` flag — only raw markdown. The structured observations array is only available via the MCP `read_note(output_format='json')` tool. Scripts using `bm tool` cannot get parsed section data and must text-parse instead.
+- `bm tool read-note` returns a JSON envelope (`{title, permalink, file_path, content, frontmatter}`) — there is NO raw-markdown flag, and the note body is the escaped `.content` string. Pipe through `jq -r '.content'` before any line-oriented regex; a grep over the raw envelope matches the whole body as one line (verified bm 0.21.6 — every `bm tool` subcommand hardcodes JSON output). Parsed observation/section data still requires the MCP `read_note` tool.
 - `bm project info` requires a project NAME argument: `bm project info main --json`. The `--json` output exposes `statistics.isolated_entities` (int), `statistics.note_types` (dict), `statistics.observation_categories` (dict), `statistics.most_connected_entities` (array).
 
 ## Script conventions
