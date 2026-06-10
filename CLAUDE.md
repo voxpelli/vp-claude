@@ -176,6 +176,8 @@ full drift-guard picture live in `.claude/rules/scripts-and-validation.md`.
 - `bd create --type=bug` requires `## Steps to Reproduce` AND `## Acceptance Criteria` sections in the description
 - `bd create --type=task` requires `## Acceptance Criteria` — title-case "Criteria" only (lowercase rejected)
 - `bd close <id>` requires `-r "<summary>"` — non-empty reason is mandatory
+- `bd list` hides lower-priority issues by default — a fresh P3/P4 create is invisible in the default view; verify with `bd list -p <N>`
+- `bd close` success can silently revert when `.beads/` is gitignored — verify every close with `bd show <id>` (upstream: vp-claude-syw)
 
 ## Skill routing
 
