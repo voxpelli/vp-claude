@@ -68,18 +68,17 @@ Always `brew_cask` (snake_case). Not `brew-cask` or `homebrew_cask`.
 | `alternative` | Alternative tools with similar functionality |
 | `performance` | Startup time, memory usage, battery impact |
 | `conflict` | Conflicts with other casks or system tools |
-| `popularity` | Install counts from Homebrew analytics — MCP-sourced only |
+| `popularity` | Install counts from Homebrew analytics (MCP or formulae.brew.sh JSON) |
 
-### Analytics observations (MCP-sourced only)
+### Analytics observations
 
-When `mcp__homebrew__info` is reachable and its output includes an
-`==> Analytics` block, emit exactly one `[popularity]` observation with
-the 30/90/365-day install counts. Casks have no `build-error` counter.
-Always include the source stamp `(Homebrew MCP, YYYY-MM)`.
-
-If the MCP server is unavailable, omit the observation entirely — the
-`formulae.brew.sh` JSON API does not expose analytics and there is no
-structured fallback.
+Emit exactly one `[popularity]` observation with the 30/90/365-day install
+counts (casks have no `build-error` counter). Source it from
+`mcp__homebrew__info` when reachable (stamp `(Homebrew MCP, YYYY-MM)`),
+otherwise from the `analytics` block in the formulae.brew.sh cask JSON fetched
+in Step 2 (stamp `(formulae.brew.sh API, YYYY-MM-DD)`) — both draw on the same
+Homebrew analytics but can diverge via client-cache lag. Only omit when neither
+source yields analytics; never fabricate counts.
 
 When updating an existing note that already has a `[popularity]` line,
 use `edit_note` with `find_replace` to replace the old line rather than

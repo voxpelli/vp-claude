@@ -31,8 +31,12 @@ tavily_extract(
 
 ## Fetch Install Analytics (MCP, optional)
 
-The JSON API does not expose install analytics. When the local Homebrew MCP
-server is available, call `mcp__homebrew__info` to pick them up:
+Install analytics are available from two sources. The formulae.brew.sh JSON
+API fetched in Step 2 includes an `analytics` block —
+`analytics.install.{30d,90d,365d}`, `analytics.install_on_request`, and
+`analytics.build_error.30d` — so analytics are always obtainable even without
+the MCP. When the local Homebrew MCP server is available, `mcp__homebrew__info`
+exposes the same counts in human-readable form:
 
 ```
 mcp__homebrew__info(formula_or_cask="<name>")
@@ -49,14 +53,21 @@ install-on-request: 52,500 (30 days), 120,072 (90 days), 330,758 (365 days)
 build-error: 42 (30 days)
 ```
 
-If the tool call errors, the server is disconnected, or the `==> Analytics`
-block is absent, skip this step entirely. Do not retry. Do not emit a
-`[popularity]` observation — the formulae.brew.sh JSON API does not expose
-analytics, so there is no structured fallback and fabricating counts would
-be worse than omitting them.
+If the MCP tool call errors, the server is disconnected, or the `==> Analytics`
+block is absent, do not retry — fall back to the `analytics` block in the
+Step 2 JSON response (`analytics.install.30d/90d/365d` and
+`analytics.build_error.30d`). Never fabricate counts; omit the `[popularity]`
+observation only if neither source yields analytics.
+
+The MCP and the JSON API draw on the same Homebrew analytics dataset but can
+diverge: the JSON carries a `generated_date`, while `brew info` may serve a
+lagging client-side cache (observed 2026-06-11). Always stamp the source and
+date of the figures you record.
 
 When analytics are present, extract the numbers and emit exactly one
-`[popularity]` observation in Step 6 (Synthesize) using this format:
+`[popularity]` observation in Step 6 (Synthesize). Stamp the source —
+`(Homebrew MCP, YYYY-MM)` for the MCP, `(formulae.brew.sh API, YYYY-MM-DD)`
+for the JSON block — using this format:
 
 `[popularity] 70,654 installs/30d · 173,836/90d · 438,626/365d · 42 build errors/30d (Homebrew MCP, YYYY-MM)`
 

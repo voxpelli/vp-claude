@@ -11,7 +11,7 @@ schema:
   gotcha?(array): string, common pitfalls — licensing model, OS requirements, conflicts,
     caveats
   performance?(array): string, performance characteristics — startup time, memory footprint, battery impact
-  popularity?(array): string, Homebrew install analytics (30/90/365-day counts) with date stamp; omit when MCP unavailable
+  popularity?(array): string, Homebrew install analytics (30/90/365-day counts) with source + date stamp; source from Homebrew MCP or the formulae.brew.sh JSON analytics block, omit only when neither is available
   pattern?(array): string, recurring usage patterns and integration recipes
   security?(array): string, supply-chain or runtime security considerations
   licensing?(array): string, paid/subscription/free model details and renewal/seat caveats
@@ -67,7 +67,7 @@ Preferred relation labels for cask notes:
 - [purpose] Schema for Homebrew cask notes in the casks/ directory
 - [convention] Inferred from 2 notes created 2026-03-12; sample too small for reliable frequency data — all fields are optional
 - [convention] Licensing model (free/paid/subscription) is the most important gotcha to capture — it's not visible in the formula metadata
-- [convention] `popularity` observations must cite window (30d/90d/365d), source (Homebrew MCP), and date — omit entirely when MCP is unavailable rather than fabricating from the JSON API, which does not expose analytics
+- [convention] `popularity` observations must cite window (30d/90d/365d), source (Homebrew MCP or formulae.brew.sh JSON `analytics` block), and date — both sources draw on the same Homebrew analytics but can diverge (client-cache lag), so stamp which one; omit only when neither yields counts, never fabricate
 
 ## Relations
 

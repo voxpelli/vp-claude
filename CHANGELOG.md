@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.5][] - 2026-06-11
+
+### Fixed
+
+- **Homebrew analytics source guidance was inverted.** `/tool-intel`'s
+  `brew`/`cask` ecosystem references, both note templates, and the
+  `brew_formula` + `brew_cask` schemas all claimed *"the formulae.brew.sh JSON
+  API does not expose analytics"* and instructed omitting the `[popularity]`
+  observation whenever the Homebrew MCP was unavailable — but the JSON response
+  already fetched in Step 2 **does** carry an `analytics` block
+  (`install.{30d,90d,365d}`, `install_on_request`, and a formula-only
+  `build_error.30d`; verified against `sem-cli`, `ripgrep`, and the
+  `claude-code` cask). The guidance now treats that JSON block as a structured
+  fallback — `[popularity]` is omitted only when *neither* source yields counts
+  — notes that the MCP and the API draw on the same Homebrew dataset but can
+  diverge via client-cache lag, and requires the observation to stamp which
+  source it used: `(Homebrew MCP, YYYY-MM)` or `(formulae.brew.sh API,
+  YYYY-MM-DD)`. The two schema changes are dual-synced to the Basic Memory
+  `brew_formula`/`brew_cask` notes.
+
 ## [0.31.4][] - 2026-06-09
 
 ### Added
@@ -1584,6 +1604,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.31.5]: https://github.com/voxpelli/vp-claude/compare/v0.31.4...v0.31.5
 [0.31.4]: https://github.com/voxpelli/vp-claude/compare/v0.31.3...v0.31.4
 [0.31.3]: https://github.com/voxpelli/vp-claude/compare/v0.31.2...v0.31.3
 [0.31.2]: https://github.com/voxpelli/vp-claude/compare/v0.31.1...v0.31.2

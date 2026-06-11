@@ -13,7 +13,7 @@ schema:
   feature?(array): string, notable capabilities worth knowing beyond basic usage
   pattern?(array): string, usage patterns, integration recipes, and best practices
   convention?(array): string, standard setup conventions and idiomatic configuration choices
-  popularity?(array): string, Homebrew install analytics (30/90/365-day counts plus build-error count) with date stamp; omit when MCP unavailable
+  popularity?(array): string, Homebrew install analytics (30/90/365-day counts plus build-error count) with source + date stamp; source from Homebrew MCP or the formulae.brew.sh JSON analytics block, omit only when neither is available
   compatibility?(array): string, version pinning, OS/arch coverage, peer-tool compatibility caveats
   security?(array): string, supply-chain or runtime security considerations
   relates_to?(array): Note, related formula, cask, or engineering notes
@@ -50,7 +50,7 @@ Schema for Homebrew formula notes — one note per formula in the `brew/` direct
 - [convention] `usage` should include the binary name when it differs from the formula name (e.g. ripgrep → rg, git-delta → delta, difftastic → difft)
 - [convention] `gotcha` entries are the highest-value observations — prioritise real-world surprises over docs
 - [convention] Relations use `brew-<name>`, `cask-<name>`, `npm-<name>` wiki-link format (substitute the real name, wrapped in `[[...]]`)
-- [convention] `popularity` observations must cite window (30d/90d/365d), source (Homebrew MCP), and date — omit entirely when MCP is unavailable rather than fabricating from the JSON API, which does not expose analytics
+- [convention] `popularity` observations must cite window (30d/90d/365d), source (Homebrew MCP or formulae.brew.sh JSON `analytics` block), and date — both sources draw on the same Homebrew analytics but can diverge (client-cache lag), so stamp which one; omit only when neither yields counts, never fabricate
 
 ## Relation Vocabulary
 

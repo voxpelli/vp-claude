@@ -37,8 +37,12 @@ tavily_extract(
 
 ## Fetch Install Analytics (MCP, optional)
 
-The JSON API does not expose install analytics. When the local Homebrew MCP
-server is available, call `mcp__homebrew__info` to pick them up:
+Install analytics are available from two sources. The formulae.brew.sh cask
+JSON fetched in Step 2 includes an `analytics` block
+(`analytics.install.{30d,90d,365d}`; casks have no `build_error`), so analytics
+are always obtainable even without the MCP. When the local Homebrew MCP server
+is available, `mcp__homebrew__info` exposes the same counts in human-readable
+form:
 
 ```
 mcp__homebrew__info(formula_or_cask="<name>")
@@ -56,13 +60,18 @@ install-on-request: 12,840 (30 days), 38,120 (90 days), 142,903 (365 days)
 
 Casks have `==> Analytics` but no `build-error` line (casks don't build).
 
-If the tool call errors, the server is disconnected, or the `==> Analytics`
-block is absent, skip this step entirely. Do not retry. Do not emit a
-`[popularity]` observation — there is no structured fallback in the JSON
-API.
+If the MCP tool call errors, the server is disconnected, or the `==> Analytics`
+block is absent, do not retry — fall back to the `analytics` block in the
+Step 2 cask JSON (`analytics.install.30d/90d/365d`; casks have no
+`build_error`). Never fabricate counts; omit the `[popularity]` observation
+only if neither source yields analytics. The MCP and JSON draw on the same
+Homebrew analytics dataset but can diverge (the JSON carries a `generated_date`;
+`brew info` may serve a lagging cache) — always stamp the source and date.
 
 When analytics are present, extract the numbers and emit exactly one
-`[popularity]` observation in Step 6 (Synthesize) using this format:
+`[popularity]` observation in Step 6 (Synthesize). Stamp the source —
+`(Homebrew MCP, YYYY-MM)` or `(formulae.brew.sh API, YYYY-MM-DD)` — using this
+format:
 
 `[popularity] 12,840 installs/30d · 38,120/90d · 142,903/365d (Homebrew MCP, YYYY-MM)`
 
