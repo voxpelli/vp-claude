@@ -11,6 +11,7 @@ lines — BM parses `[[` as a relation boundary. Put all `[[wiki-links]]` in
 ````markdown
 ---
 title: <Full Name> - <Brief Descriptor>
+aliases: ["<Full Name>"]
 type: person
 url: <personal-site or most authoritative URL>
 tags: [<domain>, <subdomain>]
@@ -57,6 +58,20 @@ Examples:
 - `Linus Torvalds - Linux Creator`
 - `Tim Berners-Lee - World Wide Web Inventor`
 - `Grace Hopper - Computer Science Pioneer and COBOL Creator`
+
+### Aliases
+
+Emit `aliases: ["<Full Name>"]` — the bare name (the title minus its
+` - <Descriptor>`), which you already have from the synthesized title. It is a
+YAML list of **bare strings**, never wrapped in `[[ ]]`. This lets bare
+`[[<Full Name>]]` wiki-links resolve to the descriptively-titled note. Add a
+second entry only for a genuinely link-used variant (a handle like `voxpelli`,
+or a full given name when the title uses a short form).
+
+The alias resolves in **Obsidian today** (and any md-wiki-vec index that claims
+Obsidian compatibility); it is **inert inside Basic Memory's own tooling** until
+BM's LinkResolver gains an alias step (tracked in `UPSTREAM-basic-memory.md`).
+A `[[bare name]]` click inside BM stays unresolved for now — expected, not a bug.
 
 ### Observation categories
 

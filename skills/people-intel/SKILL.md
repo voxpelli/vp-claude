@@ -250,7 +250,15 @@ picking one.
 <!-- This pattern is mirrored in package-intel and tool-intel — update all when changing -->
 
 **New person:** Use `write_note` with the full template. Set
-`note_type="person"`.
+`note_type="person"`. Emit `aliases: ["<Full Name>"]` in the frontmatter — the
+bare name (the title minus its ` - <Descriptor>`), which you already have from
+the synthesized title; a YAML list of bare strings, never `[[ ]]`. Add a known
+link-variant (handle / full given name) only if research surfaced one. Skip the
+alias and note it to the user if that bare name already titles or aliases
+another note (an ambiguous Obsidian target). The alias resolves `[[<Full Name>]]`
+links in Obsidian / md-wiki-vec now and in Basic Memory once its LinkResolver
+gains an alias step — it is inert inside BM tooling until then (see
+`UPSTREAM-basic-memory.md`), which is expected, not a bug.
 
 **Existing person:** Pick the operation based on the note's current state:
 
@@ -260,6 +268,13 @@ picking one.
 | `## Observations` exists but is empty | `find_replace` anchored on `## Observations\n` |
 | `## Observations` is absent entirely | `find_replace` anchored on the next section header (typically `## Relations\n`); prepend a new `## Observations` section before it |
 | Last observation wraps across multiple lines | Include all continuation lines in both `find_text` and the prefix of `content`, then append the new observation after |
+
+**Self-heal aliases (SHOULD):** if the existing note's frontmatter lacks an
+`aliases:` key, add one in the same update — a `find_replace` anchored on the
+`title:` line (`title: <X>` → `title: <X>\naliases: ["<bare name>"]`), staying
+strictly inside the frontmatter (never include a `---` fence in `find_text`).
+This backfills the alias on notes you actively re-run, without a separate bulk
+pass.
 
 Canonical call (populated section):
 
