@@ -6,7 +6,7 @@ tooling, discovered while building vp-knowledge.
 
 ## Feature Requests
 
-- **synergy-registry: support local-only sibling entries (private sibling, zero committed footprint)** (2026-06-03) —
+- **synergy-registry: support local-only sibling entries (private sibling, zero committed footprint)** (2026-06-03) _(Resolved 2026-06-16 — vp-beads shipped private-add mode: a `.local.json` entry whose `file` is `PRIVATE-SYNERGY-<name>.md` is added as a private sibling; confirmed in the running sibling-sync v0.18.0 skill. Detailed entry retained below for design context.)_ —
   The `PRIVATE-SYNERGY-<project>.md` overlay (v0.17.0) makes a sibling's synergy
   *content* private, but registry resolution still forces the sibling's
   *existence* to be public: `.claude/synergy-registry.local.json` only

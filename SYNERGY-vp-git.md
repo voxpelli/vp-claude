@@ -64,6 +64,16 @@ _No entries yet._
 
 ## They Have / We Don't
 
+- **`tag-audit` SHA-grouped safety-tag triage** (2026-05-27) — vp-git's
+  `/tag-audit` skill audits accumulated safety tags by sorting on SHA (not
+  name) to expose duplicates, cross-references current branch refs, applies a
+  per-tag decision tree, and gates deletion behind a KEEP/DROP proposal.
+  Self-contained (one SKILL.md + one references sidecar), copy-on-demand.
+  vp-knowledge has no tag-creation workflow today, so demand is hypothetical —
+  a portable git-hygiene primitive to revisit if the pattern surfaces here.
+  Priority: consider (no tag-creation workflow yet) · Effort: trivial (copy
+  `skills/tag-audit/`) · Logged: 2026-06-16 via /sibling-sync
+
 - **`check-portability.mjs` portability lint** (2026-05-04) — vp-git ships a
   root-level `check-portability.mjs` (run via `npm run check:portability`)
   that warns on hard-coded `${CLAUDE_PLUGIN_ROOT}` paths and `../` path

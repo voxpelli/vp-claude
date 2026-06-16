@@ -6,6 +6,7 @@ RETRO-*.md
 SWARM-*.md
 PLAN-*.md
 SYNERGY-*.local.md
+PRIVATE-SYNERGY-*.md
 
 # Beads / Dolt files — entire .beads/ directory is local-only
 .beads/

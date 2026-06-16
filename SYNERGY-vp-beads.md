@@ -22,7 +22,10 @@ of maintaining both halves catches drift cases a single-source record misses.
   gap from plugin-specific extensions including the gardener read-only
   invariant and `KNOWN_MCP_PREFIXES` allowlist). Changes to either copy
   must stay in sync or the audit logic diverges silently.
-  Status: drifting · Last verified: 2026-05-29
+  Status: drifting · Last verified: 2026-06-16
+  Note: 2026-06-16 re-verify (/sibling-sync): drift WIDENED — `validate-plugin.mjs`
+  is now 482 lines here (was 358) vs vp-beads's 617 (was 333); vp-beads's copy
+  nearly doubled since last check. Still drifting; the re-converge case strengthens.
   Note: Bilaterally confirmed drifting after Sprint 20 /sibling-sync pass
   — vp-beads's row also marks drifting (LV 2026-05-04). The 25-line gap
   reflects vp-claude additions since. Re-converge candidate when vg-3/vg-4
@@ -67,7 +70,10 @@ of maintaining both halves catches drift cases a single-source record misses.
   test paths; v0.29.0 added gh-ecosystem hook coverage. Bilaterally
   confirmed drifting after Sprint 20 /sibling-sync pass — vp-beads's row
   also marks drifting (LV 2026-05-04).
-  Status: drifting · Last verified: 2026-05-06
+  Status: drifting · Last verified: 2026-06-16
+  Note: 2026-06-16 re-verify (/sibling-sync): drift WIDENED — `check-hooks.mjs`
+  is now 397 lines here (was 366) vs vp-beads's 641 (was 284); vp-beads added
+  ~357 lines. Still drifting.
   Note: Strong extraction candidate for shared `@voxpelli/claude-plugin-tools`.
 
 - **BM error classification hook** (2026-04-05) — Both plugins have a
