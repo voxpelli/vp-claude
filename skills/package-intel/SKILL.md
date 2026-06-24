@@ -450,3 +450,69 @@ edit_note(
 Only add links where the relationship is genuine — don't link notes that
 mention the same word in an unrelated context. Skip this step for updates to
 existing packages where cross-links likely already exist.
+
+## Batch mode: upgrade haul
+
+**Detection hook.** If the input is not a single prefixed identifier but a
+**batch** — multiple bare or prefixed package names, OR a pasted upgrade/outdated
+command line — treat it as an *upgrade haul* (a batch refresh of already-documented
+notes against a version delta) rather than a from-scratch research call. Triggers:
+
+- `npm outdated`, `npm update`, `npm -g outdated`, `npm i a@latest b@latest`
+- analogous package-manager upgrade signals from the other five ecosystems:
+  `cargo install-update -l` (crate), `go list -u -m all` (go),
+  `composer outdated` (composer), `pip list --outdated` (pypi),
+  `bundle outdated` (gem)
+- two or more bare identifiers pasted together (`fastify pino`, `crate:serde tokio`)
+
+The single prefixed-identifier path (`/package-intel npm:fastify`, or a bare
+`fastify`) is **unchanged** — it runs Steps 0–7 exactly as above. The hook only
+fires on a batch.
+
+**Load the shared core.** The ecosystem-agnostic mechanics — input parsing /
+de-qualification, highlights-reel synthesis across the version delta, the two
+recording axes, stale-cache arbitration, batch orchestration, and the `--stale`
+relationship — live in
+`${CLAUDE_PLUGIN_ROOT}/skills/package-intel/references/upgrade-haul.md`.
+Read it now and follow it; this section only encodes the package-intel adapter
+contract (input dialect, ecosystem routing, Axis-B target) it delegates back here.
+
+### Adapter contract
+
+1. **Input dialect.** Strip the command word and flags per the shared core: drop
+   `npm` / `npm outdated` / `npm update` / `cargo install-update -l` /
+   `go list -u -m all` / `composer outdated` / `pip list --outdated` /
+   `bundle outdated`, leading `-`/`--` flags, and any trailing redirect — the
+   operands are the identifiers. De-qualify each operand (`pkg@latest`,
+   `pkg@^1.2.0` → `pkg`). For an `npm outdated` / `npm -g outdated` table, the
+   first column of each row is the identifier; ignore the wanted/latest columns.
+
+2. **Ecosystem routing.** Resolve each de-qualified operand to a canonical note
+   the way a single call would — via **Step 0: Detect ecosystem**. Honour an
+   explicit per-operand prefix (`crate:serde`); for bare operands, the command
+   line's tool fixes the ecosystem (an `npm outdated` paste is all `npm`,
+   `bundle outdated` all `gem`, etc.), otherwise fall back to the Step-0
+   project-context inference. Scoped npm names (`@scope/pkg`) stay npm. Run the
+   Step-1 existence check per operand, globbing the operand's ecosystem directory
+   (`npm/`, `crates/`, `go/`, `composer/`, `pypi/`, `gems/`).
+
+3. **Per-item fast path.** Each resolved item runs the **Step 1 freshness
+   fast-path**: a haul is a refresh, so most items are already documented and hit
+   the `<60 days` tier — DeepWiki + Context7 + changelog (Step 3e) + Socket only.
+   The existing note's recorded version is the delta's left endpoint.
+
+4. **Axis-B narrative target — `## Release Highlights`.** Write the curated
+   changelog reel for each note's delta into its **`## Release Highlights`**
+   section (the prose target the note templates already define). This is the
+   package-intel-specific recording target the shared core delegates here.
+
+5. **Axis-A version slot — consume what the schema has, do not block on `f3zx`.**
+   Refresh the machine-readable `[version]` observation that `--stale` Pattern 3
+   reads. The canonical schema slot exists **only for `npm_package` today** (per
+   0.31.4, recorded at Step 1 / Step 3e and stamped in Step 4) — so for npm,
+   refresh both the `[version]` observation and the header line. For
+   crate/go/composer/pypi/gem the slot is not yet in the schema (it arrives via
+   bead `f3zx`, tracked-but-unstarted); record the new version by the same
+   convention where the note already carries one, but do **not** wait on `f3zx`.
+   Per the shared core's "refresh BOTH axes" gotcha, stamp the headline version
+   **and** the prose reel — they move independently.

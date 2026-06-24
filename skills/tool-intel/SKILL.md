@@ -52,6 +52,107 @@ One argument: the tool identifier with a required ecosystem prefix.
 - `gh:` — strip `https://github.com/` if pasted, strip `@<tag>` suffix, require `owner/repo` form (e.g., `gh:meiji163/gh-notify`); error if no `/` is present
 - `plugin:` / `skill:` — strip `https://github.com/` if pasted; require `owner/repo`; an optional `#<name>` suffix selects one plugin/skill from a multi-artifact repo (a marketplace holding several plugins, or a multi-skill bundle); error if no `/` is present. Build the title **literally** from the identifier you were given — do NOT drop a `#<name>` suffix even when it repeats the repo's last path segment. Whether that suffix is redundant depends on the install's source branch (a single-plugin self-hosted marketplace vs. a multi-plugin repo), which only the `/knowledge-gaps --global` resolver (`lib/installed-plugins.mjs`) can determine — and its offer already hands you the canonical, de-duplicated identifier verbatim. On a rare manual paste of a redundant suffix, Step 1's existence check (glob on the leaf `#`/`/`-segment) finds the canonical note so you update it instead of forking a duplicate.
 
+## Batch detection: upgrade haul
+
+**Before single-identifier dispatch**, check whether the input is a *batch
+refresh* rather than one research call. Trigger the upgrade-haul flow when the
+input is either:
+
+- a pasted **`brew upgrade` / `brew outdated`** command line (or any
+  `brew install`/`brew reinstall` line with several operands), or
+- **multiple bare identifiers** (a space- or newline-separated list of names,
+  with or without `brew:`/`cask:` prefixes).
+
+A single prefixed identifier (`/tool-intel brew:ripgrep`) is **not** a batch —
+it falls straight through to [Step 0](#step-0-detect-ecosystem) unchanged.
+
+When triggered, **load the shared reference** for the ecosystem-agnostic core
+(input parsing, highlights-reel synthesis, the two recording axes, stale-cache
+arbitration, batch orchestration, and the `--stale` relationship):
+
+```
+Read ${CLAUDE_PLUGIN_ROOT}/skills/package-intel/references/upgrade-haul.md
+```
+
+(The shared reference lives under `package-intel/references/` even though both
+intel skills load it — same home as `forge-fallback.md`.) Do **not** restate its
+mechanics here; the tool-intel-specific routing below is the *adapter* the
+shared reference delegates to. Then resolve the batch per the adapter and run
+each item through [Step 0](#step-0-detect-ecosystem) onward on the freshness
+fast-path.
+
+### Adapter: tool-intel surface
+
+This section is the per-skill adapter the shared reference's
+*Per-skill adapter contract* requires. It owns three things; everything else
+(Axis A, orchestration, arbitration) is shared and lives in the reference.
+
+**1. Input dialect.** Command words and flags that are noise:
+`brew upgrade`, `brew outdated`, `brew install`, `brew reinstall`, leading
+`-`/`--` flags, and a trailing redirect. The operands are the identifiers.
+Strip version qualifiers per the shared reference (`claude-code@latest` →
+`claude-code`).
+
+**2. Ecosystem routing — bare-name → formula/cask auto-routing.** A pasted
+`brew upgrade foo bar` yields **bare names with no `brew:`/`cask:` prefix**, so
+the class (formula vs cask) is unknown up front. Resolve each operand:
+
+- Run `brew info <name>` (or `mcp__homebrew__info` when the Homebrew MCP is
+  reachable) and reuse the **artifacts-vs-Dependencies shape signal**: a cask
+  exposes an `artifacts` block (`app`, `binary`, `pkg`); a formula exposes
+  `Dependencies` / build-from-source fields. Route an `artifacts`-shaped result
+  to the `casks/` directory (`brew_cask`), a `Dependencies`-shaped result to the
+  `brew/` directory (`brew_formula`).
+- An already-prefixed operand (`brew:foo`, `cask:bar`) skips this inference and
+  routes by its prefix directly.
+
+**Step-1 existence check globs BOTH directories.** Because formula-vs-cask is
+unknown before routing, run the [Step 1](#step-1-check-for-existing-note)
+existence check against **both** `brew/` and `casks/` for an unknown-class bare
+name:
+
+```
+list_directory(dir_name="brew",  file_name_glob="*<name>*")
+list_directory(dir_name="casks", file_name_glob="*<name>*")
+```
+
+Whichever directory holds the note fixes the class (and tells you the note
+already exists, so you update rather than fork). If neither matches, fall back to
+the `brew info` shape signal above to pick the class for a new note.
+
+**Cask version-fetch routing on a `not-in-api` signal (dogfood edge case).** The
+batch version-fetch helper `scripts/fetch-brew-upstream.sh` reads
+`formulae.brew.sh`, which is **core-formula-only** — so it returns
+`upstream_state: "not-in-api"` for any **cask**. On a `not-in-api` signal, do
+**not** treat the version as unknowable: **dispatch that operand to
+`scripts/fetch-cask-upstream.sh`** (the cask-indexed `cask.json` source)
+instead. (Dogfood 2026-06-24: `claude-code` is a cask, so
+`fetch-brew-upstream.sh` returned `not-in-api`; re-dispatching to
+`fetch-cask-upstream.sh` recovered its version.) This is the formula-vs-cask
+sub-routing the shared reference flags for the adapter.
+
+**3. Axis-B narrative target.** Tool-intel records the curated changelog reel as
+**inline `[feature]` / `[version]` observations** (the tool-intel narrative
+style) — **not** a `## Release Highlights` section (that is package-intel's
+target). Each surfaced delta change becomes its own observation line in
+`## Observations`.
+
+**Recording targets — refresh BOTH axes.** Per the shared reference's two-axis
+convention:
+
+- **Axis A — the `[version]` observation.** Refresh the headline `[version]`
+  observation to the installed/current version (by convention; the hardened
+  brew/cask machine-stable schema slot is the *separate, unstarted* bead `80r4`
+  — consume the convention, do not block on it).
+- **Axis B — the inline changelog reel.** Add the curated `[feature]` /
+  `[version]` observations for the delta.
+
+Both axes are independent: refreshing the inline reel alone leaves the
+**top-of-note `[version]` stamp stale**. On every refreshed note, move the
+headline `[version]` observation **and** the inline reel — they do not update
+each other. (Dogfood: an `llmfit`-style refresh that wrote only the narrative
+left the headline version at the old value until it was bumped separately.)
+
 ## Ecosystem Dispatch
 
 ### Step 0: Detect ecosystem
