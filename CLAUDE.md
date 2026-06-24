@@ -16,7 +16,7 @@ A Claude Code plugin (`vp-knowledge`) containing user-owned skills, agents, and 
   plugin.json                        # Plugin manifest
 skills/
   package-intel/SKILL.md             # Seven-source multi-ecosystem package research
-    references/                      # 14 files: 6 ecosystem + 6 note templates + gh-api-fallback + forge-fallback
+    references/                      # 15 files: 6 ecosystem + 6 note templates + gh-api-fallback + forge-fallback + upgrade-haul (shared, also loaded by tool-intel)
   tool-intel/SKILL.md                # Five-source dev-tool research (brew/cask/action/docker/vscode/gh)
     references/                      # 16 files: 8 ecosystem + 7 note templates + gh-api-fallback
   knowledge-gaps/SKILL.md            # Cross-reference deps + tool manifests vs BM coverage; --stale for version drift (brew/npm/cask/crate/vscode); --global for installed plugin/skill coverage
@@ -188,6 +188,7 @@ When the user asks about knowledge or packages, choose the right skill:
 | "prime", "project context", "coverage", "which deps are documented" | `/knowledge-prime` |
 | "what do we know about \[X\]", "recall", "find notes on", topic question | `/knowledge-ask [topic]` |
 | "research \[pkg\]", "document \[pkg\]", needs external sources | `/package-intel [pkg]` |
+| "upgrade haul", "refresh these after upgrading", pasted `brew upgrade`/`npm outdated` line, batch of names | `/package-intel` or `/tool-intel` batch mode (per ecosystem) |
 | "gaps", "undocumented", "audit coverage" | `/knowledge-gaps` |
 | "stale", "drifted", "outdated notes", "which tools/packages need updating" | `/knowledge-gaps --stale [<ecosystem>]` |
 | "installed plugins", "which plugins/skills are documented", "plugin/skill coverage" | `/knowledge-gaps --global` |

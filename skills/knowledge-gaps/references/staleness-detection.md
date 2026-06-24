@@ -356,6 +356,18 @@ For more than 5 `Drifted >30d` items, prioritize `[semver-major]` first, then
 larger fan-out. Track partial failures: if any refresh invocation fails, report
 which succeeded vs failed rather than claiming the whole batch succeeded.
 
+**This batched handoff IS an upgrade haul — it is the *detector* half of a
+bidirectional pair.** When the user accepts, the batch routes into the
+*executor* side: `package-intel`'s **Batch mode: upgrade haul** section and
+`tool-intel`'s **Batch detection: upgrade haul** section, both of which load the
+shared core `skills/package-intel/references/upgrade-haul.md` (input parsing,
+highlights-reel synthesis, the two recording axes, batch orchestration). The
+executor refreshes the same Axis-A `[version]` observation this skill reads via
+S2 **Pattern 3**, so the next `--stale` run sees the closed drift. The reel each
+executor writes already brackets exactly the recorded→upstream delta this report
+surfaces. See the reference's *Relationship to `--stale`* section — this pointer
+is its reverse partner.
+
 ### S8. Scope footnote
 
 After the report, include a one-line footnote acknowledging scope:

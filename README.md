@@ -36,6 +36,8 @@ Queries seven sources in parallel, synthesizes a structured note, and cross-link
 
 Plus changelog analysis via GitHub releases — with a git-tag fallback when the release list lags the registry version (a tag pushed without a published Release). After writing, searches for existing notes that reference the package and adds bidirectional cross-links. The result is an ecosystem-prefixed note (`npm-*`, `crate-*`, `pypi-*`, etc.) with observations, relations, and release highlights — connected into the graph from day one.
 
+**Batch mode ("upgrade haul").** Hand `/package-intel` a list of names or a pasted upgrade/outdated command line (`npm outdated`, `npm i a@latest b@latest`, and the crate/go/composer/pypi/gem equivalents) and it refreshes every already-documented note against its recorded→current version delta in one pass — synthesizing a curated changelog reel for just that interval and stamping the new version into the `## Release Highlights` prose — plus the machine-stable `[version]` observation where the schema carries that slot (npm today; the other ecosystems as the slot lands). The single prefixed-identifier path is unchanged; batch mode is purely additive. This is the executor half of `/knowledge-gaps --stale` — its batched-refresh offer routes straight into this mode.
+
 ### `/tool-intel <prefix>:<name>` — Research any dev tool
 
 Queries five sources in parallel, synthesizes a structured note, and cross-links existing notes. Supports eight tool categories:
@@ -71,6 +73,8 @@ Queries five sources in parallel, synthesizes a structured note, and cross-links
 | Homebrew MCP (optional) | Install analytics (30/90/365-day counts + build errors) for `brew:` and `cask:` — skipped silently when unavailable |
 
 Plus version/changelog data (GitHub releases for actions, Docker Hub tags for images, API versions for brew/vscode) — with a git-tag fallback for `action:`/`gh:`/`brew:` when the release list lags the newest git tag. For `vscode:`, it also records an **Open VSX trust signal** — a `[security]` observation placing the extension on a 4-state ladder (verified-restricted / public-namespace / **marketplace-only = squattable** / not-published-anywhere); a Marketplace-only extension has an unclaimed Open VSX namespace that fork-IDEs (Cursor, Windsurf, VSCodium) resolve installs against, a known supply-chain exposure. After writing, searches for existing notes that reference the tool and adds bidirectional cross-links. The result is a prefixed note (`brew-*`, `action-*`, etc.) with type-specific sections — `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for Docker, `## Common Usage` for formulae — plus observations and relations.
+
+**Batch mode ("upgrade haul").** Hand `/tool-intel` a pasted `brew upgrade` / `brew outdated` line or a list of bare names and it refreshes every already-documented note in one pass. Bare names route to formula or cask automatically via the artifacts-vs-`Dependencies` shape signal (and re-dispatch from `fetch-brew-upstream.sh` to `fetch-cask-upstream.sh` on a `not-in-api` result), and each note's delta is recorded as inline `[feature]` / `[version]` observations. The single prefixed-identifier path is unchanged; batch mode is purely additive — and is the executor half of `/knowledge-gaps --stale`.
 
 ### `/knowledge-gaps` — Find undocumented dependencies
 
@@ -418,6 +422,7 @@ skills/
     references/ecosystem-pypi.md       PyPI API + note template
     references/ecosystem-gems.md       RubyGems API + note template
     references/gh-api-fallback.md      GitHub API fallback for unindexed/wrong-repo cases
+    references/upgrade-haul.md         Shared batch-refresh core (both intel skills)
   tool-intel/
     SKILL.md                           Five-source research workflow
     references/ecosystem-brew.md       formulae.brew.sh API

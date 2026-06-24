@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.6][] - 2026-06-24
+
+### Added
+
+- **Batch mode ("upgrade haul") for `/package-intel` and `/tool-intel`.** Both
+  intel skills gain an additive batch-detection hook: instead of a single
+  prefixed identifier, you can hand them a list of bare/prefixed names **or** a
+  pasted upgrade/outdated command line (`brew upgrade a b c`, `npm outdated`,
+  `npm i a@latest b@latest`) and they refresh every already-documented note
+  against its recorded→current version delta in one pass. The
+  ecosystem-agnostic core lives in a new shared reference,
+  `skills/package-intel/references/upgrade-haul.md` (input parsing /
+  de-qualification, curated highlights-reel synthesis across the delta, the two
+  recording axes — Axis A `[version]` observation + Axis B prose reel —
+  stale-cache arbitration favouring the authoritative registry/API read, and
+  batch orchestration with file-disjoint per-note writes + a single central
+  cross-link pass). Each skill supplies a per-skill adapter section
+  (`package-intel`: **Batch mode: upgrade haul**, Axis-B target
+  `## Release Highlights`; `tool-intel`: **Batch detection: upgrade haul**, with
+  bare-name formula-vs-cask auto-routing via the artifacts-vs-`Dependencies`
+  shape signal, a `fetch-brew-upstream.sh` → `fetch-cask-upstream.sh`
+  re-dispatch on a `not-in-api` signal, and inline `[feature]` / `[version]`
+  observations as the Axis-B target).
+- **`/knowledge-gaps --stale` S7 is now the bidirectional partner.** The
+  *Offer batched refresh* step in `references/staleness-detection.md` now points
+  the accepted batch at the two executor adapter sections and the shared
+  `upgrade-haul.md` core, completing the detector↔executor cross-reference: the
+  `--stale` detector finds drift, the upgrade haul closes it against the same
+  Axis-A `[version]` slot S2 Pattern 3 reads.
+
+This is purely additive — the single prefixed-identifier path
+(`/package-intel npm:fastify`, `/tool-intel brew:ripgrep`) is unchanged.
+
 ## [0.31.5][] - 2026-06-11
 
 ### Fixed
@@ -1604,6 +1637,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.31.6]: https://github.com/voxpelli/vp-claude/compare/v0.31.5...v0.31.6
 [0.31.5]: https://github.com/voxpelli/vp-claude/compare/v0.31.4...v0.31.5
 [0.31.4]: https://github.com/voxpelli/vp-claude/compare/v0.31.3...v0.31.4
 [0.31.3]: https://github.com/voxpelli/vp-claude/compare/v0.31.2...v0.31.3
