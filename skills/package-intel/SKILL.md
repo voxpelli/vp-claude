@@ -318,11 +318,14 @@ Include the metric window (weekly vs total) and registry name — e.g.,
 
 **For npm notes, add a `[version]` observation** recording the documented latest
 version as a clean leading token — e.g. `- [version] 5.8.5`. This is the
-machine-stable slot `/knowledge-gaps --stale npm` reads first (Pattern 3), before
-the fragile header/prose extraction, so a note whose subject involves version
-strings (e.g. `yaml`, `semver`) can't be misparsed. The same value goes in the
-header line (`| v<version> |`); keep them consistent. Only `npm_package` defines
-this slot today — the other cohort schemas don't, so omit `[version]` for
+machine-stable slot intended to shield notes whose subject involves version
+strings (e.g. `yaml`, `semver`) from misparse. The same value goes in the header
+line (`| v<version> |`); **keep them consistent.** (Note: `--stale` currently
+reads the header pipe *first* — Pattern 1 outranks the `[version]` observation
+under first-hit-wins — so the observation is a redundant safety slot today, not
+the effective read target; making it win is bead `vp-claude-9q7e`. Until then,
+the header pipe is what must be accurate.) Only `npm_package` defines this slot
+today — the other cohort schemas don't, so omit `[version]` for
 crate/go/composer/pypi/gem until the slot is extended to them (bd vp-claude-f3zx).
 
 **No wiki-links in observations.** Never use `[[Target]]` syntax in observation
@@ -479,6 +482,9 @@ contract (input dialect, ecosystem routing, Axis-B target) it delegates back her
 
 ### Adapter contract
 
+Per-item outcomes and the batch-close summary follow the shared reference's
+*Batch-outcome contract* — no adapter-specific extension needed.
+
 1. **Input dialect.** Strip the command word and flags per the shared core: drop
    `npm` / `npm outdated` / `npm update` / `cargo install-update -l` /
    `go list -u -m all` / `composer outdated` / `pip list --outdated` /
@@ -506,13 +512,14 @@ contract (input dialect, ecosystem routing, Axis-B target) it delegates back her
    section (the prose target the note templates already define). This is the
    package-intel-specific recording target the shared core delegates here.
 
-5. **Axis-A version slot — consume what the schema has, do not block on `f3zx`.**
-   Refresh the machine-readable `[version]` observation that `--stale` Pattern 3
-   reads. The canonical schema slot exists **only for `npm_package` today** (per
-   0.31.4, recorded at Step 1 / Step 3e and stamped in Step 4) — so for npm,
-   refresh both the `[version]` observation and the header line. For
-   crate/go/composer/pypi/gem the slot is not yet in the schema (it arrives via
-   bead `f3zx`, tracked-but-unstarted); record the new version by the same
-   convention where the note already carries one, but do **not** wait on `f3zx`.
-   Per the shared core's "refresh BOTH axes" gotcha, stamp the headline version
-   **and** the prose reel — they move independently.
+5. **Axis-A version slot — refresh the inline header pipe (what `--stale` reads
+   first).** For every package cohort the recorded version lives in the header
+   line `GitHub: … | v<version> | <license>` (S2 **Pattern 1**), which outranks
+   the `[version]` observation under first-hit-wins — so refresh the pipe; that
+   is the slot `--stale` re-reads. npm notes *additionally* carry a `[version]`
+   observation (Pattern 3, emitted since 0.31.4); move it in the **same** edit so
+   the two stay consistent, but never the obs alone — a stale pipe defeats the
+   round-trip. For crate/go/composer/pypi/gem there is no `[version]` slot yet
+   (bead `f3zx`, do **not** wait on it) — the pipe is the only Axis-A target.
+   Per the shared core's "refresh BOTH axes" gotcha, move the header pipe **and**
+   the prose reel — they move independently.

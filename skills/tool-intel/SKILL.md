@@ -59,12 +59,15 @@ refresh* rather than one research call. Trigger the upgrade-haul flow when the
 input is either:
 
 - a pasted **`brew upgrade` / `brew outdated`** command line (or any
-  `brew install`/`brew reinstall` line with several operands), or
-- **multiple bare identifiers** (a space- or newline-separated list of names,
+  `brew install`/`brew reinstall` line with **two or more** operands), or
+- **two or more bare identifiers** (a space- or newline-separated list of names,
   with or without `brew:`/`cask:` prefixes).
 
-A single prefixed identifier (`/tool-intel brew:ripgrep`) is **not** a batch —
-it falls straight through to [Step 0](#step-0-detect-ecosystem) unchanged.
+Neither a single prefixed identifier (`/tool-intel brew:ripgrep`) **nor a single
+bare name** (`/tool-intel ripgrep`) is a batch — both fall straight through to
+[Step 0](#step-0-detect-ecosystem) unchanged (a bare name with no prefix hits
+Step 0's normal prefix-error path, prompting for `brew:`/`cask:`). The batch
+hook fires only on two or more operands.
 
 When triggered, **load the shared reference** for the ecosystem-agnostic core
 (input parsing, highlights-reel synthesis, the two recording axes, stale-cache
@@ -86,6 +89,8 @@ fast-path.
 This section is the per-skill adapter the shared reference's
 *Per-skill adapter contract* requires. It owns three things; everything else
 (Axis A, orchestration, arbitration) is shared and lives in the reference.
+Per-item outcomes and the batch-close summary follow the shared reference's
+*Batch-outcome contract* — no adapter-specific extension needed.
 
 **1. Input dialect.** Command words and flags that are noise:
 `brew upgrade`, `brew outdated`, `brew install`, `brew reinstall`, leading
@@ -120,16 +125,44 @@ Whichever directory holds the note fixes the class (and tells you the note
 already exists, so you update rather than fork). If neither matches, fall back to
 the `brew info` shape signal above to pick the class for a new note.
 
-**Cask version-fetch routing on a `not-in-api` signal (dogfood edge case).** The
-batch version-fetch helper `scripts/fetch-brew-upstream.sh` reads
-`formulae.brew.sh`, which is **core-formula-only** — so it returns
-`upstream_state: "not-in-api"` for any **cask**. On a `not-in-api` signal, do
-**not** treat the version as unknowable: **dispatch that operand to
-`scripts/fetch-cask-upstream.sh`** (the cask-indexed `cask.json` source)
-instead. (Dogfood 2026-06-24: `claude-code` is a cask, so
-`fetch-brew-upstream.sh` returned `not-in-api`; re-dispatching to
-`fetch-cask-upstream.sh` recovered its version.) This is the formula-vs-cask
-sub-routing the shared reference flags for the adapter.
+**If the shape signal is ambiguous, do not guess.** A dependency-free formula
+(common for single-binary Go/Rust tools) exposes no `Dependencies` block; a
+`brew info` / `mcp__homebrew__info` call can also error, or a name can resolve as
+*both* a formula and a cask. In any of these cases — no clean `artifacts` shape,
+no clean `Dependencies` shape, both present, or an error — surface the operand as
+`class-ambiguous` in the batch summary ("needs an explicit `brew:`/`cask:`
+prefix") and skip it from the auto-routed batch rather than misfiling a note
+under the wrong type. (The Step-1 dual-directory glob above already resolves the
+common case — an existing note — so this only bites a genuinely new, ambiguous
+bare name.)
+
+**Cask version-fetch routing on a `not-in-api` signal (dogfood edge case).**
+`scripts/fetch-brew-upstream.sh` reads `formulae.brew.sh`, which is
+**core-formula-only**, so it returns `upstream_state: "not-in-api"` for any
+**cask** *and* for any third-party-tap formula. Join the fetch output to each
+operand **by `name`**, then branch — mirroring the detector's tap handling
+(knowledge-gardener Step 5b-iv resolution rules 1–2, which already classify
+`tap + not-in-api/api-unavailable → Not in registry`):
+
+1. **`not-in-api` with the name populated** → dispatch that operand to
+   `scripts/fetch-cask-upstream.sh` (the `cask.json` source) and re-branch on its
+   result:
+   - **cask hit** (`ok`/`deprecated`/`disabled`) → it's a cask; route to
+     `casks/`. (Dogfood 2026-06-24: `claude-code` is a cask — the re-dispatch
+     recovered its version.)
+   - **second `not-in-api`** → the operand is in neither core formulae nor casks:
+     a third-party-tap or private formula. Do **not** keep the old version or
+     invent one. Run `brew info <name>` for the locally-installed version, stamp
+     it `(local, unverified — not in core-formula or cask APIs)` plus a `[gotcha]`
+     noting the tap/private source, and report it in the batch summary's
+     skipped/unverified column. (The changelog reel can still proceed via the
+     upstream repo's git tags from `brew info`.)
+2. **`api-unavailable`** → the script emits this as a single sentinel with an
+   **empty `name`** (a curl/parse failure for the whole fetch run, not one
+   operand). It does not join to any operand: treat every operand in that fetch
+   batch as `unverified[api-unavailable]`, skip the version write, and report —
+   **never** read a failed fetch as "no drift." An empty-name row is the
+   run-failure signal.
 
 **3. Axis-B narrative target.** Tool-intel records the curated changelog reel as
 **inline `[feature]` / `[version]` observations** (the tool-intel narrative
@@ -140,18 +173,22 @@ target). Each surfaced delta change becomes its own observation line in
 **Recording targets — refresh BOTH axes.** Per the shared reference's two-axis
 convention:
 
-- **Axis A — the `[version]` observation.** Refresh the headline `[version]`
-  observation to the installed/current version (by convention; the hardened
-  brew/cask machine-stable schema slot is the *separate, unstarted* bead `80r4`
-  — consume the convention, do not block on it).
+- **Axis A — the inline header pipe.** For brew/cask the recorded version lives
+  in the note's header line `Homepage: … | v<version> | <license>` (S2
+  **Pattern 1**) — that is the slot `--stale brew`/`--stale cask` reads first, so
+  refresh **that**. brew/cask notes do **not** carry a `[version]` observation;
+  do not add one (the hardened machine-stable schema slot is the separate,
+  unstarted bead `80r4` — do not block on it). Use `edit_note(find_replace)` on
+  the `| v<old> |` token.
 - **Axis B — the inline changelog reel.** Add the curated `[feature]` /
-  `[version]` observations for the delta.
+  `[version]` observations for the delta (the tool-intel narrative style).
 
-Both axes are independent: refreshing the inline reel alone leaves the
-**top-of-note `[version]` stamp stale**. On every refreshed note, move the
-headline `[version]` observation **and** the inline reel — they do not update
-each other. (Dogfood: an `llmfit`-style refresh that wrote only the narrative
-left the headline version at the old value until it was bumped separately.)
+Both axes are independent: refreshing the inline reel alone leaves the **header
+pipe stale**, and the pipe is exactly what `--stale` re-reads — so the drift
+never closes. On every refreshed note, move the header pipe `| v<version> |`
+**and** the inline reel — they do not update each other. (Dogfood: an
+`llmfit`-style refresh that wrote only the narrative left the headline version at
+the old value until it was bumped separately.)
 
 ## Ecosystem Dispatch
 
