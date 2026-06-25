@@ -455,9 +455,13 @@ wins** — this is the **same set the `/knowledge-gaps --stale` reference
 | 6 | Registry/prose fallback | `- **Version**: 0.11.13 (…)` / `Current: v3.2.4 (…)` |
 
 Pattern 3 reads the version straight from the note's `observations` array — the
-canonical `[version]` slot proposed for the package schemas (bead `f3zx` / Wave
-3); **not yet emitted by the default `/package-intel` templates**, but present
-in some hand-edited notes, so check it before the curated prose. Accept
+canonical `[version]` slot. The `/package-intel` npm template **emits it since
+0.31.4** (71 npm notes backfilled); `f3zx` tracks extending it to the other five
+package cohorts (crate/go/composer/pypi/gem). **But "emitted" is not "read
+first":** under first-hit-wins, Pattern 1 (the inline pipe) outranks Pattern 3
+and the npm template emits *both*, so for a standard npm note the pipe is what
+wins and the `[version]` observation is a redundant secondary slot today (the
+read-ordering fix is bead `vp-claude-9q7e`). Accept
 `[version]` or `[version-range]`; for a range take the first concrete version
 token (strip a leading range operator: `^`, `~`, `>=`, `>`, `<=`, `<`, `=`).
 Pattern 5 takes the **highest semver** among the versions referenced in the
@@ -466,8 +470,9 @@ Pattern 5 takes the **highest semver** among the versions referenced in the
 (breaking/feature/fix), not version order. **Release Highlights ranks last on
 purpose** — the list is hand-curated and may lag the real latest release, so
 trusting it risks a false "current", worse than an honest `unparseable`; reach
-it only when patterns 1–4 and the prose fallback all miss. Until `f3zx` lands
-the `[version]` slot, Pattern 5 is what recovers most notes.
+it only when patterns 1–4 and the prose fallback all miss. For the non-npm
+package cohorts (no `[version]` slot until `f3zx` extends it), Pattern 5 is what
+recovers most notes.
 
 Strip a leading `v` (`v1.39.0` ≡ `1.39.0`). If none match, record
 `bm_version = unparseable` (a corpus-quality finding worth surfacing).
