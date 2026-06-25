@@ -79,12 +79,16 @@ A refreshed note carries the new version on **two orthogonal axes**. These are a
 recording convention, **not an ecosystem quirk** — both apply wherever the note
 type supports them:
 
-- **Axis A — the machine-readable version slot.** The `[version]` (or
-  `[version-range]`) observation that `--stale` **Pattern 3** reads directly
-  from the note's `observations` array. The reel **refreshes the `[version]`
-  observation wherever it is appropriate by convention** (as done by hand for
-  brew/cask today), AND updates the canonical schema slot where one exists
-  (npm only today, per 0.31.4).
+- **Axis A — the machine-readable version slot `--stale` reads.** This is the
+  **inline header pipe** `… | v<version> | <license>` (S2 **Pattern 1**) — the
+  slot `--stale` reads *first* for **every** cohort under first-hit-wins. The
+  haul MUST refresh the pipe. npm notes *also* carry a `[version]` observation
+  (Pattern 3); update it in the **same** edit to keep the two consistent, but
+  never update only the observation — the pipe outranks it, so a stale pipe
+  defeats the round-trip even with a fresh `[version]` obs. (Heterogeneous
+  corpus: an older note may record version only in a `| Version |` table row or
+  prose — Patterns 2/6; refresh whichever slot S2 would read for *that* note,
+  defaulting to the pipe for current-era notes.)
 - **Axis B — the prose changelog narrative.** The human-readable reel from
   [Highlights-reel synthesis](#highlights-reel-synthesis). Its location is
   adapter-specific (see below).
@@ -95,12 +99,13 @@ brew/cask/vscode (bead `80r4`) is tracked separately and unstarted. The haul
 **consumes whatever slot exists today** and otherwise records the `[version]`
 observation by convention — it must never wait on `f3zx`/`80r4`.
 
-**Gotcha — refresh BOTH axes.** Updating the prose reel alone leaves the
-note's *headline* version stale. (Dogfood: an `llmfit` refresh wrote the
-Release Highlights but left the top-of-note `[version]` stamp at the old value
-until it was bumped separately.) On every refreshed note, stamp the headline
-`[version]` observation **and** the narrative — they are independent and both
-must move.
+**Gotcha — refresh BOTH axes.** Updating the prose reel alone leaves the note's
+*headline* version (the inline pipe) stale, and the pipe is exactly what `--stale`
+re-reads — so the drift never closes. (Dogfood: an `llmfit` refresh wrote the
+Release Highlights but left the top-of-note version at the old value until it was
+bumped separately.) On every refreshed note, move the headline pipe `| v<version> |`
+**and** the narrative — they are independent and both must move. For npm, the
+`[version]` observation is a third slot that must move with the pipe (same edit).
 
 ## Stale-cache arbitration
 
@@ -125,7 +130,7 @@ Defaults for running the haul over the resolved list:
   fast path.
 - **Per-note edits are file-disjoint.** Each note lives in its own file, so
   concurrent refreshes never corrupt each other's output.
-- **One central cross-link pass at the end.** Defer Step-10/Step-7 cross-linking
+- **One central cross-link pass at the end.** Defer Step 7 cross-linking
   (which touches *shared* neighbor notes) to a single pass after all per-note
   refreshes land, so the disjoint writes never contend on a shared note.
 - **Cap concurrent launches.** Follow the `~4–6` concurrent-*launch* cap from
@@ -137,6 +142,37 @@ Defaults for running the haul over the resolved list:
   writer per note. (Dogfood: 6 file-disjoint research subagents in one message,
   writes centralized in the main context — clean, no throttle.)
 
+### Batch-outcome contract
+
+A haul is a *batch* — it must report a per-item outcome and never claim blanket
+success while an item silently no-op'd. This mirrors the `--stale` S7 discipline
+("report which succeeded vs failed") on the executor side. Classify each resolved
+operand and surface a summary table at batch close:
+
+- `refreshed[old→new]` — the Axis-A version slot was confirmed changed (see the
+  verification step below) and the Axis-B narrative was written.
+- `already-current` — recorded version already matched upstream; no edit needed.
+- `FAILED[reason]` — an edit was attempted but did not land: `edit-missed` (the
+  `find_replace` matched nothing), `note-missing` (Step 1 found no existing note —
+  a haul refreshes existing notes; a missing note is out of scope, not a silent
+  skip), or `write-error` (BM returned an error).
+- `unverified[reason]` — the upstream version could not be retrieved, so no
+  comparison was possible: `api-unavailable` (the fetch returned
+  `upstream_state:"api-unavailable"`). **Never record a version as current when
+  the upstream read failed, and never report `unverified` as "no drift."**
+
+**Axis-A edit verification (required).** After the `edit_note(find_replace)` that
+bumps the version, **re-read the note** and confirm the slot changed to the new
+value — the repo's `find_replace` silently matches nothing on a byte mismatch
+(whitespace, a `v` prefix, a stale source-stamp suffix) and on notes >~40KB.
+Verify the **inline pipe specifically** (the slot `--stale` reads); for npm,
+verify the pipe *and* the `[version]` observation both moved — a passing
+obs-edit with a missed pipe-edit still leaves the round-trip broken. If the slot
+is unchanged, classify the item `FAILED[edit-missed]`, do not proceed to Axis B,
+and do not count it refreshed. (Precedent: the `N_before`/`N_after` survival
+check in `/knowledge-maintain` — `schema_validate` passing is not proof an edit
+landed; only a re-read of the specific slot is.)
+
 ## Relationship to `--stale`
 
 Upgrade haul is the **executor** half of a bidirectional pair with the
@@ -145,13 +181,13 @@ Upgrade haul is the **executor** half of a bidirectional pair with the
 - **Detector → executor:** `knowledge-gaps --stale` finds drifted notes and, in
   its *S7 Offer batched refresh* step, routes the top stale items into these
   skills as a batch. That handoff IS an upgrade haul.
-- **Executor → detector:** a haul refreshes the same Axis-A `[version]`
-  observation that `--stale` **Pattern 3** reads, so the next `--stale` run sees
-  the closed drift.
+- **Executor → detector:** a haul refreshes the same Axis-A slot `--stale` reads
+  — the inline header pipe (**Pattern 1**) for every cohort, plus the `[version]`
+  observation for npm — so the next `--stale` run sees the closed drift.
 
 The detector side is documented in
-`skills/knowledge-gaps/references/staleness-detection.md` (S7 offer + Pattern 3
-version extraction); that file carries the reverse pointer back here.
+`skills/knowledge-gaps/references/staleness-detection.md` (S7 offer + S2
+version-extraction patterns); that file carries the reverse pointer back here.
 
 ## Per-skill adapter contract
 
