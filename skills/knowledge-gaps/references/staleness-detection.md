@@ -93,9 +93,16 @@ in different notes (different `*-intel` template eras). Match these patterns in
 | 6 | Registry/prose fallback | `- **Version**: 0.11.13 (…)` / `Current: v3.2.4 (…)` |
 
 Pattern 3 reads the version directly from the note's `observations` array — the
-canonical `[version]` slot proposed for the package schemas (bead `f3zx` / Wave
-3). It is **not yet emitted by the default `/package-intel` templates**, but it
-appears in some hand-edited notes, so check it before the curated prose. Accept
+canonical `[version]` slot. The `/package-intel` npm template **emits it since
+0.31.4** (and 71 npm notes were backfilled); `f3zx` tracks extending the slot to
+the other five package cohorts (crate/go/composer/pypi/gem), which do not emit it
+yet. **But "emitted" is not "read first":** under the first-hit-wins ordering
+above, Pattern 1 (the inline header pipe) outranks Pattern 3, and the npm
+template emits *both* — so for a standard npm note `--stale` actually reads the
+pipe, and the `[version]` observation is a redundant secondary slot today, not
+the effective one. (Making Pattern 3 win for npm — so the slot can shield
+version-string packages like `yaml`/`semver` from misparse as 0.31.4 intended —
+is tracked separately as bead `vp-claude-9q7e`.) Accept
 either `[version]` or `[version-range]`; for a range, take the first concrete
 version token (strip a leading range operator: `^`, `~`, `>=`, `>`, `<=`, `<`,
 `=`). Pattern 5 takes the **highest semver** among the versions referenced in
@@ -104,9 +111,9 @@ the `## Release Highlights` or `## Version History` list (linked or bold) — do
 (breaking/feature/fix), not version order. **Release Highlights ranks last on
 purpose:** the list is hand-curated and may lag the real latest release, so
 trusting it risks a false "current" — worse than an honest `<unparseable>`. Only
-fall to it when patterns 1–4 and the prose fallback all miss. Until `f3zx` lands
-the `[version]` slot, Pattern 5 is what actually recovers most
-otherwise-`<unparseable>` package notes.
+fall to it when patterns 1–4 and the prose fallback all miss. For the non-npm
+package cohorts (which carry no `[version]` slot until `f3zx` extends it), Pattern
+5 is what actually recovers most otherwise-`<unparseable>` notes.
 
 **Strip a leading `v`** from the extracted value (`v1.39.0` ≡ `1.39.0`). If no
 pattern matches, record `bm_version="<unparseable>"` and continue — that is a
@@ -343,12 +350,16 @@ For notes in `Drifted <30d` or `Drifted, age unknown`, ask which to refresh
 individually rather than auto-batching — recent releases may be pre-stable or
 short-lived. This matches the `knowledge-maintainer` Section 3b routing.
 
-Example accepted batch (single turn, names recovered per S3):
+Example accepted batch (single turn, names recovered per S3). Hand each skill its
+**whole sublist in one call** — a multi-identifier `args` string is what triggers
+the executor's upgrade-haul batch path; a single identifier per call would fall
+through to the normal single-note path and skip the haul (delta reel, central
+cross-link pass, batch-outcome contract). One call per skill, since package-intel
+and tool-intel are separate skills:
 
 ```
-Skill(skill: "package-intel", args: "npm:fastify")
-Skill(skill: "package-intel", args: "npm:pino")
-Skill(skill: "tool-intel", args: "cask:warp")
+Skill(skill: "package-intel", args: "npm:fastify npm:pino")
+Skill(skill: "tool-intel", args: "cask:warp brew:ripgrep")
 ```
 
 For more than 5 `Drifted >30d` items, prioritize `[semver-major]` first, then
