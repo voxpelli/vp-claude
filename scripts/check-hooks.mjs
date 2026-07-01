@@ -5,13 +5,32 @@
 // undetected in session-start.sh for 3 releases (v0.15.0–v0.16.0).
 
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {
+  mkdirSync, mkdtempSync, readFileSync, writeFileSync,
+} from 'node:fs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const HOOKS_DIR = join(__dirname, '..', 'hooks')
+
+// Hermetic baseline for the nudge-tip env vars, applied to EVERY runHook call
+// by default — not just the nudge-specific fixtures. hooks/session-start.sh
+// unconditionally invokes tip-fragment.sh for any non-compact source, so
+// without this baseline every session-start.sh test (including the 4
+// pre-existing RETRO-count / source=startup cases that predate the nudge
+// feature) reads/writes the developer's REAL ~/.claude/references/... and
+// ~/.local/state/vp-knowledge/nudge-state on every `npm run check` — this
+// was confirmed happening on this machine, not theoretical. Pointing both
+// vars at a nonexistent path makes tip-fragment.sh exit at its own
+// missing-file guard before it ever touches the real $HOME. A future test
+// that doesn't override these stays isolated by default rather than
+// depending on the author remembering to add overrides manually.
+const NUDGE_ISOLATION_ENV = {
+  VP_KNOWLEDGE_NUDGE_TIPS_FILE: join(tmpdir(), 'check-hooks-no-nudge', 'no-such-tips.txt'),
+  VP_KNOWLEDGE_STATE_DIR: join(tmpdir(), 'check-hooks-no-nudge', 'no-such-state'),
+}
 
 // --- Helpers ---
 
@@ -39,14 +58,14 @@ function makeTempPluginRoot () {
 /**
  * @param {string} script
  * @param {string} stdinJson
- * @param {{ args?: string[], cwd?: string }} [opts]
+ * @param {{ args?: string[], cwd?: string, env?: Record<string, string> }} [opts]
  * @returns {{ stdout: string, stderr: string, status: number }}
  */
-function runHook (script, stdinJson, { args = [], cwd = process.cwd() } = {}) {
+function runHook (script, stdinJson, { args = [], cwd = process.cwd(), env = {} } = {}) {
   const result = spawnSync('bash', [script, ...args], {
     input: stdinJson,
     cwd,
-    env: { ...process.env },
+    env: { ...process.env, ...NUDGE_ISOLATION_ENV, ...env },
     encoding: 'utf8',
   })
   return {
@@ -54,6 +73,26 @@ function runHook (script, stdinJson, { args = [], cwd = process.cwd() } = {}) {
     stderr: result.stderr ?? '',
     status: result.status ?? 1,
   }
+}
+
+/**
+ * Build a real, populated tips file + state dir for tests that need to
+ * exercise actual nudge-tip behavior (as opposed to the hermetic
+ * `NUDGE_ISOLATION_ENV` baseline every `runHook` call gets by default, which
+ * points at paths that don't exist). Every session-start.sh test — not just
+ * the ones using this fixture — is already isolated from the real $HOME by
+ * default; call this helper only when a test specifically wants the tip
+ * feature to actually fire.
+ *
+ * @param {{ tipLines?: string[] }} [opts]
+ * @returns {{ tipsFile: string, stateDir: string }}
+ */
+function makeNudgeFixture ({ tipLines = ['- [nudge] Sample tip. Feature: sample-feature Added: 2026-07-01'] } = {}) {
+  const dir = mkdtempSync(join(tmpdir(), 'check-hooks-nudge-'))
+  const tipsFile = join(dir, 'nudge-tips.txt')
+  const stateDir = join(dir, 'state')
+  writeFileSync(tipsFile, tipLines.join('\n') + '\n')
+  return { tipsFile, stateDir }
 }
 
 /**
@@ -162,6 +201,153 @@ test('source=startup → 1 object, recovery absent (gated)', () => {
   if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count}` }
   const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
   if (ctx.includes('Post-compaction recovery')) return { ok: false, reason: 'recovery text leaked on non-compact source' }
+  return { ok: true }
+})
+
+// --- tip-fragment.sh (via session-start.sh, isolated $HOME-equivalent state) ---
+
+test('fires once: tip present on first run today', () => {
+  const { stateDir, tipsFile } = makeNudgeFixture()
+  const { stdout } = runHook(join(HOOKS_DIR, 'session-start.sh'), JSON.stringify({ source: 'startup' }), {
+    cwd: makeTempDirWithRetros(0),
+    env: { VP_KNOWLEDGE_NUDGE_TIPS_FILE: tipsFile, VP_KNOWLEDGE_STATE_DIR: stateDir },
+  })
+  const { count, objects, parseError } = parseJsonObjects(stdout)
+  if (parseError) return { ok: false, reason: parseError }
+  if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count} — multi-object bug!` }
+  const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
+  if (!ctx.includes('Feature: sample-feature')) return { ok: false, reason: 'tip fragment missing on first run' }
+  return { ok: true }
+})
+
+test('already-shown-today: tip absent on second run same day', () => {
+  const { stateDir, tipsFile } = makeNudgeFixture()
+  const env = { VP_KNOWLEDGE_NUDGE_TIPS_FILE: tipsFile, VP_KNOWLEDGE_STATE_DIR: stateDir }
+  runHook(join(HOOKS_DIR, 'session-start.sh'), JSON.stringify({ source: 'startup' }), { cwd: makeTempDirWithRetros(0), env })
+  const { stdout } = runHook(join(HOOKS_DIR, 'session-start.sh'), JSON.stringify({ source: 'startup' }), { cwd: makeTempDirWithRetros(0), env })
+  const { count, objects, parseError } = parseJsonObjects(stdout)
+  if (parseError) return { ok: false, reason: parseError }
+  if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count} — multi-object bug!` }
+  const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
+  if (ctx.includes('Feature: sample-feature')) return { ok: false, reason: 'tip fragment leaked on already-shown-today run — throttle not working' }
+  return { ok: true }
+})
+
+test('missing reference file: tip absent, hook still succeeds', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'check-hooks-nudge-'))
+  const { status, stdout } = runHook(join(HOOKS_DIR, 'session-start.sh'), JSON.stringify({ source: 'startup' }), {
+    cwd: makeTempDirWithRetros(0),
+    env: { VP_KNOWLEDGE_NUDGE_TIPS_FILE: join(dir, 'does-not-exist.txt'), VP_KNOWLEDGE_STATE_DIR: join(dir, 'state') },
+  })
+  if (status !== 0) return { ok: false, reason: `non-zero exit ${status} on missing reference file — should degrade to empty, not fail` }
+  const { count, objects, parseError } = parseJsonObjects(stdout)
+  if (parseError) return { ok: false, reason: parseError }
+  if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count} — multi-object bug!` }
+  const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
+  if (ctx.includes('Feature:')) return { ok: false, reason: 'tip fragment present despite missing reference file' }
+  return { ok: true }
+})
+
+test('kill-switch VP_KNOWLEDGE_DISABLE_NUDGE=1: tip absent even with tips available', () => {
+  const { stateDir, tipsFile } = makeNudgeFixture()
+  const { stdout } = runHook(join(HOOKS_DIR, 'session-start.sh'), JSON.stringify({ source: 'startup' }), {
+    cwd: makeTempDirWithRetros(0),
+    env: { VP_KNOWLEDGE_NUDGE_TIPS_FILE: tipsFile, VP_KNOWLEDGE_STATE_DIR: stateDir, VP_KNOWLEDGE_DISABLE_NUDGE: '1' },
+  })
+  const { count, objects, parseError } = parseJsonObjects(stdout)
+  if (parseError) return { ok: false, reason: parseError }
+  if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count}` }
+  const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
+  if (ctx.includes('Feature:')) return { ok: false, reason: 'tip fragment present despite kill-switch set' }
+  return { ok: true }
+})
+
+test('ring-buffer excludes a recently-shown slug, picks the other tip', () => {
+  const { stateDir, tipsFile } = makeNudgeFixture({
+    tipLines: [
+      '- [nudge] Tip A. Feature: tip-a Added: 2026-01-01',
+      '- [nudge] Tip B. Feature: tip-b Added: 2026-01-02',
+    ],
+  })
+  mkdirSync(stateDir, { recursive: true })
+  // Far-past date: throttle passes (not "already shown today"), ring populated with tip-a.
+  writeFileSync(join(stateDir, 'nudge-state'), '2000-01-01 tip-a\n')
+  const { stdout } = runHook(join(HOOKS_DIR, 'session-start.sh'), JSON.stringify({ source: 'startup' }), {
+    cwd: makeTempDirWithRetros(0),
+    env: { VP_KNOWLEDGE_NUDGE_TIPS_FILE: tipsFile, VP_KNOWLEDGE_STATE_DIR: stateDir },
+  })
+  const { count, objects, parseError } = parseJsonObjects(stdout)
+  if (parseError) return { ok: false, reason: parseError }
+  if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count} — multi-object bug!` }
+  const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
+  if (ctx.includes('Feature: tip-a')) return { ok: false, reason: 'recently-shown slug was not excluded from candidates' }
+  if (!ctx.includes('Feature: tip-b')) return { ok: false, reason: 'expected the non-excluded tip to be shown' }
+  return { ok: true }
+})
+
+test('exhausted pool: excludes only the last-shown slug, never repeats it immediately', () => {
+  const { stateDir, tipsFile } = makeNudgeFixture({
+    tipLines: [
+      '- [nudge] Tip A. Feature: tip-a Added: 2026-01-01',
+      '- [nudge] Tip B. Feature: tip-b Added: 2026-01-02',
+    ],
+  })
+  mkdirSync(stateDir, { recursive: true })
+  // Both tips already shown, tip-b is the LAST (most recent) — the fallback
+  // must exclude only tip-b, not fall back to the unfiltered full pool
+  // (that would let tip-b repeat immediately, defeating anti-repeat).
+  writeFileSync(join(stateDir, 'nudge-state'), '2000-01-01 tip-a tip-b\n')
+  const { stdout } = runHook(join(HOOKS_DIR, 'session-start.sh'), JSON.stringify({ source: 'startup' }), {
+    cwd: makeTempDirWithRetros(0),
+    env: { VP_KNOWLEDGE_NUDGE_TIPS_FILE: tipsFile, VP_KNOWLEDGE_STATE_DIR: stateDir },
+  })
+  const { count, objects, parseError } = parseJsonObjects(stdout)
+  if (parseError) return { ok: false, reason: parseError }
+  if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count} — multi-object bug!` }
+  const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
+  if (ctx.includes('Feature: tip-b')) return { ok: false, reason: 'exhausted-pool fallback repeated the most-recently-shown slug immediately' }
+  if (!ctx.includes('Feature: tip-a')) return { ok: false, reason: 'expected the non-last-shown tip to fire' }
+  return { ok: true }
+})
+
+test('single-tip pool: still fires even when that tip is the last shown (no silent fallback)', () => {
+  const { stateDir, tipsFile } = makeNudgeFixture({
+    tipLines: ['- [nudge] Only tip. Feature: only-one Added: 2026-01-01'],
+  })
+  mkdirSync(stateDir, { recursive: true })
+  writeFileSync(join(stateDir, 'nudge-state'), '2000-01-01 only-one\n')
+  const { stdout } = runHook(join(HOOKS_DIR, 'session-start.sh'), JSON.stringify({ source: 'startup' }), {
+    cwd: makeTempDirWithRetros(0),
+    env: { VP_KNOWLEDGE_NUDGE_TIPS_FILE: tipsFile, VP_KNOWLEDGE_STATE_DIR: stateDir },
+  })
+  const { count, objects, parseError } = parseJsonObjects(stdout)
+  if (parseError) return { ok: false, reason: parseError }
+  if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count} — multi-object bug!` }
+  const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
+  if (!ctx.includes('Feature: only-one')) return { ok: false, reason: 'single-tip pool went silent instead of showing its only tip' }
+  return { ok: true }
+})
+
+test('ring buffer trims to 5 entries, dropping the oldest slug', () => {
+  const { stateDir, tipsFile } = makeNudgeFixture({
+    tipLines: [1, 2, 3, 4, 5, 6].map((n) => `- [nudge] Tip ${n}. Feature: s${n} Added: 2026-01-01`),
+  })
+  mkdirSync(stateDir, { recursive: true })
+  // Ring already at max (5 entries); s6 is the only tip not yet shown.
+  writeFileSync(join(stateDir, 'nudge-state'), '2000-01-01 s1 s2 s3 s4 s5\n')
+  const { stdout } = runHook(join(HOOKS_DIR, 'session-start.sh'), JSON.stringify({ source: 'startup' }), {
+    cwd: makeTempDirWithRetros(0),
+    env: { VP_KNOWLEDGE_NUDGE_TIPS_FILE: tipsFile, VP_KNOWLEDGE_STATE_DIR: stateDir },
+  })
+  const { count, objects, parseError } = parseJsonObjects(stdout)
+  if (parseError) return { ok: false, reason: parseError }
+  if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count} — multi-object bug!` }
+  const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
+  if (!ctx.includes('Feature: s6')) return { ok: false, reason: 'expected the only non-excluded tip (s6) to fire' }
+  const state = readFileSync(join(stateDir, 'nudge-state'), 'utf8').trim()
+  if (!/^\d{4}-\d{2}-\d{2} s2 s3 s4 s5 s6$/.test(state)) {
+    return { ok: false, reason: `ring buffer did not trim correctly, expected "<today> s2 s3 s4 s5 s6", got "${state}"` }
+  }
   return { ok: true }
 })
 

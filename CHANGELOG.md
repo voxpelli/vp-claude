@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.7][] - 2026-07-01
+
+### Added
+
+- **Claude Code learning-nudge system.** A new Basic Memory reference note,
+  `Claude Code Noteworthy Features` (`main/reference/claude-code-noteworthy-features`),
+  tracks powerful-but-easy-to-miss Claude Code features via `[nudge]`
+  observations (subject-first tip + normalized `Feature: <slug>` token) and a
+  per-feature `adoption-<slug>` frontmatter status (`unseen`/`nudged`/`adopted`/
+  `declined`) — seeded with 15 features. Two new skills operate on it:
+  **`/nudge-sync`** (modeled on `/tag-sync`'s vendor-sync pattern) fetches the
+  note via MCP, filters out anything already `adopted`, and writes the
+  eligible tips to `~/.claude/references/claude-code-nudge-tips.txt`,
+  reading BM via fast MCP rather than the slow `bm` CLI. The SessionStart
+  hook that later surfaces the tip reads only that cache file, never BM.
+  **`/feature-nudge`** (modeled on `/session-reflect`'s scan →
+  preview → approve → write shape) scans recent session transcripts across
+  all projects for real evidence of feature use, previews proposed
+  adoption-status transitions, and writes approved changes to the note's
+  frontmatter, regenerating the tip cache to close the loop. A new hook
+  script, `hooks/tip-fragment.sh` (invoked from `session-start.sh`, not
+  inlined), surfaces one tip per day — throttled, no repeats via a merged
+  ring-buffer/throttle state file, degrading to empty output on any failure,
+  behind a `VP_KNOWLEDGE_DISABLE_NUDGE=1` kill-switch.
+
 ## [0.31.6][] - 2026-06-25
 
 ### Added
@@ -1642,6 +1667,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.31.7]: https://github.com/voxpelli/vp-claude/compare/v0.31.6...v0.31.7
 [0.31.6]: https://github.com/voxpelli/vp-claude/compare/v0.31.5...v0.31.6
 [0.31.5]: https://github.com/voxpelli/vp-claude/compare/v0.31.4...v0.31.5
 [0.31.4]: https://github.com/voxpelli/vp-claude/compare/v0.31.3...v0.31.4

@@ -302,6 +302,22 @@ A read-only autonomous agent that audits the Raindrop bookmark library:
 
 Produces a structured report covering: library dashboard, tag inventory, naming violations, near-duplicate tags, mistagged bookmarks (via `find_mistagged_bookmarks`), orphan tags, legacy tag identification, co-occurrence analysis, non-primary-language tag detection, and taxonomy gaps. Output includes exact `update_tags` and `delete_tags` tool calls as copy-paste recommendations. Never modifies tags or bookmarks itself.
 
+### `/nudge-sync` — Sync the Claude Code feature-nudge tip cache
+
+Reads the `Claude Code Noteworthy Features` Basic Memory note via MCP, filters out any feature already marked adopted in frontmatter, and writes the eligible tips to `~/.claude/references/claude-code-nudge-tips.txt` for the SessionStart hook to read:
+
+> "Sync nudge tips" / "Refresh the tip cache" / "Nudge sync"
+
+Follows the same vendor-sync pattern as `/tag-sync`. Reads BM via fast MCP, never the slow `bm` CLI; the SessionStart hook it feeds reads only the local cache file, never Basic Memory.
+
+### `/feature-nudge` — Track adoption of noteworthy Claude Code features
+
+Scans recent session transcripts across all projects for real evidence of feature use, cross-references against the `[nudge]`-tagged catalog, previews which features have adoption evidence versus none, and updates each feature's status in Basic Memory after approval:
+
+> "Nudge me on unused features" / "Which Claude Code features haven't I adopted" / "Feature nudge"
+
+Mirrors `/session-reflect`'s scan → preview → approve → write shape. Marking a feature adopted stops it from being surfaced by the SessionStart tip — regenerating the same cache `/nudge-sync` writes closes the loop.
+
 ### Hooks — Automated quality guardrails
 
 Five hooks run automatically in the background:
@@ -309,7 +325,7 @@ Five hooks run automatically in the background:
 - **PostToolUse** (BM writes) — After any `write_note` or `edit_note`, validates the note structure against its schema. Catches malformed notes immediately.
 - **PostToolUse** (file edits) — After editing shell scripts, detects formatting drift with `shfmt -d`, surfaces the diff, and auto-fixes with `shfmt -w`. After editing schema files, reminds to sync Basic Memory.
 - **PostToolUseFailure** — Classifies Basic Memory write and schema tool failures into five categories with actionable recovery guidance.
-- **SessionStart** — Injects a knowledge graph status summary and suggests `/knowledge-prime` for project context or `/knowledge-ask` for topic-specific questions. After a compaction (`source=compact`), it also re-injects a condensed graph-recovery context so the continuing session still knows the Basic Memory tools and research skills exist.
+- **SessionStart** — Injects a knowledge graph status summary and suggests `/knowledge-prime` for project context or `/knowledge-ask` for topic-specific questions. After a compaction (`source=compact`), it also re-injects a condensed graph-recovery context so the continuing session still knows the Basic Memory tools and research skills exist. On non-compact sessions it also surfaces one learning-nudge tip per day (throttled, no repeats) from the `/nudge-sync`-synced cache, behind a `VP_KNOWLEDGE_DISABLE_NUDGE=1` kill-switch.
 - **PreToolUse** (gardener Bash) — Blocks Python and Node.js script execution when running as the knowledge-gardener agent (via `permissionDecision: "deny"`), enforcing read-only discipline.
 
 ## Installation
@@ -472,6 +488,11 @@ skills/
     SKILL.md                           Five-source person research
     references/note-template-person.md Person note template
     references/source-guide.md         Source-specific research guidance
+  nudge-sync/
+    SKILL.md                           BM note -> local tip cache sync (vendor-sync pattern)
+    references/tip-cache-contract.md   Shared exclusion rule + line grammar (also used by feature-nudge)
+  feature-nudge/
+    SKILL.md                           Transcript-scan feature-adoption tracking -> BM frontmatter
 agents/
   knowledge-gardener.md                Read-only graph auditor (tags + fourth-wall)
   knowledge-maintainer.md              Read-write graph enhancer (effort: high)
@@ -484,6 +505,7 @@ hooks/
   post-bm-write-validate.sh            Schema validation after BM writes
   post-bm-failure-classify.sh          Error classification for BM failures
   session-start.sh                     Graph context + priming hint script
+  tip-fragment.sh                      Learning-nudge tip surfacer, invoked by session-start.sh
   post-file-edit.sh                    Shell formatting + schema sync script
 schemas/
   npm_package.md                       npm package schema (npm_package type)
