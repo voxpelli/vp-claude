@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.10][] - 2026-07-01
+
+### Fixed
+
+- **`/feature-nudge`'s tag-based dispatch check (0.31.9) still couldn't rule
+  out a human quoting/pasting the tag text, and had no self-verifying check
+  on its own format assumption.** A second review pass — rerunning the same
+  reviewers against the 0.31.9 fix — found the "`type:"user"` + tag match
+  is sufficient" rule was itself an overclaim: `type:"user"` is not
+  synonymous with "a human typed this," and this reproduced live in the
+  review session itself (task-notification and tool-result content quoting
+  the tag showed up as `type:"user"` matches). Fixed by requiring the tag
+  match **and** the `promptSource:"typed"` + `origin.kind=="human"` fields
+  together, rather than either alone — confirmed via dogfooding that this
+  correctly rejects every self-referential variant found, including a new
+  one (a `type:"user"` tool-result forwarding an assistant's own tool-call
+  arguments back). Also added a standing sanity check for the `<command-name>`
+  tag format itself (mirroring the existing transcript-format check, so a
+  wrong format assumption can't silently masquerade as universal
+  non-adoption), fixed a self-contradiction where the worked example showed
+  `opusplan` (a model-picker choice explicitly documented elsewhere as
+  undetectable) as confidently "adopted," added a "scan failed" path and
+  preview section for slugs where every matched file fails to read, and
+  restructured Edge Cases into "Error handling" vs "Accepted limitations"
+  to fix duplicated reasoning and clarify which evidence check applies to
+  which branch.
+
 ## [0.31.9][] - 2026-07-01
 
 ### Fixed
@@ -1713,6 +1740,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.31.10]: https://github.com/voxpelli/vp-claude/compare/v0.31.9...v0.31.10
 [0.31.9]: https://github.com/voxpelli/vp-claude/compare/v0.31.8...v0.31.9
 [0.31.8]: https://github.com/voxpelli/vp-claude/compare/v0.31.7...v0.31.8
 [0.31.7]: https://github.com/voxpelli/vp-claude/compare/v0.31.6...v0.31.7
