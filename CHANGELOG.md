@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.9][] - 2026-07-01
+
+### Fixed
+
+- **`/feature-nudge` couldn't tell a human typing a slash command from a
+  human merely mentioning it in prose.** An adversarial review of the
+  0.31.8 fix (rerun after that fix landed) found the shape-check's
+  `promptSource:"typed"` + `origin.kind=="human"` criteria — while
+  correctly excluding synthetic/replayed content — never distinguished
+  genuine invocation from discussion; both satisfy every stated field.
+  Confirmed empirically that this could flip a never-used feature to a
+  false `adopted`, permanently suppressing its nudge. Fixed for
+  slash-command-style features by searching directly for Claude Code's own
+  `<command-name>...</command-name>` dispatch tag (confirmed: wraps every
+  genuine dispatch, built-in or plugin-namespaced; never appears around a
+  free-text mention), which also closes a self-contamination risk the
+  "Tool use" evidence path had (the search's own tool-call arguments could
+  otherwise match a future re-scan of the same session). Also restored an
+  edge case this same fix's own rewrite had dropped (an unreadable matched
+  transcript file no longer silently counts as "no evidence"), made the
+  whole-word-match check symmetric (both boundaries, not just one), and
+  documented that a handful of features (settings.json fields, environment
+  variables) can never be detected via transcript scanning at all —
+  invoked or not.
+
 ## [0.31.8][] - 2026-07-01
 
 ### Fixed
@@ -1688,6 +1713,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.31.9]: https://github.com/voxpelli/vp-claude/compare/v0.31.8...v0.31.9
 [0.31.8]: https://github.com/voxpelli/vp-claude/compare/v0.31.7...v0.31.8
 [0.31.7]: https://github.com/voxpelli/vp-claude/compare/v0.31.6...v0.31.7
 [0.31.6]: https://github.com/voxpelli/vp-claude/compare/v0.31.5...v0.31.6

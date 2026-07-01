@@ -42,20 +42,46 @@ Claude Code feature adoption.
   available yet": propose `nudged` for anything currently `unseen`, skip
   everything else. Do **not** report this as a tool/path failure — it is
   the expected state for a brand-new install.
-- **Sanity grep (see Step 2) returns zero matches, but the directory
-  exists** — this is the genuine tool/path failure case (a Grep path/tool
-  failure looks identical to a genuinely empty history otherwise). Report
-  it to the user and stop, rather than proposing `nudged` transitions on
-  data that may just be a broken scan.
+- **Sanity grep (see Step 2) returns zero matches, or errors with anything
+  other than the specific "path does not exist" signature above** — this is
+  the genuine tool/path failure case (a Grep path/tool failure looks
+  identical to a genuinely empty history otherwise). Report it to the user
+  and stop, rather than proposing `nudged` transitions on data that may
+  just be a broken scan. Treat only the exact missing-directory case above
+  as benign — any other error (permission denied, an unrelated tool fault,
+  anything ambiguous) falls here, not there.
 - **A specific feature slug's grep returns zero matches while the sanity
   grep succeeded** — this is normal, expected no-evidence for that one
   feature; propose `nudged` if currently `unseen`, per Step 3's table.
+- **A specific slug's `Grep` call itself errors (not a clean zero-match
+  result) partway through the per-slug loop** — do not fold this into
+  "no evidence for that feature." Report the affected slug(s) as
+  scan-failed in the Step 4 preview and exclude them from any proposed
+  transition this run, rather than silently proposing `nudged` on a failed
+  read.
+- **A slug's tip text has no backtick-quoted span at all, or truncating at
+  `<` (see Step 2) yields an empty search term** — skip this slug and
+  report it rather than searching with a malformed or empty term.
+- **A `Grep`-matched file's `Read` fails or its content doesn't parse as
+  expected** — do not silently count this as "no shape match" for that
+  file. Exclude it from evidence for this slug but flag it in the Step 4
+  preview (e.g. "N files could not be read and were excluded") so the user
+  can see the evidence count may be incomplete. Never let one unreadable
+  file suppress `adopted` when another matched file for the same slug
+  already passed the shape check.
 - **A slug's `Grep` result hits the tool's own result cap** (confirmed: a
   broad token can exceed ~250 matched files) — accepted, not engineered
   around: evidence is confirmed the moment any one matched file passes the
   shape check, so a cap can only ever under-count the *session number*
   shown in the preview, never flip a real "adopted" into a false
   "no evidence."
+- **A non-slash-command feature is adopted entirely outside any Claude Code
+  transcript** — environment variables (set in shell rc files), settings.json
+  fields, and model-picker choices leave no trace in a session transcript at
+  all, genuinely used or not. This is a structural limitation of
+  transcript-scanning itself, not a bug: these features will keep proposing
+  `nudged` indefinitely regardless of real adoption. Accepted rather than
+  engineered around — there is no transcript-based signal to check.
 - **Orphaned `adoption-<slug>` frontmatter keys** (a `[nudge]` observation
   was later deleted from the note body, but its frontmatter key remains) —
   left as-is. The key is inert: `schema_validate` ignores frontmatter, and a
@@ -151,6 +177,49 @@ into a session:
    — but a future tip containing one (`.`, `(`, `$`, etc.) would need
    literal-string escaping before use as a `Grep` pattern.
 
+**Branch on whether `<search-term>` starts with `/` (a slash command) — the
+two cases need genuinely different evidence criteria, not just different
+patterns.**
+
+**Slash-command terms — search for the dispatch tag directly, not the bare
+term.** A `promptSource:"typed"` + `origin.kind=="human"` check (an earlier
+version of this doc relied on exactly this) does **not** distinguish a user
+*typing the command* from a user *typing a sentence that merely mentions
+it* — both satisfy every one of those fields. Confirmed empirically instead:
+Claude Code wraps every genuine slash-command dispatch (built-in or
+plugin-namespaced) in a `<command-name>...</command-name>` tag inside
+`message.content`, and free-text mentions never produce this wrapper
+regardless of where in the message the term appears. So search for the tag
+directly:
+
+```
+Grep(pattern="<command-name><search-term></command-name>",
+     path="~/.claude/projects", glob="**/*.jsonl",
+     output_mode="files_with_matches")
+```
+
+**`Read` each matched file and confirm the tag-wrapped string appears
+specifically within a `type:"user"` entry** — a `Grep` match on the file
+alone is not sufficient. Confirmed by dogfooding this exact mechanism: a
+matched file can contain the tag-wrapped string inside a `type:"assistant"`
+`tool_use` entry instead — specifically, this very kind of search's own
+prior `Grep` call, logged with the literal pattern as its `input.pattern`
+argument, which is real noise this mechanism produces, not a hypothetical.
+A `type:"user"` entry containing the tag **is** the evidence — no further
+shape-check needed, since the tag itself is the invocation signal (and
+confirmed separately: this collapses a noisy bare-word match count, e.g.
+~100+ files for a common term, down to zero-or-few genuine hits). **Any
+match on a `type:"assistant"` entry is not evidence — discard it,
+regardless of what tool or arguments produced it.** This is also why
+"Tool use" is not a valid evidence path for slash-command terms at all: a
+slash command is always human-dispatched, never assistant-tool-invoked, so
+accepting a `type:"assistant"` match here would count exactly the
+self-referential noise just described as if it were genuine adoption.
+
+**Non-slash terms** (bare words, environment variables, settings fields —
+e.g. `opusplan`, `CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP=1`) have no
+equivalent structural marker to search for. Fall back to:
+
 ```
 Grep(pattern="<search-term>", path="~/.claude/projects", glob="**/*.jsonl",
      output_mode="files_with_matches")
@@ -161,26 +230,29 @@ just a mention:
 
 - **Typed invocation** — `type:"user"` + a `message.content` field +
   `promptSource:"typed"` + `origin.kind=="human"`. This excludes synthetic,
-  replayed, or pasted content — it's what keeps a conversation *about* a
-  feature (discussing it, reading about it) from false-positiving as actual
-  adoption.
+  replayed, or pasted content, but — unlike the tag-based check above —
+  does **not** distinguish genuine use from a human merely discussing the
+  term; see the Edge Cases entry on this class of feature for the accepted
+  limitation.
 - **Tool use** — `type:"assistant"` + a `message.content[]` entry with
   `type:"tool_use"`.
 - **Whole-word match, not a bare substring** — confirmed by a real
   pre-fix run: a bare `advisor` search matched ordinary prose about
   "security advisor**ies**." Before counting a match as shape-confirmed,
-  verify the search term is not embedded inside a longer word (the
-  character immediately following the match, if alphanumeric, must not
-  continue the same word).
+  verify the search term is not embedded inside a longer word: the
+  characters immediately **before and after** the match, if alphanumeric,
+  must not continue the same word (checking only one side leaves the other
+  boundary open to the identical false-positive class).
 
 Count **distinct sessions** (distinct transcript files) with at least one
 shape-confirmed hit per slug, not raw line matches — repeated matches
 within the same session are one piece of evidence, not several. If a
 slug's own `Grep` result hits the tool's result-count cap (confirmed: a
-broad token can exceed ~250 matched files), this cannot produce a false
-"no evidence" — a hit is confirmed the moment any one matched file passes
-the shape check, so a cap can only ever under-count the *session number*
-shown in the Step 4 preview.
+broad bare-word token can exceed ~250 matched files — the tag-based search
+above does not have this exposure in practice, since it only matches
+genuine dispatches), this cannot produce a false "no evidence" — a hit is
+confirmed the moment any one matched file passes the shape check, so a cap
+can only ever under-count the *session number* shown in the Step 4 preview.
 
 ### 3. Compute transitions
 
@@ -200,7 +272,7 @@ Group the proposed changes:
 ## Feature Adoption Check
 
 ### Evidence found — proposing "adopted"
-- **opusplan** — 3 sessions, 2026-06-28 to 2026-07-01
+- **opusplan** — 3 sessions
 
 ### No evidence yet — proposing "nudged"
 - **rewind** — "Restores the conversation to an earlier point..."
