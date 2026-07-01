@@ -1,6 +1,7 @@
 .DS_Store
 .claude/*.local.*
 .serena/
+.liggare/
 node_modules/
 RETRO-*.md
 SWARM-*.md
