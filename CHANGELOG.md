@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.12][] - 2026-07-01
+
+### Changed
+
+- **Renamed `feature-nudge` to `nudge-adoption`.** The old name read as an
+  imperative ("nudge about a feature") rather than what the skill does
+  (scan history, detect adoption evidence, update status), and paired
+  poorly with the sibling `/nudge-sync` skill it's meant to close the loop
+  with. Pure rename — directory, frontmatter `name`, human-readable
+  display text, and every cross-reference across the plugin's docs updated
+  consistently; no behavior changed. `CHANGELOG.md`'s own historical
+  entries for `0.31.7`–`0.31.11` still say `/feature-nudge`, since they
+  describe what actually shipped at the time.
+
 ## [0.31.11][] - 2026-07-01
 
 ### Fixed
@@ -1768,6 +1782,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.31.12]: https://github.com/voxpelli/vp-claude/compare/v0.31.11...v0.31.12
 [0.31.11]: https://github.com/voxpelli/vp-claude/compare/v0.31.10...v0.31.11
 [0.31.10]: https://github.com/voxpelli/vp-claude/compare/v0.31.9...v0.31.10
 [0.31.9]: https://github.com/voxpelli/vp-claude/compare/v0.31.8...v0.31.9

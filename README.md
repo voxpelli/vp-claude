@@ -302,7 +302,7 @@ A read-only autonomous agent that audits the Raindrop bookmark library:
 
 Produces a structured report covering: library dashboard, tag inventory, naming violations, near-duplicate tags, mistagged bookmarks (via `find_mistagged_bookmarks`), orphan tags, legacy tag identification, co-occurrence analysis, non-primary-language tag detection, and taxonomy gaps. Output includes exact `update_tags` and `delete_tags` tool calls as copy-paste recommendations. Never modifies tags or bookmarks itself.
 
-### `/nudge-sync` — Sync the Claude Code feature-nudge tip cache
+### `/nudge-sync` — Sync the Claude Code nudge-adoption tip cache
 
 Reads the `Claude Code Noteworthy Features` Basic Memory note via MCP, filters out any feature already marked adopted in frontmatter, and writes the eligible tips to `~/.claude/references/claude-code-nudge-tips.txt` for the SessionStart hook to read:
 
@@ -310,11 +310,11 @@ Reads the `Claude Code Noteworthy Features` Basic Memory note via MCP, filters o
 
 Follows the same vendor-sync pattern as `/tag-sync`. Reads BM via fast MCP, never the slow `bm` CLI; the SessionStart hook it feeds reads only the local cache file, never Basic Memory.
 
-### `/feature-nudge` — Track adoption of noteworthy Claude Code features
+### `/nudge-adoption` — Track adoption of noteworthy Claude Code features
 
 Scans recent session transcripts across all projects for real evidence of feature use, cross-references against the `[nudge]`-tagged catalog, previews which features have adoption evidence versus none, and updates each feature's status in Basic Memory after approval:
 
-> "Nudge me on unused features" / "Which Claude Code features haven't I adopted" / "Feature nudge"
+> "Nudge me on unused features" / "Which Claude Code features haven't I adopted" / "Nudge adoption"
 
 Mirrors `/session-reflect`'s scan → preview → approve → write shape. Marking a feature adopted stops it from being surfaced by the SessionStart tip — regenerating the same cache `/nudge-sync` writes closes the loop.
 
@@ -490,8 +490,8 @@ skills/
     references/source-guide.md         Source-specific research guidance
   nudge-sync/
     SKILL.md                           BM note -> local tip cache sync (vendor-sync pattern)
-    references/tip-cache-contract.md   Shared exclusion rule + line grammar (also used by feature-nudge)
-  feature-nudge/
+    references/tip-cache-contract.md   Shared exclusion rule + line grammar (also used by nudge-adoption)
+  nudge-adoption/
     SKILL.md                           Transcript-scan feature-adoption tracking -> BM frontmatter
 agents/
   knowledge-gardener.md                Read-only graph auditor (tags + fourth-wall)

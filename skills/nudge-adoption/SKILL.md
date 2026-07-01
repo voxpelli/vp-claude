@@ -1,6 +1,6 @@
 ---
-name: feature-nudge
-description: "This skill should be used when the user asks to 'nudge me on unused features', 'which Claude Code features haven't I adopted', 'check feature adoption', 'am I using the features I noted', 'feature nudge', 'which tips have I actually used'. Scans recent Claude Code session transcripts across all projects for real evidence of feature use (typed slash-commands, model aliases, tool invocations), cross-references them against the [nudge]-tagged features in the Basic Memory note main/reference/claude-code-noteworthy-features, previews which features have adoption evidence vs none, and updates each feature's adoption status in that note's frontmatter after user approval. On any status change, it also regenerates the shared tip cache (~/.claude/references/claude-code-nudge-tips.txt) that /nudge-sync owns."
+name: nudge-adoption
+description: "This skill should be used when the user asks to 'nudge me on unused features', 'which Claude Code features haven't I adopted', 'check feature adoption', 'am I using the features I noted', 'nudge adoption', 'which tips have I actually used'. Scans recent Claude Code session transcripts across all projects for real evidence of feature use (typed slash-commands, model aliases, tool invocations), cross-references them against the [nudge]-tagged features in the Basic Memory note main/reference/claude-code-noteworthy-features, previews which features have adoption evidence vs none, and updates each feature's adoption status in that note's frontmatter after user approval. On any status change, it also regenerates the shared tip cache (~/.claude/references/claude-code-nudge-tips.txt) that /nudge-sync owns."
 user-invocable: true
 allowed-tools:
   - Grep
@@ -10,7 +10,7 @@ allowed-tools:
   - mcp__basic-memory__edit_note
 ---
 
-# Feature Nudge
+# Nudge Adoption
 
 Scan recent Claude Code session transcripts across all projects for real
 evidence that a documented feature has actually been used, cross-reference
@@ -18,7 +18,7 @@ against the `[nudge]`-tagged catalog in Basic Memory, preview the proposed
 adoption-status changes, and write only what the user approves. Mirrors
 `session-reflect`'s scan -> preview -> approve -> write shape, but scans
 *historical* transcripts across all projects rather than the current
-conversation — hence `feature-nudge`, not a `session-*` name.
+conversation — hence `nudge-adoption`, not a `session-*` name.
 
 **Intentionally Claude-Code-specific, not a template for a generic
 mechanism.** This skill hardcodes the note permalink
@@ -442,7 +442,7 @@ read beyond the confirmation already happening, and without a shell-out to
 ### 6. Report
 
 ```markdown
-## Feature Nudge Complete
+## Nudge Adoption Complete
 
 Updated: N (goal -> adopted, ...)
 Declined: M

@@ -45,7 +45,7 @@ daily tip, and by no other component.
   never auto-create the note (that is `/package-intel`/`/tool-intel`'s kind
   of job, not this skill's).
 - **Concurrent regeneration** (another session runs `/nudge-sync` or
-  `feature-nudge` at the same time) — not engineered around. The cache file
+  `nudge-adoption` at the same time) — not engineered around. The cache file
   is a regenerable derived artifact, never a source of truth; both writers
   do a full overwrite from the same authoritative BM note, so last-writer-wins
   converges to a correct state and any staleness self-heals on the next
@@ -104,4 +104,4 @@ Tips: <N> eligible (<M> excluded as already adopted)
 
 - **[`references/tip-cache-contract.md`](references/tip-cache-contract.md)**
   — the single-source-of-truth definition of the exclusion rule and cache
-  line grammar, shared with `feature-nudge`.
+  line grammar, shared with `nudge-adoption`.

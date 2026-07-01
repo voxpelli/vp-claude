@@ -35,8 +35,8 @@ skills/
   people-intel/SKILL.md              # Five-source person research
     references/                      # 2 files: note-template, source-guide
   nudge-sync/SKILL.md                # Syncs the BM noteworthy-features note to a local tip cache for the SessionStart hook
-    references/                      # 1 file: tip-cache-contract (shared with feature-nudge)
-  feature-nudge/SKILL.md             # Transcript-scan feature-adoption tracking → BM frontmatter status
+    references/                      # 1 file: tip-cache-contract (shared with nudge-adoption)
+  nudge-adoption/SKILL.md            # Transcript-scan feature-adoption tracking → BM frontmatter status
 agents/
   knowledge-gardener.md              # Read-only graph health auditor (incl. tag alignment)
   knowledge-maintainer.md            # All-in-one graph enhancer (writes, incl. tag fixes)
@@ -75,7 +75,7 @@ component type — see [Detailed conventions](#detailed-conventions).
 - **raindrop-triage** — unsorted-bookmark triage + `--promote` classification across the AI-* collections. `/raindrop-triage`
 - **people-intel** — five-source person research → BM person note. `/people-intel <name>`
 - **nudge-sync** — syncs the `claude-code-noteworthy-features` BM note (via MCP) to a local tip cache the SessionStart hook reads, filtering out already-adopted features. `/nudge-sync`
-- **feature-nudge** — scans session transcripts across all projects for real evidence of feature use, previews adoption-status changes against the noteworthy-features note, writes after approval. `/feature-nudge`
+- **nudge-adoption** — scans session transcripts across all projects for real evidence of feature use, previews adoption-status changes against the noteworthy-features note, writes after approval. `/nudge-adoption`
 
 ### Agents (4)
 
@@ -203,7 +203,7 @@ When the user asks about knowledge or packages, choose the right skill:
 | "fix these notes", "apply audit fixes", "tidy \[note\]" (named notes) | `/knowledge-maintain [note ...]` |
 | "fix the whole audit", "remediate the graph", "research missing packages" | `knowledge-maintainer` agent |
 | "sync nudge tips", "refresh the tip cache", "rebuild the tip cache" | `/nudge-sync` |
-| "nudge me on unused features", "which features haven't I adopted", "feature nudge" | `/feature-nudge` |
+| "nudge me on unused features", "which features haven't I adopted", "nudge adoption" | `/nudge-adoption` |
 
 ## Detailed conventions
 
