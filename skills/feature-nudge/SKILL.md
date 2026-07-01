@@ -3,7 +3,6 @@ name: feature-nudge
 description: "This skill should be used when the user asks to 'nudge me on unused features', 'which Claude Code features haven't I adopted', 'check feature adoption', 'am I using the features I noted', 'feature nudge', 'which tips have I actually used'. Scans recent Claude Code session transcripts across all projects for real evidence of feature use (typed slash-commands, model aliases, tool invocations), cross-references them against the [nudge]-tagged features in the Basic Memory note main/reference/claude-code-noteworthy-features, previews which features have adoption evidence vs none, and updates each feature's adoption status in that note's frontmatter after user approval. On any status change, it also regenerates the shared tip cache (~/.claude/references/claude-code-nudge-tips.txt) that /nudge-sync owns."
 user-invocable: true
 allowed-tools:
-  - Glob
   - Grep
   - Read
   - Write
@@ -35,15 +34,28 @@ Claude Code feature adoption.
   `/package-intel`/`/tool-intel`'s kind of job, not this skill's).
 - **No `[nudge]` observations in the note** — report "No features to check
   adoption for" and exit.
-- **No transcripts found (`Glob` returned zero files)** — do **not** silently
-  treat this as "no evidence for everything" (see Step 2's guard — a Glob
-  path/tool failure looks identical to a genuinely empty history). Report it
-  to the user and stop, rather than proposing `nudged` transitions on data
-  that may just be a broken scan.
-- **All transcripts found but unreadable** (a real, non-zero file list that
-  fails to parse) — this is a different, legitimate case: report "No session
-  evidence available" and treat every feature as no-evidence (propose
-  `nudged` for anything currently `unseen`, skip everything else).
+- **`~/.claude/projects` doesn't exist at all** (confirmed empirically: this
+  raises a "Path does not exist" tool error, not a clean zero-match result)
+  — this is the **benign** fresh-install case, never seen Claude Code
+  before this skill's own invocation. Catch the specific path-not-found
+  error from Step 2's sanity grep and treat it as "No session evidence
+  available yet": propose `nudged` for anything currently `unseen`, skip
+  everything else. Do **not** report this as a tool/path failure — it is
+  the expected state for a brand-new install.
+- **Sanity grep (see Step 2) returns zero matches, but the directory
+  exists** — this is the genuine tool/path failure case (a Grep path/tool
+  failure looks identical to a genuinely empty history otherwise). Report
+  it to the user and stop, rather than proposing `nudged` transitions on
+  data that may just be a broken scan.
+- **A specific feature slug's grep returns zero matches while the sanity
+  grep succeeded** — this is normal, expected no-evidence for that one
+  feature; propose `nudged` if currently `unseen`, per Step 3's table.
+- **A slug's `Grep` result hits the tool's own result cap** (confirmed: a
+  broad token can exceed ~250 matched files) — accepted, not engineered
+  around: evidence is confirmed the moment any one matched file passes the
+  shape check, so a cap can only ever under-count the *session number*
+  shown in the preview, never flip a real "adopted" into a false
+  "no evidence."
 - **Orphaned `adoption-<slug>` frontmatter keys** (a `[nudge]` observation
   was later deleted from the note body, but its frontmatter key remains) —
   left as-is. The key is inert: `schema_validate` ignores frontmatter, and a
@@ -85,38 +97,67 @@ features as one.
 
 ### 2. Gather evidence
 
-Glob recent session transcripts across all projects, most-recently-modified
-first, capped at ~50 files (this skill's own bound on transcript-scan cost;
-recent-first ordering means older sessions rarely add new adoption
-evidence — a pattern also observed in the built-in `fewer-permission-prompts`
-skill, but adopted here as this skill's own design choice, not a claim about
-that skill's undocumented internals). Transcripts nest at
-variable depth — a session file directly under a project directory, but
-subagent and workflow-agent transcripts one or more levels deeper — so the
-glob must be recursive, and a tilde embedded in the `pattern` string does
-**not** expand (confirmed empirically: `Glob(pattern="~/.claude/projects/*/*.jsonl")`
-returns zero files even when matching transcripts exist, despite real
-transcripts being present). The fix, also confirmed empirically (found real
-transcript files, not zero) — put the tilde in the `path` parameter instead,
-which behaves the same way `Read`/`Write` expand `~` elsewhere in this
-plugin:
+**Search by content directly — do not pre-filter by a "recent files"
+working set.** An earlier version of this step used `Glob` to build a
+most-recently-modified-first working set of ~50 transcript files, then
+grepped only within it. This shipped a real, silent bug: Claude Code's
+`Glob` caps its returned file list (confirmed: capped well under the total
+file count across `~/.claude/projects`), and that cap is a traversal-order
+truncation, not a true mtime-sorted slice — so "sort what `Glob` returned,
+take the top ~50" was sorting an arbitrary subset. In one real run, the
+actively-running session's own transcript (the freshest file on the whole
+machine) was completely absent from the computed "top 50." A specific
+feature's mentions are sparse relative to any practical file-count cap, so
+searching by content directly is both simpler and reliably correct — it
+never depends on getting file *ordering* right.
+
+**Sanity check first**, once per invocation, before the per-slug loop:
 
 ```
-Glob(pattern="**/*.jsonl", path="~/.claude/projects")
+Grep(pattern="\"type\":\"user\"", path="~/.claude/projects",
+     glob="**/*.jsonl", output_mode="files_with_matches")
 ```
 
-**If this ever returns zero files, treat it as a tool/path failure, not
-"no evidence"** — report this to the user rather than silently proceeding
-as if every feature had no adoption evidence (indistinguishable failure
-modes are exactly how this bug shipped undetected the first time). If it
-does regress, fall back to resolving the actual absolute home directory and
-using `Glob(pattern="**/*.jsonl", path="<absolute-home>/.claude/projects")`
-— also confirmed working, though the tilde form above should be preferred
-since it needs no path resolution.
+This literal string (no space after the colon — confirmed empirically that
+real transcript JSON has none; a `"type": "user"` form with a space matches
+nothing) is present in every real session transcript, so it is a reliable
+first check that transcript scanning works at all:
+- **A "Path does not exist" error** — `~/.claude/projects` itself is
+  missing. This is the benign fresh-install case (see Edge Cases): treat as
+  "no session evidence available yet," not a failure.
+- **Zero matches with no error** (the directory exists but nothing matched
+  this ubiquitous string) — genuine tool/path failure. Report to the user
+  and stop; never silently proceed as if every feature had no evidence
+  (indistinguishable failure modes are exactly how the original bug shipped
+  undetected).
+- **A non-zero match count (expect many — this string is common enough
+  that the result may itself hit the tool's own result-count cap, which is
+  fine here: this check only needs "more than zero," not an exact count)**
+  — transcript scanning works; proceed to the per-slug loop below.
 
-Sort by mtime descending, take the top ~50. For each catalog slug, `Grep` as
-a cheap first-pass filter across those files, then `Read` matching lines to
-confirm the shape is real evidence, not just a mention:
+**Per-slug search.** For each catalog slug, derive a `<search-term>` from
+the tip text (loaded in Step 1) — **not** the normalized slug, which is a
+machine key for frontmatter/ring-buffer matching that nobody ever types
+into a session:
+1. Extract the first backtick-quoted span from the slug's tip text (every
+   seed tip's prose leads with one, e.g. `` `opusplan` ``, `` `/advisor` ``,
+   `` `/fork <directive>` ``, `` `CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP=1` ``).
+2. If it contains a placeholder argument (a `<...>` token, e.g.
+   `/fork <directive>`, `/batch <instruction>`), truncate at the first `<`
+   and trim trailing whitespace, keeping only the fixed literal part
+   (`/fork <directive>` → `/fork`).
+3. Use the resulting literal string as `<search-term>`. None of the current
+   seed terms contain regex metacharacters, so no escaping is needed today
+   — but a future tip containing one (`.`, `(`, `$`, etc.) would need
+   literal-string escaping before use as a `Grep` pattern.
+
+```
+Grep(pattern="<search-term>", path="~/.claude/projects", glob="**/*.jsonl",
+     output_mode="files_with_matches")
+```
+
+Then `Read` each matched file to confirm the shape is real evidence, not
+just a mention:
 
 - **Typed invocation** — `type:"user"` + a `message.content` field +
   `promptSource:"typed"` + `origin.kind=="human"`. This excludes synthetic,
@@ -125,10 +166,21 @@ confirm the shape is real evidence, not just a mention:
   adoption.
 - **Tool use** — `type:"assistant"` + a `message.content[]` entry with
   `type:"tool_use"`.
+- **Whole-word match, not a bare substring** — confirmed by a real
+  pre-fix run: a bare `advisor` search matched ordinary prose about
+  "security advisor**ies**." Before counting a match as shape-confirmed,
+  verify the search term is not embedded inside a longer word (the
+  character immediately following the match, if alphanumeric, must not
+  continue the same word).
 
 Count **distinct sessions** (distinct transcript files) with at least one
-hit per slug, not raw line matches — repeated matches within the same
-session are one piece of evidence, not several.
+shape-confirmed hit per slug, not raw line matches — repeated matches
+within the same session are one piece of evidence, not several. If a
+slug's own `Grep` result hits the tool's result-count cap (confirmed: a
+broad token can exceed ~250 matched files), this cannot produce a false
+"no evidence" — a hit is confirmed the moment any one matched file passes
+the shape check, so a cap can only ever under-count the *session number*
+shown in the Step 4 preview.
 
 ### 3. Compute transitions
 

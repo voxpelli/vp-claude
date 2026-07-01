@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.8][] - 2026-07-01
+
+### Fixed
+
+- **`/feature-nudge` Step 2 could silently miss the most-recently-used
+  feature.** The evidence-gathering step used `Glob` to build a
+  most-recently-modified-first working set of ~50 transcript files, then
+  searched only within it. Claude Code's `Glob` caps its returned file list,
+  and that cap is a traversal-order truncation rather than a true
+  mtime-sorted slice — so a live dogfood run found the actively-running
+  session's own transcript completely absent from the computed "top 50."
+  Fixed by searching by content directly instead of pre-filtering by
+  recency: each feature's evidence search now derives a real search term
+  from its tip's own backtick-quoted invocation syntax (not the normalized
+  slug, which nobody types), greps for it across every project's
+  transcripts with no file-count pre-filter, and requires a whole-word
+  match to close a false-positive class found in the same dogfood run (a
+  bare `advisor` search matching "security advisor**ies**" prose). A
+  distinct fresh-install case (`~/.claude/projects` not existing yet) is
+  now handled separately from a genuine tool/path failure.
+
 ## [0.31.7][] - 2026-07-01
 
 ### Added
@@ -1667,6 +1688,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.31.8]: https://github.com/voxpelli/vp-claude/compare/v0.31.7...v0.31.8
 [0.31.7]: https://github.com/voxpelli/vp-claude/compare/v0.31.6...v0.31.7
 [0.31.6]: https://github.com/voxpelli/vp-claude/compare/v0.31.5...v0.31.6
 [0.31.5]: https://github.com/voxpelli/vp-claude/compare/v0.31.4...v0.31.5
