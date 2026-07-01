@@ -83,6 +83,18 @@ Claude Code feature adoption.
 
 ### Accepted limitations (no fix needed)
 
+- **The slash-command evidence check (see Step 2) is a structural signal,
+  not a positive "a human typed this" flag** — there is no such flag
+  anywhere in the real transcript schema (confirmed against 600 real
+  dispatch samples). The one theoretical gap this leaves: a human could
+  type a message whose content, verbatim and from the very first
+  character, reproduces `<command-name>term</command-name>` as literal
+  text (e.g. quoting this exact skill's own prose at the start of a
+  message) — the starts-with-the-tag condition would not catch that
+  specific construction. Accepted as an extremely low-probability
+  coincidence (the message would need to open with that exact tag
+  pattern, not merely mention it) rather than engineered around, since no
+  stronger signal exists in the real data to close it.
 - **A slug's `Grep` result hits the tool's own result cap** (confirmed: a
   broad bare-word token can exceed ~250 matched files; the tag-based search
   for slash-command terms does not have this exposure in practice, since it
@@ -239,13 +251,8 @@ two cases need genuinely different evidence criteria, not just different
 patterns.**
 
 **Slash-command terms — search for the dispatch tag directly, not the bare
-term, AND still require the human-typed fields.** A bare
-`promptSource:"typed"` + `origin.kind=="human"` check (an earlier version
-of this doc relied on exactly this, alone) does **not** distinguish a user
-*typing the command* from a user *typing a sentence that merely mentions
-it* — both satisfy every one of those fields. Confirmed empirically:
-Claude Code wraps every genuine slash-command dispatch (built-in or
-plugin-namespaced) in a `<command-name>...</command-name>` tag inside
+term.**  Claude Code wraps every genuine slash-command dispatch (built-in
+or plugin-namespaced) in a `<command-name>...</command-name>` tag inside
 `message.content`, and free-text mentions never produce this wrapper
 regardless of where in the message the term appears. So search for the tag
 directly:
@@ -256,38 +263,75 @@ Grep(pattern="<command-name><search-term></command-name>",
      output_mode="files_with_matches")
 ```
 
-**A tag match alone is still not sufficient — `type:"user"` is not
-synonymous with "a human typed this."** Confirmed empirically, and it
-reproduces without any special effort: a `type:"user"` entry can also be
-synthetic tool/task output (e.g. `promptSource:"system"`,
-`origin.kind=="task-notification"`) whose content contains the literal
-tag string purely because some other process quoted it while discussing
-this exact mechanism — which is exactly what happens every time this
-mechanism itself gets reviewed or documented. `Read` each matched file and
-require **all three** of:
-1. The entry is `type:"user"` (not `type:"assistant"` — see below).
-2. `promptSource:"typed"` and `origin.kind=="human"` on that same entry —
-   the same fields the non-slash branch uses, added back here rather than
-   dropped, since the tag alone doesn't establish a human typed it.
-3. The tag-wrapped string appears within that entry's content.
+**A tag match alone is not sufficient — but the correct further check is
+structural, not field-based.** An earlier version of this doc required
+`promptSource:"typed"` + `origin.kind=="human"` on top of the tag match.
+That was backwards and confirmed unsatisfiable against 600 real dispatch
+samples across every project on this machine: a genuine dispatch entry's
+`message` object is *always* exactly `{role, content}` — no `promptSource`,
+no `origin`, no `permissionMode` field ever exists on a real dispatch. Those
+fields belong to a different message shape (ordinary typed prose) and
+structurally never co-occur with the dispatch-tag shape, so requiring them
+made the check impossible to satisfy, ever, for any real usage.
 
-Only all three together **is** the evidence — the tag is what tells you
-*which* feature; the human-typed fields are what tell you a person, not a
-quoting tool or a pasted excerpt, produced it. This still gets the benefit
-the tag search was for (collapsing a noisy bare-word match count, e.g.
-~100+ files for a common term, down to zero-or-few genuine hits), since
-requiring the tag on top of the human-typed fields only makes the check
-stricter, never looser. **Any match on a `type:"assistant"` entry is not
-evidence — discard it, regardless of what tool or arguments produced it.**
-Confirmed by dogfooding this exact mechanism: a matched file can contain
-the tag-wrapped string inside a `type:"assistant"` `tool_use` entry —
-specifically, this very kind of search's own prior `Grep` call, logged with
-the literal pattern as its `input.pattern` argument, which is real noise
-this mechanism produces, not a hypothetical. This is also why "Tool use" is
-not a valid evidence path for slash-command terms at all: a slash command
-is always human-dispatched, never assistant-tool-invoked, so accepting a
-`type:"assistant"` match here would count exactly the self-referential
-noise just described as if it were genuine adoption.
+`Read` each matched file and confirm the matching entry satisfies **one of
+two** genuine-dispatch shapes — confirmed via live dogfooding that built-in
+commands are emitted in either shape depending on the command, so checking
+only one produces real false negatives (a genuine historical `/fork`
+dispatch was missed by Shape A alone):
+
+**Shape A — `type:"user"` dispatch.** All four of:
+1. The entry is `type:"user"`.
+2. `message.content` is a **string**, not an array/list — this alone rules
+   out an assistant `tool_use` block and a `tool_result` entry, both of
+   which always have list-shaped content, never string.
+3. That string, with leading whitespace trimmed, **starts with**
+   `<command-name>` or `<command-message>` — not "contains the tag
+   anywhere in the message." Confirmed: 0/600 genuine dispatches had the
+   tag embedded mid-prose. A human quoting or pasting the tag inside a
+   longer message fails this condition.
+4. The **top-level transcript entry** (a sibling of `message`, not nested
+   inside it) carries **none** of `toolUseResult`, `sourceToolAssistantUUID`,
+   `requestId` — an extra, cheap guard against the `tool_result` shape
+   specifically, on top of condition 2 (which already excludes it via
+   content type).
+
+**Shape B — `type:"system"` local-command dispatch.** Confirmed this is
+the general emission shape for every built-in local slash command (found
+99 times across 33 sessions and ~10 projects, spanning `/fork`, `/exit`,
+`/mcp`, `/doctor`, `/plugin`, `/model`, and others — not a rare one-off).
+All three of:
+1. The entry is `type:"system"` with `subtype:"local_command"` — check
+   these as the entry's own literal JSON fields, not as text mentioned
+   inside some other entry's content (a report or message that merely
+   *quotes* `"type":"system"` as a string doesn't make its own top-level
+   `type` field `"system"`).
+2. `content` sits **directly on the entry** (no `message` wrapper — this
+   shape has no `message` object at all, unlike Shape A) and is a string.
+3. That string, trimmed, starts with `<command-name>` or `<command-
+   message>` — same rule as Shape A condition 3.
+
+Shape B needs no extra tool_result/tool_use guard: the exact combination
+`type:"system"` + `subtype:"local_command"` was confirmed absent from
+every `assistant`/`tool_result` entry found — conditions 1–2 alone already
+exclude the self-contamination risk.
+
+A match satisfying either shape **is** the evidence — no further check
+needed. Both are *structural* signals, not a positive "a human typed this"
+flag — there is no such flag anywhere in the real data; every condition
+works by elimination, ruling out every non-dispatch shape actually
+observed rather than asserting a positive marker of humanity. **Any match
+on a `type:"assistant"` entry is not evidence — discard it, regardless of
+what tool or arguments produced it.** Confirmed by dogfooding this exact
+mechanism: a matched file can contain the tag-wrapped string inside a
+`type:"assistant"` `tool_use` entry — specifically, this very kind of
+search's own prior `Grep` call, logged with the literal pattern as its
+`input.pattern` argument, which is real noise this mechanism produces, not
+a hypothetical. This is also why "Tool use" is not a valid evidence path
+for slash-command terms at all: a slash command is always human-dispatched,
+never assistant-tool-invoked, so accepting a `type:"assistant"` match here
+would count exactly the self-referential noise just described as if it
+were genuine adoption.
 
 **Non-slash terms** (bare words, environment variables, settings fields —
 e.g. `opusplan`, `CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP=1`) have no
@@ -319,8 +363,8 @@ just a mention:
   boundary open to the identical false-positive class).
 
 Count **distinct sessions** (distinct transcript files) with at least one
-confirmed hit per slug — tag-and-human-typed-confirmed for slash-command
-terms, shape-confirmed for non-slash terms — not raw line matches: repeated
+confirmed hit per slug — structurally-confirmed for slash-command terms,
+shape-confirmed for non-slash terms — not raw line matches: repeated
 matches within the same session are one piece of evidence, not several. If
 a slug's own `Grep` result hits the tool's result-count cap (confirmed: a
 broad bare-word token can exceed ~250 matched files — the tag-based search

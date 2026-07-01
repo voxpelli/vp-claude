@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.11][] - 2026-07-01
+
+### Fixed
+
+- **`/feature-nudge`'s 0.31.10 slash-command evidence check was itself
+  broken — unsatisfiable against real dispatch data.** Running the
+  released 0.31.10 fix for real found 0 of 15 catalog features showed
+  confirmed evidence, even though several (`/goal`, `/fork`, `/advisor`,
+  `/fewer-permission-prompts`) are demonstrably in heavy real use. Root
+  cause, confirmed against 600 real dispatch samples across every project
+  on the machine: the check required a `<command-name>` tag match **and**
+  `promptSource:"typed"` **and** `origin.kind:"human"` together, but a
+  genuine dispatch entry's `message` object is *always* exactly
+  `{role, content}` — those two extra fields never exist on a real
+  dispatch, only on ordinary typed prose. Requiring them made the check
+  impossible to satisfy for any real usage. Fixed by replacing the
+  field-based check with a structural one: the entry must be `type:"user"`
+  with string (not array) content starting with the tag and none of the
+  `tool_result` marker fields, **or** `type:"system"`/`subtype:"local_command"`
+  with content sitting directly on the entry (Claude Code emits built-in
+  local commands — confirmed for `/fork`, `/exit`, `/mcp`, `/doctor`,
+  `/plugin`, `/model`, and others — in this second shape, not the first).
+  Verified in both directions: real dispatches for `/goal`, `/advisor`,
+  `/fewer-permission-prompts`, and `/fork` are now correctly detected, and
+  the two self-contamination cases already found this session (an
+  assistant tool-call's own arguments; a tool-result forwarding them) are
+  still correctly excluded.
+
 ## [0.31.10][] - 2026-07-01
 
 ### Fixed
@@ -1740,6 +1768,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.31.11]: https://github.com/voxpelli/vp-claude/compare/v0.31.10...v0.31.11
 [0.31.10]: https://github.com/voxpelli/vp-claude/compare/v0.31.9...v0.31.10
 [0.31.9]: https://github.com/voxpelli/vp-claude/compare/v0.31.8...v0.31.9
 [0.31.8]: https://github.com/voxpelli/vp-claude/compare/v0.31.7...v0.31.8
