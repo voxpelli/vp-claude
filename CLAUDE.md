@@ -46,7 +46,7 @@ hooks/
   hooks.json                         # PreToolUse, PostToolUse, PostToolUseFailure, SessionStart
 schemas/                             # 23 BM note-schema definitions — source of truth (see ## Schemas)
 scripts/                             # CLI-first audit + npm-run-check utilities (see ## Scripts)
-lib/                                 # JS modules imported by check scripts (staleness-contract, version-distance, fourth-wall-rules, release-counts, mdast, installed-plugins)
+lib/                                 # JS modules imported by check scripts (staleness-contract, version-distance, fourth-wall-rules, release-counts, mdast, installed-plugins, plugin-load-paths)
 .claude/rules/                       # Path-scoped dev conventions, load on edit of matching files (see ## Detailed conventions)
 ```
 
@@ -145,7 +145,7 @@ Skills and agents reference tools from multiple MCP servers. When editing, use e
 
 ## Validation
 
-`npm run check` — runs `check:plugin` (validate-plugin.mjs, incl. the CLAUDE.md size guard) + `check:contract` (staleness drift-bucket contract self-test) + `check:md` (remark) + `check:sh` (shellcheck + shfmt) + `check:hooks` (hook integration tests) + `check:distance` (version-distance classifier self-test) + `check:fourthwall` (fourth-wall rule-registry self-test) + `check:release-counts` (CLAUDE.md component counts ↔ disk) + `check:mdast` (mdast prose/fenced split self-test) + `check:installed-plugins` (installed-plugin/skill resolver self-test).
+`npm run check` — runs `check:plugin` (validate-plugin.mjs, incl. the CLAUDE.md size guard) + `check:contract` (staleness drift-bucket contract self-test) + `check:md` (remark) + `check:sh` (shellcheck + shfmt) + `check:hooks` (hook integration tests) + `check:distance` (version-distance classifier self-test) + `check:fourthwall` (fourth-wall rule-registry self-test) + `check:release-counts` (CLAUDE.md component counts ↔ disk) + `check:mdast` (mdast prose/fenced split self-test) + `check:installed-plugins` (installed-plugin/skill resolver self-test) + `check:plugin-load-paths` (`${CLAUDE_PLUGIN_ROOT}` cross-load paths in skill prose resolve on disk).
 Shell scripts are validated with `shellcheck` (linting) and `shfmt -d`
 (format verification). Requires `brew install shfmt` if not already present.
 
@@ -173,6 +173,7 @@ full drift-guard picture live in `.claude/rules/scripts-and-validation.md`.
 | `check-release-counts.mjs` | Live + fixture check: CLAUDE.md `### Skills/Agents/Hooks (N)` headings match on-disk counts (imports `lib/release-counts.mjs`) | `npm run check:release-counts` |
 | `check-mdast.mjs` | Fixture self-test for `lib/mdast.mjs` `collectScannableText` — proves prose + inline-code is collected while fenced blocks (any depth: tilde, 4-backtick nesting) + frontmatter are skipped (powers `auditToolReferences`) | `npm run check:mdast` |
 | `list-installed-plugins.mjs` | CLI for `/knowledge-gaps --global` Step 7c: reads `~/.claude/plugins/*` + `~/.agents/.skill-lock.json`, emits NDJSON `{identifier, title, installedAt, members, sourceResolved}` per installed plugin/skill (file I/O only — resolution in `lib/installed-plugins.mjs`) | `/knowledge-gaps --global` |
+| `check-plugin-load-paths.mjs` | Live + fixture check: every bare `${CLAUDE_PLUGIN_ROOT}/...` cross-load path in `skills/**/*.md` prose (imports `lib/plugin-load-paths.mjs`) resolves on disk — catches a moved/renamed shared reference file that remark-validate-links and validate-plugin.mjs's hook-command resolution both miss | `npm run check:plugin-load-paths` |
 | `check-list-installed-plugins.mjs` | Fixture tests for `lib/installed-plugins.mjs` resolver — every owner/repo source shape (`./`, `./sub`, github, git-subdir, unresolved) + skill grouping-by-source | `npm run check:installed-plugins` |
 
 ### bd CLI quirks

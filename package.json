@@ -13,6 +13,7 @@
     "check:md": "remark . --quiet --frail",
     "check:mdast": "node scripts/check-mdast.mjs",
     "check:plugin": "node validate-plugin.mjs",
+    "check:plugin-load-paths": "node scripts/check-plugin-load-paths.mjs",
     "check:release-counts": "node scripts/check-release-counts.mjs",
     "check:sh": "shellcheck hooks/*.sh scripts/*.sh && shfmt -d hooks/*.sh scripts/*.sh"
   },
