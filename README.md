@@ -1,6 +1,6 @@
 # vp-knowledge
 
-A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https://github.com/basicmachines-co/basic-memory) into an actively maintained knowledge graph. Research packages from six ecosystems and tools from six dev-environment categories using parallel enrichment, find documentation gaps in your projects, detect when documented packages and tools have drifted from upstream registries (brew, npm, cask, crate, vscode), surface project-relevant knowledge before coding, and let autonomous agents audit and improve your notes — all without leaving your terminal.
+A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https://github.com/basicmachines-co/basic-memory) into an actively maintained knowledge graph. Research packages from six ecosystems and tools from eight dev-environment categories using parallel enrichment, find documentation gaps in your projects, detect when documented packages and tools have drifted from upstream registries (brew, npm, cask, crate, vscode), surface project-relevant knowledge before coding, and let autonomous agents audit and improve your notes — all without leaving your terminal.
 
 ## What it does
 
@@ -34,7 +34,7 @@ Queries seven sources in parallel, synthesizes a structured note, and cross-link
 | Readwise | Your highlights and saved articles about the package |
 | Socket | Supply-chain risk scores (license, maintenance, quality, supply-chain, vulnerability) for npm, pypi, cargo, gem |
 
-Plus changelog analysis via GitHub releases — with a git-tag fallback when the release list lags the registry version (a tag pushed without a published Release). After writing, searches for existing notes that reference the package and adds bidirectional cross-links. The result is an ecosystem-prefixed note (`npm-*`, `crate-*`, `pypi-*`, etc.) with observations, relations, and release highlights — connected into the graph from day one.
+Plus changelog analysis via GitHub releases — with a git-tag fallback when the release list lags the registry version (a tag pushed without a published Release). After writing, searches for existing notes that reference the package and adds bidirectional cross-links, and rewrites any bare-name `[[Name]]` wiki-link stub elsewhere in the graph to the note's full title (bare-name links don't auto-resolve against a descriptor-titled note). The result is an ecosystem-prefixed note (`npm-*`, `crate-*`, `pypi-*`, etc.) with observations, relations, and release highlights — connected into the graph from day one.
 
 **Batch mode ("upgrade haul").** Hand `/package-intel` a list of names or a pasted upgrade/outdated command line (`npm outdated`, `npm i a@latest b@latest`, and the crate/go/composer/pypi/gem equivalents) and it refreshes every already-documented note against its recorded→current version delta in one pass — synthesizing a curated changelog reel for just that interval and stamping the new version into the `## Release Highlights` prose — plus the machine-stable `[version]` observation where the schema carries that slot (npm today; the other ecosystems as the slot lands). The single prefixed-identifier path is unchanged; batch mode is purely additive. This is the executor half of `/knowledge-gaps --stale` — its batched-refresh offer routes straight into this mode.
 
@@ -45,6 +45,7 @@ Queries five sources in parallel, synthesizes a structured note, and cross-links
 | Form | Category | Example |
 |------|----------|---------|
 | `brew:<name>` | Homebrew formula | `brew:ripgrep` |
+| `brew:<owner>/<tap>/<name>` | Third-party Homebrew tap formula | `brew:dicklesworthstone/tap/br` |
 | `cask:<name>` | Homebrew cask | `cask:warp` |
 | `action:<owner>/<repo>` | GitHub Action | `action:actions/checkout` |
 | `docker:<image>` | Docker Hub image | `docker:node` |
@@ -72,7 +73,7 @@ Queries five sources in parallel, synthesizes a structured note, and cross-links
 | Readwise | Your highlights and saved articles about the tool |
 | Homebrew MCP (optional) | Install analytics (30/90/365-day counts + build errors) for `brew:` and `cask:` — skipped silently when unavailable |
 
-Plus version/changelog data (GitHub releases for actions, Docker Hub tags for images, API versions for brew/vscode) — with a git-tag fallback for `action:`/`gh:`/`brew:` when the release list lags the newest git tag. For `vscode:`, it also records an **Open VSX trust signal** — a `[security]` observation placing the extension on a 4-state ladder (verified-restricted / public-namespace / **marketplace-only = squattable** / not-published-anywhere); a Marketplace-only extension has an unclaimed Open VSX namespace that fork-IDEs (Cursor, Windsurf, VSCodium) resolve installs against, a known supply-chain exposure. After writing, searches for existing notes that reference the tool and adds bidirectional cross-links. The result is a prefixed note (`brew-*`, `action-*`, etc.) with type-specific sections — `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for Docker, `## Common Usage` for formulae — plus observations and relations.
+Plus version/changelog data (GitHub releases for actions, Docker Hub tags for images, API versions for brew/vscode) — with a git-tag fallback for `action:`/`gh:`/`brew:` when the release list lags the newest git tag. For `vscode:`, it also records an **Open VSX trust signal** — a `[security]` observation placing the extension on a 4-state ladder (verified-restricted / public-namespace / **marketplace-only = squattable** / not-published-anywhere); a Marketplace-only extension has an unclaimed Open VSX namespace that fork-IDEs (Cursor, Windsurf, VSCodium) resolve installs against, a known supply-chain exposure. Third-party Homebrew taps (`brew:<owner>/<tap>/<name>`) get a dedicated fetch path — Ruby-DSL formula parsing, an upstream-repo DeepWiki pivot, a license cross-check against the upstream repo's own LICENSE, and a `.github/workflows` SLSA/SHA-256 hygiene audit — instead of misrouting to the core registry. After writing, searches for existing notes that reference the tool and adds bidirectional cross-links. The result is a prefixed note (`brew-*`, `action-*`, etc.) with type-specific sections — `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for Docker, `## Common Usage` for formulae — plus observations and relations.
 
 **Batch mode ("upgrade haul").** Hand `/tool-intel` a pasted `brew upgrade` / `brew outdated` line or a list of bare names and it refreshes every already-documented note in one pass. Bare names route to formula or cask automatically via the artifacts-vs-`Dependencies` shape signal (and re-dispatch from `fetch-brew-upstream.sh` to `fetch-cask-upstream.sh` on a `not-in-api` result), and each note's delta is recorded as inline `[feature]` / `[version]` observations. The single prefixed-identifier path is unchanged; batch mode is purely additive — and is the executor half of `/knowledge-gaps --stale`.
 
@@ -197,7 +198,7 @@ Queries five sources in parallel, synthesizes a structured person note, and cros
 | Tavily | Bio, current role, projects, contributions, controversies |
 | DeepWiki | GitHub repo philosophy (developer profiles only) |
 
-Includes a fourth-wall guardrail (no self-referential knowledge-graph content in person notes) and an anti-hagiography step (explicit controversy search). After writing, searches for existing notes that mention the person and adds bidirectional cross-links using the person schema's relation vocabulary (`created`, `founded`, `maintains`, `works_with`, `enables`, `relates_to`).
+Includes a fourth-wall guardrail (no self-referential knowledge-graph content in person notes) and an anti-hagiography step (explicit controversy search). After writing, searches for existing notes that mention the person and adds bidirectional cross-links using the person schema's relation vocabulary (`created`, `founded`, `maintains`, `works_with`, `enables`, `relates_to`), and rewrites any bare-name `[[Name]]` wiki-link stub elsewhere in the graph to the note's full title (bare-name links don't auto-resolve against a descriptor-titled note).
 
 ### Knowledge Gardener — Read-only graph auditor
 
@@ -541,6 +542,8 @@ scripts/
   check-release-counts.mjs             Component-count contract: CLAUDE.md ↔ disk (npm run check:release-counts)
   check-mdast.mjs                      mdast prose/fenced split tests (npm run check:mdast)
   check-list-installed-plugins.mjs     Installed-plugin/skill resolver tests (npm run check:installed-plugins)
+  check-plugin-load-paths.mjs          ${CLAUDE_PLUGIN_ROOT} cross-load path resolution tests (npm run check:plugin-load-paths)
+  check-bm-version-extract.mjs         S2 version-extractor tests (npm run check:bm-version-extract)
   list-installed-plugins.mjs           CLI: emit NDJSON of installed plugins/skills for /knowledge-gaps --global
   fetch-brew-upstream.sh               API-only upstream facts for brew formulae (stdin: names; never reads ~/basic-memory)
   fetch-cask-upstream.sh               API-only upstream facts for casks (bulk cask.json; comma-segment version)
@@ -554,6 +557,8 @@ lib/
   release-counts.mjs                   Component-count parse/compare (check:release-counts)
   mdast.mjs                            Shared mdast prose/heading collectors (check:mdast; used by validate-plugin)
   installed-plugins.mjs                Pure installed-plugin/skill resolver (used by list-installed-plugins.mjs)
+  plugin-load-paths.mjs                Pure ${CLAUDE_PLUGIN_ROOT} path extractor (check:plugin-load-paths)
+  bm-version-extract.mjs               Pure S2 version extractor, 6 priority patterns (check:bm-version-extract)
 validate-plugin.mjs                    Plugin validator (color enum, frontmatter, MCP prefixes, staleness-bucket contract)
 VOICE.md                               Plugin identity, agent colors, description-tone conventions
 ```

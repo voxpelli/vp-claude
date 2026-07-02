@@ -5,6 +5,117 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.0][] - 2026-07-02
+
+### Changed
+
+- **`knowledge-maintainer` Section 3b redefined as a refresh queue, not an
+  actor.** Field-testing found the prior "auto-batch up to 5 `/tool-intel`
+  refreshes for `Drifted >30d`" behavior executed as minimal
+  single-observation version bumps in unattended/background mode instead of
+  full source-enrichment refreshes — concrete signal loss: a
+  `cosign 3.0.5 → 3.0.6` bump looked routine but actually patched three 2026
+  CVEs, caught only by a later manual `/tool-intel` run. Section 3b now
+  never performs a refresh itself and never spawns recursive `/tool-intel`
+  subagents from an unattended background agent; instead it emits a
+  structured Refresh Queue for the human-supervised session to action —
+  Routine lane ordered by `[semver-major]` > `[semver-minor-multi]` >
+  `[patch]`, with any target carrying a prior `[security]` observation
+  always routed to a separate HIGH PRIORITY / IMMEDIATE ACTION lane so a
+  security-relevant drift can't go unnoticed. **This is a behavior change
+  users relying on the old auto-refresh will notice** — the primary reason
+  for this release's minor bump.
+
+### Added
+
+- **`tool-intel`/`package-intel` upgrade-haul: Axis-B changelog target now
+  resolves to a linked timeline note when one exists**, instead of always
+  writing inline — e.g. `cask-claude-code`'s changelog reel now correctly
+  routes to `Claude Code Release History` rather than duplicating it inline.
+  Disambiguates by title pattern against a note's `see_also`/`documented_in`
+  relations, correctly skipping unrelated linked notes (e.g. a security-hub
+  note) on the same subject.
+- **`/knowledge-gaps --stale` gains `--limit N` / `--since <date>` /
+  `--sample N` scope modifiers** for narrowing a large cohort (e.g. a
+  388-note `npm` directory) before the expensive per-note read/fetch work
+  runs, plus a documented parallel-subagent strategy for processing a cohort
+  too large for one turn.
+- **`check:plugin-load-paths`** — new drift guard asserting every
+  `${CLAUDE_PLUGIN_ROOT}/...` path referenced in skill prose actually
+  resolves on disk, catching a moved/renamed shared reference file that
+  neither `remark-validate-links` nor `validate-plugin.mjs` cover.
+- **`knowledge-gardener` surfaces silent schema drift** —
+  `unmatched_observations`/`unmatched_relations` from `schema_validate` now
+  appear as a "Silent drift" report subsection instead of being absorbed
+  without comment.
+- **`package-intel`/`tool-intel` batch trigger phrases added to
+  `description`** so a keyword-less pasted `npm outdated` or
+  `brew upgrade foo bar` line auto-routes to the right skill (the router
+  only reads `description`, not skill body content).
+- **Machine-stable `[version]` observation slot extended to brew/cask/vscode
+  tool cohorts** (previously npm-only), hardening `--stale`'s drift
+  detection against the same fragile prose/table extraction that
+  misparsed version-centric packages before.
+- **`package-intel`/`people-intel` reconcile bare-name `[[Name]]` stubs**
+  after writing a descriptor-titled note — existing notes elsewhere that
+  reference the new note via a bare wiki-link (which doesn't auto-resolve)
+  now get rewritten to the full title.
+- **`tool-intel` dispatches third-party Homebrew taps**
+  (`brew:<owner>/<tap>/<formula>`) to a dedicated fetch path — Ruby-DSL
+  formula parsing, upstream-repo DeepWiki pivot, license cross-check, and a
+  `.github/workflows` SLSA/SHA-256 hygiene audit — instead of silently
+  misrouting to the core registry.
+- **`lib/bm-version-extract.mjs`** — the previously prose-duplicated
+  6-pattern version-extraction logic (mirrored by hand across
+  `staleness-detection.md` and `knowledge-gardener.md`) is now a real,
+  44-fixture-tested library both docs point at as canonical.
+
+### Fixed
+
+- **`package-intel`/`tool-intel` Step 5 overwrite dropped relations and left
+  a stale permalink** when relocating a note whose stub existed at a
+  different directory/title (e.g. an old `indieweb/history/` stub for a
+  now-documented npm package). A later live dry-run against the real Basic
+  Memory instance found the original fix's premise was itself wrong —
+  `write_note(overwrite=True)` targeting a new directory doesn't relocate
+  the old note, it creates a genuine duplicate — corrected to add an
+  explicit cleanup step for the orphaned stub.
+- **`fetch-brew-upstream.sh` under-reported drift for tag-only formulae**
+  (tagged releases with no GitHub Release) — added a git-tag date fallback
+  with a new `days_stale_source` provenance field.
+- **`recent_activity` `has_more`-based pagination instructions were
+  unsatisfiable** (the tool has no `has_more` field; returns a flat
+  `result` array) — fixed across 4 locations found this sprint
+  (`staleness-detection.md`, `knowledge-gardener.md`, `knowledge-prime.md`,
+  `knowledge-maintainer.md`).
+- **`lib/bm-version-extract.mjs` Pattern 1 recognized only a `Homepage:`
+  header label**, silently unparseable for 5 of 6 real ecosystem
+  conventions (`GitHub:` for npm/crate/go/composer/pypi/gem, `Publisher:`
+  for vscode, `Runs:` for action, `Source:` for gh, `Homepage / repo:` for
+  plugin/skill) — found by an adversarial full-branch review after initial
+  release. Fixed to a closed 6-label alternation; also made all 6 patterns
+  fence-aware, since none previously skipped fenced code blocks (a
+  version-looking string inside a documentation example was wrongly
+  extracted as real data). Verified against real notes pulled from the live
+  graph: extraction accuracy improves with zero regressions.
+- **Relation-search mechanism documentation was inaccurate** for the
+  bare-name-stub-reconciliation pattern — corrected twice: first from
+  "relation titles index both source and target" (only true for resolved
+  relations) to a permalink-based explanation, then refined again after
+  verification against Basic Memory's actual source showed it's the default
+  hybrid/semantic search doing the work, not full-text search (an explicit
+  `search_type="text"` would not find the match).
+- Small documentation accuracy pass: a stale "Auto-fix" row in the README
+  autonomy table describing the now-removed Section 3b auto-behavior, a
+  missing drift-guard entry, stale "batch ordering" phrasing, and a
+  mis-pointed cross-reference in the relocated-stub step.
+
+### Docs
+
+- Tracked the Context7 MCP server's `resolve-library-id` parameter-schema
+  bug (`UPSTREAM-mcp--context7.md`) — no valid invocation exists; already
+  handled gracefully by both intel skills' existing fallback branches.
+
 ## [0.31.12][] - 2026-07-01
 
 ### Changed
@@ -1782,6 +1893,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.32.0]: https://github.com/voxpelli/vp-claude/compare/v0.31.12...v0.32.0
 [0.31.12]: https://github.com/voxpelli/vp-claude/compare/v0.31.11...v0.31.12
 [0.31.11]: https://github.com/voxpelli/vp-claude/compare/v0.31.10...v0.31.11
 [0.31.10]: https://github.com/voxpelli/vp-claude/compare/v0.31.9...v0.31.10

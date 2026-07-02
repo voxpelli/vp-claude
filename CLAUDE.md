@@ -46,7 +46,7 @@ hooks/
   hooks.json                         # PreToolUse, PostToolUse, PostToolUseFailure, SessionStart
 schemas/                             # 23 BM note-schema definitions — source of truth (see ## Schemas)
 scripts/                             # CLI-first audit + npm-run-check utilities (see ## Scripts)
-lib/                                 # JS modules imported by check scripts (staleness-contract, version-distance, fourth-wall-rules, release-counts, mdast, installed-plugins, plugin-load-paths)
+lib/                                 # JS modules imported by check scripts (staleness-contract, version-distance, fourth-wall-rules, release-counts, mdast, installed-plugins, plugin-load-paths, bm-version-extract)
 .claude/rules/                       # Path-scoped dev conventions, load on edit of matching files (see ## Detailed conventions)
 ```
 
