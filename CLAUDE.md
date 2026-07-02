@@ -145,7 +145,7 @@ Skills and agents reference tools from multiple MCP servers. When editing, use e
 
 ## Validation
 
-`npm run check` — runs `check:plugin` (validate-plugin.mjs, incl. the CLAUDE.md size guard) + `check:contract` (staleness drift-bucket contract self-test) + `check:md` (remark) + `check:sh` (shellcheck + shfmt) + `check:hooks` (hook integration tests) + `check:distance` (version-distance classifier self-test) + `check:fourthwall` (fourth-wall rule-registry self-test) + `check:release-counts` (CLAUDE.md component counts ↔ disk) + `check:mdast` (mdast prose/fenced split self-test) + `check:installed-plugins` (installed-plugin/skill resolver self-test) + `check:plugin-load-paths` (`${CLAUDE_PLUGIN_ROOT}` cross-load paths in skill prose resolve on disk).
+`npm run check` — runs `check:plugin` (validate-plugin.mjs, incl. the CLAUDE.md size guard) + `check:contract` (staleness drift-bucket contract self-test) + `check:md` (remark) + `check:sh` (shellcheck + shfmt) + `check:hooks` (hook integration tests) + `check:distance` (version-distance classifier self-test) + `check:fourthwall` (fourth-wall rule-registry self-test) + `check:release-counts` (CLAUDE.md component counts ↔ disk) + `check:mdast` (mdast prose/fenced split self-test) + `check:installed-plugins` (installed-plugin/skill resolver self-test) + `check:plugin-load-paths` (`${CLAUDE_PLUGIN_ROOT}` cross-load paths in skill prose resolve on disk) + `check:bm-version-extract` (S2 version-extractor self-test).
 Shell scripts are validated with `shellcheck` (linting) and `shfmt -d`
 (format verification). Requires `brew install shfmt` if not already present.
 
@@ -175,6 +175,7 @@ full drift-guard picture live in `.claude/rules/scripts-and-validation.md`.
 | `list-installed-plugins.mjs` | CLI for `/knowledge-gaps --global` Step 7c: reads `~/.claude/plugins/*` + `~/.agents/.skill-lock.json`, emits NDJSON `{identifier, title, installedAt, members, sourceResolved}` per installed plugin/skill (file I/O only — resolution in `lib/installed-plugins.mjs`) | `/knowledge-gaps --global` |
 | `check-plugin-load-paths.mjs` | Live + fixture check: every bare `${CLAUDE_PLUGIN_ROOT}/...` cross-load path in `skills/**/*.md` prose (imports `lib/plugin-load-paths.mjs`) resolves on disk — catches a moved/renamed shared reference file that remark-validate-links and validate-plugin.mjs's hook-command resolution both miss | `npm run check:plugin-load-paths` |
 | `check-list-installed-plugins.mjs` | Fixture tests for `lib/installed-plugins.mjs` resolver — every owner/repo source shape (`./`, `./sub`, github, git-subdir, unresolved) + skill grouping-by-source | `npm run check:installed-plugins` |
+| `check-bm-version-extract.mjs` | Fixture tests for the S2 version extractor (imports `lib/bm-version-extract.mjs`) — covers all 6 priority-ordered patterns + the strict table-row label guard, the semver-range-in-prose non-match, and the channel-mismatch regression; this is the canonical logic mirrored as prose in `staleness-detection.md` S2 and `knowledge-gardener.md` Step 5b-ii | `npm run check:bm-version-extract` |
 
 ### bd CLI quirks
 

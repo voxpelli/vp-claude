@@ -82,6 +82,15 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
   link nodes only) nor `validate-plugin.mjs` (`${CLAUDE_PLUGIN_ROOT}` inside hook
   commands only) cover this case. Fixture self-test: real path passes, dangling
   path fails, template placeholder skipped.
+- **`check:bm-version-extract` (`check-bm-version-extract.mjs`)** — fixture
+  self-test of the S2 version extractor (`lib/bm-version-extract.mjs`,
+  `extractBmVersion`): the 6 priority-ordered patterns, the strict
+  `| Version | ... |` table-row label guard (rejects `| Spec Version | ... |`),
+  a semver-range-in-prose non-match paired with the same range correctly
+  resolving via `[version-range]`, and a channel-mismatch table row that must
+  not shadow a fresher `[version]` observation. This is the canonical logic
+  that `staleness-detection.md` S2 and `knowledge-gardener.md` Step 5b-ii
+  mirror as prose tables.
 
 When adding a new "X must agree with Y" invariant, follow this family: a hard
 `error()` for mechanically-unambiguous checks (counts, sizes), a `warn()` for

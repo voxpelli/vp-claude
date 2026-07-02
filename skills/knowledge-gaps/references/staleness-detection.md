@@ -119,7 +119,15 @@ Issue up to 5 concurrent `read_note` calls per turn to keep latency bounded.
 in different notes (different `*-intel` template eras). Match these patterns in
 **priority order, first hit wins**:
 
-<!-- Version-extraction patterns mirrored in agents/knowledge-gardener.md Step 5b-ii — update both in lockstep (no machine contract couples them) -->
+**Canonical logic:** the table below is documentation — the real,
+fixture-tested matching logic is `lib/bm-version-extract.mjs`
+(`extractBmVersion(noteContent, noteTitle)` → `{version, pattern}`), proven by
+`scripts/check-bm-version-extract.mjs` (`npm run check:bm-version-extract`).
+It is kept in sync with `agents/knowledge-gardener.md` Step 5b-ii, fixture-tested
+against both the strict `| Version | ... |` table-row label guard and the
+semver-range/channel-mismatch regressions.
+
+<!-- Version-extraction patterns mirrored in agents/knowledge-gardener.md Step 5b-ii — update both in lockstep (no machine contract couples them); the actual logic lives in lib/bm-version-extract.mjs -->
 
 | Priority | Pattern | Example |
 |---|---|---|

@@ -451,7 +451,15 @@ Then reason about the `content` field.
 wins** — this is the **same set the `/knowledge-gaps --stale` reference
 (`staleness-detection.md` S2) uses; keep the two in sync**:
 
-<!-- Version-extraction patterns mirrored in skills/knowledge-gaps/references/staleness-detection.md S2 — update both in lockstep (no machine contract couples them) -->
+**Canonical logic:** the table below is documentation — the real,
+fixture-tested matching logic is `lib/bm-version-extract.mjs`
+(`extractBmVersion(noteContent, noteTitle)` → `{version, pattern}`), proven by
+`scripts/check-bm-version-extract.mjs` (`npm run check:bm-version-extract`).
+It is kept in sync with `skills/knowledge-gaps/references/staleness-detection.md`
+S2, fixture-tested against both the strict `| Version | ... |` table-row label
+guard and the semver-range/channel-mismatch regressions.
+
+<!-- Version-extraction patterns mirrored in skills/knowledge-gaps/references/staleness-detection.md S2 — update both in lockstep (no machine contract couples them); the actual logic lives in lib/bm-version-extract.mjs -->
 
 | Priority | Pattern | Example |
 |---|---|---|
