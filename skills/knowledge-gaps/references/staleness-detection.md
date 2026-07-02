@@ -13,6 +13,13 @@ five qualify. `action`, `gh`, `go`, and `docker` are deliberately excluded
 canonical comparable version); reject those tokens with an error listing the
 valid set.
 
+It also takes three optional scope modifiers — `--limit N`, `--since <date>`,
+`--sample N` — for narrowing a large cohort before the expensive part of the
+workflow runs. The full flag grammar and validation rules live in the
+`knowledge-gaps` `SKILL.md` Mode A section (the parsing owner); this file
+documents where each modifier is applied within S1-S8 and the "Large-cohort
+strategy" pattern that composes them.
+
 **BM access is via MCP only.** The per-ecosystem `scripts/fetch-<eco>-upstream.sh`
 scripts do the *external* API work and never read `~/basic-memory/`. This skill
 collects BM-side data via the MCP tools and pipes names to the scripts.
@@ -33,6 +40,7 @@ report are interchangeable as input to the `knowledge-maintainer` Section 3b.
   - [S6. Render the report](#s6-render-the-report)
   - [S7. Offer batched refresh](#s7-offer-batched-refresh)
   - [S8. Scope footnote](#s8-scope-footnote)
+- [Large-cohort strategy (parallel subagents)](#large-cohort-strategy-parallel-subagents)
 
 ## Cohort configuration
 
@@ -67,6 +75,36 @@ If a cohort's filtered list is empty, skip that cohort silently (or, for an
 explicit single-ecosystem `--stale <eco>`, report "No `<prefix>` notes
 documented in Basic Memory yet — nothing to check" and suggest seeding one via
 `/tool-intel` or `/package-intel`).
+
+**Scope modifiers apply here, before S2's per-note read storm** — this is what
+makes `--since`/`--limit`/`--sample` shrink N before the expensive part of the
+workflow rather than merely trimming the rendered report:
+
+- **`--since <date>`** — call `recent_activity(timeframe="<date>", type="entity",
+  output_format="json")` ONCE per invocation (not once per cohort — a single
+  call covers every selected cohort), with an explicit `page_size`, paginating
+  by incrementing `page` until a page returns fewer items than `page_size` (or
+  an empty result) — `recent_activity` has no `has_more` field, unlike
+  `search_notes` — to get the set of titles active since `<date>`. Subtract
+  that set from each cohort's filtered listing from S1 above — the notes NOT
+  in the recent-activity set are the ones untouched since `<date>`, i.e.
+  candidates a previous audit hasn't already refreshed. This is the same
+  recent-activity-minus-inventory technique the `knowledge-gardener` Step 5
+  stale-note detection uses, applied here to shrink the cohort instead of to
+  flag it. **Processing (do not script):** collect the active-titles set from
+  the flat top-level `result` array (singular key — not `results`, and not
+  nested) mentally, deduplicating as you go (`recent_activity` was observed
+  returning duplicate rows for the same entity in live testing), and diff it
+  against the S1 listing — don't write ad-hoc code to do the set subtraction.
+- **`--limit N`** — after the `--since` subtraction (if present), keep only
+  the first N titles remaining in each cohort's listing (S1 order — nothing is
+  known about drift yet at this stage, so this is not a staleness-ranked
+  slice).
+- **`--sample N`** — same insertion point as `--limit`, but draws N titles at
+  random from the remaining listing instead of taking the first N.
+
+Only the notes surviving this filtering proceed to S2. Carry forward how many
+were excluded by each modifier — S8 reports it.
 
 ### S2. Extract documented version per note (MCP, multi-pattern)
 
@@ -348,7 +386,18 @@ top 5 in parallel via the cohort's routed command (prefix → skill):
 
 For notes in `Drifted <30d` or `Drifted, age unknown`, ask which to refresh
 individually rather than auto-batching — recent releases may be pre-stable or
-short-lived. This matches the `knowledge-maintainer` Section 3b routing.
+short-lived. **This is a separate mechanism from the `knowledge-maintainer`
+Section 3b, not the same routing:** S7 offers a live, interactive refresh
+inside this skill's own `--stale` turn — on acceptance it invokes the
+`Skill` tool directly, in the foreground, with the user present to approve.
+Section 3b, by contrast, never executes a refresh itself; it only emits a
+Refresh Queue (grouped by the same bucket/distance-class priority order used
+here) for a human to action afterward in a separate, later session. The two
+share the same bucket names and the same `[semver-major]` >
+`[semver-minor-multi]` > `[patch]` prioritization convention — so a person
+moving between a `--stale` report and a maintainer Refresh Queue sees
+consistent ordering — but they are independent code paths with different
+execution models, not one "matching" the other.
 
 Example accepted batch (single turn, names recovered per S3). Hand each skill its
 **whole sublist in one call** — a multi-identifier `args` string is what triggers
@@ -391,3 +440,95 @@ After the report, include a one-line footnote acknowledging scope:
 > `skill` is unsupported (no comparable version — ships off a moving `main`);
 > both are covered by `/knowledge-gaps --global` (coverage, not drift). `pypi`,
 > `gem`, and `composer` are deferred until their cohorts grow.*
+
+**When a scope modifier narrowed the cohort** (`--limit`, `--since`, or
+`--sample` was present), append a second footnote line naming which one(s) and
+the resulting count — this is the difference between a scoped run and a full
+sweep, and a reader of just the rendered report has no other way to tell:
+
+> *This run was scoped: `--since 2026-06-01` excluded 210 notes touched on or
+> after that date; `--limit 50` then capped the npm cohort to the first 50 of
+> the remaining 178. N notes checked out of an unscoped cohort of 388. Run
+> `/knowledge-gaps --stale npm` without scope flags for the full sweep.*
+
+Omit the flags that weren't used from the sentence (a `--limit`-only run
+doesn't mention `--since`); always state both the checked count and the full
+unscoped cohort size so the delta is legible without re-running the audit.
+
+## Large-cohort strategy (parallel subagents)
+
+A cohort like a 388-note `npm` directory is too large to check in a single
+`--stale` turn even with scope modifiers narrowing one run at a time — S2's
+per-note reads and S3's per-name upstream fetches are both O(N), and a single
+turn has a practical ceiling on tool-call count. For a cohort this size,
+partition it into waves and run each wave as an isolated subagent rather than
+as sequential turns in the main session.
+
+**Partitioning:** tile the cohort into waves using **successive `--since`
+cutoffs**, not `--limit`. `--limit N` always returns the *same* first N titles
+for an unchanged cohort — it has no offset/page/skip mechanism in its flag
+grammar — so calling it again for "wave 2" would silently re-fetch the
+identical first N notes rather than advance through the cohort; `--limit`
+is only safe to layer on *top* of an already date-disjoint `--since` slice,
+never used alone to tile a large cohort. `--since`, by contrast, is
+genuinely partition-safe, because its "untouched since `<date>`" sets nest:
+an earlier (further-in-the-past) boundary always yields a *smaller* set than
+a later (more-recent) boundary — anything untouched since 2020-01-01 is
+necessarily also untouched since 2026-01-01, but not the reverse. So pick a
+sequence of boundary dates running from oldest to most recent (e.g.
+`2020-01-01`, then `2025-01-01`, then `2026-01-01`, then `2026-06-01`
+against a 388-note cohort) and process waves in that order, subtracting the
+union of all prior waves' titles from each new wave's `--since` result before
+processing it — wave 1 is the (smallest) untouched-since-2020 set; wave 2 is
+the untouched-since-2025 set minus wave 1's titles; wave 3 is the
+untouched-since-2026 set minus waves 1-2's titles, and so on. Each wave then
+covers a distinct date band (e.g. "last touched between 2025 and 2026"), the
+bands are disjoint by construction, and the earliest (most overdue) notes
+land in wave 1 — the priority order a `--stale` run wants. Waves don't need
+to coordinate with each other beyond knowing which prior boundaries already
+ran. **`--sample` is not partition-safe for tiling** — it draws at random,
+so parallel waves using `--sample` would overlap in some places and miss
+others; reserve `--sample` for a single spot-check run, never for covering a
+full cohort across waves.
+
+**Launching waves:** dispatch each wave as an `Agent` call running
+`--stale <eco> --since <wave-boundary-date>`, one call per boundary date from
+the sequence above, in parallel. These are read-only MCP
+queries and external API reads — S7's refresh only runs on explicit
+acceptance — so concurrent waves are write-safe by construction. Cap
+concurrent *launches* the same way the `/package-intel`/`/tool-intel` batch
+fan-out does (a handful at once, not a burst of ten — see this project's
+`CLAUDE.md` "Parallel agent orchestration" note) to avoid the API-side
+admission throttle, which is distinct from any upstream data-source rate
+limit. Keep `AskUserQuestion` out of a wave subagent's tool access — it
+auto-approves and silently returns empty answers inside a subagent, which
+would corrupt S7's interactive refresh offer; have each wave stop after S6
+(render) and hand its section back, with the orchestrating turn making the S7
+offer once, on the combined result.
+
+**Skill resolution inside a subagent is unconfirmed.** A subagent inherits the
+parent's tool allowlist, so it *can* invoke `Skill`, but whether
+plugin-namespaced resolution (`Skill(skill: "knowledge-gaps", args: "--stale
+npm --since 2026-01-01")`) works reliably from inside a subagent is
+undocumented.
+Don't rely on it for a wave: hand the subagent this workflow directly — read
+the relevant S1-S8 steps into its prompt (or point it at this file's path)
+rather than asking it to resolve `/knowledge-gaps` by name.
+
+**Aggregating results:** each wave returns one `### Version Drift — <eco>`
+section (S6), scoped to its slice, with an S8 footnote naming its `--since`
+boundary. The orchestrating turn concatenates the wave sections under one report
+header and sums the per-bucket counts across waves for a combined
+`#### Summary` — it does not re-run S1-S3 itself just to produce a rollup.
+
+**This is a manual stopgap, not the sanctioned mechanism.** A
+Dynamic Workflow script that partitions into waves and aggregates off the
+orchestrator's context was investigated as the Claude-Code-native way to
+process a cohort this size, tracked as spike `vp-claude-4g53` — the spike
+concluded with a **DEFER verdict** (already run and decided, not open work):
+adopting it wasn't justified at current cohort sizes. The pattern above
+remains the documented approach, and it is the in-plugin half of the fix.
+The real fix for the underlying O(N)-read friction (S2's per-note
+`read_note` calls) is a Basic Memory bulk-read feature request upstream, not
+something this plugin can build around further without duplicating BM's own
+indexer (YAGNI).

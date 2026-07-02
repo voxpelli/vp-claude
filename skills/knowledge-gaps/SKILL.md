@@ -2,7 +2,7 @@
 name: knowledge-gaps
 description: "This skill should be used when the user asks about 'knowledge gaps', 'tool coverage', 'undocumented dependencies', 'undocumented tools', 'concept gaps', 'installed plugins', 'plugin coverage', 'undocumented skills', 'globally installed plugins/skills', 'what is installed on this machine', 'stale/outdated/drifted notes', 'version drift', or 'which tools/packages need updating'. Audits project dependency and tool manifests — and installed Claude Code plugins + skills.sh bundles — against Basic Memory coverage, and detects concept-level hub gaps. Two flag modes: `--stale [brew|npm|cask|crate|vscode]` checks version drift instead of coverage; `--global` audits what is installed on this machine — Claude Code plugins + skills.sh bundles today — against coverage. Supported ecosystems and full flag mechanics are documented in the skill body."
 user-invocable: true
-argument-hint: "[--stale [brew|npm|cask|crate|vscode]] [--global]"
+argument-hint: "[--stale [brew|npm|cask|crate|vscode] [--limit N] [--since <date>] [--sample N]] [--global]"
 paths:
   - "package.json"
   - "Cargo.toml"
@@ -99,14 +99,47 @@ need updating".
   bumping version) and `skill` is unsupported (no comparable version);
   `pypi`/`gem`/`composer` are deferred." Do NOT silently fall back to all.
 
+**Scope modifiers (additive):** after the ecosystem token, `--stale` also
+accepts three optional scoping flags, in any order —
+`--stale [<eco>] [--limit N] [--since <date>] [--sample N]`. These exist for
+large cohorts (e.g. a 388-note `npm` directory) where the default full sweep
+is impractical in one turn. Applied **per cohort** — a bare `--stale --limit
+50` run against all five cohorts checks up to 50 notes in EACH of
+brew/npm/cask/crate/vscode, not 50 total.
+
+- **`--since <date>`** — the highest-leverage flag: it restricts the cohort to
+  notes NOT touched since `<date>` (ISO `YYYY-MM-DD`), and does so BEFORE the
+  upstream fetch (S3) and before S2's per-note read storm — it shrinks N, it
+  doesn't just filter the rendered report. Resolved via one
+  `recent_activity(timeframe="<date>")` call, not N `read_note` calls. See the
+  staleness-detection reference's S1 for the exact mechanics.
+- **`--limit N`** — caps the (optionally `--since`-narrowed) cohort to the
+  first N notes in listing order. Deterministic: the same input always yields
+  the same slice — which is exactly why it is **not** safe to tile a large
+  cohort into waves on its own (a second `--limit N` call re-fetches the
+  identical first N notes rather than advancing). Only safe to layer on top
+  of an already date-disjoint `--since` slice; partitioning itself uses
+  successive `--since` cutoffs, not `--limit` (see "Large-cohort strategy" in
+  the reference file for the actual mechanism).
+- **`--sample N`** — takes a random N-note sample instead of the first N, for
+  spot-checking a huge cohort's overall drift rate without processing it in
+  full. Not partition-safe (overlapping/uncovered draws across separate runs)
+  — use it for a single spot-check, never to tile a full sweep.
+
+`N` must be a positive integer and `<date>` a valid ISO date; reject a
+malformed value by name rather than silently ignoring it. `--limit` and
+`--sample` both set a cohort size, so they're mutually exclusive — if both
+appear, reject with: "`--limit` and `--sample` can't both be set — pick one."
+
 **What to do:** load and follow the staleness-detection reference file in
 full — do NOT execute any of the Mode B steps below in the same session:
 
 `${CLAUDE_PLUGIN_ROOT}/skills/knowledge-gaps/references/staleness-detection.md`
 
-Pass the parsed ecosystem scope (one cohort, or all five) to that workflow; it
-runs the per-cohort drift check and renders one `### Version Drift — <eco>`
-section per checked cohort.
+Pass the parsed ecosystem scope (one cohort, or all five) AND any parsed
+`--limit`/`--since`/`--sample` values to that workflow; it runs the per-cohort
+drift check and renders one `### Version Drift — <eco>` section per checked
+cohort.
 
 ### Mode B — Standard mode (manifest-driven coverage)
 
