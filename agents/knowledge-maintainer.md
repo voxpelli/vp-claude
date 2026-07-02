@@ -794,7 +794,10 @@ Report everything done:
 
 Same principles as the knowledge-gardener:
 - Use `list_directory` for inventory before `search_notes`
-- Set explicit `page_size` and paginate with `page` + `has_more`
+- Use `search_notes(page_size=10)` — always set explicit page size, paginate
+  with `page` parameter and check `has_more`. `recent_activity` (Step 1.4) has
+  no `has_more` field — paginate it by incrementing `page` until a page
+  returns fewer items than `page_size` instead.
 - Use `read_note(include_frontmatter=true, output_format="json")` for
   structured access
 - Use `build_context(max_related=10)` to limit traversal

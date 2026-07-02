@@ -108,7 +108,13 @@ Fetch recent activity now (needed for scoring before sorting):
 ```
 recent_activity(timeframe="7d", output_format="json")
 ```
-Paginate until `has_more=false` to ensure complete 7-day activity window.
+Set an explicit `page_size` and paginate by incrementing `page` until a page
+returns fewer items than `page_size` (or an empty result) — `recent_activity`
+has no `has_more` field, unlike `search_notes` — to ensure complete 7-day
+activity window. The response is a flat top-level `result` array (singular
+key, not nested under `results`); collect the set of active permalinks
+mentally, deduplicating as you go (`recent_activity` was observed returning
+duplicate rows for the same entity in live testing).
 
 If the project has `.beads/` (check via `Glob(pattern=".beads/*")`) or
 `recent_activity` shows notes updated in the last 7 days, those notes get
