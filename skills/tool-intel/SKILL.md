@@ -504,6 +504,40 @@ one.
 **New tool:** Use `write_note` with the full template. Set
 `note_type="<tool-type>"` (e.g., `note_type="github_action"`).
 
+**Relocated stub (a note about this tool already exists, but at a
+different directory or title than the target ecosystem location — e.g. an
+old `indieweb/history/` stub for what is now a documented Homebrew formula):**
+This is **not** a fresh create. `write_note(overwrite=True)` and `move_note`
+both preserve the *old* note's explicit frontmatter `permalink` field as-is
+— the file physically relocates but the permalink keeps pointing at the
+stale directory — and neither operation carries the old note's
+`## Relations` forward automatically, since the content you pass in replaces
+the note wholesale. Silently overwriting loses genuine relations (e.g. a
+`used_by` edge) and leaves a stale permalink. Handle it explicitly:
+
+1. If Step 1's existence check didn't surface the stub (it globs only the
+   target ecosystem directory), run a broader
+   `search_notes(query="<tool-name>")` before concluding the note is new
+   — a stub in an unrelated directory won't match the directory-scoped glob.
+2. Read the stub (reuse the Step 1 read if you already have it — see
+   `<!-- This pattern is mirrored in package-intel — update both when changing -->`
+   above) and record its `## Relations` entries and current `permalink`.
+3. Write the new note with `write_note(overwrite=True, ...)`, targeting the
+   correct ecosystem `directory` and title (e.g. `brew-<name>` / `cask-<name>`
+   — the `<prefix>-<tool-name>` convention this skill uses throughout), and
+   fold the stub's genuine relations (ones that still apply to the tool's
+   new identity, not history-specific cruft) into the new content's
+   `## Relations` section. If a relation's continued relevance is unclear,
+   don't merge it blind — carry it forward and flag it for review in Step 6
+   rather than dropping it silently.
+4. Re-read the written note and confirm `permalink` in frontmatter matches
+   the target ecosystem directory + title. If it still reads the stub's old
+   value, re-key it with a direct `edit_note(find_replace)` anchored on the
+   `permalink:` line — this is the only operation observed to reliably fix
+   it; `write_note(overwrite=True)` and `move_note` will not.
+5. In Step 6, report which relations were carried forward and flag any that
+   were dropped or need review — never drop relations silently.
+
 **Existing tool:** Pick the operation based on the note's current state:
 
 | Note state | Use |
