@@ -525,10 +525,13 @@ If the user's project has undocumented Tier 1 packages:
 ### 3b. Refresh drifted notes
 
 If a gardener report (or a `/knowledge-gaps --stale` run) contains one or more
-`### Version Drift — <eco>` sections, act on their findings. Drift refresh is
-conceptually similar to Section 3's "undocumented package" workflow — both
-delegate to a research skill via the Skill tool — except this targets
-*existing* notes whose recorded version has fallen behind upstream.
+`### Version Drift — <eco>` sections, process their findings. Drift refresh
+targets *existing* notes whose recorded version has fallen behind upstream —
+unlike Section 3 (which delegates directly to a research skill via the Skill
+tool for *new*, undocumented packages), Section 3b does NOT invoke a research
+skill itself. It produces a structured **Refresh Queue** for a human to
+action in the main, foreground session afterward — see "Mandatory behavior"
+below for why.
 
 **Refresh command and upstream name by note prefix.** The bucket→action rules
 further below are ecosystem-agnostic — only the refresh command and the
@@ -542,12 +545,27 @@ re-read/refresh *name* vary by prefix:
 | `npm-` | `/package-intel npm:<name>` | frontmatter `packages[0]` (NOT prefix-strip — scoped/non-prefixed titles exist) |
 | `crate-` | `/package-intel crate:<name>` | strip leading `crate-` |
 
-**Mandatory behavior — full research-skill enrichment, NOT minimal version bumps**
+**Mandatory behavior — Section 3b is a queue, not an actor**
 
-Every refresh action in this section MUST go through the full research skill
-(`/tool-intel` for `brew`/`cask`/`vscode`, `/package-intel` for `npm`/`crate`)
-via the Skill tool. Do NOT shortcut to a single `edit_note` appending a
-`[release] vX.Y.Z` observation — that path demonstrably loses security signal.
+Section 3b NEVER performs a refresh itself. Two paths are both forbidden:
+
+1. A minimal `edit_note` appending a single `[release] vX.Y.Z` observation
+   ("the version-bump path") — this demonstrably loses security signal (see
+   the cosign case below).
+2. Invoking `/tool-intel` or `/package-intel` via the Skill tool from
+   *within* this agent to run the full research pipeline on the
+   maintainer's own behalf ("the recursive-spawn path") — spawning agents
+   from within an unattended background agent adds exactly the kind of
+   runaway-agent-chain complexity this project avoids elsewhere, and this
+   agent has no reliable way to confirm it is running attended rather than
+   as an unsupervised background task.
+
+Instead, every `Drifted >30d` target (and every security-flagged target in
+any bucket — see the override below) is emitted as one entry in the
+**Refresh Queue** report (format below), naming the target and the exact
+refresh command from the table above. A human running the main, foreground
+session then actions the queue by invoking `/tool-intel` / `/package-intel`
+directly — the queue is the Section 3b deliverable, not the refresh.
 
 Empirical motivation (Sprint 23 field-test of v0.29.3): when this section
 was previously executed as "auto-batch up to 5 minimal version bumps", a
@@ -556,19 +574,21 @@ subsequent manual `/tool-intel brew:cosign` running the full pipeline
 surfaced **three** 2026 CVEs the bump-only path missed (CVE-2026-22703
 bundle verification bypass, CVE-2026-39395 auth bypass, CVE-2026-24122
 cert chain timing). Treat "skip the skill, write the version directly" as
-**broken**, not as a performance optimization.
+**broken** — and treat "spawn the skill recursively to compensate" as
+**also broken**: the original failure mode was this agent rationalizing a
+version-only bump because it believed "the Skill tool only loads
+instructions on parallel invocation, not enrichment loops" while running
+unattended. The queue design sidesteps that question entirely — no in-agent
+Skill invocation for refreshes means no dependence on that behavior either
+way.
 
-If you are tempted to inline a version-only edit because "the Skill tool
-only loads instructions on parallel invocation, not enrichment loops" —
-that rationalisation is wrong. The Skill tool DOES run the full skill
-body on each invocation. Use it.
-
-**Pre-action re-read (mandatory before EACH target)**
+**Pre-enqueue re-read (mandatory before EACH target)**
 
 Audit findings have a ~30-minute wall-clock staleness window in practice
 — another agent or a manual `/tool-intel` run may have refreshed the
-note between gardener and maintainer. Before acting on each Drifted-target
-entry, re-read the target and re-confirm the audit input still holds:
+note between gardener and maintainer. Before adding each Drifted-target
+entry to the queue, re-read the target and re-confirm the audit input
+still holds:
 
 ```
 read_note(identifier="<prefix>-<name>", output_format="json")
@@ -576,83 +596,104 @@ read_note(identifier="<prefix>-<name>", output_format="json")
 #  npm-fastify, vscode-esbenp.prettier-vscode — NOT the upstream name)
 # → locate the most recent [version] observation
 # → compare against the report's recorded version
-# → if they no longer match (drift already resolved), skip the action
+# → if they no longer match (drift already resolved), skip the entry
 #   with a "stale audit input" annotation in the Step 6 summary
+# → also check for any prior [security] observation — this routes the
+#   target to the HIGH PRIORITY queue lane instead of the routine lane
+#   (see the security-sensitive override below)
 ```
 
-This adds <1s per target and prevents the maintainer from re-refreshing
-notes that have already been brought current. Source pattern: Sprint 23
+This adds <1s per target and prevents the maintainer from queueing notes
+that have already been brought current elsewhere. Source pattern: Sprint 23
 flagged `brew-tailscale` as `Drifted <30d` but the recorded version was
 already current (1.96.4) by remediation time; a re-read would have caught
-this and skipped.
+this and skipped it.
 
 **Routing rules** (bucket names match the gardener's `#### <bucket>`
 sub-headings exactly — load-bearing strings to search for):
 
-- **`Drifted >30d`** → auto-refresh tier. After the pre-action re-read
-  confirms drift still exists, batch up to 5 entries in a single parallel
-  turn of the prefix's refresh command (per the table above) Skill
-  invocations. Both `tool-intel` and `package-intel` are idempotent — they
-  detect an existing note and run in refresh mode, appending new
-  observations rather than overwriting. This matches the existing
-  parallel-research pattern used in Section 3 for new notes. **Always full
-  pipeline, never a minimal version-only edit.**
-  When the bucket has more than 5 entries, prioritize bullets annotated
-  `[semver-major]` first, then `[semver-minor-multi]`, then `[patch]` —
-  the gardener emits these distance-class annotations in Step 5b-iv
-  resolution rule 5 so that major-version drifts win batch selection
-  regardless of age.
-- **Security-sensitive override (applies to ALL buckets):** if the
-  target note has any prior `[security]` observation (check during the
-  pre-action re-read), it ALWAYS gets a full research-skill refresh
-  regardless of age bucket — including `Drifted <30d` and
-  `Drifted, age unknown`. Patch-level bumps on security tools routinely
-  ship CVE fixes (the cosign case above). Do NOT defer security tools
-  to Section 4 approval.
+- **`Drifted >30d`** → routine queue tier. After the pre-enqueue re-read
+  confirms drift still exists AND no prior `[security]` observation is
+  present (see the override below), add one entry per target to the
+  **Refresh Queue → Routine** lane of the report (format below), citing
+  the prefix's refresh command from the table above. Do NOT invoke the
+  Skill tool and do NOT `edit_note` for these targets — this bucket is
+  enqueued, never acted on directly.
+  When the bucket has more than 5 entries, order the queue with bullets
+  annotated `[semver-major]` first, then `[semver-minor-multi]`, then
+  `[patch]` — the gardener emits these distance-class annotations in Step
+  5b-iv resolution rule 5, so a human working the queue top-to-bottom
+  clears major-version drifts first regardless of age. There is no cap on
+  queue length (the old batch-of-5 was a concurrency limit for live Skill
+  invocations; a queue entry does no work, so it doesn't need one).
+- **Security-sensitive override (applies to ALL buckets, and takes
+  priority over normal bucket routing):** if the target note has any prior
+  `[security]` observation (check during the pre-enqueue re-read), it
+  NEVER goes through the routine queue lane — regardless of age bucket,
+  including `Drifted <30d` and `Drifted, age unknown`. Instead add it to
+  the **Refresh Queue → HIGH PRIORITY / IMMEDIATE ACTION** lane, called
+  out distinctly from routine entries so a human reviewing the report
+  cannot miss it. Patch-level bumps on security tools routinely ship CVE
+  fixes (the cosign case above) — the point of this override is
+  **visibility, not automation**: this agent still does not run the
+  refresh itself, it only guarantees the target can't be silently buried
+  among routine drift entries or deferred past the next sprint.
 - **`Archive candidates`** (deprecated or disabled upstream — emitted for
   `brew`/`cask`/`npm`; `crate`/`vscode` have no deprecation flag so never
   populate it) → surface under Section 4 "Needs Your Approval" with the
   suggested `move_note` call. Never auto-archive — deprecation reversals do
   happen, and archival is a content-level decision.
 - **`Drifted <30d`** or **`Drifted, age unknown`** → surface under Section 4
-  "Needs Your Approval" rather than auto-refresh (UNLESS the
-  security-sensitive override applies — then auto-refresh via the full
-  research skill). A very recent upstream release may not yet be the
-  version the user wants documented (pre-release, unstable, or
-  rolling-back-soon).
+  "Needs Your Approval" rather than the refresh queue (UNLESS the
+  security-sensitive override applies — then HIGH PRIORITY queue lane, not
+  Section 4). A very recent upstream release may not yet be the version
+  the user wants documented (pre-release, unstable, or rolling-back-soon).
 - **`Unparseable`** → surface under Section 4 "Needs Your Approval" with the
   prefix's refresh command per entry to restore the version metadata. Don't
-  auto-refresh — the underlying note may have structural issues that warrant
-  inspection first.
+  enqueue or auto-refresh — the underlying note may have structural issues
+  that warrant inspection first.
 - **`Not in registry`** → ignore. Flagged as informational; no action is
   available because the target isn't in its registry API — tap-distributed
   brew formulae, unpublished/renamed/removed packages, or extensions present
-  only on the VS Marketplace (not Open VSX). An auto-refresh would itself
-  404, so this is surfaced, never auto-acted.
+  only on the VS Marketplace (not Open VSX). A refresh would itself 404, so
+  this is surfaced, never queued or acted on.
 
-Example parallel batch (single assistant turn, after pre-action re-reads
-confirm drift still exists). The refresh command is chosen per the prefix
-table above, so a mixed-cohort batch interleaves `/tool-intel` and
-`/package-intel` calls (use the upstream name — `packages[0]` for npm):
+**Refresh Queue report format**, emitted after all pre-enqueue re-reads
+complete (the refresh command is chosen per the prefix table above, so a
+mixed-cohort queue interleaves `/tool-intel` and `/package-intel` entries —
+use the upstream name, `packages[0]` for npm):
+
+```markdown
+### Refresh Queue
+
+#### HIGH PRIORITY / IMMEDIATE ACTION (security-flagged — do not defer)
+1. **brew-cosign** — prior `[security]` observation on file; currently
+   `Drifted >30d`. Run: `/tool-intel brew:cosign`
+
+#### Routine (Drifted >30d)
+1. **brew-bat** `[patch]` — Run: `/tool-intel brew:bat`
+2. **brew-deno** `[semver-minor-multi]` — Run: `/tool-intel brew:deno`
+3. **npm-fastify** `[patch]` — Run: `/package-intel npm:fastify`
+4. **crate-serde** `[patch]` — Run: `/package-intel crate:serde`
+5. **cask-warp** `[patch]` — Run: `/tool-intel cask:warp`
 ```
-Skill(skill: "tool-intel", args: "brew:bat")
-Skill(skill: "tool-intel", args: "brew:deno")
-Skill(skill: "package-intel", args: "npm:fastify")
-Skill(skill: "package-intel", args: "crate:serde")
-Skill(skill: "tool-intel", args: "cask:warp")
-```
 
-**Partial-failure handling:** Track each Skill invocation's result. If any
-research-skill call fails (network, schema mismatch, internal error), do NOT
-claim the whole batch succeeded. Report which entries succeeded and which
-failed, with the failure reason. Example summary: "Refreshed 3 of 5 drifted
-notes — brew:bat, brew:deno, npm:fastify succeeded; crate:serde failed
-(network), cask:warp failed (schema error). Re-run for serde and warp to
-retry. Skipped tailscale (stale audit input — already current at 1.96.4 on
-re-read)."
+Nothing in this report has been executed by this agent — it is the Section
+3b deliverable, to be actioned by a human in the main, foreground session
+(running the listed commands directly, or explicitly launching a fresh
+agent per entry). Fold it into the Step 6 summary under a
+`### Refresh Queue (N items)` heading so it survives alongside the rest of
+the run's output.
 
-After a successful refresh batch, optionally suggest re-running the gardener
-audit to confirm the entries have flipped to `Drifted` removed / current.
+**No partial-failure handling is needed here — there is nothing to
+execute.** Since Section 3b only enqueues, the only failure mode is a
+stale queue entry, not a failed research call. The pre-enqueue re-read
+(above) already guards against that: "Skipped brew-tailscale from the
+queue (stale audit input — already current at 1.96.4 on re-read)."
+
+Once a human actions the queue outside this agent, re-running the gardener
+audit will confirm the entries have flipped to `Drifted` removed / current
+— suggest that as a natural next step in the Step 6 summary.
 
 ### 4. Present confirmation items
 
@@ -739,6 +780,11 @@ Report everything done:
 ### Applied after confirmation (N items)
 - Merged npm-lodash + npm-lodash-es
 - Archived old-api-design
+
+### Refresh Queue (N items)
+- [the Section 3b Refresh Queue report, HIGH PRIORITY lane first — see
+  "Refresh Queue report format" above; omit this heading entirely if no
+  `Drifted >30d` or security-flagged targets were found]
 
 ### Skipped / Deferred
 - [anything not addressed and why]

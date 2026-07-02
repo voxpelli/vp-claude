@@ -142,7 +142,7 @@ A focused alternative mode of `/knowledge-gaps` that detects when documented not
 - brew-arm-none-eabi-gcc, brew-mcp-netutils
 ```
 
-Bucket names (`Drifted >30d`, `Drifted <30d`, `Drifted, age unknown`, `Archive candidates`, `Unparseable`, `Not in registry`, `API unavailable`) are the same canonical strings the `knowledge-gardener` Step 5b emits, so the maintainer's auto-refresh logic works against either output. Supported cohorts: brew, npm, cask, crate, vscode. `action`/`gh`/`go`/`docker` are excluded (no single canonical comparable version); `pypi`/`gem`/`composer` are deferred until their cohorts grow.
+Bucket names (`Drifted >30d`, `Drifted <30d`, `Drifted, age unknown`, `Archive candidates`, `Unparseable`, `Not in registry`, `API unavailable`) are the same canonical strings the `knowledge-gardener` Step 5b emits, so either output routes into the same `knowledge-maintainer` Section 3b queue logic — a report from either source is interchangeable input to that queue. Section 3b itself never runs a refresh automatically; it enqueues `Drifted >30d` (and security-flagged) targets into a Refresh Queue for a human to action afterward. Supported cohorts: brew, npm, cask, crate, vscode. `action`/`gh`/`go`/`docker` are excluded (no single canonical comparable version); `pypi`/`gem`/`composer` are deferred until their cohorts grow.
 
 ### `/knowledge-prime` — Surface project-relevant knowledge
 
@@ -588,7 +588,7 @@ VOICE.md                               Plugin identity, agent colors, descriptio
                       ├── auto-fixes structure and tags
                       ├── auto-runs /package-intel for Tier 1 package gaps
                       ├── auto-runs /tool-intel for undocumented tool manifests
-                      ├── auto-batches /tool-intel + /package-intel for drifted notes (>30d)
+                      ├── enqueues drifted notes (>30d) into a Refresh Queue for a human to action
                       └── asks before content changes
  "prime context"   -> knowledge-primer    -> context brief (autonomous agent)
  "audit tags"      -> raindrop-gardener   -> tag health report (read-only)
