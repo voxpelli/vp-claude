@@ -363,3 +363,39 @@ edit_note(
 
 Only add links where the relationship is genuine. Skip this step for updates to
 existing notes where cross-links likely already exist.
+
+**Reconcile bare-name stubs.** For a new note titled `<Full Name> -
+<Descriptor>`, existing notes elsewhere in the graph may already reference
+this person via a bare `[[<Full Name>]]` wiki-link, written before this note
+existed. Basic Memory resolves wiki-links by exact title match, so
+`[[<Full Name>]]` does NOT resolve to `[[<Full Name> - <Descriptor>]]` — the
+link silently stays broken. This is a different mechanism from the
+`aliases:` frontmatter Step 4 sets on the *new* note itself: the alias makes
+this note resolvable by its own bare name once BM's LinkResolver supports
+aliases (still inert as of this writing — see Step 4), but it does nothing
+for links that already live in *other* notes today. Reconcile those
+explicitly. Search relations, not text — FTS5 strips brackets, so a
+`search_type="text"` query containing `[[`/`]]` degrades to an unscoped match
+on the bare name; `entity_types: ["relation"]` with the bare name instead
+searches relation titles, which index both the source and target of a
+wiki-link:
+
+```
+search_notes(query="<Full Name>", entity_types=["relation"], page_size=15)
+```
+
+For each result (excluding the note just written) that contains a bare
+`[[<Full Name>]]` link aimed at this person — not an unrelated note that
+happens to share the bare name — rewrite it to the full title:
+
+```
+edit_note(
+  identifier="<existing-note-title>",
+  operation="find_replace",
+  find_text="[[<Full Name>]]",
+  content="[[<Full Name> - <Descriptor>]]"
+)
+```
+
+Skip this step when the new note's title has no `<Descriptor>` suffix (title
+equals the bare name — nothing to reconcile).

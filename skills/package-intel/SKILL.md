@@ -492,6 +492,38 @@ Only add links where the relationship is genuine — don't link notes that
 mention the same word in an unrelated context. Skip this step for updates to
 existing packages where cross-links likely already exist.
 
+**Reconcile bare-name stubs.** Existing notes elsewhere in the graph may
+reference this package via a bare `[[<package-name>]]` wiki-link — no
+ecosystem prefix — written before the prefix convention (v0.22.0+) or before
+this note existed. Basic Memory resolves wiki-links by exact title match, so
+`[[<package-name>]]` does NOT resolve to `[[<prefix>-<package-name>]]` — the
+link silently stays broken. Reconcile it explicitly. Search relations, not
+text — FTS5 strips brackets, so a `search_type="text"` query containing
+`[[`/`]]` degrades to an unscoped match on the bare word; `entity_types:
+["relation"]` with the bare name instead searches relation titles, which
+index both the source and target of a wiki-link:
+
+```
+search_notes(query="<package-name>", entity_types=["relation"], page_size=10)
+```
+
+For each result (excluding the note just written) that contains a bare
+`[[<package-name>]]` link aimed at this package — not an unrelated note that
+happens to share the bare name — rewrite it to the full title:
+
+```
+edit_note(
+  identifier="<existing-note-title>",
+  operation="find_replace",
+  find_text="[[<package-name>]]",
+  content="[[<prefix>-<package-name>]]"
+)
+```
+
+As with the cross-link step above, verify each match actually names this
+package before rewriting — a generic bare name (e.g. a common English word)
+can produce false positives.
+
 ## Batch mode: upgrade haul
 
 **Detection hook.** If the input is not a single prefixed identifier but a
