@@ -8,8 +8,8 @@ tooling, discovered while building vp-knowledge.
 
 - **synergy-registry: support local-only sibling entries (private sibling, zero committed footprint)** (2026-06-03) _(Resolved 2026-06-16 — vp-beads shipped private-add mode: a `.local.json` entry whose `file` is `PRIVATE-SYNERGY-<name>.md` is added as a private sibling; confirmed in the running sibling-sync v0.18.0 skill. Detailed entry retained below for design context.)_ —
   The `PRIVATE-SYNERGY-<project>.md` overlay (v0.17.0) makes a sibling's synergy
-  *content* private, but registry resolution still forces the sibling's
-  *existence* to be public: `.claude/synergy-registry.local.json` only
+  _content_ private, but registry resolution still forces the sibling's
+  _existence_ to be public: `.claude/synergy-registry.local.json` only
   **overrides** fields of an entry that already exists in the committed
   `synergy-registry.json`; an entry whose `name` is absent from the committed
   base is **ignored** (`sibling-sync/SKILL.md:106-107`;
@@ -17,8 +17,8 @@ tooling, discovered while building vp-knowledge.
   fully-private sibling — e.g. `relationship: open-core-partner`, a proprietary
   partner whose existence shouldn't appear in a public OSS repo — cannot be
   registered without committing a base entry that names it and its relationship.
-  PRIVATE-SYNERGY closed the *content* half of the proprietary↔public boundary;
-  this is the *registration* half. Concrete change: let
+  PRIVATE-SYNERGY closed the _content_ half of the proprietary↔public boundary;
+  this is the _registration_ half. Concrete change: let
   `.claude/synergy-registry.local.json` **add** local-only entries (not just
   override) — a local-only entry (name not in the committed base) registers a
   recognized, sibling-syncable sibling whose `name`, `file`, `bm-entity`, and
@@ -36,7 +36,7 @@ tooling, discovered while building vp-knowledge.
   delivers private-registration plus automation. This is the exact tradeoff
   vp-claude faces for a proprietary open-core-partner sibling.
 
-- *(Resolved 2026-06-02, vp-beads `upstream-tracker/SKILL.md:86` — the carve-out now reads "Sibling projects that ship upstream artifacts (skills, hooks, agents) can still receive upstream-tracker entries…")* **upstream-tracker: clarify redirect rule for sibling projects with shipped skill code** (2026-05-04) —
+- _(Resolved 2026-06-02, vp-beads `upstream-tracker/SKILL.md:86` — the carve-out now reads "Sibling projects that ship upstream artifacts (skills, hooks, agents) can still receive upstream-tracker entries…")_ **upstream-tracker: clarify redirect rule for sibling projects with shipped skill code** (2026-05-04) —
   Workflow 1 step 1 currently says "If the observation is about a sibling
   project rather than an upstream package or tool, redirect to
   `/synergy-tracker` — this skill only tracks upstream dependency friction,
@@ -62,7 +62,7 @@ tooling, discovered while building vp-knowledge.
   file exists despite the skill prose suggesting a redirect; the carve-out
   is exercised in practice but undocumented.
 
-- *(Resolved 2026-06-03, vp-beads v0.17.0 — ships the `/harden-memories` read-only audit skill under the exact proposed name; commits `e8734c3` + `5ad8394`)* **/harden-memories: new skill to triage and prune persistent memories** (2026-05-05) —
+- _(Resolved 2026-06-03, vp-beads v0.17.0 — ships the `/harden-memories` read-only audit skill under the exact proposed name; commits `e8734c3` + `5ad8394`)_ **/harden-memories: new skill to triage and prune persistent memories** (2026-05-05) —
   `bd prime` injects every `bd remember` entry in full at SessionStart
   and PreCompact (~1.5–2k tokens for a 16-entry set; scales linearly).
   Entries silently accumulate as conventions drift, skills ship, or facts
@@ -95,7 +95,7 @@ tooling, discovered while building vp-knowledge.
   significant ceremony per audit (~40 tool calls for vp-knowledge's
   16-entry pass; an automated skill would compress to ~10).
 
-- *(Resolved 2026-06-03, vp-beads v0.17.0 — shipped as the `PRIVATE-SYNERGY-<project>.md` overlay, a different design than the proposed `.local.md` suffix; the proprietary↔public boundary is now protected upstream. Whether vp-claude adopts the `PRIVATE-SYNERGY-` convention is tracked as a Divergence in `SYNERGY-vp-beads.md`.)* **sibling-sync + synergy-tracker: `.local.md` SYNERGY variant for proprietary↔public boundaries** (2026-05-31) —
+- _(Resolved 2026-06-03, vp-beads v0.17.0 — shipped as the `PRIVATE-SYNERGY-<project>.md` overlay, a different design than the proposed `.local.md` suffix; the proprietary↔public boundary is now protected upstream. Whether vp-claude adopts the `PRIVATE-SYNERGY-` convention is tracked as a Divergence in `SYNERGY-vp-beads.md`.)_ **sibling-sync + synergy-tracker: `.local.md` SYNERGY variant for proprietary↔public boundaries** (2026-05-31) —
   Add support for gitignored `SYNERGY-<name>.local.md` files that hold local-only
   synergy content for siblings where the relationship crosses a trust/visibility
   boundary (e.g., `relationship: open-core-partner` where one project is
@@ -142,4 +142,4 @@ tooling, discovered while building vp-knowledge.
 
 ## Upstream Opportunities
 
-*No entries yet.*
+_No entries yet._

@@ -161,8 +161,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   recording axes — Axis A the inline header pipe `| v<version> |` that `--stale`
   reads first (S2 Pattern 1; npm also moves its `[version]` observation) + Axis B
   prose reel — stale-cache arbitration favouring the authoritative registry/API
-  read, a batch-outcome contract (per-item refreshed/failed/unverified reporting
-  + Axis-A edit verification), and
+  read, a batch-outcome contract (per-item refreshed/failed/unverified
+  reporting + Axis-A edit verification), and
   batch orchestration with file-disjoint per-note writes + a single central
   cross-link pass). Each skill supplies a per-skill adapter section
   (`package-intel`: **Batch mode: upgrade haul**, Axis-B target
