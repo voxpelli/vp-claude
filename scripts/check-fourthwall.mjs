@@ -84,6 +84,19 @@ for (const { id, text } of ALT_FIXTURES) {
   check(`${id} alternation fires: "${text.slice(0, 44)}"`, detectFourthWallViolations(text).some((h) => h.id === id))
 }
 
+console.log('\nfourth-wall: planted violations fire ONLY their own rule (cross-contamination guard)')
+// No cross-contamination exists today, but as more deterministic rules are added a
+// new pattern could plausibly start matching an existing rule's violation fixture
+// without anyone noticing — this proves each fixture's hit set is exactly its own id.
+const ALL_PLANTED_FIXTURES = [
+  ...Object.entries(VIOLATIONS).map(([id, text]) => ({ id, text })),
+  ...ALT_FIXTURES,
+]
+for (const { id, text } of ALL_PLANTED_FIXTURES) {
+  const hitIds = detectFourthWallViolations(text).map((h) => h.id)
+  check(`${id} fires ONLY its own rule (no other rule also matches): "${text.slice(0, 44)}"`, hitIds.length === 1 && hitIds[0] === id)
+}
+
 console.log('\nfourth-wall: near-miss legitimate prose stays silent (over-broadening guard)')
 // Each string is lexically close to a deterministic rule's trigger but is
 // legitimate subject prose that MUST NOT fire — an accidentally over-broadened
