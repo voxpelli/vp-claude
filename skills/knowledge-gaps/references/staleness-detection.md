@@ -185,7 +185,11 @@ Bash("printf '%s\\n' <name1> <name2> … | bash scripts/fetch-<eco>-upstream.sh"
 Each script emits NDJSON per name. Core fields (identical across scripts):
 `name`, `upstream_version`, `homepage`, `deprecated`, `disabled`, `tier`,
 `days_stale`, `upstream_state` (`ok` | `deprecated` | `disabled` |
-`not-in-api` | `api-unavailable`). The vscode script adds `openvsx_version`
+`not-in-api` | `api-unavailable`). `fetch-brew-upstream.sh` additionally emits
+`days_stale_source` (`"release"` | `"tag"` | `null` — provenance of
+`days_stale`); this field is currently **brew-only** — the cask/npm/crate/vscode
+scripts don't emit it, so don't rely on its presence for other cohorts. The
+vscode script adds `openvsx_version`
 (raw default `.version`, may be a pre-release), `marketplace_version`,
 `openvsx_namespace_access`, `openvsx_verified`, `openvsx_publisher`, and
 `openvsx_prerelease` (true when the default `.version` is a pre-release). For

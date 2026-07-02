@@ -4,7 +4,10 @@ set -euo pipefail
 # Fetch upstream facts for a list of Homebrew formula names from the central
 # formulae.brew.sh API. Reads formula names from stdin (one per line), emits
 # NDJSON per name to stdout. Optionally enriches GitHub-hosted formulae with
-# release timing via `gh release list`.
+# release timing via `gh release list`, falling back to the newest git tag's
+# commit date when the formula tags releases but never cuts a GitHub Release
+# (e.g. brew:sem — stable at a version with a matching git tag, but
+# `gh release list` tops out at an older published Release).
 #
 # This script NEVER touches ~/basic-memory/ — that is the caller's concern.
 # The calling agent should fetch BM-side data (recorded versions, etc.) via
@@ -16,8 +19,11 @@ set -euo pipefail
 #   homepage          .homepage from API ("" when not-in-api)
 #   deprecated        bool — true if formulae.brew.sh marks the formula deprecated
 #   disabled          bool — true if formulae.brew.sh marks the formula disabled
-#   tier              "1" (API-only) | "2" (with gh release timing)
-#   days_stale        integer days since latest GH release | null
+#   tier              "1" (API-only) | "2" (with gh release/tag timing)
+#   days_stale        integer days since latest GH release or tag | null
+#   days_stale_source "release" | "tag" | null — provenance of days_stale;
+#                     "tag" means the release list was empty and the date
+#                     came from the newest git tag's commit instead
 #   upstream_state            ok | deprecated | disabled | not-in-api | api-unavailable
 #
 # Note: this script does NOT classify drift — that comparison happens in the
@@ -47,7 +53,7 @@ INDEX=$(mktemp)
 trap 'rm -f "$API_CACHE" "$INDEX"' EXIT
 
 if ! curl -fsSL --max-time 30 https://formulae.brew.sh/api/formula.json -o "$API_CACHE" 2>/dev/null; then
-	jq -cn '{name:"", upstream_version:"", homepage:"", deprecated:false, disabled:false, tier:"", days_stale:null, upstream_state:"api-unavailable"}'
+	jq -cn '{name:"", upstream_version:"", homepage:"", deprecated:false, disabled:false, tier:"", days_stale:null, days_stale_source:null, upstream_state:"api-unavailable"}'
 	exit 0
 fi
 
@@ -58,7 +64,7 @@ fi
 # vault. Emit the api-unavailable sentinel and exit so callers see a clean
 # error path instead.
 if ! jq empty "$API_CACHE" >/dev/null 2>&1; then
-	jq -cn '{name:"", upstream_version:"", homepage:"", deprecated:false, disabled:false, tier:"", days_stale:null, upstream_state:"api-unavailable"}'
+	jq -cn '{name:"", upstream_version:"", homepage:"", deprecated:false, disabled:false, tier:"", days_stale:null, days_stale_source:null, upstream_state:"api-unavailable"}'
 	exit 0
 fi
 
@@ -82,7 +88,8 @@ emit() {
 		--arg tier "$7" \
 		--argjson days "$d" \
 		--arg upstream_state "$8" \
-		'{name:$name, upstream_version:$up_v, homepage:$home, deprecated:$dep, disabled:$dis, tier:$tier, days_stale:$days, upstream_state:$upstream_state}'
+		--arg days_stale_source "${9:-}" \
+		'{name:$name, upstream_version:$up_v, homepage:$home, deprecated:$dep, disabled:$dis, tier:$tier, days_stale:$days, days_stale_source: (if $days_stale_source == "" then null else $days_stale_source end), upstream_state:$upstream_state}'
 }
 
 # Days since an ISO 8601 timestamp. Tries BSD date (macOS) first, then GNU date.
@@ -136,6 +143,7 @@ while IFS= read -r name; do
 	# meaningful based on its own version comparison.
 	tier="1"
 	days="null"
+	days_stale_source=""
 	if [[ "$HAS_GH" -eq 1 ]] && [[ "$homepage" =~ ^https://github\.com/([^/]+)/([^/]+) ]]; then
 		owner="${BASH_REMATCH[1]}"
 		repo="${BASH_REMATCH[2]%.git}"
@@ -145,9 +153,39 @@ while IFS= read -r name; do
 			days=$(days_since "$published")
 			if [[ "$days" != "null" ]]; then
 				tier="2"
+				days_stale_source="release"
+			fi
+		fi
+
+		# Fallback: some formulae tag a release upstream but never cut a
+		# GitHub Release (e.g. brew:sem — stable at a version with a
+		# matching git tag, but `gh release list` tops out at an older
+		# published Release). When the release list yields nothing, use
+		# the newest git tag's commit date instead. Prefer a tag matching
+		# upstream_version exactly (with or without a leading "v"), since
+		# `/tags` is not semver- or date-sorted; fall back to the tags
+		# API's first entry as a best-effort timestamp otherwise.
+		if [[ "$tier" == "1" ]]; then
+			tags_json=$(gh api "repos/$owner/$repo/tags" 2>/dev/null || echo "")
+			if [[ -n "$tags_json" ]]; then
+				tag_sha=$(echo "$tags_json" | jq -r --arg v "$upstream_version" '
+					(map(select(.name == $v or .name == ("v" + $v))) | .[0]) as $exact
+					| (($exact // .[0]) | .commit.sha) // empty
+				')
+				if [[ -n "$tag_sha" ]]; then
+					tag_date=$(gh api "repos/$owner/$repo/commits/$tag_sha" \
+						--jq '.commit.committer.date' 2>/dev/null || echo "")
+					if [[ -n "$tag_date" && "$tag_date" != "null" ]]; then
+						days=$(days_since "$tag_date")
+						if [[ "$days" != "null" ]]; then
+							tier="2"
+							days_stale_source="tag"
+						fi
+					fi
+				fi
 			fi
 		fi
 	fi
 
-	emit "$name" "$upstream_version" "$homepage" "$deprecated" "$disabled" "$days" "$tier" "ok"
+	emit "$name" "$upstream_version" "$homepage" "$deprecated" "$disabled" "$days" "$tier" "ok" "$days_stale_source"
 done
