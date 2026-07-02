@@ -170,6 +170,22 @@ style) — **not** a `## Release Highlights` section (that is package-intel's
 target). Each surfaced delta change becomes its own observation line in
 `## Observations`.
 
+**Linked-timeline-note check (before writing Axis B).** A high-velocity tool's
+changelog can be extracted out of the subject note into a dedicated timeline
+note, leaving only a `see_also`/`documented_in` relation behind. Before writing
+the reel, read the subject note's `## Relations` for such a link — a
+`see_also`/`documented_in` relation whose target title matches a
+"... Release History"/timeline pattern — and, when found, append the curated
+reel to **that** note instead of inline. Worked example:
+`casks/cask-claude-code.md` carries `see_also [[Claude Code Release History]]`
+(a separate Basic Memory note, not a file in this repo); a haul touching that
+cask appends its reel to the linked `Claude Code Release History` note, not
+back into the cask note — re-inlining there would re-inflate exactly what was
+just extracted. Fall back to today's inline behavior — appending `[feature]` /
+`[version]` observations directly in the subject note — when no linked
+timeline note exists. Axis A (the inline header pipe) always stays in the
+subject note regardless of where Axis B lands.
+
 **Recording targets — refresh BOTH axes.** Per the shared reference's two-axis
 convention:
 

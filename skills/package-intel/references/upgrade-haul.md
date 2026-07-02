@@ -202,7 +202,12 @@ deliberately does not hardcode them. An adapter MUST define:
    globbing every relevant note directory in the Step-1 existence check).
 3. **Axis-B narrative target** — *where* the curated reel is written:
    `## Release Highlights` for `package-intel`; inline `[feature]` / `[version]`
-   observations for `tool-intel`.
+   observations for `tool-intel`. Target resolution need not be a fixed
+   section/inline convention — an adapter may resolve it dynamically instead,
+   e.g. by checking the subject note's Relations for a linked timeline note and
+   routing the reel there when one exists, falling back to its default target
+   otherwise (see the tool-intel adapter's linked-timeline-note check for the
+   worked mechanics).
 
 Axis A (the `[version]` observation / canonical slot) and everything else above
 are shared and identical across both skills.
