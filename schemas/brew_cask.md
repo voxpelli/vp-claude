@@ -6,6 +6,10 @@ entity: brew_cask
 version: 1
 schema:
   purpose?: string, what the app does and its primary value proposition
+  version?(array): string, current documented cask version (e.g. 1.39.0) — the
+    version this note's content reflects; the machine-stable slot
+    /knowledge-gaps --stale compares against upstream (Pattern 3, checked before
+    fragile prose extraction)
   config?: string, configuration file location and key settings
   feature?(array): string, notable capabilities worth knowing
   gotcha?(array): string, common pitfalls — licensing model, OS requirements, conflicts,
@@ -68,6 +72,8 @@ Preferred relation labels for cask notes:
 - [convention] Inferred from 2 notes created 2026-03-12; sample too small for reliable frequency data — all fields are optional
 - [convention] Licensing model (free/paid/subscription) is the most important gotcha to capture — it's not visible in the formula metadata
 - [convention] `popularity` observations must cite window (30d/90d/365d), source (Homebrew MCP or formulae.brew.sh JSON `analytics` block), and date — both sources draw on the same Homebrew analytics but can diverge (client-cache lag), so stamp which one; omit only when neither yields counts, never fabricate
+- [convention] `version` is a single clean leading token (e.g. `- [version] 1.39.0`), kept in sync with the inline header pipe (`Homepage: … | v<version> | <license>`) — both record the same value; under `--stale`'s first-hit-wins extraction the header pipe (Pattern 1) still outranks this observation (Pattern 3), so the pipe remains the slot that must be accurate today (bd `vp-claude-9q7e` tracks flipping that ordering for npm; not yet done for any cohort)
+- [convention] Sprint 36 trend-review found `version` already present organically in 4/7 sampled notes (e.g. `cask-claude-code`) before this field was declared — this addition formalizes existing practice, not a new behavior
 
 ## Relations
 

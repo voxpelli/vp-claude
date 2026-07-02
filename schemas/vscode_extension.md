@@ -6,6 +6,10 @@ entity: vscode_extension
 version: 1
 schema:
   purpose?: string, what the extension does and primary value
+  version?(array): string, current documented extension version (e.g. 1.39.0) —
+    the version this note's content reflects; the machine-stable slot
+    /knowledge-gaps --stale compares against upstream (Pattern 3, checked before
+    fragile prose extraction)
   config?: string, key settings and their defaults (workspace vs user scope)
   gotcha?(array): string, performance impact, conflicts, activation triggers
   convention?(array): string, important usage conventions
@@ -33,6 +37,7 @@ Schema for VSCode extension notes — one note per extension in the `vscode/` di
 - [convention] `gotcha` should note activation events — extension activating on every file type can hurt startup time
 - [convention] Relations use `[[vscode-publisher.ext]]` wiki-link format
 - [convention] `security` captures the Open VSX trust ladder (verified-restricted / public-namespace / marketplace-only=squattable / not-published-anywhere); a Marketplace-only extension has an unclaimed namespace that fork-IDEs (Cursor/Windsurf/Codium) resolve installs against — record the state with a date stamp
+- [convention] `version` is a single clean leading token (e.g. `- [version] 1.39.0`), kept in sync with the inline header pipe (`Publisher: … | v<version> | <license>`) — both record the same value; under `--stale`'s first-hit-wins extraction the header pipe (Pattern 1) still outranks this observation (Pattern 3), so the pipe remains the slot that must be accurate today (bd `vp-claude-9q7e` tracks flipping that ordering for npm; not yet done for any cohort)
 
 ## Relation Vocabulary
 

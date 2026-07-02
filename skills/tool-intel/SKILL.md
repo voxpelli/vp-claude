@@ -189,15 +189,32 @@ subject note regardless of where Axis B lands.
 **Recording targets — refresh BOTH axes.** Per the shared reference's two-axis
 convention:
 
-- **Axis A — the inline header pipe.** For brew/cask the recorded version lives
-  in the note's header line `Homepage: … | v<version> | <license>` (S2
-  **Pattern 1**) — that is the slot `--stale brew`/`--stale cask` reads first, so
-  refresh **that**. brew/cask notes do **not** carry a `[version]` observation;
-  do not add one (the hardened machine-stable schema slot is the separate,
-  unstarted bead `80r4` — do not block on it). Use `edit_note(find_replace)` on
-  the `| v<old> |` token.
+- **Axis A — the inline header pipe.** For brew/cask/vscode the recorded version
+  lives in the note's header line (`Homepage: … | v<version> | <license>` for
+  brew/cask, `Publisher: … | v<version> | <license>` for vscode — S2
+  **Pattern 1**) — that is the slot `--stale brew`/`--stale cask`/`--stale vscode`
+  reads first, so refresh **that**. Use `edit_note(find_replace)` on the
+  `| v<old> |` token. brew/cask/vscode notes now **also** carry a `[version]`
+  observation (bead `80r4`, schema slot `Pattern 3`) — a clean leading token,
+  e.g. `- [version] 1.39.0`, kept in sync with the pipe on the **same** edit.
+  Mirroring npm's own caveat: under `--stale`'s first-hit-wins ordering the
+  header pipe (Pattern 1) still outranks the `[version]` observation (Pattern
+  3), so the pipe remains the effective read target today — the observation is
+  a redundant safety slot, same status as npm's (flipping the ordering is bead
+  `vp-claude-9q7e`, not yet done for any cohort). Refresh both anyway; a stale
+  `[version]` observation is still a corpus-quality defect even when `--stale`
+  doesn't currently read it first.
 - **Axis B — the inline changelog reel.** Add the curated `[feature]` /
-  `[version]` observations for the delta (the tool-intel narrative style).
+  `[version]` observations for the delta (the tool-intel narrative style). This
+  reel's `[version]` lines accumulate as delta narrative (one per surfaced
+  change, potentially several over successive hauls) — a **different use of
+  the same category** than Axis A's single canonical current-version slot
+  above. This overlap predates bead `80r4` and is **not resolved by it**:
+  whether the reel's use of `[version]` is a legitimate second use of the
+  category or should migrate to a different tag (to keep `[version]` strictly
+  canonical-single) is an open question, not settled here — do not delete reel
+  entries when reconciling a note that has both; see `vp-claude-jcql` (filed to
+  reconcile Axis-B's `[version]` usage) before treating this as resolved.
 
 Both axes are independent: refreshing the inline reel alone leaves the **header
 pipe stale**, and the pipe is exactly what `--stale` re-reads — so the drift

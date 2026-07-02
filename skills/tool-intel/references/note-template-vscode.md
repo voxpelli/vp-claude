@@ -43,6 +43,7 @@ Key settings (add to `settings.json`):
 
 ## Observations
 
+- [version] <version>
 - [requires] Companion CLI tool needed: `<tool-name>` (install via `brew install <tool>` or `npm install -g <pkg>`)
 - [performance] CPU/memory impact, activation events, startup overhead
 - [conflict] Conflicts with: vscode-<other> — reason
@@ -73,6 +74,7 @@ Always `vscode_extension` (snake_case). Not `vscode-extension` or `vs_extension`
 
 | Category | When to use |
 |----------|-------------|
+| `version` | Current documented extension version — machine-stable slot, one clean leading token |
 | `requires` | Companion CLI or runtime the extension needs to function |
 | `performance` | Startup time, memory impact, always-on language servers |
 | `conflict` | Extensions that shouldn't be installed alongside this one |
@@ -81,6 +83,20 @@ Always `vscode_extension` (snake_case). Not `vscode-extension` or `vs_extension`
 | `compatibility` | VS Code version requirements, Cursor/Codium compatibility |
 | `alternative` | Extensions with similar functionality |
 | `security` | Open VSX trust state (verified-restricted / public-namespace / marketplace-only=squattable / not-published-anywhere), publisher verification, supply-chain caveats — see the "Open VSX Trust Signal" section in `ecosystem-vscode.md` |
+
+### Version observation
+
+Emit exactly one **canonical** `[version]` observation as a clean leading
+token — e.g. `- [version] 1.39.0` — recording the same value as the header
+pipe (`Publisher: … | v<version> | <license>`). This is the machine-stable
+slot `/knowledge-gaps --stale vscode` reads (Pattern 3), checked before
+fragile prose/table extraction. Keep it in sync with the header pipe on every
+refresh — `edit_note` with `find_replace` to replace this specific canonical
+line in place, never `append` a second one. This canonical line is distinct
+from any `[version]` lines an upgrade-haul changelog reel writes as narrative
+delta history — see the "Recording targets" section in `SKILL.md` for that
+separate, unresolved usage of the same category; do not delete reel entries
+under this rule.
 
 ### Companion CLI tools
 

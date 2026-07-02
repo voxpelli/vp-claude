@@ -32,6 +32,7 @@ Installs: <app-name>.app to /Applications
 
 ## Observations
 
+- [version] <version>
 - [pattern] Primary use case and how it fits into the development workflow
 - [licensing] License type — free, freemium, paid, open-source
 - [requirement] macOS version requirement or architecture limitation
@@ -61,6 +62,7 @@ Always `brew_cask` (snake_case). Not `brew-cask` or `homebrew_cask`.
 
 | Category | When to use |
 |----------|-------------|
+| `version` | Current documented cask version — machine-stable slot, one clean leading token |
 | `pattern` | Primary use case in the workflow |
 | `licensing` | Free, freemium, paid, or open-source |
 | `requirement` | macOS version, architecture, or system requirement |
@@ -69,6 +71,20 @@ Always `brew_cask` (snake_case). Not `brew-cask` or `homebrew_cask`.
 | `performance` | Startup time, memory usage, battery impact |
 | `conflict` | Conflicts with other casks or system tools |
 | `popularity` | Install counts from Homebrew analytics (MCP or formulae.brew.sh JSON) |
+
+### Version observation
+
+Emit exactly one **canonical** `[version]` observation as a clean leading
+token — e.g. `- [version] 1.39.0` — recording the same value as the header
+pipe (`Homepage: … | v<version> | <license>`). This is the machine-stable slot
+`/knowledge-gaps --stale cask` reads (Pattern 3), checked before fragile
+prose/table extraction. Keep it in sync with the header pipe on every
+refresh — `edit_note` with `find_replace` to replace this specific canonical
+line in place, never `append` a second one (same discipline as `[popularity]`
+below). This canonical line is distinct from any `[version]` lines an
+upgrade-haul changelog reel writes as narrative delta history — see the
+"Recording targets" section in `SKILL.md` for that separate, unresolved usage
+of the same category; do not delete reel entries under this rule.
 
 ### Analytics observations
 

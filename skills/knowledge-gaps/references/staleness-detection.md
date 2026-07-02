@@ -134,13 +134,24 @@ Pattern 3 reads the version directly from the note's `observations` array — th
 canonical `[version]` slot. The `/package-intel` npm template **emits it since
 0.31.4** (and 71 npm notes were backfilled); `f3zx` tracks extending the slot to
 the other five package cohorts (crate/go/composer/pypi/gem), which do not emit it
-yet. **But "emitted" is not "read first":** under the first-hit-wins ordering
-above, Pattern 1 (the inline header pipe) outranks Pattern 3, and the npm
-template emits *both* — so for a standard npm note `--stale` actually reads the
+yet. The `/tool-intel` brew/cask/vscode templates **emit it since bead `80r4`**.
+Per the Sprint 32 promote-verified-only decision, existing notes are **not**
+bulk-backfilled by that bead — only a note a maintainer has *already
+header-verified as version-accurate* gets the `[version]` line stamped as a
+side effect of that verification pass; every other existing note acquires the
+slot organically the next time it's refreshed (`/tool-intel` write path, or a
+`--stale` S7 batched refresh). `action`, `gh`, `go`, and `docker` stay outside `--stale`'s supported
+cohort set entirely (per the "Cohort configuration" table above), so they have
+no `[version]` slot and none is planned. **But "emitted" is not "read first":**
+under the first-hit-wins ordering above, Pattern 1 (the inline header pipe)
+outranks Pattern 3, and the npm/brew/cask/vscode templates all emit *both* — so
+for a standard note in any of these four cohorts `--stale` actually reads the
 pipe, and the `[version]` observation is a redundant secondary slot today, not
-the effective one. (Making Pattern 3 win for npm — so the slot can shield
-version-string packages like `yaml`/`semver` from misparse as 0.31.4 intended —
-is tracked separately as bead `vp-claude-9q7e`.) Accept
+the effective one. (Making Pattern 3 win — so the slot can shield
+version-string packages like `yaml`/`semver`, or version-named tools, from
+misparse as originally intended — is tracked separately as bead
+`vp-claude-9q7e`, scoped to npm today and not yet extended to the tool
+cohorts.) Accept
 either `[version]` or `[version-range]`; for a range, take the first concrete
 version token (strip a leading range operator: `^`, `~`, `>=`, `>`, `<=`, `<`,
 `=`). Pattern 5 takes the **highest semver** among the versions referenced in

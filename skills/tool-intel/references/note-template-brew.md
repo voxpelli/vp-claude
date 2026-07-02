@@ -31,6 +31,7 @@ Homepage: [<project-homepage>](<url>) | v<version> | <license>
 
 ## Observations
 
+- [version] <version>
 - [pattern] How this tool is typically used in development workflows
 - [gotcha] Surprising behavior, common mistakes (e.g., keg-only, PATH conflicts)
 - [conflict] Conflicts with: brew-<other> — reason for conflict
@@ -60,6 +61,7 @@ Always `brew_formula` (snake_case). Not `brew-formula` or `homebrew_formula`.
 
 | Category | When to use |
 |----------|-------------|
+| `version` | Current documented formula version — machine-stable slot, one clean leading token |
 | `pattern` | How the tool is typically used |
 | `gotcha` | Surprising behavior — keg-only, PATH issues, caveats |
 | `conflict` | Conflicts with other formulae or system tools |
@@ -69,6 +71,20 @@ Always `brew_formula` (snake_case). Not `brew-formula` or `homebrew_formula`.
 | `security` | Security considerations for the tool itself |
 | `alternative` | Alternative formulae or casks covering the same need |
 | `popularity` | Install counts from Homebrew analytics (MCP or formulae.brew.sh JSON) |
+
+### Version observation
+
+Emit exactly one **canonical** `[version]` observation as a clean leading
+token — e.g. `- [version] 1.39.0` — recording the same value as the header
+pipe (`Homepage: … | v<version> | <license>`). This is the machine-stable slot
+`/knowledge-gaps --stale brew` reads (Pattern 3), checked before fragile
+prose/table extraction. Keep it in sync with the header pipe on every
+refresh — `edit_note` with `find_replace` to replace this specific canonical
+line in place, never `append` a second one (same discipline as `[popularity]`
+below). This canonical line is distinct from any `[version]` lines an
+upgrade-haul changelog reel writes as narrative delta history — see the
+"Recording targets" section in `SKILL.md` for that separate, unresolved usage
+of the same category; do not delete reel entries under this rule.
 
 ### Analytics observations
 
