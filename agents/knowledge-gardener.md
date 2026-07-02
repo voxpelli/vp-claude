@@ -145,26 +145,29 @@ list_directory(dir_name="schema", depth=1)
 
 ### 2. Schema validation
 
-Run `schema_validate` for each note type that has a schema:
+Run `schema_validate` for each note type that has a schema, with
+`output_format="json"` — the structured field reads below (`error_count`,
+`warning_count`, `unmatched_observations`, `unmatched_relations`) require
+JSON; the tool defaults to `"text"` when the parameter is omitted:
 ```
-schema_validate(note_type="npm_package")
-schema_validate(note_type="crate_package")
-schema_validate(note_type="go_module")
-schema_validate(note_type="composer_package")
-schema_validate(note_type="pypi_package")
-schema_validate(note_type="ruby_gem")
-schema_validate(note_type="brew_formula")
-schema_validate(note_type="brew_cask")
-schema_validate(note_type="github_action")
-schema_validate(note_type="docker_image")
-schema_validate(note_type="vscode_extension")
-schema_validate(note_type="gh_extension")
-schema_validate(note_type="engineering")
-schema_validate(note_type="standard")
-schema_validate(note_type="concept")
-schema_validate(note_type="milestone")
-schema_validate(note_type="service")
-schema_validate(note_type="person")
+schema_validate(note_type="npm_package", output_format="json")
+schema_validate(note_type="crate_package", output_format="json")
+schema_validate(note_type="go_module", output_format="json")
+schema_validate(note_type="composer_package", output_format="json")
+schema_validate(note_type="pypi_package", output_format="json")
+schema_validate(note_type="ruby_gem", output_format="json")
+schema_validate(note_type="brew_formula", output_format="json")
+schema_validate(note_type="brew_cask", output_format="json")
+schema_validate(note_type="github_action", output_format="json")
+schema_validate(note_type="docker_image", output_format="json")
+schema_validate(note_type="vscode_extension", output_format="json")
+schema_validate(note_type="gh_extension", output_format="json")
+schema_validate(note_type="engineering", output_format="json")
+schema_validate(note_type="standard", output_format="json")
+schema_validate(note_type="concept", output_format="json")
+schema_validate(note_type="milestone", output_format="json")
+schema_validate(note_type="service", output_format="json")
+schema_validate(note_type="person", output_format="json")
 ```
 
 Also run `schema_infer` to check field frequencies:
@@ -384,13 +387,18 @@ Use `recent_activity(timeframe="90d", output_format="json")` to find recently
 updated notes. Cross-reference against the full inventory from step 1 to
 identify notes NOT updated in 90+ days. Flag these for review.
 
-Note: `recent_activity` may paginate on large graphs. Paginate until `has_more=false`
+Note: `recent_activity` may paginate on large graphs. It has no `has_more`
+field — set an explicit `page_size` and paginate by incrementing `page`
+until a page returns fewer items than `page_size` (or an empty result)
 before cross-referencing with the step 1 inventory.
 
-**Processing (do not script):** The response has a `results` array with
-`permalink` fields. Collect the set of active permalinks mentally, then compare
-against the Step 1 inventory. Notes not in the recent set are stale. Reason
-through the comparison directly — do not write a set-difference script.
+**Processing (do not script):** The response is a flat top-level `result`
+array (singular key, not nested under `results`) with `permalink` fields.
+Collect the set of active permalinks mentally, deduplicating as you go
+(`recent_activity` was observed returning duplicate rows for the same
+entity in live testing), then compare against the Step 1 inventory. Notes
+not in the recent set are stale. Reason through the comparison directly —
+do not write a set-difference script.
 
 ### 5b. Version drift (registry-backed ecosystems)
 
@@ -579,13 +587,18 @@ current and need no report entry.
   deprecation flag — brew, cask, npm. crate and vscode never populate it; its
   absence is expected by both this step and the maintainer.
 
-*Why this matters for the maintainer.* The maintainer's Section 3b
-auto-batch fires on the **`Drifted >30d`** bucket only. The escalation
-rule (5) is the mechanism that lifts semver-major risks into that bucket
-even when the upstream release is only days old — e.g., a `1.84.0 → 2.0.1`
-note where 2.0.1 shipped 4 days ago would otherwise sit in `Drifted <30d`
-indefinitely. The maintainer should weight any bullet annotated
-`[semver-major]` as the highest-priority refresh in its batch.
+*Why this matters for the maintainer.* The maintainer's Section 3b enqueues
+the **`Drifted >30d`** bucket into its routine Refresh Queue lane (it does not
+auto-batch or execute anything — see the current Section 3b in
+`agents/knowledge-maintainer.md`, a "queue, not actor" design). The
+escalation rule (5) is the mechanism that lifts semver-major risks into that
+bucket even when the upstream release is only days old — e.g., a
+`1.84.0 → 2.0.1` note where 2.0.1 shipped 4 days ago would otherwise sit in
+`Drifted <30d` indefinitely, which Section 3b only surfaces under "Needs Your
+Approval" rather than queueing. Section 3b orders any `[semver-major]`
+bullet ahead of `[semver-minor-multi]` and `[patch]` bullets within the
+Routine queue lane, so a human working the queue top-to-bottom clears
+major-version drifts first.
 
 **Step 5b-v. Emit the report subsection(s).** The gardener report is structured
 with top-level `### Critical`, `### Warning`, `### Info`, `### Graph
@@ -601,8 +614,11 @@ findings**, at the peer level, named for the cohort:
 ```
 
 Inside each, emit a `####` sub-heading for every non-empty canonical bucket,
-using the exact bucket names from 5b-iv. The maintainer's Section 3b auto-fix
-logic keys off these strings. The refresh command in each bullet follows the
+using the exact bucket names from 5b-iv. The maintainer's Section 3b routing
+rules key off these strings to decide each target's queue lane (Routine,
+HIGH PRIORITY / IMMEDIATE ACTION, or "Needs Your Approval") — it does not
+auto-fix anything itself; see the current Section 3b in
+`agents/knowledge-maintainer.md`. The refresh command in each bullet follows the
 note prefix: `brew`/`cask`/`vscode` → `/tool-intel <prefix>:<name>`; `npm` →
 `/package-intel npm:<name>`; `crate` → `/package-intel crate:<name>` (use the
 recovered upstream name — `packages[0]` for npm). The bullet examples below are
@@ -611,7 +627,8 @@ shown for the brew cohort; substitute the prefix and refresh command per cohort.
 Bullet formats per bucket:
 
 `Drifted >30d` and `Drifted <30d` (annotate the version-distance class
-inline — the maintainer keys off `[semver-major]` to weight the batch):
+inline — the maintainer keys off `[semver-major]` to order its Refresh
+Queue's Routine lane):
 ```
 - **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago) [<distance-class>]
   — refresh via `/tool-intel brew:<name>`
