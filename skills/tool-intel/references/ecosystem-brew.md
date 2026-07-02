@@ -80,6 +80,167 @@ written to the note (notes are cross-machine). Use it only to optionally
 surface "you already have this installed" in the synthesis prose shown to
 the user.
 
+## Third-Party Tap Formulae (`<owner>/<tap>/<formula>`)
+
+Homebrew's core registry (`formulae.brew.sh`) indexes **only**
+`homebrew-core`. A two-slash identifier — `brew:<owner>/<tap>/<formula>`
+(e.g. `brew:dicklesworthstone/tap/br`) — names a formula distributed through
+a **third-party tap**: a separate GitHub repo the user (or `brew tap
+<owner>/<tap>`) has added. `formulae.brew.sh` returns 404/empty for these —
+that is not "formula not found," it's the expected shape for any tap
+formula, so branch here (per SKILL.md Step 0's slash-count dispatch) instead
+of retrying the core JSON path.
+
+### Fetch the tap formula (Ruby DSL, no JSON API)
+
+Third-party taps have no JSON API — fetch the formula's Ruby source directly
+from the tap repo via `gh api`. GitHub's tap-repo naming convention prefixes
+the short tap name with `homebrew-` (`brew tap dicklesworthstone/tap` adds
+the repo `dicklesworthstone/homebrew-tap`):
+
+```bash
+gh api repos/<owner>/homebrew-<tap>/contents/Formula/<formula>.rb \
+  --jq '.content' | base64 -d
+```
+
+Most taps shard formulae under `Formula/`; a handful of small/older taps keep
+`.rb` files at the repo root instead. If the `Formula/<formula>.rb` path
+404s, retry at the repo root before concluding the fetch failed:
+
+```bash
+gh api repos/<owner>/homebrew-<tap>/contents/<formula>.rb \
+  --jq '.content' | base64 -d
+```
+
+If the tap repo itself 404s (`gh api repos/<owner>/homebrew-<tap>` errors),
+the identifier is malformed, misspelled, or the tap was deleted/renamed —
+report this rather than silently falling back to the core-registry path.
+
+Parse the decoded Ruby source for these fields. Regex-level extraction is
+sufficient — a full Ruby parse is not required:
+
+| Field | Pattern | Notes |
+|-------|---------|-------|
+| `desc` | `desc "..."` | One-line description |
+| `homepage` | `homepage "..."` | Upstream project URL — the pivot target for DeepWiki/changelog (below), distinct from the tap repo itself |
+| `url` | `url "..."` | Source/binary tarball URL(s); may repeat per-OS/arch inside `on_macos`/`on_linux` blocks — the version is usually embedded in the URL tag or filename |
+| `version` | `version "..."` | Only present when the version isn't inferable from `url`; if absent, derive it from the `url` tag/filename, or from `gh api repos/<owner>/homebrew-<tap>/commits?path=Formula/<formula>.rb` (the most recent version-bump commit) |
+| `license` | `license "..."` or `license any_of: [...]` | SPDX id(s) declared by the formula — cross-check against upstream below, don't take it as ground truth |
+| `depends_on` | `depends_on "..."` (repeatable) | Runtime/build dependencies; a trailing `=> :build` marks a build-only dep |
+| `caveats` | `caveats do ... end` block | Post-install notes — often the only install-time documentation a tap formula ships |
+
+### Auto-pivot DeepWiki and the changelog step to the upstream repo
+
+The tap repo (`<owner>/homebrew-<tap>`) is a packaging container, not the
+project. Parse `owner/repo` out of the formula's `homepage` field (preferred)
+or `url` field, and use **that** repo for Step 3a (DeepWiki) and Step 3d
+(changelog) — exactly as the "Resolve GitHub Repository" section below does
+for core formulae. Do not run DeepWiki against the tap repo — it holds only
+formula definitions, not the tool's source.
+
+**This is an exception to Step 3a's default skip-for-`brew:`/`cask:` rule.**
+Step 3a skips DeepWiki for `brew:`/`cask:` on the reasoning that "formulae/
+casks rarely have rich repos to analyze" — true for a homebrew-core wrapper
+around an existing well-known tool, but not for a third-party-tap formula,
+whose upstream repo is often the tool's *entire* source (frequently a small,
+young, single-maintainer project exactly like the ones this section's trust
+review exists to vet). For any `brew:<owner>/<tap>/<formula>` identifier, run
+DeepWiki against the pivoted upstream repo — do not skip it.
+
+### Cross-check the formula's license vs. the upstream repo's actual license
+
+A tap formula's `license` line is maintainer-declared and can drift from the
+upstream project's actual license — both precedent notes below hit this in
+practice. Verify against the upstream repo (from the pivot above, not the
+tap):
+
+```bash
+gh api repos/<owner>/<upstream-repo> --jq '.license.spdx_id'
+```
+
+If the result differs from the formula's `license` field — including a
+`NOASSERTION` from GitHub's license detector on a non-standard or
+rider-modified license — record it as a `[trust]` or `[security]`
+observation with both values and their source. Precedent notes use both
+tags for the same kind of finding (`brew-ataraxy-labs-tap-inspect` files its
+FSL-vs-declared-MIT/Apache mismatch as `[trust]`;
+`brew-dicklesworthstone-tap-br` files its rider-license mismatch as
+`[security]`) — pick whichever reads more naturally for the specific risk
+(compliance ambiguity leans `[trust]`; redistribution/attack-surface risk
+leans `[security]`) and stay consistent within one note.
+
+### Audit the tap's CI hygiene (SLSA / SHA-256)
+
+List the tap repo's workflows and check for supply-chain hygiene signals:
+
+```bash
+gh api repos/<owner>/homebrew-<tap>/contents/.github/workflows --jq '.[].name'
+```
+
+A 404 here means no workflow directory at all — note the absence itself as a
+`[security]` signal (no CI-based provenance for this tap). When workflows
+exist, fetch the release/build workflow content and check for:
+
+- `actions/attest-build-provenance` (or an equivalent) — SLSA build provenance
+- Per-platform SHA-256 generation/verification in the release or update step
+- A dependency-audit step (`cargo audit`, `npm audit`, etc. — language-dependent)
+
+Record what's present, not only what's missing — supply-chain hygiene is a
+spectrum; a small personal tap with strong CI hygiene is a different risk
+profile than a large tap with none. `brew-dicklesworthstone-tap-br`'s
+`[security]` observations show the shape of a hygiene-positive report (SLSA
+attestation + per-platform SHA-256 + `cargo audit` in CI, 8 named workflows).
+
+### Sibling-formula org survey
+
+List the tap's other formulae to gauge whether this is a one-off script or
+part of a maintained suite — the same "graveyard vs. flywheel" org-level
+trust signal package-intel and tool-intel both use elsewhere:
+
+```bash
+gh api repos/<owner>/homebrew-<tap>/contents/Formula --jq '.[].name'
+```
+
+Fall back to listing the repo root filtered to `*.rb` for taps that don't use
+a `Formula/` subdirectory. Record the sibling formula names/count as a
+`[trust]` or `[ecosystem]` observation —
+`brew-dicklesworthstone-tap-br`'s `[ecosystem]` observation (the 13-tool
+"Dicklesworthstone Stack"/"FrankenSuite") shows the shape.
+
+### Note convention for third-party-tap formulae
+
+- **Title:** `brew-<owner>-<tap>-<formula>`. This is exactly what SKILL.md
+  Step 0's general "replace every `:`/`/`/`#` with `-`" title rule already
+  produces for the two-slash identifier — no special-casing needed beyond
+  parsing the identifier correctly (e.g. `brew:dicklesworthstone/tap/br` →
+  `brew-dicklesworthstone-tap-br`).
+- **Tags:** always add `third-party-tap` and `trust-review` alongside the
+  usual topical tags — these mark the note as warranting periodic
+  re-review, since a personal/small-org tap carries a different risk profile
+  than homebrew-core.
+- **Mandatory observations:** `[installation]` (tap name, build-from-source
+  vs. pre-built tarball, alternative install paths such as `cargo
+  install`/`go install`/direct binary download), `[trust]` (maintainer
+  identity, org size, contributor count, star/velocity trend, the license
+  cross-check result), and `[security]` (the "third-party taps bypass
+  homebrew-core review" boilerplate line, CI hygiene findings, any
+  signed-release/SBOM status).
+
+  **Schema-category note:** `schemas/brew_formula.md` does not currently
+  declare `installation` or `trust` as picoschema categories — only
+  `security` is declared there. Because the schema's `settings.validation`
+  is `warn` (not `error`), writing undeclared `[installation]`/`[trust]`
+  categories does not block the write or fail `schema_validate` — it is
+  exactly what `brew-dicklesworthstone-tap-br` and
+  `brew-ataraxy-labs-tap-inspect` already do today, and both notes validate
+  clean. This reference deliberately does **not** add `installation`/`trust`
+  to the schema file as part of this fix — that is a separate
+  schema-evolution decision (`/schema-evolve brew_formula`, once usage
+  frequency crosses the addition threshold) and out of scope here. Prefer
+  the existing `security` category for security-flavored findings if you'd
+  rather stay fully schema-clean today; `[installation]`/`[trust]` remain
+  valid, warn-only categories in the interim.
+
 ## Resolve GitHub Repository
 
 The `homepage` field usually points to the project website or GitHub repo.

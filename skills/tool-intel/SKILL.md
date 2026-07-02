@@ -245,10 +245,31 @@ this skill covers tooling only.
 | `plugin` | `plugins/` | `claude_plugin` | `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-plugin.md` |
 | `skill` | `plugins/` | `claude_plugin` | `${CLAUDE_PLUGIN_ROOT}/skills/tool-intel/references/ecosystem-skill.md` |
 
+**Third-party tap identifiers (`brew:` only).** Count the `/`-segments after
+`brew:`:
+
+- **Zero slashes** (`brew:<name>`, e.g. `brew:ripgrep`) — a core formula.
+  Dispatch to Step 2's normal `formulae.brew.sh` JSON path.
+- **Two slashes** (`brew:<owner>/<tap>/<formula>`, e.g.
+  `brew:dicklesworthstone/tap/br`) — a formula distributed through a
+  third-party tap, not homebrew-core. `formulae.brew.sh` never indexes these
+  (it returns 404/empty, not "not found after retry") — dispatch straight to
+  the tap-aware fetch branch in `ecosystem-brew.md` ("Third-Party Tap
+  Formulae") instead of attempting the core JSON path at all. The BM
+  directory, note type, and reference file are unchanged (still `brew/` /
+  `brew_formula` / `ecosystem-brew.md`) — only the Step 2 fetch mechanics
+  differ.
+- **One slash** (`brew:<owner>/<name>`) is not a valid brew formula shape —
+  that two-part form belongs to `action:`/`gh:`. Error and prompt for either
+  the bare `brew:<name>` form or the full `brew:<owner>/<tap>/<formula>` form.
+
 **Title convention:** The user command uses a colon delimiter (`brew:ripgrep`),
 but the BM note title replaces all `:`, `/`, and `#` with `-` (preserving `@`
 and `.`). This matches the filename BM generates and enables native Obsidian
 wiki-link resolution. Examples: `brew:ripgrep` → `brew-ripgrep`,
+`brew:dicklesworthstone/tap/br` → `brew-dicklesworthstone-tap-br` (the
+third-party-tap two-slash form — the same literal rule already produces the
+`brew-<owner>-<tap>-<formula>` shape, no special-casing needed),
 `action:actions/checkout` → `action-actions-checkout`,
 `docker:grafana/grafana` → `docker-grafana-grafana`,
 `gh:meiji163/gh-notify` → `gh-meiji163-gh-notify`,
