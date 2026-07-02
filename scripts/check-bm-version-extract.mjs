@@ -46,6 +46,34 @@ check('pattern 1 anchor is specific: a bare "| vX |" line without "Homepage:" do
   extractBmVersion('Some other line | v1.2.3 | trailing\n\n## Observations\n\n- [version] 9.9.9\n', 'npm-foo'),
   { version: '9.9.9', pattern: 3 })
 
+// --- Pattern 1 regression (Sprint 33 gate finding): the header-pipe label
+//     alternation was hardcoded to "Homepage:" only, so every non-brew/cask
+//     ecosystem's differently-labeled header pipe was silently unparseable —
+//     verify each real label this repo's own note templates use ---
+check('pattern 1 regression: vscode "Publisher:" header pipe now matches (was completely unparseable)',
+  extractBmVersion('Publisher: [esbenp](https://open-vsx.org/user/esbenp) | v10.4.0 | MIT', 'vscode-esbenp.prettier-vscode'),
+  { version: '10.4.0', pattern: 1 })
+
+check('pattern 1 regression: npm/crate/go/composer/pypi/gem "GitHub:" header pipe matches',
+  extractBmVersion('GitHub: [fastify/fastify](https://github.com/fastify/fastify) | v5.8.5 | MIT', 'npm-fastify'),
+  { version: '5.8.5', pattern: 1 })
+
+check('pattern 1 regression: action "Runs:" header pipe matches',
+  extractBmVersion('Runs: node20 | v4.2.2 | MIT', 'action-actions-checkout'),
+  { version: '4.2.2', pattern: 1 })
+
+check('pattern 1 regression: gh "Source:" header pipe matches',
+  extractBmVersion('Source: [github.com/meiji163/gh-notify](https://github.com/meiji163/gh-notify) | v1.6.0 | Shell (bash) | MIT', 'gh-meiji163-gh-notify'),
+  { version: '1.6.0', pattern: 1 })
+
+check('pattern 1 regression: plugin/skill "Homepage / repo:" header pipe matches',
+  extractBmVersion('Homepage / repo: [github.com/foo/bar](https://github.com/foo/bar) | v2.1.0 | MIT | by foo', 'plugin-foo-bar'),
+  { version: '2.1.0', pattern: 1 })
+
+check('pattern 1 regression: an unlisted label ("License:") with the same pipe shape does NOT match — the alternation is a closed set, not "any label"',
+  extractBmVersion('License: MIT | v9.9.9 | permissive\n\n## Observations\n\n- [version] 1.0.0\n', 'npm-foo'),
+  { version: '1.0.0', pattern: 3 })
+
 // --- Pattern 2: `| Version | <value> |` table row ---
 check('pattern 2: bare table row',
   extractBmVersion('| Version | 0.26.1 |', 'npm-foo'),
@@ -169,6 +197,43 @@ check('pattern 6 regression: "Current:" inside narrative changelog prose under a
     'npm-foo'
   ),
   { version: null, pattern: null })
+
+// --- Pattern 6 regression: fenced code blocks must be excised before ANY
+//     pattern runs (Sprint 33 gate finding — none of the 6 patterns were
+//     fence-aware, so a coincidental version-looking line inside a
+//     `## Common Usage`-style fenced example was wrongly extracted) ---
+check('fence regression: a "- **Version**:" line inside a fenced code block is NOT extracted',
+  extractBmVersion('```markdown\n- **Version**: 9.9.9 (example only)\n```', 'npm-foo'),
+  { version: null, pattern: null })
+
+check('fence regression: a real Pattern 6 line OUTSIDE the fence still matches once the fenced example is excised',
+  extractBmVersion(
+    '```markdown\n- **Version**: 9.9.9 (example only)\n```\n\n- **Version**: 1.2.3 (registry lookup)\n',
+    'npm-foo'
+  ),
+  { version: '1.2.3', pattern: 6 })
+
+check('fence regression: a nested 4-backtick-outer/3-backtick-inner fenced example does not leak its inner content',
+  extractBmVersion('````markdown\n```\n- **Version**: 9.9.9\n```\n````\n', 'npm-foo'),
+  { version: null, pattern: null })
+
+check('fence regression: a tilde-fenced example does not leak its content',
+  extractBmVersion('~~~markdown\n- **Version**: 9.9.9 (example only)\n~~~\n', 'npm-foo'),
+  { version: null, pattern: null })
+
+check('fence regression: frontmatter (Pattern 4) is untouched by fence-stripping even when the note also has a fenced example',
+  extractBmVersion(
+    '---\ntitle: foo\nversion: 12.4.0\n---\n\n```markdown\n- **Version**: 9.9.9 (example only)\n```\n',
+    'npm-foo'
+  ),
+  { version: '12.4.0', pattern: 4 })
+
+check('fence regression: a [version] observation (Pattern 3) outside a fence still wins over fenced prose',
+  extractBmVersion(
+    '```markdown\n- **Version**: 9.9.9 (example only)\n```\n\n## Observations\n\n- [version] 5.8.5\n',
+    'npm-foo'
+  ),
+  { version: '5.8.5', pattern: 3 })
 
 // --- No match: unparseable ---
 check('unparseable: no pattern matches',
