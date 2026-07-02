@@ -14,11 +14,11 @@
     "relationship": "sibling-plugin"
   },
   {
-    "name": "basic-memory",
-    "file": "SYNERGY-basic-memory.md",
+    "name": "md-wiki-vec",
+    "file": "SYNERGY-md-wiki-vec.md",
     "remote": "https://github.com/voxpelli/my-basic-memory",
     "bm-entity": "",
-    "relationship": "fork"
+    "relationship": "shared-tooling"
   },
   {
     "name": "liggare-mcp",
