@@ -500,8 +500,13 @@ this note existed. Basic Memory resolves wiki-links by exact title match, so
 link silently stays broken. Reconcile it explicitly. Search relations, not
 text — FTS5 strips brackets, so a `search_type="text"` query containing
 `[[`/`]]` degrades to an unscoped match on the bare word; `entity_types:
-["relation"]` with the bare name instead searches relation titles, which
-index both the source and target of a wiki-link:
+["relation"]` with the bare name and no `search_type` (default hybrid)
+instead searches the relation's indexed text — for a resolved relation the
+title carries both endpoints, while for a dangling bare-name link the
+target survives in the relation's permalink slug, which the default
+hybrid/semantic search surfaces — an explicit `search_type="text"` would
+not, since text search is scoped to `title`/`content_stems` only and never
+matches on `permalink`:
 
 ```
 search_notes(query="<package-name>", entity_types=["relation"], page_size=10)

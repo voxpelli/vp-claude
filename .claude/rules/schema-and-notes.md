@@ -48,7 +48,13 @@ When querying Basic Memory via `search_notes`, choose the right approach:
   `entity_types=["observation"]` and prefix-specific queries like
   `query="[[npm-"` (bare `[[` alone doesn't match)
 - **Find relations involving an entity** — use `entity_types=["relation"]`
-  with `query="<entity-title>"` (relation titles index both source and target)
+  with `query="<entity-title>"` and no `search_type` (default hybrid); this
+  searches the relation's indexed text — for a resolved relation the title
+  carries both endpoints, while for a dangling bare-name link the target
+  survives in the relation's permalink slug, which the default
+  hybrid/semantic search surfaces — an explicit `search_type="text"` would
+  not, since text search is scoped to `title`/`content_stems` only and never
+  matches on `permalink`
 - **Semantic topic search** — omit `search_type` (default hybrid) for natural
   language queries about concepts, topics, or package names
 
