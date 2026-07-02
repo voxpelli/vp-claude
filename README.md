@@ -224,7 +224,7 @@ Acts on audit findings with tiered autonomy:
 | Fix fourth-wall violations (self-referential graph language) | Auto-fix |
 | Run `/package-intel` for Tier 1 undocumented packages | Auto-fix |
 | Run `/tool-intel` for undocumented tools from manifests | Auto-fix |
-| Refresh drifted notes (>30d) via parallel `/tool-intel` + `/package-intel` batch | Auto-fix |
+| Enqueue drifted notes (>30d, or any security-flagged target) into a Refresh Queue | Queues for review |
 | Archive deprecated/disabled packages (brew/cask/npm) | Asks first |
 | Merge duplicate notes | Asks first |
 | Archive abandoned notes (move to `archive/`) | Asks first |

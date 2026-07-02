@@ -270,8 +270,8 @@ fixture-tested via `check:distance`); keep this summary in lockstep with it.
 **Escalation rule (preserved verbatim from the gardener):** a `semver-major`
 gap forces `Drifted >30d` **regardless of `days_stale`** — a major-version gap
 is forward-compatibility risk the age axis hides. Annotate the bullet with the
-`[<distance-class>]` tag; the `knowledge-maintainer` Section 3b batch ordering
-keys off `[semver-major]` > `[semver-minor-multi]` > `[patch]`.
+`[<distance-class>]` tag; the `knowledge-maintainer` Section 3b Refresh Queue
+ordering keys off `[semver-major]` > `[semver-minor-multi]` > `[patch]`.
 
 **Per-cohort distance notes:**
 

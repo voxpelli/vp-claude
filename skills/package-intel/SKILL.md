@@ -367,21 +367,24 @@ one.
 **Relocated stub (a note about this package already exists, but at a
 different directory or title than the target ecosystem location — e.g. an
 old `indieweb/history/` stub for what is now a documented npm package):**
-This is **not** a fresh create. `write_note(overwrite=True)` and `move_note`
-both preserve the *old* note's explicit frontmatter `permalink` field as-is
-— the file physically relocates but the permalink keeps pointing at the
-stale directory — and neither operation carries the old note's
-`## Relations` forward automatically, since the content you pass in replaces
-the note wholesale. Silently overwriting loses genuine relations (e.g. a
-`used_by` edge) and leaves a stale permalink. Handle it explicitly:
+This is **not** a fresh create, and it is **not** a physical relocation
+either — verified via a live dry-run (2026-07-02, current BM version 0.22.1):
+`write_note(overwrite=True, directory=<new>, ...)` targeting a *different*
+directory than the existing stub does NOT find or overwrite the stub by
+title. It creates a genuinely new, separate note at the new location (with
+its own freshly-correct `permalink` — no stale-permalink re-key needed) and
+leaves the old stub completely untouched at its old path. Left alone, this
+produces a silent duplicate: two notes for one package, only one of them
+current. `move_note` was not independently verified in this dry-run; don't
+assume it behaves differently without checking. Handle it explicitly:
 
 1. If Step 1's existence check didn't surface the stub (it globs only the
    target ecosystem directory), run a broader
    `search_notes(query="<package-name>")` before concluding the note is new
    — a stub in an unrelated directory won't match the directory-scoped glob.
-2. Read the stub (reuse the Step 1 read if you already have it — see
-   `<!-- This pattern is mirrored in tool-intel — update both when changing -->`
-   above) and record its `## Relations` entries and current `permalink`.
+2. Read the stub (reuse the "Step 1: Check for existing note" read above if you
+   already have it) and record its `## Relations` entries and current
+   `permalink`.
 3. Write the new note with `write_note(overwrite=True, ...)`, targeting the
    correct ecosystem `directory` and title, and fold the stub's genuine
    relations (ones that still apply to the package's new identity, not
@@ -389,13 +392,15 @@ the note wholesale. Silently overwriting loses genuine relations (e.g. a
    a relation's continued relevance is unclear, don't merge it blind — carry
    it forward and flag it for review in Step 6 rather than dropping it
    silently.
-4. Re-read the written note and confirm `permalink` in frontmatter matches
-   the target ecosystem directory + title. If it still reads the stub's old
-   value, re-key it with a direct `edit_note(find_replace)` anchored on the
-   `permalink:` line — this is the only operation observed to reliably fix
-   it; `write_note(overwrite=True)` and `move_note` will not.
-5. In Step 6, report which relations were carried forward and flag any that
-   were dropped or need review — never drop relations silently.
+4. Once the new note is confirmed to carry everything needed (re-read it and
+   check `## Relations`), delete the old stub with
+   `delete_note(identifier=<old permalink>)` — the write in step 3 did not
+   remove it, and leaving it behind is exactly the duplicate this procedure
+   exists to prevent. Only delete after confirming the new note is complete;
+   never delete before the replacement is verified.
+5. In Step 6, report which relations were carried forward, which were
+   dropped or need review, and that the old stub was deleted — never drop
+   relations silently, and never leave an unreported duplicate.
 
 **Existing package:** Pick the operation based on the note's current state:
 

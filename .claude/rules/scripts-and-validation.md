@@ -73,6 +73,15 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
   repo + `#name`; `{github,repo}` → dedicated repo; `{git-subdir,url}` → parsed
   owner/repo + `#name`; unresolved → `name@marketplace` fallback) + skill
   grouping-by-`source`. The CLI's file I/O stays live-only (like `fetch-*-upstream.sh`).
+- **`check:plugin-load-paths` (`check-plugin-load-paths.mjs`)** — live-globs
+  `skills/**/*.md`, extracts every `${CLAUDE_PLUGIN_ROOT}/...` path referenced in
+  prose (`lib/plugin-load-paths.mjs`, reusing `lib/mdast.mjs`'s
+  `collectScannableText` to skip fenced blocks and template `<placeholder>`
+  paths), and asserts each one resolves on disk — catches a moved/renamed shared
+  reference file rotting silently, since neither `remark-validate-links` (real
+  link nodes only) nor `validate-plugin.mjs` (`${CLAUDE_PLUGIN_ROOT}` inside hook
+  commands only) cover this case. Fixture self-test: real path passes, dangling
+  path fails, template placeholder skipped.
 
 When adding a new "X must agree with Y" invariant, follow this family: a hard
 `error()` for mechanically-unambiguous checks (counts, sizes), a `warn()` for
