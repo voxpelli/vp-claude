@@ -17,6 +17,18 @@ conventions live here.
 - **SessionStart** (`session-start.sh`, matcher `""`) — Emits a single `additionalContext` JSON object with knowledge graph guidance, skill suggestions (`/knowledge-prime`, `/knowledge-ask`, `/knowledge-gaps`, `/schema-evolve`, and the explicit-only `/knowledge-garden`/`/knowledge-maintain`), and conditional graph-audit cycle reminders on every 4th sprint. It reads `source` from stdin and, on `source=compact`, appends a condensed graph-recovery block (the graph guidance can fall out of the window when context is summarized). This recovery payload was migrated here from a former `PostCompact` hook: `PreCompact`/`PostCompact` `additionalContext` never reaches the resumed, tool-capable agent (Claude Code docs — those events are observability-only / fire pre-compaction), so `SessionStart` `source=compact` is the only slot that injects post-compaction context. Adopted from vp-beads' v0.17.0 migration (bd `vp-claude-1oah`); the bead's SessionStart security-signal half was intentionally dropped — vp-knowledge has no Dependabot-style alert analog. On non-compact sources it also invokes `tip-fragment.sh` (a **separate** script, called via command substitution as `$(dirname "${BASH_SOURCE[0]}")/tip-fragment.sh "$source"` — `${CLAUDE_PLUGIN_ROOT}` substitutes only inside `hooks.json`'s own command string, not inside a script body) to surface one learning-nudge tip per day from `~/.claude/references/claude-code-nudge-tips.txt` (synced by the `/nudge-sync` skill). Every failure mode inside it — missing/empty tips file, exhausted ring buffer, `awk` unavailable — degrades to empty output, never an error; throttle + anti-repeat state lives in one merged file at `$HOME/.local/state/vp-knowledge/nudge-state` (path overridable via `VP_KNOWLEDGE_STATE_DIR` for tests), and `VP_KNOWLEDGE_DISABLE_NUDGE=1` is a global kill-switch checked first.
 - **PreToolUse** (`Bash` matcher) — Blocks Python and Node.js script execution inside the knowledge-gardener agent via `permissionDecision: "deny"`, enforcing read-only discipline. Main session and other agents are unaffected.
 
+## Hook event names
+
+`validate-plugin.mjs`'s `VALID_HOOK_EVENTS` allowlist is the source of truth for
+which event names it recognizes (`warn()`-only, since the upstream event set
+grows over time). One entry, `PostToolBatch`, is **speculative** — it is not a
+confirmed/documented Claude Code hook event and this plugin's `hooks/hooks.json`
+does not use it. It stays in the allowlist only to avoid a spurious warning if a
+real hook under that name ever ships; do not treat its presence there as
+confirmation the event exists. The five hooks actually shipped by this plugin
+(inventory below) use only `PreToolUse`, `PostToolUse`, `PostToolUseFailure`,
+and `SessionStart` — all independently verified, documented events.
+
 ## Hook conventions
 
 Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. All hooks are `type: "command"` and emit `additionalContext` from a JSON object on stdout — `type: "prompt"` hooks spawn Haiku without MCP access, so they cannot call MCP tools (RETRO-02). All hooks are defined in `hooks/hooks.json`. Hook scripts assume CWD = project root (consistent with vp-beads convention). Each hook must emit exactly one JSON object on stdout — Claude Code reads only the first object and silently drops the rest. `${CLAUDE_PLUGIN_ROOT}` is Claude-side string substitution, not a shell env var — it works in `hooks.json` command fields, skill `SKILL.md` content, `.mcp.json`, `.lsp.json`, and `plugin.json`, but **does NOT work in agent `.md` files** (agents see the literal string). For script paths inside agents, use CWD or a path relative to project root.

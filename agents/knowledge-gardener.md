@@ -427,6 +427,17 @@ prefix** (filter out any stray drafts or non-prefixed notes). If a cohort's
 directory is empty or missing, skip that cohort silently — the user hasn't
 documented any of its notes yet.
 
+**Floating-package exclusion filter (npm only, applies before Step 5b-ii) —
+mirrors `skills/knowledge-gaps/references/staleness-detection.md` S1, keep in
+sync:** also drop any title whose recovered package name starts with
+`@types/` — in title form, `npm-@types-*` (e.g. `npm-@types-node`,
+`npm-@types-react`). These are DefinitelyTyped packages that exist solely to
+track another package's version; they will always read as "drifted" against
+their own release cadence, which is tracking behavior, not real staleness.
+This is a **filter**, not a bucket — an excluded note produces no bullet in
+any `#### <bucket>` section in 5b-v and is not counted in any bucket total.
+Carry forward how many titles this filter dropped for the 5b-v report.
+
 **Step 5b-ii. Extract `bm_version` (+ `bm_tap` for brew) and recover the
 upstream name per note via MCP:** For each filtered title, call:
 ```
@@ -470,9 +481,26 @@ npm_package` in frontmatter and tries Pattern 3 before Pattern 1 for those
 notes only, so the misparse-shield actually fires for npm. Every other cohort
 (including the tool cohorts and the other five package cohorts) still reads
 the pipe first — extending the override is tracked as bead `vp-claude-xux8`.
-Accept
-`[version]` or `[version-range]`; for a range take the first concrete version
-token (strip a leading range operator: `^`, `~`, `>=`, `>`, `<=`, `<`, `=`).
+
+**Range-pin exclusion filter (not a bucket) — mirrors
+`skills/knowledge-gaps/references/staleness-detection.md` S2, keep in sync:**
+a `[version-range]` observation (or any other pattern whose captured raw
+value still carries a leading range operator — `^`, `~`, `>=`, `>`, `<=`,
+`<`, `=`) records that the note's dependency is itself unpinned — it is
+defined to float with whatever version its target resolves to. Do **not**
+strip the operator and treat the remainder as a concrete `bm_version` for
+comparison — that would report "drift" that is really just the pin doing its
+job. Instead **exclude the note from Step 5b-iv bucketing entirely**, the
+same way the `@types/*` filter (5b-i) does: no bullet in any `#### <bucket>`
+section, not counted in any bucket total. **Mechanism:** `extractBmVersion()`
+signals this explicitly via an `isRange` boolean returned alongside
+`{ version, pattern }` — `isRange: true` only for a `[version-range]` match —
+so the exclusion can be applied without mistaking the stripped, resolved
+token for a genuine concrete pin (the two read identically as plain text once
+the operator is gone). Only a bare `[version]` observation (`isRange: false`)
+is accepted as a concrete `bm_version` for drift comparison. Carry forward
+how many notes this filter excluded for the 5b-v report.
+
 Pattern 5 takes the **highest semver** among the versions referenced in the
 `## Release Highlights` / `## Version History` list (linked or bold) — do
 **not** assume the top bullet is newest; these blocks are grouped by change-type
@@ -682,6 +710,21 @@ If all notes resolve to current+OK, emit only:
 ### Version Drift — brew
 
 All N documented brew notes are current with upstream — no action needed.
+```
+
+**Floating-package / range-pin exclusion footnote — mirrors
+`skills/knowledge-gaps/references/staleness-detection.md` S8, keep in sync:**
+after a cohort's bucket sections, append a one-line footnote reporting the
+combined count of notes the 5b-i `@types/*` filter and the 5b-ii range-pin
+filter dropped before bucketing (npm cohort only for `@types/*`; any cohort
+for range-pin) — this makes the exclusion auditable rather than a silent gap
+between "notes enumerated" and "notes bucketed." Omit the line entirely when
+both counts are zero for that cohort:
+```
+*npm: 14 notes excluded from drift bucketing before comparison — 9 `@types/*`
+packages and 5 notes with a range-pinned recorded version (`^`/`~`/`>=`) —
+both track their target's version by design, not real drift, so they are
+filtered rather than bucketed.*
 ```
 
 ### 6. Duplicate detection

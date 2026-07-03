@@ -63,6 +63,11 @@ const VALID_HOOK_TYPES = new Set(['prompt', 'command', 'agent', 'http'])
 // Known Claude Code hook event names. A typo'd event key passes structural
 // validation but silently never fires — warn() (not error()) because the upstream
 // set grows; an unknown key is a strong typo signal, not proof of breakage.
+// NOTE: 'PostToolBatch' is SPECULATIVE — not a confirmed/documented Claude Code
+// hook event as of this writing, and unused by this plugin's own hooks.json.
+// Kept in the allowlist (rather than removed) only so a future real hook under
+// that name doesn't spuriously warn(); do not cite it elsewhere as a verified
+// event without re-checking upstream docs first.
 const VALID_HOOK_EVENTS = new Set([
   'PreToolUse', 'PostToolUse', 'PostToolUseFailure', 'PostToolBatch',
   'UserPromptSubmit', 'UserPromptExpansion',

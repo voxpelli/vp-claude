@@ -3,14 +3,6 @@ name: knowledge-gaps
 description: "This skill should be used when the user asks about 'knowledge gaps', 'tool coverage', 'undocumented dependencies', 'undocumented tools', 'concept gaps', 'installed plugins', 'plugin coverage', 'undocumented skills', 'globally installed plugins/skills', 'what is installed on this machine', 'stale/outdated/drifted notes', 'version drift', or 'which tools/packages need updating'. Audits project dependency and tool manifests — and installed Claude Code plugins + skills.sh bundles — against Basic Memory coverage, and detects concept-level hub gaps. Two flag modes: `--stale [brew|npm|cask|crate|vscode]` checks version drift instead of coverage; `--global` audits what is installed on this machine — Claude Code plugins + skills.sh bundles today — against coverage. Supported ecosystems and full flag mechanics are documented in the skill body."
 user-invocable: true
 argument-hint: "[--stale [brew|npm|cask|crate|vscode] [--limit N] [--since <date>] [--sample N]] [--global]"
-paths:
-  - "package.json"
-  - "Cargo.toml"
-  - "go.mod"
-  - "composer.json"
-  - "Brewfile"
-  - ".github/workflows/*.yml"
-  - "Dockerfile"
 allowed-tools:
   - Read
   - Grep

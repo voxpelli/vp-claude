@@ -16,12 +16,18 @@ let passed = 0
 let failed = 0
 
 /**
+ * `isRange` in `expected` is optional — most fixtures aren't about the
+ * range-pin signal and omit it, in which case `actual.isRange` is not
+ * checked. Fixtures that ARE about Pattern 3's `[version-range]` behavior
+ * pass it explicitly.
+ *
  * @param {string} name
- * @param {{ version: string | null, pattern: number | null }} actual
- * @param {{ version: string | null, pattern: number | null }} expected
+ * @param {{ version: string | null, pattern: number | null, isRange: boolean }} actual
+ * @param {{ version: string | null, pattern: number | null, isRange?: boolean }} expected
  */
 function check (name, actual, expected) {
-  if (actual.version === expected.version && actual.pattern === expected.pattern) {
+  const isRangeOk = !('isRange' in expected) || actual.isRange === expected.isRange
+  if (actual.version === expected.version && actual.pattern === expected.pattern && isRangeOk) {
     passed++
   } else {
     failed++
@@ -105,21 +111,21 @@ check('channel-mismatch regression: "| Legacy Version | 0.9.0 |" is NOT selected
   { version: '1.2.0', pattern: 3 })
 
 // --- Pattern 3: [version] / [version-range] observation ---
-check('pattern 3: plain [version] observation',
+check('pattern 3: plain [version] observation is not flagged as a range',
   extractBmVersion('## Observations\n\n- [version] 5.8.5\n', 'npm-foo'),
-  { version: '5.8.5', pattern: 3 })
+  { version: '5.8.5', pattern: 3, isRange: false })
 
 check('pattern 3: [version] observation with trailing prose keeps only the leading token',
   extractBmVersion('## Observations\n\n- [version] 5.8.5 (stable)\n', 'npm-foo'),
-  { version: '5.8.5', pattern: 3 })
+  { version: '5.8.5', pattern: 3, isRange: false })
 
-check('pattern 3: [version-range] strips a leading caret',
+check('pattern 3: [version-range] strips a leading caret AND is flagged isRange — the resolved token is informational only, callers must exclude it from bucketing rather than treat it as a concrete pin',
   extractBmVersion('## Observations\n\n- [version-range] ^9.0.0\n', 'npm-foo'),
-  { version: '9.0.0', pattern: 3 })
+  { version: '9.0.0', pattern: 3, isRange: true })
 
-check('pattern 3: [version-range] with no leading operator',
+check('pattern 3: [version-range] with no leading operator is still flagged isRange (the observation label decides, not the presence of an operator)',
   extractBmVersion('## Observations\n\n- [version-range] 9.0.0 - 9.5.0\n', 'npm-foo'),
-  { version: '9.0.0', pattern: 3 })
+  { version: '9.0.0', pattern: 3, isRange: true })
 
 check('pattern 3 outranks pattern 4 (frontmatter version present but observation wins)',
   extractBmVersion('---\ntitle: foo\nversion: 3.3.3\n---\n\n## Observations\n\n- [version] 4.4.4\n', 'npm-foo'),
@@ -131,9 +137,9 @@ check('semver-range regression: ">=2.5.0 || 5.0.0 - 7.2.3" in body PROSE is not 
   extractBmVersion('This package supports version ranges like >=2.5.0 || 5.0.0 - 7.2.3 in its peerDependencies.', 'npm-foo'),
   { version: null, pattern: null })
 
-check('semver-range regression: the same range via [version-range] yields 2.5.0',
+check('semver-range regression: the same range via [version-range] yields 2.5.0, flagged isRange',
   extractBmVersion('## Observations\n\n- [version-range] >=2.5.0 || 5.0.0 - 7.2.3\n', 'npm-foo'),
-  { version: '2.5.0', pattern: 3 })
+  { version: '2.5.0', pattern: 3, isRange: true })
 
 // --- Pattern 4: frontmatter `version:` field ---
 check('pattern 4: bare frontmatter version',

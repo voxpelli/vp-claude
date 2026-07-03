@@ -81,6 +81,14 @@ fragile:
 - The `knowledge-gardener` Step 11 flags (informationally) notes that already
   have a `## Sources` section but cite in bare text — it never resolves URLs
   itself (an auto-resolved wrong URL is false provenance).
+- **A `source:`/`url:` frontmatter field does NOT satisfy a schema's `[source]`
+  observation requirement.** `schema_validate` only checks `[category]`
+  observations in the note body — it never inspects frontmatter. When a schema
+  (e.g. `standard`, `service`) declares `[convention] source is required`, the
+  note needs an explicit `- [source] ...` line under `## Observations`, even if
+  a `source:`/`url:` field is already set in frontmatter. Setting only the
+  frontmatter field will pass a first read but fail `schema_validate` — add the
+  body observation up front to avoid a second write/validate round-trip.
 
 ## Note structure conventions (for package-intel output)
 

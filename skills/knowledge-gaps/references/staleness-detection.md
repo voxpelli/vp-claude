@@ -71,6 +71,18 @@ list_directory(dir_name="<directory>", depth=1)
 From the returned listing, **keep only titles starting with the cohort prefix**
 (filter out drafts and non-prefixed notes).
 
+**Floating-package exclusion filter (npm only, applies before scope modifiers):**
+also drop any title whose recovered package name starts with `@types/` — in
+title form, `npm-@types-*` (e.g. `npm-@types-node`, `npm-@types-react`). These
+are DefinitelyTyped packages that exist solely to track another package's
+version; they will always read as "drifted" against their own release
+cadence, which is tracking behavior, not real staleness. This is a **filter**,
+not a bucket — an excluded note produces no bullet in any `#### <bucket>`
+section and is not counted in any bucket total. It always applies (not
+gated behind a flag) and is independent of the `--since`/`--limit`/`--sample`
+scope modifiers below. Carry forward how many titles this filter dropped —
+S8 reports the count.
+
 If a cohort's filtered list is empty, skip that cohort silently (or, for an
 explicit single-ecosystem `--stale <eco>`, report "No `<prefix>` notes
 documented in Basic Memory yet — nothing to check" and suggest seeding one via
@@ -104,7 +116,9 @@ workflow rather than merely trimming the rendered report:
   random from the remaining listing instead of taking the first N.
 
 Only the notes surviving this filtering proceed to S2. Carry forward how many
-were excluded by each modifier — S8 reports it.
+were excluded by the `@types/*` filter and by each scope modifier — S8
+reports both, distinctly (the `@types/*` count is unconditional; the scope-
+modifier counts only appear when a modifier flag was actually passed).
 
 ### S2. Extract documented version per note (MCP, multi-pattern)
 
@@ -162,10 +176,27 @@ secondary slot. **`npm_package` notes are the one exception** (bead
 those notes only, so the misparse-shield for version-string packages
 (`yaml`, `semver`) actually fires now. Extending the same override to the
 tool cohorts (brew/cask/vscode) or the other five package cohorts is tracked
-separately as bead `vp-claude-xux8`. Accept
-either `[version]` or `[version-range]`; for a range, take the first concrete
-version token (strip a leading range operator: `^`, `~`, `>=`, `>`, `<=`, `<`,
-`=`). Pattern 5 takes the **highest semver** among the versions referenced in
+separately as bead `vp-claude-xux8`.
+
+**Range-pin exclusion filter (not a bucket):** a `[version-range]` observation
+(or any other pattern whose captured raw value still carries a leading range
+operator — `^`, `~`, `>=`, `>`, `<=`, `<`, `=`) records that the note's
+dependency is itself unpinned — it is defined to float with whatever version
+its target resolves to. Do **not** strip the operator and treat the remainder
+as a concrete `bm_version` for comparison purposes — that would report a
+"drift" that is really just the pin doing its job. Instead **exclude the
+note from S4 bucketing entirely**, the same way the `@types/*` filter (S1)
+does: no bullet in any `#### <bucket>` section, not counted in any bucket
+total. **Mechanism:** `extractBmVersion()` returns this as an explicit
+`isRange` boolean alongside `{ version, pattern }` — `isRange: true` only for
+a `[version-range]` observation match — precisely so this exclusion can be
+applied without the stripped, resolved token being mistaken for a genuine
+concrete pin (the two are textually indistinguishable once the operator is
+gone). Only a bare `[version]` observation (`isRange: false`) is accepted as
+a concrete `bm_version` for drift comparison. Carry forward how many notes
+this filter excluded — S8 reports the count alongside the `@types/*` count.
+
+Pattern 5 takes the **highest semver** among the versions referenced in
 the `## Release Highlights` or `## Version History` list (linked or bold) — do
 **not** assume the top bullet is newest; these blocks are grouped by change-type
 (breaking/feature/fix), not version order. **Release Highlights ranks last on
@@ -469,6 +500,18 @@ After the report, include a one-line footnote acknowledging scope:
 > `skill` is unsupported (no comparable version — ships off a moving `main`);
 > both are covered by `/knowledge-gaps --global` (coverage, not drift). `pypi`,
 > `gem`, and `composer` are deferred until their cohorts grow.*
+
+**Floating-package / range-pin exclusion footnote:** always append a line
+reporting the combined count of notes the S1 `@types/*` filter and the S2
+range-pin filter dropped before bucketing, per cohort where nonzero — this is
+what makes the exclusion auditable rather than a silent gap between "notes
+enumerated" and "notes bucketed." Omit the line entirely for a cohort where
+both counts are zero:
+
+> *npm: 14 notes excluded from drift bucketing before comparison — 9
+> `@types/*` packages and 5 notes with a range-pinned recorded version
+> (`^`/`~`/`>=`) — both track their target's version by design, not real
+> drift, so they are filtered rather than bucketed.*
 
 **When a scope modifier narrowed the cohort** (`--limit`, `--since`, or
 `--sample` was present), append a second footnote line naming which one(s) and
