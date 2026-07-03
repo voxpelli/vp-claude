@@ -20,6 +20,53 @@ live here.
 
 Required fields: `name`, `description`, `model`, `color`, `tools`. Optional fields: `skills` (preloaded skill content), `effort` (`low`/`medium`/`high`/`max`). The `tools` field is a YAML list of allowed tool names. The knowledge-gardener must remain read-only — never add `write_note`, `edit_note`, or `delete_note` to its tools list. The knowledge-maintainer has write access (`effort: high`) but must confirm before content-level changes.
 
+### Description field: prose triggers, not `<example>` XML
+
+The Claude Code spec documents an escaped `<example>...</example>` XML-in-YAML
+convention for agent frontmatter `description` fields. **This project deviates
+from that spec convention** and uses prose triggers instead — a single quoted
+YAML string, no embedded XML:
+
+```yaml
+description: "Use this agent when <the general trigger condition>. Typical
+  triggers include: <comma or semicolon list of trigger phrases, quoted or
+  paraphrased from real user requests>. <One sentence stating any safety-
+  relevant routing contrast — e.g. read-only vs write-capable — if the agent
+  has a sibling agent it could be confused with>. See \"When to invoke\" in
+  the agent body for worked scenarios."
+```
+
+Precedent for this shape already exists in the installed-plugin ecosystem —
+`pr-review-toolkit`'s agents (e.g. `code-reviewer`) use a single-line prose
+description ending with a pointer to a body `## When to invoke` section;
+`vp-beads`'s `sprint-review` uses a quoted single-line "Use this agent
+when... Also trigger proactively when... Do NOT trigger during..." prose
+form. This project's convention combines both: a quoted prose description in
+frontmatter, plus a `## When to invoke` section in the body.
+
+`VOICE.md` at the plugin root governs the *tone* of the description's first
+sentence (garden-metaphor framing where a fitting verb exists) — consult it
+whenever a description is rewritten, not just when adding a fifth agent.
+`VOICE.md` is silent on the frontmatter *structure* (prose vs. `<example>`
+XML); this section is the structural authority.
+
+**Body companion section:** every agent's body must include a `## When to
+invoke` section (placed early, right after the introductory paragraph(s) and
+before the agent's procedural sections) that expands the frontmatter
+description into the fuller scenario detail an `<example>` block used to
+hold — typically 3-4 bullets, each naming a representative user request and
+what distinguishes it from a sibling agent's scenarios. This is where the
+detail that prose frontmatter can't hold lives, without polluting the
+frontmatter itself.
+
+**Preserve routing contrasts.** Where two agents in this plugin could be
+confused for one another on a given request (e.g. knowledge-gardener
+read-only auditor vs knowledge-maintainer sole writer), both the frontmatter
+description AND the `## When to invoke` section must make the distinction
+unambiguous — this is a safety-relevant signal, not just a style
+preference, since a caller must not launch a write-capable agent when a
+read-only one was intended, or vice versa.
+
 Color assignments and the agent description-tone conventions live in `VOICE.md` at the plugin root. Consult it before adding a fifth agent or rewriting an existing description.
 
 ## See also
