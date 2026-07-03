@@ -6,27 +6,15 @@ import yaml from 'js-yaml'
 import remarkFrontmatter from 'remark-frontmatter'
 import remarkParse from 'remark-parse'
 import { unified } from 'unified'
+import {
+  guardedArrayIncludes, isKeyWithType, isObject, isObjectWithKey, isStringArray, isType,
+} from '@voxpelli/typed-utils'
 
 import { collectScannableText, findUnclosedFence } from './lib/mdast.mjs'
 import { buildCanonicalRelationVerbs, checkRelationVocabDrift } from './lib/schema-vocab.mjs'
 import { checkStalenessConsume, checkStalenessEmit } from './lib/staleness-contract.mjs'
 
 const ROOT = new URL('.', import.meta.url).pathname.replace(/\/$/, '')
-
-/**
- * A plugin entry in marketplace.json — accessed across two loops (shape/required
- * fields, then version consistency). Fields are optional because the validator's
- * job is to flag when they're missing/wrong.
- *
- * @typedef {{ name?: unknown, source?: unknown, version?: unknown, description?: unknown }} MarketplaceEntry
- */
-
-/**
- * A single hook handler inside a hooks.json event entry — type/timeout/command
- * interact across several branches below.
- *
- * @typedef {{ type?: unknown, timeout?: unknown, command?: unknown }} HookConfig
- */
 
 /** @type {string[]} */
 const errors = []
@@ -71,26 +59,12 @@ function extractFrontmatter (content) {
   if (!match || match[1] === undefined) return
   try {
     const parsed = yaml.load(match[1])
-    return typeof parsed === 'object' && parsed !== null
-      ? /** @type {Record<string, unknown>} */ (parsed)
-      : undefined
+    return isObject(parsed) ? parsed : undefined
   } catch {}
 }
 
-/**
- * Generic membership guard: narrows `value` to the set's element type `T` in the
- * truthy branch, so a `!isMember(SET, x)` check leaves `x` widened to `T` on the
- * valid path. Lets the VALID_* sets double as runtime validators AND type narrowers.
- *
- * @template T
- * @param {ReadonlySet<T>} set
- * @param {unknown} value
- * @returns {value is T}
- */
-const isMember = (set, value) => set.has(/** @type {T} */ (value))
-
 /** @typedef {'prompt' | 'command' | 'agent' | 'http'} HookType */
-/** @type {ReadonlySet<HookType>} */
+/** @type {Set<HookType>} */
 const VALID_HOOK_TYPES = new Set(/** @type {const} */ (['prompt', 'command', 'agent', 'http']))
 
 // Known Claude Code hook event names. A typo'd event key passes structural
@@ -116,15 +90,15 @@ const VALID_HOOK_EVENTS = new Set([
 ])
 
 /** @typedef {'blue' | 'cyan' | 'green' | 'yellow' | 'magenta' | 'red'} AgentColor */
-/** @type {ReadonlySet<AgentColor>} */
+/** @type {Set<AgentColor>} */
 const VALID_AGENT_COLORS = new Set(/** @type {const} */ (['blue', 'cyan', 'green', 'yellow', 'magenta', 'red']))
 
 /** @typedef {'inherit' | 'sonnet' | 'opus' | 'haiku'} AgentModel */
-/** @type {ReadonlySet<AgentModel>} */
+/** @type {Set<AgentModel>} */
 const VALID_AGENT_MODELS = new Set(/** @type {const} */ (['inherit', 'sonnet', 'opus', 'haiku']))
 
 /** @typedef {'low' | 'medium' | 'high' | 'max'} AgentEffort */
-/** @type {ReadonlySet<AgentEffort>} */
+/** @type {Set<AgentEffort>} */
 const VALID_AGENT_EFFORTS = new Set(/** @type {const} */ (['low', 'medium', 'high', 'max']))
 
 const KNOWN_MCP_PREFIXES = [
@@ -506,9 +480,8 @@ function extractSubagentTypeRefs (content) {
 const pluginPath = join(ROOT, '.claude-plugin', 'plugin.json')
 const plugin = await readJson(pluginPath)
 if (plugin !== undefined) {
-  const p = /** @type {Record<string, unknown>} */ (plugin)
   for (const field of ['name', 'version', 'description']) {
-    if (!(field in p)) {
+    if (!isObjectWithKey(plugin, field)) {
       error(pluginPath, `Missing required field: ${field}`)
     }
   }
@@ -522,29 +495,29 @@ if (existsSync(marketplacePath)) {
 
   // Shape validation + version consistency, sharing one marketplace-defined guard.
   if (marketplace !== undefined) {
-    const m = /** @type {Record<string, unknown>} */ (marketplace)
     for (const field of ['name', 'owner', 'plugins']) {
-      if (!(field in m)) error(marketplacePath, `Missing required field: ${field}`)
+      if (!isObjectWithKey(marketplace, field)) error(marketplacePath, `Missing required field: ${field}`)
     }
-    if ('plugins' in m && !Array.isArray(m.plugins)) {
+    if (isObjectWithKey(marketplace, 'plugins') && !isType(marketplace.plugins, 'array')) {
       error(marketplacePath, '"plugins" must be an array')
     }
-    const entries = Array.isArray(m.plugins) ? m.plugins : []
+    const entries = isKeyWithType(marketplace, 'plugins', 'array') ? marketplace.plugins : []
     for (const entry of entries) {
-      const e = /** @type {MarketplaceEntry} */ (entry)
+      const entryName = isKeyWithType(entry, 'name', 'string') ? entry.name : '?'
       for (const field of ['name', 'source', 'description']) {
-        if (!(field in e)) error(marketplacePath, `Plugin entry "${String(e.name ?? '?')}" missing required field: ${field}`)
+        if (!isObjectWithKey(entry, field)) error(marketplacePath, `Plugin entry "${entryName}" missing required field: ${field}`)
       }
     }
     // Version consistency: a local "./" entry must match plugin.json version.
     if (plugin !== undefined) {
-      const pluginVersion = /** @type {Record<string, unknown>} */ (plugin).version
+      const pluginVersion = isObjectWithKey(plugin, 'version') ? plugin.version : undefined
       for (const entry of entries) {
-        const e = /** @type {MarketplaceEntry} */ (entry)
-        if (e.source === './' && e.version !== pluginVersion) {
+        const entrySource = isObjectWithKey(entry, 'source') ? entry.source : undefined
+        const entryVersion = isObjectWithKey(entry, 'version') ? entry.version : undefined
+        if (entrySource === './' && entryVersion !== pluginVersion) {
           error(
             marketplacePath,
-            `Local "./" entry version "${String(e.version)}" does not match plugin.json version "${String(pluginVersion)}"`
+            `Local "./" entry version "${String(entryVersion)}" does not match plugin.json version "${String(pluginVersion)}"`
           )
         }
       }
@@ -558,12 +531,10 @@ const hooksPath = join(ROOT, 'hooks', 'hooks.json')
 if (existsSync(hooksPath)) {
   const hooksData = await readJson(hooksPath)
   if (hooksData !== undefined) {
-    const h = /** @type {Record<string, unknown>} */ (hooksData)
-    if (!h.hooks || typeof h.hooks !== 'object') {
+    if (!isObjectWithKey(hooksData, 'hooks') || !isObject(hooksData.hooks)) {
       error(hooksPath, 'Missing top-level "hooks" object')
     } else {
-      // eslint-disable-next-line prefer-destructuring -- a type-cast assignment reads clearer than destructuring + a separate cast
-      const hooks = /** @type {Record<string, unknown>} */ (h.hooks)
+      const { hooks } = hooksData
       for (const [event, entries] of Object.entries(hooks)) {
         if (!VALID_HOOK_EVENTS.has(event)) {
           warn(hooksPath, `Unknown hook event "${event}" — typo? A hook under an unrecognized event silently never fires. Known events: ${[...VALID_HOOK_EVENTS].join(', ')}`)
@@ -573,34 +544,33 @@ if (existsSync(hooksPath)) {
           continue
         }
         for (const entry of entries) {
-          const e = /** @type {Record<string, unknown>} */ (entry)
-          if (typeof e.matcher !== 'string') {
+          if (!isKeyWithType(entry, 'matcher', 'string')) {
             error(hooksPath, `hooks.${event}: entry missing "matcher" (string)`)
           }
-          if (!Array.isArray(e.hooks)) {
+          if (!isKeyWithType(entry, 'hooks', 'array')) {
             error(hooksPath, `hooks.${event}: entry missing "hooks" (array)`)
             continue
           }
-          for (const hook of e.hooks) {
-            const hk = /** @type {HookConfig} */ (hook)
-            if (!isMember(VALID_HOOK_TYPES, hk.type)) {
-              error(hooksPath, `hooks.${event}: hook type must be one of ${[...VALID_HOOK_TYPES].join(', ')}, got "${String(hk.type)}"`)
+          for (const hook of entry.hooks) {
+            const hookType = isObjectWithKey(hook, 'type') ? hook.type : undefined
+            if (!guardedArrayIncludes(VALID_HOOK_TYPES, hookType)) {
+              error(hooksPath, `hooks.${event}: hook type must be one of ${[...VALID_HOOK_TYPES].join(', ')}, got "${String(hookType)}"`)
             }
-            if (hk.type === 'prompt') {
+            if (hookType === 'prompt') {
               warn(hooksPath, `hooks.${event}: type "prompt" hooks spawn Haiku without MCP access — consider "command" with additionalContext instead (see RETRO-02)`)
             }
-            if (typeof hk.timeout !== 'number') {
+            if (!isKeyWithType(hook, 'timeout', 'number')) {
               error(hooksPath, `hooks.${event}: hook missing "timeout" (number)`)
             }
             // Validate command hook paths
-            if (hk.type === 'command' && typeof hk.command === 'string') {
+            if (hookType === 'command' && isKeyWithType(hook, 'command', 'string')) {
               // eslint-disable-next-line no-template-curly-in-string -- literal placeholder text being substituted, not a template literal
-              const resolved = hk.command.replaceAll('${CLAUDE_PLUGIN_ROOT}', ROOT)
+              const resolved = hook.command.replaceAll('${CLAUDE_PLUGIN_ROOT}', ROOT)
               // Extract the file path from the command (after "bash " or similar)
               const parts = resolved.split(/\s+/)
               const scriptPath = parts.find((p) => p.startsWith('/') || p.startsWith('./'))
               if (scriptPath && !existsSync(scriptPath)) {
-                error(hooksPath, `hooks.${event}: referenced file does not exist: ${hk.command}`)
+                error(hooksPath, `hooks.${event}: referenced file does not exist: ${hook.command}`)
               }
             }
           }
@@ -660,30 +630,30 @@ for (const file of skillFiles) {
   if (typeof fm.description === 'string' && fm.description.length > 1400) {
     warn(file, `description is ${fm.description.length} chars — Claude Code may truncate it for routing; move capability detail into the body`)
   }
-  if ('allowed-tools' in fm && !Array.isArray(fm['allowed-tools'])) {
+  if (isObjectWithKey(fm, 'allowed-tools') && !isType(fm['allowed-tools'], 'array')) {
     error(file, 'allowed-tools must be an array')
   }
-  if ('user-invocable' in fm && typeof fm['user-invocable'] !== 'boolean') {
+  if (isObjectWithKey(fm, 'user-invocable') && !isType(fm['user-invocable'], 'boolean')) {
     error(file, `user-invocable must be a boolean, got ${typeof fm['user-invocable']}`)
   }
-  if ('argument-hint' in fm && typeof fm['argument-hint'] !== 'string') {
+  if (isObjectWithKey(fm, 'argument-hint') && !isType(fm['argument-hint'], 'string')) {
     error(file, `argument-hint must be a string, got ${typeof fm['argument-hint']}`)
   }
-  if ('paths' in fm && !Array.isArray(fm.paths)) {
+  if (isObjectWithKey(fm, 'paths') && !isType(fm.paths, 'array')) {
     error(file, 'paths must be an array of glob strings')
   }
-  if ('effort' in fm && !isMember(VALID_AGENT_EFFORTS, fm.effort)) {
+  if (isObjectWithKey(fm, 'effort') && !guardedArrayIncludes(VALID_AGENT_EFFORTS, fm.effort)) {
     error(file, `Invalid skill effort "${String(fm.effort)}", must be one of: ${[...VALID_AGENT_EFFORTS].join(', ')}`)
   }
-  if ('maxTurns' in fm && (typeof fm.maxTurns !== 'number' || fm.maxTurns < 1)) {
+  if (isObjectWithKey(fm, 'maxTurns') && (!isType(fm.maxTurns, 'number') || fm.maxTurns < 1)) {
     error(file, `maxTurns must be a positive integer, got ${String(fm.maxTurns)}`)
   }
-  if ('context' in fm && fm.context !== 'fork') {
+  if (isObjectWithKey(fm, 'context') && fm.context !== 'fork') {
     error(file, `context must be "fork" if present, got "${String(fm.context)}"`)
   }
-  if (Array.isArray(fm['allowed-tools'])) {
-    validateMcpPrefixes(file, /** @type {string[]} */ (fm['allowed-tools']))
-    auditToolReferences(file, content, /** @type {string[]} */ (fm['allowed-tools']), 'allowed-tools')
+  if (isKeyWithType(fm, 'allowed-tools', 'array') && isStringArray(fm['allowed-tools'])) {
+    validateMcpPrefixes(file, fm['allowed-tools'])
+    auditToolReferences(file, content, fm['allowed-tools'], 'allowed-tools')
   }
   // Validate Agent(subagent_type="X") references resolve to an actual agent file.
   // Skills that delegate to a subagent (e.g. /knowledge-garden) silently no-op
@@ -721,30 +691,30 @@ if (existsSync(agentsDir)) {
         error(file, `Missing required frontmatter field: ${field}`)
       }
     }
-    if ('tools' in fm && !Array.isArray(fm.tools)) {
+    if (isObjectWithKey(fm, 'tools') && !isType(fm.tools, 'array')) {
       error(file, 'tools must be an array')
     }
-    if (Array.isArray(fm.tools)) {
-      validateMcpPrefixes(file, /** @type {string[]} */ (fm.tools))
-      auditToolReferences(file, content, /** @type {string[]} */ (fm.tools), 'tools')
+    if (isKeyWithType(fm, 'tools', 'array') && isStringArray(fm.tools)) {
+      validateMcpPrefixes(file, fm.tools)
+      auditToolReferences(file, content, fm.tools, 'tools')
     }
-    if ('color' in fm && !isMember(VALID_AGENT_COLORS, fm.color)) {
+    if (isObjectWithKey(fm, 'color') && !guardedArrayIncludes(VALID_AGENT_COLORS, fm.color)) {
       error(file, `Invalid agent color "${String(fm.color)}", must be one of: ${[...VALID_AGENT_COLORS].join(', ')}`)
     }
-    if ('model' in fm && !isMember(VALID_AGENT_MODELS, fm.model)) {
+    if (isObjectWithKey(fm, 'model') && !guardedArrayIncludes(VALID_AGENT_MODELS, fm.model)) {
       error(file, `Invalid agent model "${String(fm.model)}", must be one of: ${[...VALID_AGENT_MODELS].join(', ')}`)
     }
-    if ('effort' in fm && !isMember(VALID_AGENT_EFFORTS, fm.effort)) {
+    if (isObjectWithKey(fm, 'effort') && !guardedArrayIncludes(VALID_AGENT_EFFORTS, fm.effort)) {
       error(file, `Invalid agent effort "${String(fm.effort)}", must be one of: ${[...VALID_AGENT_EFFORTS].join(', ')}`)
     }
-    if ('skills' in fm && !Array.isArray(fm.skills)) {
+    if (isObjectWithKey(fm, 'skills') && !isType(fm.skills, 'array')) {
       error(file, 'skills must be an array')
     }
 
     // Gardener read-only invariant
-    if (file.endsWith('knowledge-gardener.md') && Array.isArray(fm.tools)) {
+    if (file.endsWith('knowledge-gardener.md') && isKeyWithType(fm, 'tools', 'array') && isStringArray(fm.tools)) {
       const forbidden = ['write_note', 'edit_note', 'delete_note']
-      for (const tool of /** @type {string[]} */ (fm.tools)) {
+      for (const tool of fm.tools) {
         if (forbidden.some((f) => tool.includes(f))) {
           error(file, `Read-only agent must not have write tool: ${tool}`)
         }
@@ -752,8 +722,8 @@ if (existsSync(agentsDir)) {
     }
 
     // Validate agent skills references resolve to actual skill files
-    if ('skills' in fm && Array.isArray(fm.skills)) {
-      for (const skillName of /** @type {string[]} */ (fm.skills)) {
+    if (isKeyWithType(fm, 'skills', 'array') && isStringArray(fm.skills)) {
+      for (const skillName of fm.skills) {
         const skillPath = join(ROOT, 'skills', skillName, 'SKILL.md')
         if (!existsSync(skillPath)) {
           error(file, `Phantom skill reference: "${skillName}" — no file at skills/${skillName}/SKILL.md`)

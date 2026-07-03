@@ -29,6 +29,7 @@
     "@types/node": "^22.19.19",
     "@voxpelli/eslint-config": "^25.1.0",
     "@voxpelli/tsconfig": "^16.2.1",
+    "@voxpelli/typed-utils": "^5.0.0",
     "eslint": "^9.39.4",
     "js-yaml": "^4.1.0",
     "npm-run-all2": "^9.0.0",
