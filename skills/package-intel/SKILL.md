@@ -383,13 +383,19 @@ Include the metric window (weekly vs total) and registry name — e.g.,
 leading token — e.g. `- [version] 5.8.5`. This is the machine-stable slot
 intended to shield notes whose subject involves version strings (e.g. `yaml`,
 `semver`) from misparse. The same value goes in the header line
-(`| v<version> |`); **keep them consistent.** (Note: `--stale` currently reads
-the header pipe *first* — Pattern 1 outranks the `[version]` observation under
-first-hit-wins — so the observation is a redundant safety slot today, not the
-effective read target for npm; making it win there is bead `vp-claude-9q7e`
-(npm-scoped; not yet extended to the other five cohorts). Until then, the
-header pipe is what must be accurate.) All six package schemas now define this
-slot (bd `vp-claude-f3zx`, shipped) — no cohort is exempt.
+(`| v<version> |`); **keep them consistent.** (Note: which slot `--stale`
+reads first is cohort-dependent. For `npm_package` notes, the `[version]`
+observation (Pattern 3) now wins — `lib/bm-version-extract.mjs` tries it
+*before* the header pipe (Pattern 1) for npm specifically, bead
+`vp-claude-9q7e`, shipped — so for npm the observation is the effective read
+target and must be kept accurate. For the other five cohorts
+(crate/go/composer/pypi/gem), the header pipe (Pattern 1) still outranks the
+observation under first-hit-wins — extending the override to those cohorts is
+tracked separately as bead `vp-claude-xux8`, not yet done. Refresh both slots
+on every note regardless of cohort — the non-authoritative one still ships
+and stays load-bearing for older/heterogeneous notes.) All six package
+schemas now define this slot (bd `vp-claude-f3zx`, shipped) — no cohort is
+exempt.
 
 **No wiki-links in observations.** Never use `[[Target]]` syntax in observation
 lines. BM's parser treats any `[[` as a relation boundary — the text before it

@@ -27,7 +27,8 @@ allowed-tools:
 Research a developer environment or CI/CD tool and synthesize a structured
 Basic Memory note using five enrichment sources, then cross-link existing notes.
 Supports Homebrew formulae, Homebrew casks, GitHub Actions, Docker images,
-VSCode extensions, and GitHub CLI extensions.
+VSCode extensions, GitHub CLI extensions, Claude Code plugins, and skills.sh
+agent-skill bundles.
 
 ## Arguments
 
@@ -197,13 +198,16 @@ convention:
   `| v<old> |` token. brew/cask/vscode notes now **also** carry a `[version]`
   observation (bead `80r4`, schema slot `Pattern 3`) — a clean leading token,
   e.g. `- [version] 1.39.0`, kept in sync with the pipe on the **same** edit.
-  Mirroring npm's own caveat: under `--stale`'s first-hit-wins ordering the
+  For these tool-intel cohorts, under `--stale`'s first-hit-wins ordering the
   header pipe (Pattern 1) still outranks the `[version]` observation (Pattern
   3), so the pipe remains the effective read target today — the observation is
-  a redundant safety slot, same status as npm's (flipping the ordering is bead
-  `vp-claude-9q7e`, not yet done for any cohort). Refresh both anyway; a stale
-  `[version]` observation is still a corpus-quality defect even when `--stale`
-  doesn't currently read it first.
+  a redundant safety slot. npm's own `--stale` now reads its `[version]`
+  observation first, ahead of the header pipe (bead `vp-claude-9q7e`, shipped
+  npm-only in the 0.31.4/0.32.1 releases); `9q7e` was never extended to
+  brew/cask/vscode or tool-intel's other cohorts, so their header-pipe-first
+  ordering is unchanged. Refresh both anyway; a stale `[version]` observation
+  is still a corpus-quality defect even when `--stale` doesn't currently read
+  it first.
 - **Axis B — the inline changelog reel.** Add the curated `[feature]` /
   `[version]` observations for the delta (the tool-intel narrative style). This
   reel's `[version]` lines accumulate as delta narrative (one per surfaced

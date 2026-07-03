@@ -37,7 +37,7 @@ Schema for VSCode extension notes — one note per extension in the `vscode/` di
 - [convention] `gotcha` should note activation events — extension activating on every file type can hurt startup time
 - [convention] Relations use `[[vscode-publisher.ext]]` wiki-link format
 - [convention] `security` captures the Open VSX trust ladder (verified-restricted / public-namespace / marketplace-only=squattable / not-published-anywhere); a Marketplace-only extension has an unclaimed namespace that fork-IDEs (Cursor/Windsurf/Codium) resolve installs against — record the state with a date stamp
-- [convention] `version` is a single clean leading token (e.g. `- [version] 1.39.0`), kept in sync with the inline header pipe (`Publisher: … | v<version> | <license>`) — both record the same value; under `--stale`'s first-hit-wins extraction the header pipe (Pattern 1) still outranks this observation (Pattern 3), so the pipe remains the slot that must be accurate today (bd `vp-claude-9q7e` tracks flipping that ordering for npm; not yet done for any cohort)
+- [convention] `version` is a single clean leading token (e.g. `- [version] 1.39.0`), kept in sync with the inline header pipe (`Publisher: … | v<version> | <license>`) — both record the same value; under `--stale`'s first-hit-wins extraction the header pipe (Pattern 1) still outranks this observation (Pattern 3) here, so the pipe remains the slot that must be accurate for this cohort (bd `vp-claude-9q7e` flipped that ordering for npm only; brew/cask/vscode still read the pipe first, unchanged here)
 
 ## Relation Vocabulary
 

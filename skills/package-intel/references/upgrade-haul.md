@@ -79,17 +79,25 @@ A refreshed note carries the new version on **two orthogonal axes**. These are a
 recording convention, **not an ecosystem quirk** — both apply wherever the note
 type supports them:
 
-- **Axis A — the machine-readable version slot `--stale` reads.** This is the
-  **inline header pipe** `… | v<version> | <license>` (S2 **Pattern 1**) — the
-  slot `--stale` reads *first* for **every** cohort under first-hit-wins. The
-  haul MUST refresh the pipe. All package-cohort notes *also* carry a
-  `[version]` observation (Pattern 3); update it in the **same** edit to keep
-  the two consistent, but never update only the observation — the pipe
-  outranks it, so a stale pipe defeats the round-trip even with a fresh
-  `[version]` obs. (Heterogeneous
-  corpus: an older note may record version only in a `| Version |` table row or
-  prose — Patterns 2/6; refresh whichever slot S2 would read for *that* note,
-  defaulting to the pipe for current-era notes.)
+- **Axis A — the machine-readable version slot `--stale` reads first.** Which
+  physical slot is authoritative is **cohort-dependent**: for `npm_package`
+  notes it is the **`[version]` observation** (S2 **Pattern 3**) —
+  `lib/bm-version-extract.mjs` tries Pattern 3 before Pattern 1 for npm
+  specifically (bead `vp-claude-9q7e`, shipped). For every other cohort — the
+  other five package cohorts (crate/go/composer/pypi/gem) and the tool
+  cohorts (brew/cask/vscode) — it is still the **inline header pipe**
+  `… | v<version> | <license>` (Pattern 1); extending the override beyond npm
+  is tracked separately as bead `vp-claude-xux8`, not yet done. The haul MUST
+  refresh whichever slot is authoritative for the note's cohort. All
+  package-cohort notes carry *both* slots — the inline header pipe **and**
+  the `[version]` observation; update both in the **same** edit to keep them
+  consistent, but never update only the non-authoritative slot for that
+  cohort — it does not win under
+  first-hit-wins, so leaving the authoritative slot stale defeats the
+  round-trip even with the other slot fresh. (Heterogeneous corpus: an older
+  note may record version only in a `| Version |` table row or prose —
+  Patterns 2/6; refresh whichever slot S2 would read for *that* note,
+  defaulting to the cohort-authoritative slot for current-era notes.)
 - **Axis B — the prose changelog narrative.** The human-readable reel from
   [Highlights-reel synthesis](#highlights-reel-synthesis). Its location is
   adapter-specific (see below).
@@ -101,13 +109,14 @@ haul records the `[version]` observation by convention on every refresh, no
 cohort-specific gating remains.
 
 **Gotcha — refresh BOTH axes.** Updating the prose reel alone leaves the note's
-*headline* version (the inline pipe) stale, and the pipe is exactly what `--stale`
-re-reads — so the drift never closes. (Dogfood: an `llmfit` refresh wrote the
-Release Highlights but left the top-of-note version at the old value until it was
-bumped separately.) On every refreshed note, move the headline pipe `| v<version> |`
-**and** the narrative — they are independent and both must move. For every
-package cohort, the `[version]` observation is a third slot that must move
-with the pipe (same edit).
+*headline* version (the inline pipe) stale, and the pipe is what `--stale`
+re-reads for every cohort except npm (which reads the `[version]` observation
+instead, see Axis A above) — so the drift never closes. (Dogfood: an `llmfit`
+refresh wrote the Release Highlights but left the top-of-note version at the
+old value until it was bumped separately.) On every refreshed note, move the
+headline pipe `| v<version> |` **and** the narrative — they are independent
+and both must move. For every package cohort, the `[version]` observation is
+a third slot that must move with the pipe (same edit).
 
 ## Stale-cache arbitration
 
@@ -167,9 +176,11 @@ operand and surface a summary table at batch close:
 bumps the version, **re-read the note** and confirm the slot changed to the new
 value — the repo's `find_replace` silently matches nothing on a byte mismatch
 (whitespace, a `v` prefix, a stale source-stamp suffix) and on notes >~40KB.
-Verify the **inline pipe specifically** (the slot `--stale` reads); for every
-package cohort, verify the pipe *and* the `[version]` observation both moved — a passing
-obs-edit with a missed pipe-edit still leaves the round-trip broken. If the slot
+Verify the **cohort-authoritative slot specifically** (the slot `--stale`
+reads first for that cohort — the `[version]` observation for npm, the
+inline pipe for every other cohort); for every package cohort, verify the
+pipe *and* the `[version]` observation both moved — a passing edit to only
+the non-authoritative slot still leaves the round-trip broken. If the slot
 is unchanged, classify the item `FAILED[edit-missed]`, do not proceed to Axis B,
 and do not count it refreshed. (Precedent: the `N_before`/`N_after` survival
 check in `/knowledge-maintain` — `schema_validate` passing is not proof an edit
@@ -184,9 +195,10 @@ Upgrade haul is the **executor** half of a bidirectional pair with the
   its *S7 Offer batched refresh* step, routes the top stale items into these
   skills as a batch. That handoff IS an upgrade haul.
 - **Executor → detector:** a haul refreshes the same Axis-A slot `--stale` reads
-  — the inline header pipe (**Pattern 1**) for every cohort, plus the `[version]`
-  observation for every package cohort — so the next `--stale` run sees the
-  closed drift.
+  — the `[version]` observation (**Pattern 3**) for npm, the inline header
+  pipe (**Pattern 1**) for every other cohort — plus, for every package
+  cohort, the other of the two slots as well, so the next `--stale` run sees
+  the closed drift regardless of which slot it reads first for that cohort.
 
 The detector side is documented in
 `skills/knowledge-gaps/references/staleness-detection.md` (S7 offer + S2
@@ -212,5 +224,6 @@ deliberately does not hardcode them. An adapter MUST define:
    otherwise (see the tool-intel adapter's linked-timeline-note check for the
    worked mechanics).
 
-Axis A (the `[version]` observation / canonical slot) and everything else above
-are shared and identical across both skills.
+Axis A (the machine-readable version slot, per its cohort-dependent
+definition above) and everything else above are shared and identical across
+both skills.

@@ -80,7 +80,9 @@ For each named target, find the canonical note:
 Prefix-to-directory mapping: `npm:`→`npm/`, `crate:`→`crates/`, `go:`→`go/`,
 `composer:`→`composer/`, `pypi:`→`pypi/`, `gem:`→`gems/`, `brew:`→`brew/`,
 `cask:`→`casks/`, `action:`→`actions/`, `docker:`→`docker/`,
-`vscode:`→`vscode/`, `gh:`→`gh/`.
+`vscode:`→`vscode/`, `gh:`→`gh/`, `plugin:`→`plugins/`, `skill:`→`plugins/`,
+`git:`→`engineering/git/` (git_builtin notes are conventionally plain-titled
+like `git-replay` and also resolve via the plain-title path above).
 
 Exclude schema notes (permalinks under `/schema/`) — they are structural
 definitions, not subject content.

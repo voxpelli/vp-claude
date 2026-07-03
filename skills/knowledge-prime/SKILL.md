@@ -99,9 +99,13 @@ Notes whose title matches a direct project dependency.
 **Pass 2 — Graph expansion (score: 2):**
 For top-scoring notes from pass 1, expand via:
 ```
-build_context(url="memory://npm/<pkg>", depth=1, max_related=5)
+build_context(url="<ecosystem-dir>/<note-title>", depth=1, max_related=5)
 ```
-Related notes that appear get score 2 (transitive relevance).
+Use each note's own resolved path from pass 1 (e.g. `npm/npm-fastify`,
+`crates/crate-tokio`, `brew/brew-ripgrep`) — never hardcode to a single
+ecosystem; a Cargo-only or Brewfile-only project will have pass 1 top-scoring
+on crate or brew notes, not npm. Related notes that appear get score 2
+(transitive relevance).
 
 **Pass 3 — Beads/activity boost (score: 1):**
 Fetch recent activity now (needed for scoring before sorting):

@@ -64,7 +64,8 @@ Read(file_path="~/.claude/references/raindrop-tags.md")
   Record which of the three are *absent* from frontmatter — Step 8 will
   backfill them from the seed values defined below.
   Check staleness: if `fetched_at` matches today's date and no explicit
-  arguments were passed, warn and suggest `--reset` or a count argument.
+  arguments were passed, warn "Vocabulary was already synced today. Pass a
+  count or `--reset` to force." and **Stop.** Do not proceed to Step 3.
 - **File missing** (or `--reset`) — enter **creation mode**. Seed default
   config fields: `blocklist: ["5", "4", "3", "2", "imported", "toread",
   "unread", "for:*"]`, `context_tags: []`, `conventions: []`.

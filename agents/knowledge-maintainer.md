@@ -115,15 +115,21 @@ must go through `edit_note(find_replace)` with the Rule 1 constraint above.
 
 ### Rule 3: Dual-write to BM and the local schema file
 
-Every schema change must update both targets in the same operation:
+Every schema change must update both targets, but this agent's `tools:`
+list grants no local filesystem-write capability — it cannot touch the
+local repo file directly. Delegate the local-file half to
+`/schema-evolve`, which performs both sides of the sync itself:
 
 1. `edit_note` on the BM note (`main/schema/<type>`), respecting Rule 1
-2. `Edit` on the local file (`schemas/<type>.md`) with the matching change
+2. `Skill(skill: "schema-evolve", args: "<type>")` to bring the local file
+   (`schemas/<type>.md`) into sync with the change just made in BM
 
-If only one side lands, the local repo and BM drift. The PostToolUse
-`Edit|Write` hook will remind you to sync when editing schema files
-manually, but the discipline is yours to enforce — there is no automated
-reconciliation.
+Do not attempt a direct file edit on the schema file — this agent has no
+filesystem-write tool, so that instruction is unfulfillable and would
+silently leave the two sides drifted, which is exactly the failure this
+rule exists to prevent. If `/schema-evolve` reports no drift (e.g. the BM
+edit already matches what it would propose), note that in the summary
+rather than treating it as a failed sync.
 
 ### References
 

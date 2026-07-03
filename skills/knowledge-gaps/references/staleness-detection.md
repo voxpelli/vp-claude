@@ -252,11 +252,12 @@ Bash("printf '%s\\n' <name1> <name2> … | bash scripts/fetch-<eco>-upstream.sh"
 Each script emits NDJSON per name. Core fields (identical across scripts):
 `name`, `upstream_version`, `homepage`, `deprecated`, `disabled`, `tier`,
 `days_stale`, `upstream_state` (`ok` | `deprecated` | `disabled` |
-`not-in-api` | `api-unavailable`). `fetch-brew-upstream.sh` additionally emits
-`days_stale_source` (`"release"` | `"tag"` | `null` — provenance of
-`days_stale`); this field is currently **brew-only** — the cask/npm/crate/vscode
-scripts don't emit it, so don't rely on its presence for other cohorts. The
-vscode script adds `openvsx_version`
+`not-in-api` | `api-unavailable`). `fetch-brew-upstream.sh` and
+`fetch-cask-upstream.sh` both emit `days_stale_source`, but with different
+value enums — brew: `"release"` | `"tag"` | `null` (provenance of
+`days_stale`); cask: `"tap-bump"` | `null` (its Tier-2 opportunistic bump-date
+enrichment). npm/crate/vscode still don't emit it, so don't rely on its
+presence for those cohorts. The vscode script adds `openvsx_version`
 (raw default `.version`, may be a pre-release), `marketplace_version`,
 `openvsx_namespace_access`, `openvsx_verified`, `openvsx_publisher`, and
 `openvsx_prerelease` (true when the default `.version` is a pre-release). For
@@ -323,7 +324,7 @@ annotated inline so the maintainer can prioritize:
 |---|---|
 | `semver-major` | leading major differs (`1.84.0` → `2.0.1`); for `0.x` any minor bump qualifies (pre-1.0 minor is breaking) |
 | `semver-minor-multi` | major matches, minor jumped by ≥3 |
-| `patch` | trailing-component change |
+| `patch` | trailing-component (patch-level) change, **or** any same-major minor jump smaller than the `semver-minor-multi` threshold (minor difference < 3, i.e. 1 or 2) — a catch-all, not just a patch-digit-only diff |
 | `distance-unknown` | either version not cleanly semver-splittable, **or** the two versions use different schemes (one is CalVer — leading component ≥ 2000 — the other is not). A scheme mismatch is NEVER escalated as `semver-major` |
 
 **Scheme-mismatch guard (runs first):** before classifying distance, check
