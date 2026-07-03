@@ -74,17 +74,20 @@ check('sanity: fixture-referenced real file does not itself exist on disk (would
 
 const realFileFixture = `See \`${PLUGIN_ROOT_TOKEN}/lib/mdast.mjs\` for the AST helper.`
 const realExtracted = extractPluginLoadPaths(realFileFixture)
-check('extracts a real path', realExtracted.length === 1 && realExtracted[0].relativePath === 'lib/mdast.mjs')
-check('a real, existing path resolves on disk', existsSync(join(ROOT, realExtracted[0].relativePath)))
+const [realPath] = realExtracted
+check('extracts a real path', realExtracted.length === 1 && realPath?.relativePath === 'lib/mdast.mjs')
+check('a real, existing path resolves on disk', realPath != null && existsSync(join(ROOT, realPath.relativePath)))
 
 const danglingFixture = `See \`${PLUGIN_ROOT_TOKEN}/skills/does-not-exist/references/ghost.md\` for details.`
 const danglingExtracted = extractPluginLoadPaths(danglingFixture)
-check('extracts a dangling path', danglingExtracted.length === 1 && danglingExtracted[0].relativePath === 'skills/does-not-exist/references/ghost.md')
-check('a dangling path does NOT resolve on disk (guard actually catches drift)', !existsSync(join(ROOT, danglingExtracted[0].relativePath)))
+const [danglingPath] = danglingExtracted
+check('extracts a dangling path', danglingExtracted.length === 1 && danglingPath?.relativePath === 'skills/does-not-exist/references/ghost.md')
+check('a dangling path does NOT resolve on disk (guard actually catches drift)', danglingPath != null && !existsSync(join(ROOT, danglingPath.relativePath)))
 
 const templateFixture = `See \`${PLUGIN_ROOT_TOKEN}/skills/tool-intel/references/ecosystem-<ecosystem>.md\` for the full template.`
 const templateExtracted = extractPluginLoadPaths(templateFixture)
-check('extracts a template path and flags it isTemplate', templateExtracted.length === 1 && templateExtracted[0].isTemplate === true)
+const [templatePath] = templateExtracted
+check('extracts a template path and flags it isTemplate', templateExtracted.length === 1 && templatePath?.isTemplate === true)
 
 const fencedFixture = '```\nBash: node ' + PLUGIN_ROOT_TOKEN + '/scripts/list-installed-plugins.mjs\n```\n'
 check('a path inside a fenced code block is NOT extracted (mdast skips code nodes)', extractPluginLoadPaths(fencedFixture).length === 0)
@@ -94,7 +97,8 @@ check(`content with no ${PLUGIN_ROOT_TOKEN} mention extracts nothing`, extractPl
 
 const sentenceFixture = `Read \`${PLUGIN_ROOT_TOKEN}/lib/mdast.mjs\`. It handles fences.`
 const sentenceExtracted = extractPluginLoadPaths(sentenceFixture)
-check('backtick-delimited path is unaffected by trailing prose', sentenceExtracted.length === 1 && sentenceExtracted[0].relativePath === 'lib/mdast.mjs')
+const [sentencePath] = sentenceExtracted
+check('backtick-delimited path is unaffected by trailing prose', sentenceExtracted.length === 1 && sentencePath?.relativePath === 'lib/mdast.mjs')
 
 // Unlike the backtick-delimited fixture above, a BARE (non-backticked) mention
 // puts the path and the trailing sentence punctuation in the *same* mdast
@@ -105,7 +109,8 @@ check('backtick-delimited path is unaffected by trailing prose', sentenceExtract
 // follows the closing backtick.
 const bareMentionFixture = `See ${PLUGIN_ROOT_TOKEN}/lib/mdast.mjs. It handles fences.`
 const bareMentionExtracted = extractPluginLoadPaths(bareMentionFixture)
-check('bare (non-backticked) mention strips a trailing sentence period', bareMentionExtracted.length === 1 && bareMentionExtracted[0].relativePath === 'lib/mdast.mjs')
+const [bareMentionPath] = bareMentionExtracted
+check('bare (non-backticked) mention strips a trailing sentence period', bareMentionExtracted.length === 1 && bareMentionPath?.relativePath === 'lib/mdast.mjs')
 
 const multiFixture = `\`${PLUGIN_ROOT_TOKEN}/lib/mdast.mjs\` and \`${PLUGIN_ROOT_TOKEN}/lib/release-counts.mjs\` are both pure.`
 check('extracts multiple distinct paths from one document', extractPluginLoadPaths(multiFixture).length === 2)
