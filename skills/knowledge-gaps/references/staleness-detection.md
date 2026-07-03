@@ -178,6 +178,17 @@ those notes only, so the misparse-shield for version-string packages
 tool cohorts (brew/cask/vscode) or the other five package cohorts is tracked
 separately as bead `vp-claude-xux8`.
 
+**Multiple `[version]` observations on one note (brew/cask/vscode).** These
+three cohorts also accumulate `[feature]` / `[version]` narrative-reel lines
+from `tool-intel`'s upgrade-haul Axis B (a deliberate, intentional second use
+of the same category — resolved 2026-07-03, `vp-claude-jcql`), so a note can
+carry more than one `[version]` line. This is not ambiguous in practice:
+`extractBmVersion()`'s regex takes the **first** match in document order, and
+the note templates emit the canonical slot as the *first* line of
+`## Observations`, with reel entries appended after it — so Pattern 3
+reliably reads the canonical slot, never a reel entry, without any
+additional disambiguation logic.
+
 **Range-pin exclusion filter (not a bucket):** a `[version-range]` observation
 (or any other pattern whose captured raw value still carries a leading range
 operator — `^`, `~`, `>=`, `>`, `<=`, `<`, `=`) records that the note's
@@ -427,6 +438,15 @@ character-exact; the maintainer Section 3b text-searches for them):
 
 #### Drifted, age unknown (Q notes)
 
+`fetch-cask-upstream.sh` carries Tier-2 opportunistic bump-date enrichment
+(mirroring brew's Tier 2) — it matches the leading comma-segment of the
+current version against `Homebrew/homebrew-cask` commit history, so a cask
+row now often resolves `days_stale` and sorts into `Drifted >30d`/`<30d`
+instead. This bucket is no longer "cask always lands here" — it now means
+Tier 2 found no matching bump commit (pre-2023-08 sharding, a pre-fonts-
+migration path, an `old_tokens` rename, or `gh` unavailable/unauthed), which
+still happens routinely for older casks.
+
 | Note | Documented | Upstream | Distance | Refresh command |
 |------|-----------|----------|----------|-----------------|
 | cask-eza | 0.18.0 | 0.20.5 | `[distance-unknown]` | `/tool-intel cask:eza` |
@@ -527,8 +547,8 @@ which succeeded vs failed rather than claiming the whole batch succeeded.
 
 **This batched handoff IS an upgrade haul — it is the *detector* half of a
 bidirectional pair.** When the user accepts, the batch routes into the
-*executor* side: `package-intel`'s **Batch mode: upgrade haul** section and
-`tool-intel`'s **Batch detection: upgrade haul** section, both of which load the
+*executor* side: both `package-intel`'s and `tool-intel`'s **Batch mode:
+upgrade haul** section, each of which loads the
 shared core `skills/package-intel/references/upgrade-haul.md` (input parsing,
 highlights-reel synthesis, the two recording axes, batch orchestration). The
 executor refreshes the same Axis-A `[version]` observation this skill reads via

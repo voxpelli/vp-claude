@@ -68,6 +68,16 @@ if ! jq empty "$API_CACHE" >/dev/null 2>&1; then
 	exit 0
 fi
 
+# Defensive: a syntactically-valid-but-EMPTY array (e.g. a CDN edge serving a
+# truncated/placeholder response, or an outage that still returns `[]` with a
+# 200) passes the `jq empty` check above yet would silently build an empty
+# index — every formula then reads as not-in-api, indistinguishable from a
+# real "not published" verdict. Guard on a non-zero count, not just syntax.
+if [[ "$(jq 'length' "$API_CACHE" 2>/dev/null || echo 0)" -eq 0 ]]; then
+	jq -cn '{name:"", upstream_version:"", homepage:"", deprecated:false, disabled:false, tier:"", days_stale:null, days_stale_source:null, upstream_state:"api-unavailable"}'
+	exit 0
+fi
+
 # One-shot index: name -> {stable, homepage, deprecated, disabled}. Per-name
 # lookups against the index are O(1) instead of O(formulae) — there are ~6000
 # formulae in the API blob, so this matters.

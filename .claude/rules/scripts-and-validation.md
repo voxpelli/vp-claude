@@ -124,6 +124,22 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
   not shadow a fresher `[version]` observation. This is the canonical logic
   that `staleness-detection.md` S2 and `knowledge-gardener.md` Step 5b-ii
   mirror as prose tables.
+- **`check:analytics-guidance` (`check-analytics-guidance.mjs`)** — live +
+  fixture guard against one specific regression class (fixed in v0.31.5,
+  commit 972c70d): the `tool-intel` brew/cask ecosystem references, both note
+  templates, and the `brew_formula`/`brew_cask` schemas once claimed "the
+  formulae.brew.sh JSON API does not expose analytics" and told the skill to
+  omit `[popularity]` whenever the Homebrew MCP was down — but that JSON
+  response already carries an `analytics` block, so the doc contradicted the
+  skill's own (correct) behavior for many releases undetected. `lib/analytics-
+  guidance.mjs` exports the canonical six-file list plus two checks:
+  `detectInvertedAnalyticsClaims` (fails on a reintroduced "does not expose
+  analytics" / "MCP-sourced only" / "no structured fallback" phrasing) and
+  `hasAnalyticsJsonFallbackMention` (a loose "analytics" ↔ "JSON" proximity
+  check, so a rewrite can't silently drop the fallback mention while still
+  avoiding the three banned phrasings). Deliberately narrow — this is not a
+  general doc-matches-behavior framework, only a guard against this one
+  regression class reappearing.
 
 When adding a new "X must agree with Y" invariant, follow this family: a hard
 `error()` for mechanically-unambiguous checks (counts, sizes), a `warn()` for

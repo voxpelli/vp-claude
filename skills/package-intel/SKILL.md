@@ -48,6 +48,68 @@ One argument: the package identifier with an optional ecosystem prefix.
 **Backward compatibility:** No prefix always resolves to npm. Scoped npm packages
 (`@scope/pkg`) are always npm regardless of the `/` in the name.
 
+## Batch mode: upgrade haul
+
+**Detection hook.** If the input is not a single prefixed identifier but a
+**batch** — multiple bare or prefixed package names, OR a pasted upgrade/outdated
+command line — treat it as an *upgrade haul* (a batch refresh of already-documented
+notes against a version delta) rather than a from-scratch research call. Triggers:
+
+- `npm outdated`, `npm update`, `npm -g outdated`, `npm i a@latest b@latest`
+- analogous package-manager upgrade signals from the other five ecosystems:
+  `cargo install-update -l` (crate), `go list -u -m all` (go),
+  `composer outdated` (composer), `pip list --outdated` (pypi),
+  `bundle outdated` (gem)
+- two or more bare identifiers pasted together (`fastify pino`, `crate:serde tokio`)
+
+The single prefixed-identifier path (`/package-intel npm:fastify`, or a bare
+`fastify`) is **unchanged** — it runs Steps 0–7 exactly as above. The hook only
+fires on a batch.
+
+**Load the shared core.** The ecosystem-agnostic mechanics — input parsing /
+de-qualification, highlights-reel synthesis across the version delta, the two
+recording axes, stale-cache arbitration, batch orchestration, and the `--stale`
+relationship — live in
+`${CLAUDE_PLUGIN_ROOT}/skills/package-intel/references/upgrade-haul.md`.
+Read it now and follow it; this section only encodes the package-intel adapter
+contract (input dialect, ecosystem routing, Axis-B target) it delegates back here.
+
+### Adapter contract
+
+This section is the per-skill adapter the shared reference's *Per-skill adapter
+contract* requires. It owns three things; everything else (Axis A, orchestration,
+arbitration) is shared and lives in the reference. Per-item outcomes and the
+batch-close summary follow the shared reference's *Batch-outcome contract* — no
+adapter-specific extension needed.
+
+1. **Input dialect.** Strip the command word and flags per the shared core: drop
+   `npm` / `npm outdated` / `npm update` / `cargo install-update -l` /
+   `go list -u -m all` / `composer outdated` / `pip list --outdated` /
+   `bundle outdated`, leading `-`/`--` flags, and any trailing redirect — the
+   operands are the identifiers. De-qualify each operand (`pkg@latest`,
+   `pkg@^1.2.0` → `pkg`). For an `npm outdated` / `npm -g outdated` table, the
+   first column of each row is the identifier; ignore the wanted/latest columns.
+
+2. **Ecosystem routing.** Resolve each de-qualified operand to a canonical note
+   the way a single call would — via **Step 0: Detect ecosystem**. Honour an
+   explicit per-operand prefix (`crate:serde`); for bare operands, the command
+   line's tool fixes the ecosystem (an `npm outdated` paste is all `npm`,
+   `bundle outdated` all `gem`, etc.), otherwise fall back to the Step-0
+   project-context inference. Scoped npm names (`@scope/pkg`) stay npm. Run the
+   Step-1 existence check per operand, globbing the operand's ecosystem directory
+   (`npm/`, `crates/`, `go/`, `composer/`, `pypi/`, `gems/`).
+
+3. **Axis-B narrative target — `## Release Highlights`.** Write the curated
+   changelog reel for each note's delta into its **`## Release Highlights`**
+   section (the prose target the note templates already define). This is the
+   package-intel-specific recording target the shared core delegates here.
+
+Per-item freshness fast-pathing (Step 1) and the Axis-A version-slot refresh
+(the inline header pipe `GitHub: … | v<version> | <license>`, S2 **Pattern 1**)
+are shared orchestration/Axis-A concerns, not adapter-specific — see the shared
+core's *Batch orchestration* and *Two recording axes* sections; they apply here
+unchanged.
+
 ## Ecosystem Dispatch
 
 ### Step 0: Detect ecosystem
@@ -566,72 +628,3 @@ edit_note(
 As with the cross-link step above, verify each match actually names this
 package before rewriting — a generic bare name (e.g. a common English word)
 can produce false positives.
-
-## Batch mode: upgrade haul
-
-**Detection hook.** If the input is not a single prefixed identifier but a
-**batch** — multiple bare or prefixed package names, OR a pasted upgrade/outdated
-command line — treat it as an *upgrade haul* (a batch refresh of already-documented
-notes against a version delta) rather than a from-scratch research call. Triggers:
-
-- `npm outdated`, `npm update`, `npm -g outdated`, `npm i a@latest b@latest`
-- analogous package-manager upgrade signals from the other five ecosystems:
-  `cargo install-update -l` (crate), `go list -u -m all` (go),
-  `composer outdated` (composer), `pip list --outdated` (pypi),
-  `bundle outdated` (gem)
-- two or more bare identifiers pasted together (`fastify pino`, `crate:serde tokio`)
-
-The single prefixed-identifier path (`/package-intel npm:fastify`, or a bare
-`fastify`) is **unchanged** — it runs Steps 0–7 exactly as above. The hook only
-fires on a batch.
-
-**Load the shared core.** The ecosystem-agnostic mechanics — input parsing /
-de-qualification, highlights-reel synthesis across the version delta, the two
-recording axes, stale-cache arbitration, batch orchestration, and the `--stale`
-relationship — live in
-`${CLAUDE_PLUGIN_ROOT}/skills/package-intel/references/upgrade-haul.md`.
-Read it now and follow it; this section only encodes the package-intel adapter
-contract (input dialect, ecosystem routing, Axis-B target) it delegates back here.
-
-### Adapter contract
-
-Per-item outcomes and the batch-close summary follow the shared reference's
-*Batch-outcome contract* — no adapter-specific extension needed.
-
-1. **Input dialect.** Strip the command word and flags per the shared core: drop
-   `npm` / `npm outdated` / `npm update` / `cargo install-update -l` /
-   `go list -u -m all` / `composer outdated` / `pip list --outdated` /
-   `bundle outdated`, leading `-`/`--` flags, and any trailing redirect — the
-   operands are the identifiers. De-qualify each operand (`pkg@latest`,
-   `pkg@^1.2.0` → `pkg`). For an `npm outdated` / `npm -g outdated` table, the
-   first column of each row is the identifier; ignore the wanted/latest columns.
-
-2. **Ecosystem routing.** Resolve each de-qualified operand to a canonical note
-   the way a single call would — via **Step 0: Detect ecosystem**. Honour an
-   explicit per-operand prefix (`crate:serde`); for bare operands, the command
-   line's tool fixes the ecosystem (an `npm outdated` paste is all `npm`,
-   `bundle outdated` all `gem`, etc.), otherwise fall back to the Step-0
-   project-context inference. Scoped npm names (`@scope/pkg`) stay npm. Run the
-   Step-1 existence check per operand, globbing the operand's ecosystem directory
-   (`npm/`, `crates/`, `go/`, `composer/`, `pypi/`, `gems/`).
-
-3. **Per-item fast path.** Each resolved item runs the **Step 1 freshness
-   fast-path**: a haul is a refresh, so most items are already documented and hit
-   the `<60 days` tier — DeepWiki + Context7 + changelog (Step 3e) + Socket only.
-   The existing note's recorded version is the delta's left endpoint.
-
-4. **Axis-B narrative target — `## Release Highlights`.** Write the curated
-   changelog reel for each note's delta into its **`## Release Highlights`**
-   section (the prose target the note templates already define). This is the
-   package-intel-specific recording target the shared core delegates here.
-
-5. **Axis-A version slot — refresh the inline header pipe (what `--stale` reads
-   first).** For every package cohort the recorded version lives in the header
-   line `GitHub: … | v<version> | <license>` (S2 **Pattern 1**), which outranks
-   the `[version]` observation under first-hit-wins — so refresh the pipe; that
-   is the slot `--stale` re-reads. All six cohorts *additionally* carry a
-   `[version]` observation (Pattern 3; npm since 0.31.4, crate/go/composer/pypi/gem
-   since bead `f3zx`); move it in the **same** edit so the two stay consistent,
-   but never the obs alone — a stale pipe defeats the round-trip. Per the shared
-   core's "refresh BOTH axes" gotcha, move the header pipe **and** the prose
-   reel — they move independently.

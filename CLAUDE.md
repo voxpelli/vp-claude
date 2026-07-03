@@ -46,7 +46,7 @@ hooks/
   hooks.json                         # PreToolUse, PostToolUse, PostToolUseFailure, SessionStart
 schemas/                             # 23 BM note-schema definitions — source of truth (see ## Schemas)
 scripts/                             # CLI-first audit + npm-run-check utilities (see ## Scripts)
-lib/                                 # JS modules imported by check scripts (staleness-contract, version-distance, fourth-wall-rules, release-counts, mdast, installed-plugins, plugin-load-paths, bm-version-extract)
+lib/                                 # JS modules imported by check scripts (staleness-contract, version-distance, fourth-wall-rules, release-counts, mdast, installed-plugins, plugin-load-paths, bm-version-extract, analytics-guidance)
 .claude/rules/                       # Path-scoped dev conventions, load on edit of matching files (see ## Detailed conventions)
 ```
 
@@ -145,7 +145,7 @@ Skills and agents reference tools from multiple MCP servers. When editing, use e
 
 ## Validation
 
-`npm run check` — runs `check:plugin` (validate-plugin.mjs, incl. the CLAUDE.md size guard) + `check:lint` (eslint, `@voxpelli/eslint-config`) + `check:tsc` (`tsc --checkJs --allowJs` against JSDoc types; `tsconfig.json` extends `@voxpelli/tsconfig/node22.json`) + `check:type-coverage` (`type-coverage --at-least 99`) + `check:contract` (staleness drift-bucket contract self-test) + `check:md` (remark) + `check:sh` (shellcheck + shfmt) + `check:hooks` (hook integration tests) + `check:distance` (version-distance classifier self-test) + `check:fourthwall` (fourth-wall rule-registry self-test) + `check:release-counts` (CLAUDE.md/README.md component counts ↔ disk) + `check:mdast` (mdast prose/fenced split self-test) + `check:installed-plugins` (installed-plugin/skill resolver self-test) + `check:plugin-load-paths` (`${CLAUDE_PLUGIN_ROOT}` cross-load paths in skill prose resolve on disk) + `check:bm-version-extract` (S2 version-extractor self-test).
+`npm run check` — runs `check:plugin` (validate-plugin.mjs, incl. the CLAUDE.md size guard) + `check:lint` (eslint, `@voxpelli/eslint-config`) + `check:tsc` (`tsc --checkJs --allowJs` against JSDoc types; `tsconfig.json` extends `@voxpelli/tsconfig/node22.json`) + `check:type-coverage` (`type-coverage --at-least 99`) + `check:contract` (staleness drift-bucket contract self-test) + `check:md` (remark) + `check:sh` (shellcheck + shfmt) + `check:hooks` (hook integration tests) + `check:distance` (version-distance classifier self-test) + `check:fourthwall` (fourth-wall rule-registry self-test) + `check:release-counts` (CLAUDE.md/README.md component counts ↔ disk) + `check:mdast` (mdast prose/fenced split self-test) + `check:installed-plugins` (installed-plugin/skill resolver self-test) + `check:plugin-load-paths` (`${CLAUDE_PLUGIN_ROOT}` cross-load paths in skill prose resolve on disk) + `check:bm-version-extract` (S2 version-extractor self-test) + `check:analytics-guidance` (brew/cask analytics-source doc guidance self-test, guards against the v0.31.5 inverted-claim regression).
 Shell scripts are validated with `shellcheck` (linting) and `shfmt -d`
 (format verification). Requires `brew install shfmt` if not already present.
 
@@ -176,6 +176,7 @@ full drift-guard picture live in `.claude/rules/scripts-and-validation.md`.
 | `check-plugin-load-paths.mjs` | Live + fixture check: every bare `${CLAUDE_PLUGIN_ROOT}/...` cross-load path in `skills/**/*.md` prose (imports `lib/plugin-load-paths.mjs`) resolves on disk — catches a moved/renamed shared reference file that remark-validate-links and validate-plugin.mjs's hook-command resolution both miss | `npm run check:plugin-load-paths` |
 | `check-list-installed-plugins.mjs` | Fixture tests for `lib/installed-plugins.mjs` resolver — every owner/repo source shape (`./`, `./sub`, github, git-subdir, unresolved) + skill grouping-by-source | `npm run check:installed-plugins` |
 | `check-bm-version-extract.mjs` | Fixture tests for the S2 version extractor (imports `lib/bm-version-extract.mjs`) — covers all 6 priority-ordered patterns + the strict table-row label guard, the semver-range-in-prose non-match, and the channel-mismatch regression; this is the canonical logic mirrored as prose in `staleness-detection.md` S2 and `knowledge-gardener.md` Step 5b-ii | `npm run check:bm-version-extract` |
+| `check-analytics-guidance.mjs` | Live + fixture check: the two `tool-intel` brew/cask ecosystem references, both note templates, and the `brew_formula`/`brew_cask` schemas (imports `lib/analytics-guidance.mjs`) never reintroduce the inverted "JSON API does not expose analytics" claim fixed in v0.31.5, and each still mentions the JSON `analytics` fallback | `npm run check:analytics-guidance` |
 
 ### bd CLI quirks
 

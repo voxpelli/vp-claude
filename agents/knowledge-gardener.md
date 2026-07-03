@@ -1016,6 +1016,74 @@ prose (e.g., "saved 20 minutes of setup time"). Report confirmed hits under
 **Warning** with the note title and the full observation text, suggesting
 the date suffix be stripped while leaving the substantive content intact.
 
+### 13. Session-refresh version/maintainer contradiction audit
+
+**Narrow and high-precision by design — this is the one mechanically
+checkable sliver of the "verify-before-capture" convention (documented
+identically in `package-intel`/`tool-intel` SKILL.md), not a general
+contradiction-recall or coverage claim.** That convention says a
+contradiction discovered while refreshing a note should be recorded as a
+`[gotcha]` observation; everything else about verify-before-capture (source-
+authority judgment calls, whether a contradiction was even noticed in the
+first place) stays honor-system and is not auditable. This step catches only
+the one checkable failure mode: a note touched in the last 7 days that
+carries two or more disagreeing single-fact observations with no `[gotcha]`
+explaining the disagreement.
+
+**Scope — session-refreshed notes only:**
+```
+recent_activity(timeframe="7d", output_format="json")
+```
+Same tool as Step 5's staleness sweep, but at the shorter session-scale
+window this plugin already uses elsewhere for "recently touched" notes
+(`knowledge-primer`, `/knowledge-prime`, and `knowledge-gaps`' recency-scoped
+sweep all use `7d`, distinct from Step 5's 90d staleness window). Same
+pagination caveats apply: no `has_more` field — paginate by incrementing
+`page` with an explicit `page_size` until a page returns fewer items than
+`page_size`; the response is a flat top-level `result` array keyed by
+`permalink`; duplicate rows for the same entity have been observed in live
+testing — dedup mentally as you collect the set, do not script the dedup.
+
+Two further guards, mirroring `knowledge-gaps` SKILL.md's Edge Cases entries
+for its own `7d` recency-scoped sweep: if the `recent_activity` call itself
+errors, report "Step 13 sweep unavailable" rather than silently treating the
+failure as "zero notes touched, no contradictions found" — an error and a
+genuinely empty 7-day window are different findings and must not be
+conflated. If a `read_note` call fails mid-sweep for one of the flagged
+notes, name it in the report ("N of M flagged notes could not be read — Step
+13 sweep is partial") and continue with the rest; do not silently report a
+partial result as if it were the full sweep.
+
+**Detection rule.** For each note in the 7-day set:
+```
+read_note(identifier="<permalink>", output_format="json")
+```
+Group its `observations` array by exact `[category]` tag, restricted to
+single-fact categories where two differing values on one note are inherently
+a contradiction rather than a legitimate multi-valued list: `[version]`,
+`[version-range]`, `[maintainer]`. (Deliberately narrow — categories that are
+legitimately repeatable, e.g. `[connection]` or `[gap]`, are out of scope;
+widening this list is a future enhancement, not this step's job.)
+
+For any such category with 2+ observations on the same note:
+1. Extract the substantive value from each observation's text (strip the
+   `[category]` tag; for version-like fields, strip a leading `v`; trim
+   whitespace; compare case-insensitively).
+2. If two or more distinct values remain, this is a candidate contradiction.
+3. Check the same note's `[gotcha]` observations, if any, for one whose text
+   contains both distinct values as substrings — this is the exact shape the
+   verify-before-capture convention itself prescribes (e.g. "registry says
+   v5.8.5 ..., README badge says v5.9.0 ..."). If found, the contradiction
+   is already documented — skip it.
+4. If no such `[gotcha]` exists, flag the note.
+
+**Report** flagged notes under **Warning**, in a
+`#### Session-refresh contradictions (Step 13)` subsection: note title,
+conflicting category, the distinct values found, and a suggestion to add a
+`[gotcha]` observation recording (or resolving) the discrepancy. This step
+never writes — it only surfaces the gap; that is consistent with every other
+step in this agent.
+
 ## Output Format
 
 ````markdown
@@ -1049,6 +1117,13 @@ observation text — never applies fixes itself; the maintainer does.)*
 - [note-title] — `[raindrop]` observation "..." carries the insight itself with no cited artifact; recategorize to `[connection]`
 - [note-title] — `[gap]` observation "Does not yet support X (as of v2.1)" is time-boxed; verify still-current before keeping
 - [note-title] — `[source]` observation "... (saved 2024-05-12)" carries bookmark-date boilerplate; strip the date suffix
+
+#### Session-refresh contradictions (Step 13)
+*(Emitted by Step 13. Narrow, high-precision check on the one mechanically
+verifiable sliver of verify-before-capture — not a general contradiction-
+recall claim. Read-only; never writes a `[gotcha]` itself, only flags the
+gap.)*
+- [note-title] — `[version]` conflict: "5.8.5" vs "5.9.0" (touched within 7d), no `[gotcha]` explaining the discrepancy
 
 #### Silent drift (unmatched categories / verbs by type)
 *(Emitted by Step 2. Lists `unmatched_observations` and `unmatched_relations`

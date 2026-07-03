@@ -45,14 +45,11 @@ Classify the request first:
 - Brew-note refresh batches, graph-wide orphan linking, or any sweep across a
   whole ecosystem/type.
 
-To delegate, launch the write agent and stop:
-
-```
-Agent(subagent_type="knowledge-maintainer",
-      description="Graph remediation from audit",
-      prompt="<the user's original request, verbatim; include the gardener
-              report if one is in context>")
-```
+To delegate, launch the write agent and stop: call
+`Agent(subagent_type="knowledge-maintainer", description="Graph remediation from audit", prompt="<the user's original request, verbatim; include the gardener report if one is in context>")`
+— i.e. pass a `description` of "Graph remediation from audit" and a `prompt`
+that is the user's original request verbatim, including the gardener report
+if one is already in context.
 
 **If the `Agent` call fails or returns no usable report** (unknown subagent type,
 error payload, or empty output — the `knowledge-maintainer` agent may not be

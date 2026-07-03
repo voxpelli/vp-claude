@@ -49,13 +49,10 @@ This is the first and most important step. Classify the request:
   cross-project scope leak, orphan detection across the entire graph, tag
   alignment.
 
-To delegate, launch the read-only auditor and stop:
-
-```
-Agent(subagent_type="knowledge-gardener",
-      description="Full graph health audit",
-      prompt="<the user's original request, verbatim>")
-```
+To delegate, launch the read-only auditor and stop: call
+`Agent(subagent_type="knowledge-gardener", description="Full graph health audit", prompt="<the user's original request, verbatim>")`
+— i.e. pass a `description` summarizing the audit as "Full graph health
+audit" and a `prompt` that is the user's original request, verbatim.
 
 Relay the agent's report. Do **not** also run the inline path. **If the `Agent`
 call fails or returns no usable report** (unknown subagent type, error payload,

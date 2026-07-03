@@ -52,7 +52,7 @@ One argument: the tool identifier with a required ecosystem prefix.
 - `gh:` — strip `https://github.com/` if pasted, strip `@<tag>` suffix, require `owner/repo` form (e.g., `gh:meiji163/gh-notify`); error if no `/` is present
 - `plugin:` / `skill:` — strip `https://github.com/` if pasted; require `owner/repo`; an optional `#<name>` suffix selects one plugin/skill from a multi-artifact repo (a marketplace holding several plugins, or a multi-skill bundle); error if no `/` is present. Build the title **literally** from the identifier you were given — do NOT drop a `#<name>` suffix even when it repeats the repo's last path segment. Whether that suffix is redundant depends on the install's source branch (a single-plugin self-hosted marketplace vs. a multi-plugin repo), which only the `/knowledge-gaps --global` resolver (`lib/installed-plugins.mjs`) can determine — and its offer already hands you the canonical, de-duplicated identifier verbatim. On a rare manual paste of a redundant suffix, Step 1's existence check (glob on the leaf `#`/`/`-segment) finds the canonical note so you update it instead of forking a duplicate.
 
-## Batch detection: upgrade haul
+## Batch mode: upgrade haul
 
 **Before single-identifier dispatch**, check whether the input is a *batch
 refresh* rather than one research call. Trigger the upgrade-haul flow when the
@@ -207,14 +207,15 @@ convention:
 - **Axis B — the inline changelog reel.** Add the curated `[feature]` /
   `[version]` observations for the delta (the tool-intel narrative style). This
   reel's `[version]` lines accumulate as delta narrative (one per surfaced
-  change, potentially several over successive hauls) — a **different use of
-  the same category** than Axis A's single canonical current-version slot
-  above. This overlap predates bead `80r4` and is **not resolved by it**:
-  whether the reel's use of `[version]` is a legitimate second use of the
-  category or should migrate to a different tag (to keep `[version]` strictly
-  canonical-single) is an open question, not settled here — do not delete reel
-  entries when reconciling a note that has both; see `vp-claude-jcql` (filed to
-  reconcile Axis-B's `[version]` usage) before treating this as resolved.
+  change, potentially several over successive hauls) — a **different, and
+  equally intentional, use of the same category** than Axis A's single
+  canonical current-version slot above. This overlap predates bead `80r4` and
+  is a deliberate design decision (resolved 2026-07-03, `vp-claude-jcql`), not
+  an open question: both uses of `[version]` stay — the canonical slot as the
+  single machine-stable current value (Pattern 3, what `--stale` reads),
+  the narrative reel as accumulating delta history. Do not delete reel entries
+  when reconciling a note that has both; they serve different purposes and
+  neither supersedes the other.
 
 Both axes are independent: refreshing the inline reel alone leaves the **header
 pipe stale**, and the pipe is exactly what `--stale` re-reads — so the drift

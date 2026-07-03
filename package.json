@@ -4,6 +4,7 @@
   "description": "vp-knowledge Claude Code plugin: Basic Memory knowledge-graph skills, agents, and hooks for package/tool/person research and graph maintenance, plus the .mjs validation tooling that powers npm run check.",
   "scripts": {
     "check": "run-p check:*",
+    "check:analytics-guidance": "node scripts/check-analytics-guidance.mjs",
     "check:bm-version-extract": "node scripts/check-bm-version-extract.mjs",
     "check:contract": "node scripts/check-staleness-contract.mjs",
     "check:distance": "node scripts/check-version-distance.mjs",

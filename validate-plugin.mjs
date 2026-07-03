@@ -7,7 +7,7 @@ import remarkFrontmatter from 'remark-frontmatter'
 import remarkParse from 'remark-parse'
 import { unified } from 'unified'
 
-import { collectScannableText } from './lib/mdast.mjs'
+import { collectScannableText, findUnclosedFence } from './lib/mdast.mjs'
 import { checkStalenessConsume, checkStalenessEmit } from './lib/staleness-contract.mjs'
 
 const ROOT = new URL('.', import.meta.url).pathname.replace(/\/$/, '')
@@ -152,10 +152,6 @@ const KNOWN_BUILTIN_TOOLS = new Set([
   'TaskCreate', 'TaskGet', 'TaskList', 'TaskOutput',
 ])
 
-// Smoke-test pattern for the unclosed-fence vacuous-pass guard below — mirrors
-// the mcp__ token test but for bare built-in tool names.
-const BARE_BUILTIN_TOOL_PATTERN = new RegExp('`(?:' + [...KNOWN_BUILTIN_TOOLS].join('|') + ')[`(]')
-
 // A tool named in prose to explain why a skill deliberately does NOT use it
 // (a design-decision mention), not to invoke it. This is grammatically
 // indistinguishable from a genuine use by any local rule — e.g. nudge-sync's
@@ -257,22 +253,24 @@ function auditToolReferences (file, content, declaredTools, fieldName) {
   // fence-masking leaked — tilde fences and 4-backtick-nested fences.
   const toolSet = new Set(declaredTools)
   const seen = new Set()
-  const segments = collectScannableText(content)
-  // Guard against a silent vacuous pass: an unclosed fence makes remark absorb the
-  // rest of the file into one opaque `code` node, so collectScannableText returns []
-  // even for a file full of tool refs (and remark --frail does NOT flag unclosed
-  // fences). If the AST saw nothing but the raw bytes carry a tool token, fail loudly.
-  // Test the frontmatter-STRIPPED body: a frontmatter-only mcp__ reference (in the
-  // `allowed-tools` list) plus an all-fenced/empty body must not false-fire here.
-  // NOTE: this only catches a fence opening BEFORE all prose (segments===0); the
-  // realistic prose-then-unclosed-fence case needs a structural fence-balance check
-  // (beaded) — a per-token "raw must be in segments" cross-check is infeasible
-  // because legitimate CLOSED fenced examples are also raw-but-not-collected.
+  // Guard against a silent vacuous pass BEFORE trusting collectScannableText:
+  // an unclosed fence makes remark absorb the rest of the file into one
+  // opaque `code` node (CommonMark auto-closes at EOF — not a parse error),
+  // so collectScannableText would quietly return too little and any tool
+  // tokens swallowed past the unclosed fence go unchecked. Structural, not
+  // AST-based (see findUnclosedFence's doc comment in lib/mdast.mjs) — this
+  // supersedes the old segments===0 heuristic, which only caught a fence
+  // opening BEFORE all prose; this also catches the realistic
+  // prose-then-unclosed-fence case the old guard passed vacuously. Test the
+  // frontmatter-STRIPPED body: frontmatter is delimited by `---`, never
+  // backtick/tilde runs, so stripping it is just noise reduction here.
   const body = content.replace(/^---\n[\s\S]*?\n---\n?/, '')
-  if (segments.length === 0 && (/mcp__[\w-]+__[\w-]+/.test(body) || BARE_BUILTIN_TOOL_PATTERN.test(body))) {
-    error(file, `${fieldName}: no scannable prose but the body has mcp__ or built-in-tool tokens — likely an unclosed code fence; fix the markdown`)
+  const unclosedFence = findUnclosedFence(body)
+  if (unclosedFence) {
+    error(file, `${fieldName}: unclosed code fence starting at line ${unclosedFence.line} ("${unclosedFence.marker}") — content after it may be silently unscanned for tool references; fix the markdown`)
     return
   }
+  const segments = collectScannableText(content)
   for (const text of segments) {
     for (const match of text.matchAll(/mcp__[\w-]+__[\w-]+/g)) {
       const tool = match[0]
@@ -296,6 +294,62 @@ function auditToolReferences (file, content, declaredTools, fieldName) {
   for (const tool of findUndeclaredBuiltinTools(content, declaredTools)) {
     if (BUILTIN_MENTION_EXCEPTIONS.has(`${relFile}:${tool}`)) continue
     warn(file, `Built-in tool "${tool}" referenced in prose but missing from ${fieldName} — verify this is a real reference, not just a documentation mention`)
+  }
+}
+
+/**
+ * Extract `subagent_type="X"` references from scannable text only — prose +
+ * inline-code spans, via `collectScannableText` (fenced code blocks and
+ * frontmatter excluded). Matches the house convention already used for the
+ * mcp__ tool audit and the bare-built-in-tool audit above: a fenced code
+ * block is treated as an illustrative example, not a real call-site, so a
+ * future skill can show hypothetical `subagent_type` syntax in a fenced
+ * snippet without tripping the phantom-subagent check below. KNOWN TRADEOFF:
+ * this repo's two current real "how to delegate" call-sites
+ * (knowledge-garden, knowledge-maintain SKILL.md) are themselves written as
+ * unlabeled fenced blocks, so — like any fenced content — they are no longer
+ * scanned by this specific check; a typo'd subagent_type inside one of those
+ * blocks would no longer be caught here. Pure — no file I/O — so it is
+ * directly unit-testable (see the self-test below).
+ *
+ * @param {string} content
+ * @returns {string[]} unique referenced agent names, first-seen order
+ */
+function extractSubagentTypeRefs (content) {
+  const seen = new Set()
+  /** @type {string[]} */
+  const found = []
+  const scannableText = collectScannableText(content).join('\n')
+  for (const match of scannableText.matchAll(/subagent_type\s*=\s*["']([\w-]+)["']/g)) {
+    const agentName = match[1]
+    if (agentName !== undefined && !seen.has(agentName)) {
+      seen.add(agentName)
+      found.push(agentName)
+    }
+  }
+  return found
+}
+
+// Self-test: extractSubagentTypeRefs must ignore a fenced example and still
+// find a prose/inline-code reference — the split bd vp-claude-o6dk closes.
+// Synthetic fixtures only, mirroring the self-test convention above.
+{
+  const fencedFixture = [
+    'Some prose before.',
+    '',
+    '```',
+    'Agent(subagent_type="totally-hypothetical-agent")',
+    '```',
+  ].join('\n')
+  const fencedFound = extractSubagentTypeRefs(fencedFixture)
+  if (fencedFound.includes('totally-hypothetical-agent')) {
+    error(join(ROOT, '<self-test>'), 'extractSubagentTypeRefs self-test failed: a fenced example was incorrectly counted as a real subagent_type reference')
+  }
+
+  const proseFixture = 'Delegate with subagent_type="knowledge-gardener" inline.'
+  const proseFound = extractSubagentTypeRefs(proseFixture)
+  if (!proseFound.includes('knowledge-gardener')) {
+    error(join(ROOT, '<self-test>'), 'extractSubagentTypeRefs self-test failed: a real prose subagent_type reference was not detected')
   }
 }
 
@@ -366,6 +420,83 @@ function auditToolReferences (file, content, declaredTools, fieldName) {
 
   for (const message of failures) {
     error(join(ROOT, '<self-test>'), `auditToolReferences self-test failed: ${message}`)
+  }
+}
+
+// Self-test: findUnclosedFence must detect a fence left open AFTER prose (the
+// realistic case the old segments===0 heuristic passed vacuously — see
+// bd vp-claude-zcam) and must round-trip balanced 4-backtick-outer /
+// 3-backtick-inner nesting and a balanced tilde fence without a false
+// positive. Synthetic fixtures only, mirroring the self-test convention above.
+{
+  const proseThenUnclosed = [
+    'Some prose before the fence.',
+    '',
+    '```',
+    'mcp__basic-memory__search_notes(query="x")',
+  ].join('\n')
+  if (!findUnclosedFence(proseThenUnclosed)) {
+    error(join(ROOT, '<self-test>'), 'findUnclosedFence self-test failed: did not detect a fence left open after prose (the prose-then-unclosed-fence case)')
+  }
+
+  const nestedClosed = [
+    '````markdown',
+    '```',
+    'mcp__raindrop__find_bookmarks(collection_ids=[-1])',
+    '```',
+    '````',
+  ].join('\n')
+  if (findUnclosedFence(nestedClosed)) {
+    error(join(ROOT, '<self-test>'), 'findUnclosedFence self-test failed: false positive on balanced 4-backtick-outer/3-backtick-inner nesting')
+  }
+
+  const tildeClosed = ['~~~', 'content', '~~~'].join('\n')
+  if (findUnclosedFence(tildeClosed)) {
+    error(join(ROOT, '<self-test>'), 'findUnclosedFence self-test failed: false positive on a balanced tilde fence')
+  }
+}
+
+// Self-test: auditToolReferences must route an unclosed fence to error() (not
+// silently pass) and must NOT false-positive on the real note-template
+// nesting shape even when it wraps an mcp__ token — the exact real-corpus
+// shape raindrop-triage/SKILL.md uses. Unwinds afterward like the self-tests
+// above.
+{
+  const selfTestFile = join(ROOT, '<self-test-fence-balance>')
+  const warningsSnapshot = warnings.length
+  const errorsSnapshot = errors.length
+  /** @type {string[]} */
+  const failures = []
+
+  const unclosedContent = [
+    'Prose that mentions `mcp__basic-memory__search_notes` first.',
+    '',
+    '```',
+    'unclosed fence content',
+  ].join('\n')
+  auditToolReferences(selfTestFile, unclosedContent, ['mcp__basic-memory__search_notes'], 'allowed-tools')
+  if (errors.length !== errorsSnapshot + 1) {
+    failures.push('an unclosed fence after prose did not produce exactly one error')
+  }
+  errors.length = errorsSnapshot
+  warnings.length = warningsSnapshot
+
+  const nestedClosedContent = [
+    '````markdown',
+    '```',
+    'mcp__basic-memory__search_notes(query="x")',
+    '```',
+    '````',
+  ].join('\n')
+  auditToolReferences(selfTestFile, nestedClosedContent, [], 'allowed-tools')
+  if (errors.length !== errorsSnapshot) {
+    failures.push('a balanced 4-backtick/3-backtick nested fence was incorrectly flagged as unclosed')
+  }
+  errors.length = errorsSnapshot
+  warnings.length = warningsSnapshot
+
+  for (const message of failures) {
+    error(join(ROOT, '<self-test>'), `auditToolReferences fence-balance self-test failed: ${message}`)
   }
 }
 
@@ -556,9 +687,10 @@ for (const file of skillFiles) {
   // Validate Agent(subagent_type="X") references resolve to an actual agent file.
   // Skills that delegate to a subagent (e.g. /knowledge-garden) silently no-op
   // at runtime if the agent name is a typo or was renamed — mirror the agent→skill
-  // phantom-reference check for the skill→agent direction.
-  for (const match of content.matchAll(/subagent_type\s*=\s*["']([\w-]+)["']/g)) {
-    const agentName = match[1]
+  // phantom-reference check for the skill→agent direction. Scanned via
+  // extractSubagentTypeRefs (scannable text only — see its doc comment for the
+  // fenced-example tradeoff this implies).
+  for (const agentName of extractSubagentTypeRefs(content)) {
     if (!existsSync(join(ROOT, 'agents', `${agentName}.md`))) {
       error(file, `Phantom subagent reference: "${agentName}" — no file at agents/${agentName}.md`)
     }
