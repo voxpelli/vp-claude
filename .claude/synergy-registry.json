@@ -12,19 +12,5 @@
     "remote": "https://github.com/voxpelli/claude-git",
     "bm-entity": "engineering/agents/vp-plugins-vp-git-and-vp-knowledge",
     "relationship": "sibling-plugin"
-  },
-  {
-    "name": "md-wiki-vec",
-    "file": "SYNERGY-md-wiki-vec.md",
-    "remote": "https://github.com/voxpelli/my-basic-memory",
-    "bm-entity": "",
-    "relationship": "shared-tooling"
-  },
-  {
-    "name": "liggare-mcp",
-    "file": "SYNERGY-liggare-mcp.md",
-    "remote": "https://github.com/voxpelli/liggare-mcp",
-    "bm-entity": "",
-    "relationship": "shared-tooling"
   }
 ]
