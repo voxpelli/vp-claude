@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.1][] - 2026-07-03
+
+### Changed
+
+- **The fourth-wall detector registry now has a runtime consumer.**
+  `lib/fourth-wall-rules.mjs` previously ran only inside the CI fixture test
+  (`check:fourthwall`) — the knowledge-gardener agent is markdown and can't
+  import it, so the deterministic `detect` patterns never touched a real
+  write. The PostToolUse write hook now runs a new `hooks/fourth-wall-check.mjs`
+  entrypoint against every `write_note`/`edit_note` call and folds any hits
+  into the existing `additionalContext` JSON object (never a second object;
+  schema-permalink notes stay exempt). Always degrades to zero violations on
+  empty/malformed input and never blocks a write.
+
+### Added
+
+- **`check:release-counts` now also gates README.md's hooks-count sentence
+  and a previously-unwired `<!-- schema-count: N -->` comment in CLAUDE.md**,
+  beyond its original CLAUDE.md-only Skills/Agents/Hooks headings check.
+- **Canonical `[version]` observation slot extended to the 5 remaining
+  package cohorts** — crate, go, composer, pypi, gem now carry the same
+  machine-stable version slot npm gained in 0.31.4 (schema field,
+  note-template seed line, `/package-intel` Step 4 emit rule). Existing
+  notes are not bulk-backfilled — they acquire the slot organically on next
+  refresh, matching the doctrine already adopted for the tool-cohort
+  equivalent (`80r4`).
+- **`/knowledge-gaps --stale` now reads the `[version]` observation ahead of
+  the inline header pipe for npm notes specifically** — the misparse-shield
+  for version-string packages (`yaml`, `semver`) originally promised in
+  0.31.4 now actually fires. Scoped to npm only; every other cohort
+  (including the 5 package cohorts above) still reads the header pipe first.
+- **Honest-uncertainty conventions extended in package/tool/people-intel**:
+  a single-source claim now gets hedged even absent contradiction, and a
+  genuinely unresolved contradiction (neither source clearly more
+  authoritative) is recorded as still-open within the existing
+  `[gotcha]`/`[controversy]` categories rather than forced to pick a side.
+
+### Fixed
+
+- **`js-yaml` bumped to 4.3.0**, clearing a moderate Dependabot alert
+  (GHSA-h67p-54hq-rp68, quadratic-complexity DoS in merge-key alias
+  expansion) — dev-only dependency, never reachable at plugin runtime.
+  `npm-run-all2` also bumped 7→9.
+- **Two schema files had never been byte-audited against their Basic Memory
+  counterparts** (`claude_plugin`, `git_builtin` — both added after the last
+  audit): fixed whitespace-wrap drift in the `schema:` picoschema block,
+  the same class of drift the prior audit fixed elsewhere. Purely
+  cosmetic — verified via direct YAML parse that every folded value is
+  byte-for-byte unchanged.
+
+### Docs
+
+- **4 agent frontmatter descriptions migrated off escaped `<example>` XML to
+  prose triggers** (`knowledge-gardener`, `knowledge-maintainer`,
+  `knowledge-primer`, `raindrop-gardener`), matching the convention already
+  used by sibling-plugin agents. Read-only-vs-write-capable routing
+  contrast preserved and made explicit in each rewritten description.
+
 ## [0.32.0][] - 2026-07-02
 
 ### Changed
@@ -1893,6 +1951,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.32.1]: https://github.com/voxpelli/vp-claude/compare/v0.32.0...v0.32.1
 [0.32.0]: https://github.com/voxpelli/vp-claude/compare/v0.31.12...v0.32.0
 [0.31.12]: https://github.com/voxpelli/vp-claude/compare/v0.31.11...v0.31.12
 [0.31.11]: https://github.com/voxpelli/vp-claude/compare/v0.31.10...v0.31.11
