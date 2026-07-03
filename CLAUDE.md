@@ -145,7 +145,7 @@ Skills and agents reference tools from multiple MCP servers. When editing, use e
 
 ## Validation
 
-`npm run check` — runs `check:plugin` (validate-plugin.mjs, incl. the CLAUDE.md size guard) + `check:contract` (staleness drift-bucket contract self-test) + `check:md` (remark) + `check:sh` (shellcheck + shfmt) + `check:hooks` (hook integration tests) + `check:distance` (version-distance classifier self-test) + `check:fourthwall` (fourth-wall rule-registry self-test) + `check:release-counts` (CLAUDE.md/README.md component counts ↔ disk) + `check:mdast` (mdast prose/fenced split self-test) + `check:installed-plugins` (installed-plugin/skill resolver self-test) + `check:plugin-load-paths` (`${CLAUDE_PLUGIN_ROOT}` cross-load paths in skill prose resolve on disk) + `check:bm-version-extract` (S2 version-extractor self-test).
+`npm run check` — runs `check:plugin` (validate-plugin.mjs, incl. the CLAUDE.md size guard) + `check:lint` (eslint, `@voxpelli/eslint-config`) + `check:tsc` (`tsc --checkJs --allowJs` against JSDoc types; `tsconfig.json` extends `@voxpelli/tsconfig/node22.json`) + `check:type-coverage` (`type-coverage --at-least 99`) + `check:contract` (staleness drift-bucket contract self-test) + `check:md` (remark) + `check:sh` (shellcheck + shfmt) + `check:hooks` (hook integration tests) + `check:distance` (version-distance classifier self-test) + `check:fourthwall` (fourth-wall rule-registry self-test) + `check:release-counts` (CLAUDE.md/README.md component counts ↔ disk) + `check:mdast` (mdast prose/fenced split self-test) + `check:installed-plugins` (installed-plugin/skill resolver self-test) + `check:plugin-load-paths` (`${CLAUDE_PLUGIN_ROOT}` cross-load paths in skill prose resolve on disk) + `check:bm-version-extract` (S2 version-extractor self-test).
 Shell scripts are validated with `shellcheck` (linting) and `shfmt -d`
 (format verification). Requires `brew install shfmt` if not already present.
 
@@ -308,6 +308,15 @@ via the `vp-plugins` marketplace at `voxpelli/vp-claude`.
   three agents have disjoint scopes so they run concurrently in a single
   message with no coordination cost. Extension candidate for the
   /session-reflect skill itself.
+- A gate reviewer that mutates a file as part of its own self-test (e.g.
+  `pr-test-analyzer` sabotaging-then-restoring a function to prove a
+  detector fires) can produce a misleading "external session is editing
+  this file" signal if a concurrently-running *reading* reviewer observes
+  the file mid-mutation. Verified 2026-07-03: `type-design-analyzer`
+  witnessed `pr-test-analyzer`'s transient sabotage of
+  `findUndeclaredBuiltinTools` and reasonably (but wrongly) inferred an
+  unrelated concurrent process. Isolate mutating self-test reviewers from
+  concurrent readers in a multi-reviewer gate, or run them sequentially.
 
 ### Relationship to upstream memory-* skills
 
