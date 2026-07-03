@@ -146,6 +146,35 @@ When adding a new "X must agree with Y" invariant, follow this family: a hard
 heuristics. Anchor on a uniquely-greppable marker, never a count that recurs
 across prose sentences (the use/mention footgun).
 
+### warn()-level findings surface as GitHub annotations
+
+`warn()` findings (5 call sites as of this writing: the bare-built-in-tool
+check inside `auditToolReferences()`, unknown hook events, `type: "prompt"`
+hooks, unknown skill frontmatter fields, description-length) never fail CI —
+`process.exit(1)` only fires on `errors.length > 0`. That is deliberate (see
+above), but a finding that can never fail CI still needs *some* CI-visible
+surface or it just accumulates in scrollback forever with nothing forcing
+triage. The report block at the end of `validate-plugin.mjs`, gated on
+`process.env.GITHUB_ACTIONS`, additionally emits each warning as a GitHub
+Actions `::warning file=<path>::<message>` workflow command (both the `file=`
+property and the message are escaped per GitHub's documented workflow-command
+rules via `escapeWorkflowCommandValue()`). The Actions runner parses that
+format straight off stdout into a PR-visible check annotation — no
+`.github/workflows/ci.yml` change was needed, since nothing in that workflow
+redirects or filters the `npm run check` step's stdout (worth re-checking if
+that step is ever piped through a formatter). Non-CI runs are unaffected: the
+existing plain `⚠`-prefixed `console.warn` output always runs first,
+unconditionally — the GitHub-annotation block is strictly additive, not a
+replacement. No `warn()` call site tracks a line number today, so every
+annotation currently uses the file-only form; a future call site that does
+track one should add `,line=<N>` to the same workflow-command string rather
+than inventing an unrelated mechanism. Net effect: any new `warn()` call
+automatically gets CI visibility for free — there is nothing to remember or
+wire up per call site beyond the `(file, message)` pair `warn()` already
+takes. This behavior can only be verified on a real GitHub Actions run — the
+annotation is an Actions-runner side effect on stdout, invisible to
+`npm run check` locally.
+
 ## bm CLI quirks
 
 Scripts using the `bm` CLI must work around three asymmetries:

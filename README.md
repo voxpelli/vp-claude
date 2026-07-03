@@ -40,7 +40,7 @@ Plus changelog analysis via GitHub releases — with a git-tag fallback when the
 
 ### `/tool-intel <prefix>:<name>` — Research any dev tool
 
-Queries five sources in parallel, synthesizes a structured note, and cross-links existing notes. Supports eight tool categories:
+Queries six sources in parallel, synthesizes a structured note, and cross-links existing notes. Supports eight tool categories:
 
 | Form | Category | Example |
 |------|----------|---------|
@@ -71,6 +71,7 @@ Queries five sources in parallel, synthesizes a structured note, and cross-links
 | Tavily | Security advisories, CVEs, supply-chain risks, gotchas |
 | Raindrop | Your bookmarked articles (with full content extraction) |
 | Readwise | Your highlights and saved articles about the tool |
+| Local man page | Flag/option exhaustiveness for `brew:`/`cask:` — `man -P cat -- "<name>" \| col -bx \| head -300`; per-lookup skip when a formula ships no man page, or the whole source skips for the session if the `man`/`col` toolchain itself is missing (checked once, not per-lookup) |
 | Homebrew MCP (optional) | Install analytics (30/90/365-day counts + build errors) for `brew:` and `cask:` — skipped silently when unavailable |
 
 Plus version/changelog data (GitHub releases for actions, Docker Hub tags for images, API versions for brew/vscode) — with a git-tag fallback for `action:`/`gh:`/`brew:` when the release list lags the newest git tag. For `vscode:`, it also records an **Open VSX trust signal** — a `[security]` observation placing the extension on a 4-state ladder (verified-restricted / public-namespace / **marketplace-only = squattable** / not-published-anywhere); a Marketplace-only extension has an unclaimed Open VSX namespace that fork-IDEs (Cursor, Windsurf, VSCodium) resolve installs against, a known supply-chain exposure. Third-party Homebrew taps (`brew:<owner>/<tap>/<name>`) get a dedicated fetch path — Ruby-DSL formula parsing, an upstream-repo DeepWiki pivot, a license cross-check against the upstream repo's own LICENSE, and a `.github/workflows` SLSA/SHA-256 hygiene audit — instead of misrouting to the core registry. After writing, searches for existing notes that reference the tool and adds bidirectional cross-links. The result is a prefixed note (`brew-*`, `action-*`, etc.) with type-specific sections — `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for Docker, `## Common Usage` for formulae — plus observations and relations.
@@ -373,7 +374,7 @@ npx skills add basicmachines-co/basic-memory-skills
 
 ### Required for enrichment pipelines
 
-The `/package-intel` seven-source pipeline and `/tool-intel` five-source pipeline need these additional MCP servers and plugins. Context7 and Socket are used by `/package-intel` only; DeepWiki and Tavily are used by both; Readwise is used by both plus `/knowledge-gaps`.
+The `/package-intel` seven-source pipeline and `/tool-intel` six-source pipeline need these additional MCP servers and plugins. Context7 and Socket are used by `/package-intel` only; DeepWiki and Tavily are used by both; Readwise is used by both plus `/knowledge-gaps`.
 
 **[DeepWiki](https://docs.devin.ai/work-with-devin/deepwiki-mcp)** — repository documentation and architecture questions:
 
@@ -443,7 +444,7 @@ skills/
     references/gh-api-fallback.md      GitHub API fallback for unindexed/wrong-repo cases
     references/upgrade-haul.md         Shared batch-refresh core (both intel skills)
   tool-intel/
-    SKILL.md                           Five-source research workflow
+    SKILL.md                           Six-source research workflow
     references/ecosystem-brew.md       formulae.brew.sh API
     references/ecosystem-cask.md       formulae.brew.sh/cask API
     references/ecosystem-action.md     action.yml extraction + permissions

@@ -18,7 +18,7 @@ const ROOT = new URL('.', import.meta.url).pathname.replace(/\/$/, '')
 
 /** @type {string[]} */
 const errors = []
-/** @type {string[]} */
+/** @type {{ file: string, message: string }[]} */
 const warnings = []
 
 /**
@@ -34,7 +34,27 @@ function error (file, message) {
  * @param {string} message
  */
 function warn (file, message) {
-  warnings.push(`${relative(ROOT, file)}: ${message}`)
+  warnings.push({ file: relative(ROOT, file), message })
+}
+
+/**
+ * Escape a value for GitHub Actions workflow-command syntax (the `::warning
+ * file=...,line=...::message` format the runner parses off stdout into a
+ * PR-visible annotation). Per GitHub's documented escaping rules: `%`, CR,
+ * and LF must always be escaped; `:` and `,` must additionally be escaped
+ * inside property values (e.g. `file=`), never inside the message itself.
+ * https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
+ *
+ * @param {string} value
+ * @param {boolean} isProperty
+ * @returns {string}
+ */
+function escapeWorkflowCommandValue (value, isProperty) {
+  let escaped = value.replaceAll('%', '%25').replaceAll('\r', '%0D').replaceAll('\n', '%0A')
+  if (isProperty) {
+    escaped = escaped.replaceAll(':', '%3A').replaceAll(',', '%2C')
+  }
+  return escaped
 }
 
 /**
@@ -1059,10 +1079,24 @@ if (existsSync(claudeMdPath)) {
 
 if (warnings.length > 0) {
   console.warn('Plugin validation warnings:\n')
-  for (const w of warnings) {
-    console.warn(`  ⚠ ${w}`)
+  for (const { file, message } of warnings) {
+    console.warn(`  ⚠ ${file}: ${message}`)
   }
   console.warn('')
+
+  // Additive CI-visible surface: under GitHub Actions, also emit the
+  // standard `::warning::` workflow-command annotation for each warning —
+  // the runner parses this straight off stdout into a PR-visible check
+  // annotation, no workflow-file change needed. Plain-console output above
+  // is unchanged and still runs unconditionally (local/non-CI runs never
+  // see this block). No line number is tracked at any warn() call site, so
+  // every annotation uses the file-only form; add `,line=<N>` once a call
+  // site starts tracking one. See scripts-and-validation.md.
+  if (process.env.GITHUB_ACTIONS) {
+    for (const { file, message } of warnings) {
+      console.warn(`::warning file=${escapeWorkflowCommandValue(file, true)}::${escapeWorkflowCommandValue(message, false)}`)
+    }
+  }
 }
 
 if (errors.length > 0) {

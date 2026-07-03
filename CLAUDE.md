@@ -17,7 +17,7 @@ A Claude Code plugin (`vp-knowledge`) containing user-owned skills, agents, and 
 skills/
   package-intel/SKILL.md             # Seven-source multi-ecosystem package research
     references/                      # 15 files: 6 ecosystem + 6 note templates + gh-api-fallback + forge-fallback + upgrade-haul (shared, also loaded by tool-intel)
-  tool-intel/SKILL.md                # Five-source dev-tool research (brew/cask/action/docker/vscode/gh)
+  tool-intel/SKILL.md                # Six-source dev-tool research (brew/cask/action/docker/vscode/gh)
     references/                      # 16 files: 8 ecosystem + 7 note templates + gh-api-fallback
   knowledge-gaps/SKILL.md            # Cross-reference deps + tool manifests vs BM coverage; --stale for version drift (brew/npm/cask/crate/vscode); --global for installed plugin/skill coverage
     references/                      # 4 files: standard-detection, concept-detection, staleness-detection, report-templates
@@ -61,7 +61,7 @@ component type — see [Detailed conventions](#detailed-conventions).
 ### Skills (16)
 
 - **package-intel** — seven-source package research (npm/crate/go/composer/pypi/gem) → BM note. `/package-intel <pkg>`
-- **tool-intel** — five-source dev-tool research (brew/cask/action/docker/vscode/gh/plugin/skill) → BM note. `/tool-intel <prefix>:<name>`
+- **tool-intel** — six-source dev-tool research (brew/cask/action/docker/vscode/gh/plugin/skill) → BM note. `/tool-intel <prefix>:<name>`
 - **knowledge-gaps** — dep + tool-manifest coverage audit; `--stale [brew|npm|cask|crate|vscode]` for version drift; `--global` for installed plugin/skill coverage. `/knowledge-gaps`
 - **knowledge-prime** — on-demand project context brief from BM. `/knowledge-prime`
 - **schema-evolve** — schema-drift detection + dual-sync. `/schema-evolve <type>`
