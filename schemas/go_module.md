@@ -18,6 +18,10 @@ schema:
   history?(array): string, release tags and repo-creation dates
   reference?(array): string, useful pointer to in-repo docs or external sources
   popularity?(array): string, GitHub stars and Go module proxy signals with date stamp
+  version?(array): string, current documented module version (e.g. v1.8.1) — the
+    version this note's content reflects; the machine-stable slot
+    /knowledge-gaps --stale compares against upstream (Pattern 3, checked before
+    fragile prose extraction)
   license?: string, OSS license SPDX identifier or "no license" if unlicensed
   author?: string, primary author or maintainer name
   relates_to?(array): Note, related knowledge notes

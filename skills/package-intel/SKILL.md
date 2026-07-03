@@ -316,17 +316,18 @@ Include the metric window (weekly vs total) and registry name — e.g.,
 `- [popularity] 2.1M downloads/week (npm, 2026-04)` or
 `- [popularity] 850M total downloads (crates.io, 2026-04)`. Omit for PyPI and Go.
 
-**For npm notes, add a `[version]` observation** recording the documented latest
-version as a clean leading token — e.g. `- [version] 5.8.5`. This is the
-machine-stable slot intended to shield notes whose subject involves version
-strings (e.g. `yaml`, `semver`) from misparse. The same value goes in the header
-line (`| v<version> |`); **keep them consistent.** (Note: `--stale` currently
-reads the header pipe *first* — Pattern 1 outranks the `[version]` observation
-under first-hit-wins — so the observation is a redundant safety slot today, not
-the effective read target; making it win is bead `vp-claude-9q7e`. Until then,
-the header pipe is what must be accurate.) Only `npm_package` defines this slot
-today — the other cohort schemas don't, so omit `[version]` for
-crate/go/composer/pypi/gem until the slot is extended to them (bd vp-claude-f3zx).
+**For all six package cohorts (npm, crate, go, composer, pypi, gem), add a
+`[version]` observation** recording the documented latest version as a clean
+leading token — e.g. `- [version] 5.8.5`. This is the machine-stable slot
+intended to shield notes whose subject involves version strings (e.g. `yaml`,
+`semver`) from misparse. The same value goes in the header line
+(`| v<version> |`); **keep them consistent.** (Note: `--stale` currently reads
+the header pipe *first* — Pattern 1 outranks the `[version]` observation under
+first-hit-wins — so the observation is a redundant safety slot today, not the
+effective read target for npm; making it win there is bead `vp-claude-9q7e`
+(npm-scoped; not yet extended to the other five cohorts). Until then, the
+header pipe is what must be accurate.) All six package schemas now define this
+slot (bd `vp-claude-f3zx`, shipped) — no cohort is exempt.
 
 **No wiki-links in observations.** Never use `[[Target]]` syntax in observation
 lines. BM's parser treats any `[[` as a relation boundary — the text before it
@@ -609,10 +610,9 @@ Per-item outcomes and the batch-close summary follow the shared reference's
    first).** For every package cohort the recorded version lives in the header
    line `GitHub: … | v<version> | <license>` (S2 **Pattern 1**), which outranks
    the `[version]` observation under first-hit-wins — so refresh the pipe; that
-   is the slot `--stale` re-reads. npm notes *additionally* carry a `[version]`
-   observation (Pattern 3, emitted since 0.31.4); move it in the **same** edit so
-   the two stay consistent, but never the obs alone — a stale pipe defeats the
-   round-trip. For crate/go/composer/pypi/gem there is no `[version]` slot yet
-   (bead `f3zx`, do **not** wait on it) — the pipe is the only Axis-A target.
-   Per the shared core's "refresh BOTH axes" gotcha, move the header pipe **and**
-   the prose reel — they move independently.
+   is the slot `--stale` re-reads. All six cohorts *additionally* carry a
+   `[version]` observation (Pattern 3; npm since 0.31.4, crate/go/composer/pypi/gem
+   since bead `f3zx`); move it in the **same** edit so the two stay consistent,
+   but never the obs alone — a stale pipe defeats the round-trip. Per the shared
+   core's "refresh BOTH axes" gotcha, move the header pipe **and** the prose
+   reel — they move independently.

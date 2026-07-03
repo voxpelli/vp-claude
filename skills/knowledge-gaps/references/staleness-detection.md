@@ -140,9 +140,10 @@ semver-range/channel-mismatch regressions.
 
 Pattern 3 reads the version directly from the note's `observations` array — the
 canonical `[version]` slot. The `/package-intel` npm template **emits it since
-0.31.4** (and 71 npm notes were backfilled); `f3zx` tracks extending the slot to
-the other five package cohorts (crate/go/composer/pypi/gem), which do not emit it
-yet. The `/tool-intel` brew/cask/vscode templates **emit it since bead `80r4`**.
+0.31.4** (and 71 npm notes were backfilled); the other five package cohorts
+(crate/go/composer/pypi/gem) **emit it since bead `f3zx`** extended the slot to
+their schemas + templates. The `/tool-intel` brew/cask/vscode templates **emit
+it since bead `80r4`**.
 Per the Sprint 32 promote-verified-only decision, existing notes are **not**
 bulk-backfilled by that bead — only a note a maintainer has *already
 header-verified as version-accurate* gets the `[version]` line stamped as a
@@ -168,9 +169,12 @@ the `## Release Highlights` or `## Version History` list (linked or bold) — do
 (breaking/feature/fix), not version order. **Release Highlights ranks last on
 purpose:** the list is hand-curated and may lag the real latest release, so
 trusting it risks a false "current" — worse than an honest `<unparseable>`. Only
-fall to it when patterns 1–4 and the prose fallback all miss. For the non-npm
-package cohorts (which carry no `[version]` slot until `f3zx` extends it), Pattern
-5 is what actually recovers most otherwise-`<unparseable>` notes.
+fall to it when patterns 1–4 and the prose fallback all miss. The non-npm
+package cohorts (crate/go/composer/pypi/gem) now define the `[version]` slot
+too (bead `f3zx`), but per the promote-verified-only doctrine existing notes
+are not bulk-backfilled — they acquire the slot organically on next refresh.
+Until then, Pattern 5 is what actually recovers most otherwise-`<unparseable>`
+notes in those cohorts.
 
 **Strip a leading `v`** from the extracted value (`v1.39.0` ≡ `1.39.0`). If no
 pattern matches, record `bm_version="<unparseable>"` and continue — that is a

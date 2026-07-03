@@ -43,6 +43,7 @@ dependencies = [
 
 ## Observations
 
+- [version] <version>
 - [pattern] How it's typically used
 - [gotcha] What surprised us or could trip up new users
 - [benefit] Why choose this over alternatives

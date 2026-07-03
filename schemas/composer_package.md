@@ -11,6 +11,10 @@ schema:
   benefit?(array): string, advantages and strengths over alternatives
   limitation?(array): string, constraints and known weaknesses
   popularity?(array): string, Packagist install counts with date stamp
+  version?(array): string, current documented package version (e.g. 10.48.0) —
+    the version this note's content reflects; the machine-stable slot
+    /knowledge-gaps --stale compares against upstream (Pattern 3, checked before
+    fragile prose extraction)
   relates_to?(array): Note, related knowledge notes
   depends_on?(array): Note, upstream package dependencies
   used_by?(array): Note, downstream consumers of this package (inverse of depends_on)

@@ -82,10 +82,11 @@ type supports them:
 - **Axis A — the machine-readable version slot `--stale` reads.** This is the
   **inline header pipe** `… | v<version> | <license>` (S2 **Pattern 1**) — the
   slot `--stale` reads *first* for **every** cohort under first-hit-wins. The
-  haul MUST refresh the pipe. npm notes *also* carry a `[version]` observation
-  (Pattern 3); update it in the **same** edit to keep the two consistent, but
-  never update only the observation — the pipe outranks it, so a stale pipe
-  defeats the round-trip even with a fresh `[version]` obs. (Heterogeneous
+  haul MUST refresh the pipe. All package-cohort notes *also* carry a
+  `[version]` observation (Pattern 3); update it in the **same** edit to keep
+  the two consistent, but never update only the observation — the pipe
+  outranks it, so a stale pipe defeats the round-trip even with a fresh
+  `[version]` obs. (Heterogeneous
   corpus: an older note may record version only in a `| Version |` table row or
   prose — Patterns 2/6; refresh whichever slot S2 would read for *that* note,
   defaulting to the pipe for current-era notes.)
@@ -93,19 +94,20 @@ type supports them:
   [Highlights-reel synthesis](#highlights-reel-synthesis). Its location is
   adapter-specific (see below).
 
-**Do not block on slot-hardening work.** Extending the canonical `[version]`
-schema slot to the remaining package cohorts (bead `f3zx`) and to
-brew/cask/vscode (bead `80r4`) is tracked separately and unstarted. The haul
-**consumes whatever slot exists today** and otherwise records the `[version]`
-observation by convention — it must never wait on `f3zx`/`80r4`.
+**Slot-hardening is complete.** The canonical `[version]` schema slot has
+shipped across all package cohorts (bead `f3zx`) and brew/cask/vscode (bead
+`80r4`) — every cohort this skill or `tool-intel` touches now defines it. The
+haul records the `[version]` observation by convention on every refresh, no
+cohort-specific gating remains.
 
 **Gotcha — refresh BOTH axes.** Updating the prose reel alone leaves the note's
 *headline* version (the inline pipe) stale, and the pipe is exactly what `--stale`
 re-reads — so the drift never closes. (Dogfood: an `llmfit` refresh wrote the
 Release Highlights but left the top-of-note version at the old value until it was
 bumped separately.) On every refreshed note, move the headline pipe `| v<version> |`
-**and** the narrative — they are independent and both must move. For npm, the
-`[version]` observation is a third slot that must move with the pipe (same edit).
+**and** the narrative — they are independent and both must move. For every
+package cohort, the `[version]` observation is a third slot that must move
+with the pipe (same edit).
 
 ## Stale-cache arbitration
 
@@ -165,8 +167,8 @@ operand and surface a summary table at batch close:
 bumps the version, **re-read the note** and confirm the slot changed to the new
 value — the repo's `find_replace` silently matches nothing on a byte mismatch
 (whitespace, a `v` prefix, a stale source-stamp suffix) and on notes >~40KB.
-Verify the **inline pipe specifically** (the slot `--stale` reads); for npm,
-verify the pipe *and* the `[version]` observation both moved — a passing
+Verify the **inline pipe specifically** (the slot `--stale` reads); for every
+package cohort, verify the pipe *and* the `[version]` observation both moved — a passing
 obs-edit with a missed pipe-edit still leaves the round-trip broken. If the slot
 is unchanged, classify the item `FAILED[edit-missed]`, do not proceed to Axis B,
 and do not count it refreshed. (Precedent: the `N_before`/`N_after` survival
@@ -183,7 +185,8 @@ Upgrade haul is the **executor** half of a bidirectional pair with the
   skills as a batch. That handoff IS an upgrade haul.
 - **Executor → detector:** a haul refreshes the same Axis-A slot `--stale` reads
   — the inline header pipe (**Pattern 1**) for every cohort, plus the `[version]`
-  observation for npm — so the next `--stale` run sees the closed drift.
+  observation for every package cohort — so the next `--stale` run sees the
+  closed drift.
 
 The detector side is documented in
 `skills/knowledge-gaps/references/staleness-detection.md` (S7 offer + S2

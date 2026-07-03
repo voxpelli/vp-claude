@@ -13,6 +13,10 @@ schema:
   limitation?(array): string, known constraints, no_std caveats, feature-flag requirements
   security?(array): string, CVE/RUSTSEC status, supply-chain considerations, and advisories
   popularity?(array): string, crates.io download counts (total and recent) with date stamp
+  version?(array): string, current documented crate version (e.g. 1.0.219) — the
+    version this note's content reflects; the machine-stable slot
+    /knowledge-gaps --stale compares against upstream (Pattern 3, checked before
+    fragile prose extraction)
   relates_to?(array): Note, related crates or engineering notes
   depends_on?(array): Note, declared crate dependencies
   used_by?(array): Note, downstream crates or projects that depend on this crate
