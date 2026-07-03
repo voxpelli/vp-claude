@@ -39,7 +39,7 @@ check('registry is non-empty', CANONICAL_FOURTH_WALL_RULES.length > 0)
 const ids = CANONICAL_FOURTH_WALL_RULES.map((r) => r.id)
 check('rule ids are unique', new Set(ids).size === ids.length)
 check('every deterministic rule carries a detect RegExp', CANONICAL_FOURTH_WALL_RULES.every((r) => !r.deterministic || r.detect instanceof RegExp))
-check('every non-deterministic rule has no detect pattern', CANONICAL_FOURTH_WALL_RULES.every((r) => r.deterministic || !r.detect))
+check('every non-deterministic rule has no detect pattern', CANONICAL_FOURTH_WALL_RULES.every((r) => r.deterministic || !('detect' in r)))
 
 console.log('\nfourth-wall: deterministic detection fires on planted violations')
 // One planted violation per deterministic rule (fw-relation-type uses mixed case

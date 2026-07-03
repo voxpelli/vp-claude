@@ -102,7 +102,9 @@ check('catches a planted count mismatch', compareCounts(fixStated, { Skills: 3, 
 check('flags a missing count heading', compareCounts({ Skills: 3, Agents: 2 }, { Skills: 3, Agents: 2, Hooks: 1 }).some((e) => e.includes('Hooks')))
 check('parses ALL counted labels (parser-failure guard)', COUNTED_COMPONENTS.every((l) => l in fixStated))
 check('compareCounts({}, actual) errors for all 3 labels — not a vacuous pass', compareCounts({}, { Skills: 14, Agents: 4, Hooks: 5 }).length === 3)
-check('non-canonical label "Schemas" does not parse (alternation derived from array)', parseStatedCounts('### Schemas (7)\n').Schemas === undefined)
+// "Schemas" is deliberately NOT a counted component — assert it never lands in the
+// parsed record (read via bracket access since it is not a ComponentLabel key).
+check('non-canonical label "Schemas" does not parse (alternation derived from array)', !('Schemas' in parseStatedCounts('### Schemas (7)\n')))
 check('level-1 heading ignored (out-of-range)', parseStatedCounts('# Skills (14)\n').Skills === undefined)
 check('level-5 heading ignored (out-of-range)', parseStatedCounts('##### Skills (14)\n').Skills === undefined)
 check('duplicate headings: last value wins (documented behavior)', parseStatedCounts('### Skills (3)\n### Skills (99)\n').Skills === 99)
