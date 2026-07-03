@@ -139,6 +139,51 @@ const BUILTIN_MENTION_EXCEPTIONS = new Set([
   'skills/nudge-adoption/SKILL.md:Glob',
 ])
 
+// Tracks which BUILTIN_MENTION_EXCEPTIONS keys were actually matched
+// (auditToolReferences' allowlist .has() check returned true) during the REAL
+// scan of skills/agents below. A key that never gets consumed is stale — the
+// file was renamed or the mention removed — and would otherwise sit silently
+// dead forever (bd vp-claude-n27j). Populated by auditToolReferences() as a
+// side effect; module-level self-tests below also call auditToolReferences()
+// with the real allowlisted key to exercise the suppression path, so this set
+// is deliberately `.clear()`-ed right before the real skill-scan loop starts
+// (see the comment at that call site) — otherwise self-test pollution would
+// mark the entry "consumed" before the real scan ever runs, permanently
+// masking genuine staleness.
+/** @type {Set<string>} */
+const consumedBuiltinMentionExceptions = new Set()
+
+/**
+ * Pure comparison: which allowlist keys were never consumed during a scan.
+ * No file I/O, no error()/warn() side effects — directly unit-testable (see
+ * the self-test below) without needing to route synthetic content back
+ * through auditToolReferences (which would pollute the real consumed-set).
+ *
+ * @param {Set<string>} allowlist
+ * @param {Set<string>} consumed
+ * @returns {string[]} allowlist keys not present in consumed, allowlist order
+ */
+function findStaleExceptions (allowlist, consumed) {
+  return [...allowlist].filter((key) => !consumed.has(key))
+}
+
+// Self-test: findStaleExceptions must report a key that was never consumed
+// and stay silent on a key that was. Synthetic sets only — does NOT call
+// auditToolReferences, so it cannot pollute consumedBuiltinMentionExceptions.
+{
+  const usedKey = 'skills/example/SKILL.md:Read'
+  const staleKey = 'skills/example/SKILL.md:Bash'
+  const fixtureAllowlist = new Set([usedKey, staleKey])
+  const fixtureConsumed = new Set([usedKey])
+  const stale = findStaleExceptions(fixtureAllowlist, fixtureConsumed)
+  if (!stale.includes(staleKey)) {
+    error(join(ROOT, '<self-test>'), 'findStaleExceptions self-test failed: did not report a never-consumed allowlist key as stale')
+  }
+  if (stale.includes(usedKey)) {
+    error(join(ROOT, '<self-test>'), 'findStaleExceptions self-test failed: incorrectly reported a consumed allowlist key as stale')
+  }
+}
+
 /**
  * @param {string} file
  * @param {string[]} tools
@@ -148,6 +193,92 @@ function validateMcpPrefixes (file, tools) {
     if (tool.startsWith('mcp__') && !KNOWN_MCP_PREFIXES.some((p) => tool.startsWith(p))) {
       error(file, `Unknown MCP prefix in tool: ${tool}`)
     }
+  }
+}
+
+/**
+ * Extract every `mcp__<server>__<tool>` token from a file's scannable text
+ * (prose + inline-code; fenced blocks and frontmatter excluded — via
+ * lib/mdast.mjs's collectScannableText, same walk auditToolReferences uses).
+ * Skills/agents validate their mcp__ tokens against a *declared* tools array
+ * (validateMcpPrefixes above, fed from frontmatter); reference files
+ * (skills/<name>/references/<file>.md) have no such frontmatter to declare against —
+ * for those the extracted token set itself IS what gets checked against
+ * KNOWN_MCP_PREFIXES. Pure — no file I/O — directly unit-testable (see the
+ * self-test below).
+ *
+ * @param {string} content
+ * @returns {string[]} unique mcp__ tokens, first-seen order
+ */
+function extractMcpTokens (content) {
+  const seen = new Set()
+  /** @type {string[]} */
+  const found = []
+  for (const text of collectScannableText(content)) {
+    for (const match of text.matchAll(/mcp__[\w-]+__[\w-]+/g)) {
+      const token = match[0]
+      if (!seen.has(token)) {
+        seen.add(token)
+        found.push(token)
+      }
+    }
+  }
+  return found
+}
+
+// Self-test: extractMcpTokens must find a scannable-text token and ignore one
+// buried inside a fenced code block (matching the same fence-vs-prose
+// convention collectScannableText already enforces elsewhere in this file).
+// Synthetic fixtures only, mirroring the self-test convention above.
+{
+  const proseFixture = 'Call `mcp__basic-memory__search_notes` for this step.'
+  const proseFound = extractMcpTokens(proseFixture)
+  if (!proseFound.includes('mcp__basic-memory__search_notes')) {
+    error(join(ROOT, '<self-test>'), 'extractMcpTokens self-test failed: a real prose mcp__ token was not detected')
+  }
+
+  const fencedFixture = [
+    'Prose before.',
+    '',
+    '```',
+    'mcp__totally-hypothetical__example(query="x")',
+    '```',
+  ].join('\n')
+  const fencedFound = extractMcpTokens(fencedFixture)
+  if (fencedFound.includes('mcp__totally-hypothetical__example')) {
+    error(join(ROOT, '<self-test>'), 'extractMcpTokens self-test failed: a fenced-block mcp__ token was incorrectly counted as scannable')
+  }
+}
+
+// Self-test: the reference-file scan path (extractMcpTokens feeding
+// validateMcpPrefixes, with no declared-tools array — the exact wiring used
+// for skills/*/references/*.md below) must fail on a deliberately-planted
+// unknown mcp__ prefix in prose, and stay clean on a known one. Synthetic
+// content only (bd vp-claude-26c AC: "prove with a self-test fixture...
+// synthetic content, not a real file mutation"). Unwinds afterward like the
+// other error()/warn()-exercising self-tests in this file.
+{
+  const selfTestFile = join(ROOT, '<self-test-reference-mcp-prefix>')
+  const errorsSnapshot = errors.length
+  /** @type {string[]} */
+  const failures = []
+
+  const badPrefixContent = 'See `mcp__bogus-server__do_thing` for details.'
+  validateMcpPrefixes(selfTestFile, extractMcpTokens(badPrefixContent))
+  if (errors.length !== errorsSnapshot + 1) {
+    failures.push('a planted unknown mcp__ prefix in reference-file-style content did not produce exactly one error')
+  }
+  errors.length = errorsSnapshot
+
+  const goodPrefixContent = 'See `mcp__basic-memory__search_notes` for details.'
+  validateMcpPrefixes(selfTestFile, extractMcpTokens(goodPrefixContent))
+  if (errors.length !== errorsSnapshot) {
+    failures.push('a known mcp__ prefix in reference-file-style content was incorrectly flagged')
+  }
+  errors.length = errorsSnapshot
+
+  for (const message of failures) {
+    error(join(ROOT, '<self-test>'), `reference-file mcp-prefix self-test failed: ${message}`)
   }
 }
 
@@ -267,7 +398,11 @@ function auditToolReferences (file, content, declaredTools, fieldName) {
   // error()-vs-warn() convention this follows.
   const relFile = relative(ROOT, file)
   for (const tool of findUndeclaredBuiltinTools(content, declaredTools)) {
-    if (BUILTIN_MENTION_EXCEPTIONS.has(`${relFile}:${tool}`)) continue
+    const exceptionKey = `${relFile}:${tool}`
+    if (BUILTIN_MENTION_EXCEPTIONS.has(exceptionKey)) {
+      consumedBuiltinMentionExceptions.add(exceptionKey)
+      continue
+    }
     warn(file, `Built-in tool "${tool}" referenced in prose but missing from ${fieldName} — verify this is a real reference, not just a documentation mention`)
   }
 }
@@ -605,6 +740,13 @@ const SKILL_KNOWN_FIELDS = new Set([
   'skills',
 ])
 
+// Wipe any consumed-exception keys the module-level self-tests above
+// recorded as a side effect of exercising auditToolReferences() with
+// synthetic content that reuses the real allowlisted key. Every self-test
+// runs before this point; the real skill/agent scan below is the only source
+// of truth for whether an allowlist entry is actually still live.
+consumedBuiltinMentionExceptions.clear()
+
 for (const file of skillFiles) {
   const content = await readFile(file, 'utf8')
   const fm = extractFrontmatter(content)
@@ -624,10 +766,13 @@ for (const file of skillFiles) {
     }
   }
   // Claude Code truncates very long descriptions when routing — warn before the
-  // tail (e.g. flag mechanics) is at risk. Threshold sits above the current
-  // legitimately-detailed descriptions (tool-intel, the longest, is ~1.1k); the
-  // exact CC truncation limit is unconfirmed (bd vp-claude — tune down if found lower).
-  if (typeof fm.description === 'string' && fm.description.length > 1400) {
+  // tail (e.g. flag mechanics) is at risk. The confirmed hard cap is 1536 chars
+  // (combined description+when_to_use in the skill listing — see
+  // code.claude.com/docs/en/skills and anthropics/skills#881). Warn at 1500,
+  // below the cap rather than at it, so there's early-warning margin before a
+  // future edit actually gets truncated. Current longest description
+  // (tool-intel, ~1.1k) is comfortably under either number.
+  if (typeof fm.description === 'string' && fm.description.length > 1500) {
     warn(file, `description is ${fm.description.length} chars — Claude Code may truncate it for routing; move capability detail into the body`)
   }
   if (isObjectWithKey(fm, 'allowed-tools') && !isType(fm['allowed-tools'], 'array')) {
@@ -666,6 +811,84 @@ for (const file of skillFiles) {
       error(file, `Phantom subagent reference: "${agentName}" — no file at agents/${agentName}.md`)
     }
   }
+}
+
+// --- Skill reference files (skills/*/references/*.md) ---
+//
+// These are included prose fragments (no standalone frontmatter, no
+// allowed-tools declaration of their own), so they cannot go through the
+// full SKILL.md battery above — running auditToolReferences() against them
+// would compare prose mentions against a declared-tools list that doesn't
+// exist for this file type. Scoped to the two checks that are meaningful
+// without a declared-tools array: an unknown mcp__ prefix, and a phantom
+// subagent_type reference. bd vp-claude-26c.
+
+/**
+ * Audit one skill reference file. Guarded by the same findUnclosedFence()
+ * check auditToolReferences() uses and for the same reason: an unclosed
+ * fence makes remark absorb the rest of the file into one opaque `code`
+ * node, so collectScannableText() (which extractMcpTokens/
+ * extractSubagentTypeRefs both call under the hood) would quietly return
+ * too little and any mcp__/subagent_type tokens swallowed past the
+ * unclosed fence go unchecked — exactly the vacuous-pass failure mode
+ * auditToolReferences() already guards against for SKILL.md/agent files.
+ *
+ * @param {string} file
+ * @param {string} content
+ */
+function auditReferenceFile (file, content) {
+  const body = content.replace(/^---\n[\s\S]*?\n---\n?/, '')
+  const unclosedFence = findUnclosedFence(body)
+  if (unclosedFence) {
+    error(file, `reference file: unclosed code fence starting at line ${unclosedFence.line} ("${unclosedFence.marker}") — content after it may be silently unscanned for tool references; fix the markdown`)
+    return
+  }
+  validateMcpPrefixes(file, extractMcpTokens(content))
+  for (const agentName of extractSubagentTypeRefs(content)) {
+    if (!existsSync(join(ROOT, 'agents', `${agentName}.md`))) {
+      error(file, `Phantom subagent reference: "${agentName}" — no file at agents/${agentName}.md`)
+    }
+  }
+}
+
+// Self-test: auditReferenceFile must route an unclosed fence to error() (not
+// silently pass) — mirroring the auditToolReferences fence-balance self-test
+// above, but for the reference-file scan path (no declared-tools array).
+// Reproduces the reviewer-confirmed failure mode: an unclosed fence followed
+// by a bad mcp__ prefix in prose used to yield zero errors; must now yield
+// exactly one. Synthetic fixture only, unwound afterward.
+{
+  const selfTestFile = join(ROOT, '<self-test-reference-file-fence-balance>')
+  const errorsSnapshot = errors.length
+  /** @type {string[]} */
+  const failures = []
+
+  const unclosedWithBadPrefix = [
+    'Prose before the fence.',
+    '',
+    '```',
+    'unclosed fence content',
+    '',
+    'mcp__bogus-server__do_thing',
+  ].join('\n')
+  auditReferenceFile(selfTestFile, unclosedWithBadPrefix)
+  if (errors.length !== errorsSnapshot + 1) {
+    failures.push('an unclosed fence hiding a bad mcp__ prefix did not produce exactly one error')
+  }
+  errors.length = errorsSnapshot
+
+  for (const message of failures) {
+    error(join(ROOT, '<self-test>'), `auditReferenceFile fence-balance self-test failed: ${message}`)
+  }
+}
+
+const referenceFiles = skillEntries
+  .filter((f) => f.includes('references/') && f.endsWith('.md'))
+  .map((f) => join(ROOT, 'skills', f))
+
+for (const file of referenceFiles) {
+  const content = await readFile(file, 'utf8')
+  auditReferenceFile(file, content)
 }
 
 // --- Agents (optional) ---
@@ -731,6 +954,18 @@ if (existsSync(agentsDir)) {
       }
     }
   }
+}
+
+// --- BUILTIN_MENTION_EXCEPTIONS staleness (consumed-key enforcement) ---
+//
+// By this point every skill and agent file has gone through
+// auditToolReferences(), which records each allowlist key it actually
+// matched into consumedBuiltinMentionExceptions. Any key in the allowlist
+// that was never matched is dead — warn() (staleness-class finding, not a
+// hard failure) so it surfaces without blocking CI. bd vp-claude-n27j.
+
+for (const staleKey of findStaleExceptions(BUILTIN_MENTION_EXCEPTIONS, consumedBuiltinMentionExceptions)) {
+  warn(join(ROOT, 'validate-plugin.mjs'), `BUILTIN_MENTION_EXCEPTIONS entry "${staleKey}" was never matched during this scan — the file may have been renamed or the mention removed; consider removing this allowlist entry`)
 }
 
 // --- Staleness drift bucket contract (emit ↔ consume) ---

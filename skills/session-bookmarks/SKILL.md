@@ -166,11 +166,13 @@ bookmark's title or topic keywords, boost it regardless of frequency.
 This prevents specific tags (e.g., `micropub`) from losing to generic
 ones (`code`) that are more common across results.
 
-**Step C — Filter blocklist**: Remove any tag listed in the vocabulary file's
-`blocklist` frontmatter field. Support exact matches (case-insensitive) and
-prefix wildcards (entries ending in `*`). If the vocabulary file exists but
-`blocklist` is absent, skip filtering. If the vocabulary file is missing
-entirely, apply a minimal fallback: numeric-only tags (`1`-`9`) and `imported`.
+**Step C — Filter blocklist**: Remove any tag listed in the `blocklist`
+frontmatter field of the vocabulary file (`~/.claude/references/raindrop-tags.md`,
+managed by `/tag-sync` — see "Integration" below). Support exact matches
+(case-insensitive) and prefix wildcards (entries ending in `*`). If the
+vocabulary file exists but `blocklist` is absent, skip filtering. If the
+vocabulary file is missing entirely, apply a minimal fallback: numeric-only
+tags (`1`-`9`) and `imported`.
 
 **Step D — Fallback**: If fewer than 3 similar bookmarks found in Step A,
 match topics against the vocabulary file's table characterizations. This
@@ -178,7 +180,7 @@ covers novel topics with no exemplars in the library.
 
 **Step E — Selection rules**:
 - `ai-bookmarked` is mandatory (always first tag)
-- Pick 2-3 additional tags (max 4 paid slots)
+- Pick 2-3 additional tags (4 more at most, beyond the mandatory tag)
 - Each tag must add DISTINCT information — if A implies B, drop B
 - Prefer the MOST SPECIFIC tag: `nodejs` not `javascript`
 - Two tags from the same cluster is a smell — prefer cross-cluster

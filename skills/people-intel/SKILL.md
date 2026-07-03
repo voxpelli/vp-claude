@@ -35,9 +35,7 @@ unique identifiers in this graph.
 | `<Full Name>` | `Tim Berners-Lee` |
 | `<Full Name>` | `Aaron Gustafson` |
 
-If the argument contains ` - ` (the title separator), split into `name` and
-`descriptor`. Otherwise treat the full argument as `name` and derive the
-descriptor from research.
+See Step 0 below for how the argument is parsed into `name` and `descriptor`.
 
 ### Step 0: Normalize input
 
@@ -159,6 +157,11 @@ tavily_search(query="<name> bio role current work projects contributions", max_r
 tavily_search(query="<name> <primary-domain> influence controversy", max_results=5)
 ```
 
+**Anti-hagiography check:** the second query deliberately searches for
+controversy and criticism alongside the first query's neutral bio search —
+this is what keeps the note from reading as one-sided praise. Carry any
+findings into the `[controversy]` observations described in Step 3.
+
 If the person has a personal site (identifiable from Raindrop or Readwise
 results), extract the about page:
 ```
@@ -235,8 +238,10 @@ carries a higher bar than a passing remark. If a claim cannot be confirmed from
 this run's sources, weaken it to a hedged statement ("appears to", "is associated
 with") and date-qualify uncertain facts (e.g. "as of 2026-05") — never fabricate;
 if a fact is unknown, say so or omit it. Routine refreshes (note under 60 days)
-skip this step. This complements the anti-hagiography and fourth-wall guardrails
-above.
+skip this step. This complements the anti-hagiography check (Step 2d) and the
+fourth-wall guardrail (above, this step) — verify-before-capture checks
+*accuracy*, the anti-hagiography check ensures *balance*, and the fourth-wall
+guardrail keeps the note *subject-focused*.
 
 **Record contradictions, do not resolve them silently.** When two sources
 disagree on a load-bearing fact (role, affiliation, attribution), record both
@@ -273,8 +278,9 @@ the synthesized title; a YAML list of bare strings, never `[[ ]]`. Add a known
 link-variant (handle / full given name) only if research surfaced one. Skip the
 alias and note it to the user if that bare name already titles or aliases
 another note (an ambiguous Obsidian target). The alias resolves `[[<Full Name>]]`
-links in Obsidian / md-wiki-vec now and in Basic Memory once its LinkResolver
-gains an alias step — it is inert inside BM tooling until then (see
+links today in Obsidian and other wiki-link tools that honor `aliases:`
+frontmatter, and will resolve in Basic Memory once its LinkResolver gains an
+alias step — it is inert inside BM tooling until then (see
 `UPSTREAM-basic-memory.md`), which is expected, not a bug.
 
 **Existing person:** Pick the operation based on the note's current state:

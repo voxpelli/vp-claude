@@ -68,9 +68,10 @@ YAML list of **bare strings**, never wrapped in `[[ ]]`. This lets bare
 second entry only for a genuinely link-used variant (a handle like `voxpelli`,
 or a full given name when the title uses a short form).
 
-The alias resolves in **Obsidian today** (and any md-wiki-vec index that claims
-Obsidian compatibility); it is **inert inside Basic Memory's own tooling** until
-BM's LinkResolver gains an alias step (tracked in `UPSTREAM-basic-memory.md`).
+The alias resolves in **Obsidian and other wiki-link tools that honor
+`aliases:` frontmatter today**; it is **inert inside Basic Memory's own
+tooling** until BM's LinkResolver gains an alias step (tracked in
+`UPSTREAM-basic-memory.md`).
 A `[[bare name]]` click inside BM stays unresolved for now — expected, not a bug.
 
 ### Observation categories

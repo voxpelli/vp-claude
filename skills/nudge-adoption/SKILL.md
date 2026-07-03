@@ -269,10 +269,16 @@ structural, not field-based.** An earlier version of this doc required
 That was backwards and confirmed unsatisfiable against 600 real dispatch
 samples across every project on this machine: a genuine dispatch entry's
 `message` object is *always* exactly `{role, content}` — no `promptSource`,
-no `origin`, no `permissionMode` field ever exists on a real dispatch. Those
-fields belong to a different message shape (ordinary typed prose) and
-structurally never co-occur with the dispatch-tag shape, so requiring them
-made the check impossible to satisfy, ever, for any real usage.
+no `origin`, no `permissionMode` field ever exists on a real dispatch.
+
+**This "never exists" claim is scoped to dispatch-tagged entries only.**
+Those fields belong to a different message shape — ordinary typed prose,
+the one the non-slash-command branch further below evaluates — and
+structurally never co-occur with the dispatch-tag shape evaluated here.
+Requiring them on *this* shape made the check impossible to satisfy, ever,
+for any real usage. The non-slash-command branch legitimately checks
+`promptSource`/`origin.kind` because it is reading a different kind of
+transcript entry, not because the rule above was relaxed.
 
 `Read` each matched file and confirm the matching entry satisfies **one of
 two** genuine-dispatch shapes — confirmed via live dogfooding that built-in
@@ -346,9 +352,12 @@ Then `Read` each matched file to confirm the shape is real evidence, not
 just a mention:
 
 - **Typed invocation** — `type:"user"` + a `message.content` field +
-  `promptSource:"typed"` + `origin.kind=="human"`. This excludes synthetic,
-  replayed, or pasted content — but, unlike the slash-command branch above,
-  there is no further structural marker (no equivalent to the
+  `promptSource:"typed"` + `origin.kind=="human"`. These two fields are
+  legitimate here — this is the ordinary-typed-prose message shape, not the
+  dispatch-tag shape the slash-command branch above evaluates, where the same
+  fields never appear. This check excludes synthetic, replayed, or pasted
+  content — but, unlike the slash-command branch above, there is no further
+  structural marker (no equivalent to the
   `<command-name>` tag) to distinguish genuine use from a human merely
   discussing the term in ordinary prose; see the Edge Cases entry on this
   class of feature for the accepted limitation.

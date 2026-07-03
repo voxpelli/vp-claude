@@ -143,7 +143,7 @@ A focused alternative mode of `/knowledge-gaps` that detects when documented not
 - brew-arm-none-eabi-gcc, brew-mcp-netutils
 ```
 
-Bucket names (`Drifted >30d`, `Drifted <30d`, `Drifted, age unknown`, `Archive candidates`, `Unparseable`, `Not in registry`, `API unavailable`) are the same canonical strings the `knowledge-gardener` Step 5b emits, so either output routes into the same `knowledge-maintainer` Section 3b queue logic — a report from either source is interchangeable input to that queue. Section 3b itself never runs a refresh automatically; it enqueues `Drifted >30d` (and security-flagged) targets into a Refresh Queue for a human to action afterward. Supported cohorts: brew, npm, cask, crate, vscode. `action`/`gh`/`go`/`docker` are excluded (no single canonical comparable version); `pypi`/`gem`/`composer` are deferred until their cohorts grow.
+Bucket names (`Drifted >30d`, `Drifted <30d`, `Drifted, age unknown`, `Archive candidates`, `Unparseable`, `Not in registry`, `API unavailable`) match the ones the `knowledge-gardener` agent's own version-drift audit emits, so a report from either source feeds the same `knowledge-maintainer` refresh queue — the two are interchangeable inputs. That queue never runs a refresh automatically; it lists `Drifted >30d` notes (and any note with a prior security flag) for a human to action afterward. Supported cohorts: brew, npm, cask, crate, vscode. `action`/`gh`/`go`/`docker` are excluded (no single canonical comparable version); `pypi`/`gem`/`composer` are deferred until their cohorts grow.
 
 ### `/knowledge-prime` — Surface project-relevant knowledge
 
@@ -206,7 +206,7 @@ An autonomous agent that produces a health report without modifying anything:
 
 > "Audit my knowledge graph"
 
-Checks for: missing sections, schema violations, orphan notes, broken `[[wiki-links]]`, stale notes (90+ days), **version drift** (Step 5b — recorded versions compared against upstream registries for brew, npm, cask, crate, and vscode, emitted as `### Version Drift — <eco>` report sections), duplicates, project-specific data leaking into cross-project notes, tag alignment (non-canonical forms, retired tags, missing ecosystem tags, out-of-vocabulary tags), and fourth-wall violations (self-referential knowledge-graph language in subject-domain notes).
+Checks for: missing sections, schema violations, orphan notes, broken `[[wiki-links]]`, stale notes (90+ days), **version drift** (recorded versions compared against upstream registries for brew, npm, cask, crate, and vscode, emitted as `### Version Drift — <eco>` report sections), duplicates, project-specific data leaking into cross-project notes, tag alignment (non-canonical forms, retired tags, missing ecosystem tags, out-of-vocabulary tags), and fourth-wall violations (self-referential knowledge-graph language in subject-domain notes).
 
 ### Knowledge Maintainer — All-in-one graph enhancer
 
@@ -261,7 +261,7 @@ A write skill that applies targeted fixes to a bounded set of named notes — mi
 
 > "Fix the orphan links in npm-foo" / "Apply the audit fixes to these two notes"
 
-The scoped, interactive sibling of the `knowledge-maintainer` agent. Heavy or autonomous remediation ("fix the whole audit", anything that spawns `/package-intel` or `/tool-intel`, brew-refresh batches) delegates to the agent via `Agent`. Explicit `/command` only (`disable-model-invocation`). Shares the agent's write discipline: `find_replace` only (never `append`+`section`), read-before-edit, insert-then-strip moves with an `N_before`/`N_after` survival check, `schema_validate` after each change, and `write_note`/`delete_note` excluded (new notes via the intel skills, archival via `move_note`).
+The scoped, interactive sibling of the `knowledge-maintainer` agent. Heavy or autonomous remediation ("fix the whole audit", anything that spawns `/package-intel` or `/tool-intel`, brew-refresh batches) delegates to the agent via `Agent`. Explicit `/command` only (`disable-model-invocation`). Shares the agent's write discipline: `find_replace` only (never `append`+`section`), read-before-edit, a before/after observation-count check on any insert-then-strip move to catch accidental content loss, `schema_validate` after each change, and `write_note`/`delete_note` excluded (new notes via the intel skills, archival via `move_note`).
 
 ### `/session-reflect` — On-demand conversation capture
 
@@ -293,7 +293,7 @@ Fetches your tags from Raindrop, curates the top N by usage count, adds one-line
 
 > "Sync raindrop tags" / "Refresh tag vocabulary" / "Update raindrop-tags.md"
 
-Used by `/raindrop-triage` as the canonical tag dictionary — the vocabulary file's frontmatter holds the blocklist, context tags, and naming conventions read at triage time. Follows the vendor-sync pattern: `--reset` rebuilds the file from scratch; without flags, syncs the top N (default 200) tags.
+Used by `/raindrop-triage` as the canonical tag dictionary — the vocabulary file's frontmatter holds the blocklist, context tags, and naming conventions read at triage time. `--reset` rebuilds the file from scratch; without flags, syncs the top N (default 200) tags.
 
 ### Raindrop Gardener — Read-only Raindrop tag auditor
 
@@ -309,7 +309,7 @@ Reads the `Claude Code Noteworthy Features` Basic Memory note via MCP, filters o
 
 > "Sync nudge tips" / "Refresh the tip cache" / "Nudge sync"
 
-Follows the same vendor-sync pattern as `/tag-sync`. Reads BM via fast MCP, never the slow `bm` CLI; the SessionStart hook it feeds reads only the local cache file, never Basic Memory.
+Follows the same fetch-and-regenerate approach as `/tag-sync`: it fully rewrites the tip cache file each run. Reads BM via fast MCP, never the slow `bm` CLI; the SessionStart hook it feeds reads only the local cache file, never Basic Memory.
 
 ### `/nudge-adoption` — Track adoption of noteworthy Claude Code features
 
@@ -426,6 +426,8 @@ claude mcp add homebrew -- brew mcp-server
 
 ## Plugin structure
 
+Every note this plugin writes follows a schema — a structured contract for required sections and observation categories. The schema files under `schemas/` below are the version-controlled source of truth: each note type's schema self-seeds into Basic Memory the first time a note of that type is written via `/package-intel` or `/tool-intel` (e.g. researching an npm package seeds only `npm_package`, not the other 22), and stays dual-synced with its Basic Memory copy afterward. `/schema-evolve` (above) detects when real note usage has drifted from a schema and proposes updates to both.
+
 ```
 .claude-plugin/plugin.json             Plugin manifest
 .claude-plugin/marketplace.json        Marketplace listing for vp-plugins
@@ -459,10 +461,10 @@ skills/
     references/note-template-plugin.md claude_plugin note template (plugin + skill)
     references/gh-api-fallback.md      GitHub API fallback for unindexed/wrong-repo cases
   knowledge-gaps/
-    SKILL.md                           Package + tool + concept coverage analysis; --stale flag dispatches to Mode A
+    SKILL.md                           Package + tool + concept coverage analysis; --stale flag switches to the version-drift check
     references/concept-detection.md    Concept-level hub gap detection
     references/standard-detection.md   Domain standard coverage detection
-    references/staleness-detection.md  Version-drift check across ecosystems (Mode A workflow)
+    references/staleness-detection.md  Version-drift check across ecosystems (the --stale workflow)
     references/report-templates.md     Knowledge-gap + tool-coverage report templates
   knowledge-prime/
     SKILL.md                           Project context priming from BM
@@ -490,7 +492,7 @@ skills/
     references/note-template-person.md Person note template
     references/source-guide.md         Source-specific research guidance
   nudge-sync/
-    SKILL.md                           BM note -> local tip cache sync (vendor-sync pattern)
+    SKILL.md                           BM note -> local tip cache sync (fetch-and-regenerate)
     references/tip-cache-contract.md   Shared exclusion rule + line grammar (also used by nudge-adoption)
   nudge-adoption/
     SKILL.md                           Transcript-scan feature-adoption tracking -> BM frontmatter
@@ -579,7 +581,7 @@ VOICE.md                               Plugin identity, agent colors, descriptio
  /tool-intel X     -> tool-intel skill    -> <type>-X note + cross-links
  /knowledge-gaps   -> knowledge-gaps skill-> gap report (packages, tools, concepts)
                                              + offers /package-intel, /tool-intel
- /knowledge-gaps --stale -> knowledge-gaps Mode A -> version drift report (per ecosystem)
+ /knowledge-gaps --stale -> knowledge-gaps (--stale mode) -> version drift report (per ecosystem)
                                                      + offers /tool-intel refreshes
  /knowledge-prime  -> knowledge-prime     -> context brief with gotchas + gaps
  /knowledge-ask Q  -> knowledge-ask skill -> cited answer + confidence tier
