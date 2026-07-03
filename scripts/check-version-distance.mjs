@@ -95,12 +95,18 @@ check('ahead by major → true', isAheadOfRegistry('2.0.0', '1.9.9'), true)
 // --- isAheadOfRegistry: pre-release / build-metadata handling (current,
 // chosen behavior — parseSemver only reads the leading MAJOR.MINOR[.PATCH]
 // and ignores everything after, so a pre-release or build-metadata suffix
-// does not block an "ahead" verdict. Pinned so a future regex tightening
-// can't silently flip this with nothing to catch the change.) ---
+// does not block an "ahead" verdict. The two checks below have a numeric
+// difference that decides the verdict on its own, so they pin the regex
+// still matches a suffixed string (catches an anchoring regression) but do
+// NOT by themselves prove the suffix is ignored — the check after them is
+// the discriminating case: it's the one input pair where "ignore suffix"
+// actually diverges from real semver precedence.) ---
 check('pre-release suffix on bm side still counts as ahead → true',
   isAheadOfRegistry('1.0.1-beta.1', '1.0.0'), true)
 check('build-metadata suffix on bm side is ignored, still ahead → true',
   isAheadOfRegistry('1.0.1+build', '1.0.0'), true)
+check('pre-release-only difference does not count as ahead → false (the case where "ignore suffix" actually diverges from real semver precedence)',
+  isAheadOfRegistry('1.0.0', '1.0.0-beta.1'), false)
 
 // --- isAheadOfRegistry: falsy-input guard ---
 check('empty bm string → false', isAheadOfRegistry('', '1.0.0'), false)
