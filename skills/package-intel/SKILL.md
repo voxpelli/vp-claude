@@ -429,6 +429,7 @@ assume it behaves differently without checking. Handle it explicitly:
 | `## Observations` exists but is empty | `find_replace` anchored on `## Observations\n` |
 | `## Observations` is absent entirely | `find_replace` anchored on the next section header (typically `## Relations\n`); prepend a new `## Observations` section before it |
 | Last observation wraps across multiple lines | Include all continuation lines in both `find_text` and the prefix of `content`, then append the new observation after |
+| Note exceeds ~40KB (`read_note` truncates to a persisted file with no byte-exact anchor to match) | `operation="append"` a clearly-headed new section (e.g. `## <Date> Update`) instead of a blind `find_replace` — appending after `## Relations` still registers as observations on re-parse |
 
 Canonical call (populated section):
 
@@ -510,6 +511,24 @@ edit_note(
 Only add links where the relationship is genuine — don't link notes that
 mention the same word in an unrelated context. Skip this step for updates to
 existing packages where cross-links likely already exist.
+
+**Verify the specific edge resolved — not via `build_context`.** After adding
+a link, confirm that specific previously-dangling relation now resolves by
+querying the relation index directly, not by re-running `build_context`:
+
+```
+search_notes(query="<existing-note-title-or-target-name>", entity_types=["relation"], page_size=10)
+```
+
+Find the specific relation row for the edge you just added or fixed and
+confirm it shows a populated `to_entity`/target rather than a dangling
+target. **Caution:** `build_context`'s bidirectional "Related" list traverses
+only *resolved* edges and can surface a *reciprocal* relation — e.g. the
+`relates_to` link the target note already carries back to the note you just
+edited — which reads as success even when the specific egress edge you just
+wrote is still unresolved (`to_id NULL`). Seeing the target appear in
+`build_context`'s Related list does not confirm that edge; only the relation
+index does.
 
 **Reconcile bare-name stubs.** Existing notes elsewhere in the graph may
 reference this package via a bare `[[<package-name>]]` wiki-link — no

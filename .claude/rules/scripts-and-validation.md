@@ -25,8 +25,38 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
     used-but-undeclared tool. It does NOT flag the reverse (a declared-but-unused
     phantom tool); that stays a manual periodic audit (see the skill-development
     rule's tool-list hygiene). It fails loudly if the AST yields no scannable prose
-    yet the raw bytes carry `mcp__` tokens (an unclosed fence — would otherwise
-    pass vacuously).
+    yet the raw bytes carry `mcp__` (or bare built-in-tool, see below) tokens (an
+    unclosed fence — would otherwise pass vacuously).
+  - `findUndeclaredBuiltinTools()` (called from `auditToolReferences()`) — the
+    bare-built-in-tool counterpart to the `mcp__` check above (`Read`, `Write`,
+    `Bash`, `Glob`, `Grep`, `Agent`, ... — the `KNOWN_BUILTIN_TOOLS` set;
+    `AskUserQuestion` is deliberately excluded, see the skill-development rule's
+    interaction conventions). Unlike `mcp__x__y`, a bare tool name is an ordinary
+    English word, so this pass only scans **inline-code (backtick) spans** — a
+    local remark walk restricted to `inlineCode` nodes (`collectInlineCodeSpans`,
+    a sibling of `lib/mdast.mjs`'s `collectScannableText` kept inline in
+    `validate-plugin.mjs` rather than merged into the shared helper, since the
+    text-vs-code distinction only matters here) — never plain prose text, or
+    ordinary sentences like "Read the file first" would false-fire. Severity is
+    **`warn()`, not `error()`**: even backtick-wrapped, a tool name can
+    legitimately appear in "why this skill does NOT use tool X" prose (proven
+    case: nudge-adoption's `` `Glob` `` mentions, explaining a discarded design —
+    grammatically identical to a genuine-use sentence, so no local rule can tell
+    them apart), and a known instance is allowlisted in
+    `BUILTIN_MENTION_EXCEPTIONS` (keyed `"<path>:<Tool>"`) rather than silenced
+    by weakening the detector. New built-in tools — when Claude Code ships a new
+    tool name that could plausibly be referenced in skill/agent prose, add it to
+    `KNOWN_BUILTIN_TOOLS`; there is no automatic source of truth for this list,
+    unlike `KNOWN_MCP_PREFIXES` which at least has a documented per-server
+    maintenance trigger (see the skill-development rule's tool-list hygiene).
+    The detector itself (`findUndeclaredBuiltinTools`,
+    a pure function) has an inline self-test right after its definition —
+    synthetic fixtures only, asserts it fires on a planted undeclared-tool
+    reference and stays silent on an all-declared fixture — and that self-test
+    **is** `error()`, since detector correctness is unambiguous even though its
+    application to real prose isn't. First real-world catch: `Edit` referenced
+    in `agents/knowledge-maintainer.md`'s Rule 3 but absent from its `tools:`
+    list (vp-claude-v5ps).
   - `validateMcpPrefixes()` — every `mcp__<server>__*` prefix used must be in
     `KNOWN_MCP_PREFIXES` (catches typos / undocumented MCP deps).
   - phantom-subagent check — keys on `subagent_type=` so it survives the

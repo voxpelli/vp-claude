@@ -329,6 +329,53 @@ is forward-compatibility risk the age axis hides. Annotate the bullet with the
 `[<distance-class>]` tag; the `knowledge-maintainer` Section 3b Refresh Queue
 ordering keys off `[semver-major]` > `[semver-minor-multi]` > `[patch]`.
 
+**Ahead-of-registry guard (runs before bucketing, after the scheme-mismatch
+guard):** a note can legitimately record a version newer than the registry's
+— e.g. it tracks a `@latest` channel that moves faster than a versioned
+registry entry (`cask-claude-code` tracking `claude-code@latest 2.1.170`
+against an unsuffixed registry token at `2.1.153` is a real case). Bucketing
+this as `Drifted` is a false alarm, but an unguarded "note-version >
+upstream-version ⇒ benign" rule would permanently mask a real extraction
+mis-grab (the 0.31.4 yaml/semver incident looked exactly like "ahead" and was
+actually a parsing bug). Apply this **annotation only — never a new bucket,
+never the verdict** — the same shape as the vscode `marketplace_version`
+precedent above. Treat a note as benignly ahead only when **both** guards
+hold:
+
+- **(a) Same-scheme, cleanly semver-parseable comparison** — `bm_version` is
+  cleanly greater than `upstream_version` per `isAheadOfRegistry()` in
+  `lib/version-distance.mjs` (fixture-tested via `check:distance`). This is
+  the *ordering* companion to `classifyVersionDistance`'s magnitude
+  classification: it returns `false` — never "ahead" — for a CalVer note on
+  either side or any value that fails a clean `MAJOR.MINOR[.PATCH]` split.
+  CalVer notes and comma-mangled cask strings that don't resolve to clean
+  semver must NOT go through this path — you can't reliably tell "ahead"
+  from "malformed" without clean structure, so they stay in the normal drift
+  path.
+- **(b) Registry-lag timing** — the note's own frontmatter `updated_at` (the
+  same freshness field `package-intel`/`tool-intel`/`people-intel` already
+  use) is more recent than the upstream registry's last-observed movement
+  (the upstream release date, derivable from today's date minus the fetch
+  script's `days_stale`). This is what distinguishes a genuine
+  "we're tracking `@latest`, the registry snapshot hasn't caught up yet" case
+  from an old, stale note that merely carries a higher version number for an
+  unrelated reason (a bad manual edit, a copy-paste from the wrong channel).
+
+**When both guards hold:** treat the note as current — no bucket entry (the
+same "no report entry" treatment as an exact version match) — and add it to
+the `#### Summary` line as an informational annotation rather than a drift
+bullet, e.g. `Ahead of registry (informational, not drift): 1 note —
+cask-claude-code (2.1.170 vs 2.1.153, updated 2026-06-30)`. This never adds a
+`####` heading — `Summary` already exists in the canonical template.
+
+**When guard (a) holds but guard (b) fails (or is indeterminate — e.g. no
+`updated_at` on the note):** the note falls through to the normal
+versions-differ rules below unchanged, but the rendered bullet carries an
+extra `[ahead-of-registry?]` tag (note the trailing `?`) alongside its
+`[<distance-class>]` tag — flagging it for human judgment rather than
+auto-resolving it as benign. This keeps a stale note with an unexplained
+higher version number visible in `Drifted`, not silently suppressed.
+
 **Per-cohort distance notes:**
 
 - **brew / npm / crate** are clean semver → the model applies directly.
@@ -376,6 +423,7 @@ character-exact; the maintainer Section 3b text-searches for them):
 | Note | Documented | Upstream | Released | Distance | Refresh command |
 |------|-----------|----------|----------|----------|-----------------|
 | npm-pino | 9.5.0 | 9.5.1 | 4d ago | `[patch]` | `/package-intel npm:pino` |
+| cask-stale-tracker | 3.4.0 | 3.2.1 | 2d ago | `[patch] [ahead-of-registry?]` | `/tool-intel cask:stale-tracker` *(guard (a) holds — 3.4.0 is cleanly ahead — but `updated_at` predates this release, so it stays Drifted flagged for human judgment)* |
 
 #### Drifted, age unknown (Q notes)
 
@@ -428,6 +476,7 @@ A `not-in-api` with an *empty* `marketplace_version` is the benign
 - Not in registry: T notes
 - API unavailable: U notes
 - Current (no action needed): K notes
+- Ahead of registry (informational, not drift): V notes — cask-claude-code (2.1.170 vs 2.1.153, updated 2026-06-30)
 ````
 
 For cohorts whose ecosystem has no deprecation flag (`crate`, `vscode`), the

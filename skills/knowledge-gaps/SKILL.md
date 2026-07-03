@@ -13,6 +13,7 @@ allowed-tools:
   - mcp__basic-memory__read_note
   - mcp__basic-memory__list_directory
   - mcp__basic-memory__build_context
+  - mcp__basic-memory__recent_activity
   - mcp__readwise__readwise_search_highlights
   - mcp__readwise__reader_search_documents
 ---
@@ -65,6 +66,17 @@ upstream — not a coverage audit.
   are user-global, so a CI host without `~/.claude` simply yields nothing.
 - **`--global` + `--stale` together** — reject; they are separate modes
   (coverage vs drift). Run one at a time.
+- **`recent_activity` unavailable or empty (Step 10 recency-scoped sweep)** —
+  if the call errors, report "Recency sweep unavailable — could not confirm
+  recent-note coverage" in the gap report rather than treating an empty or
+  failed result as "zero recently active notes." If it returns zero results
+  (no MCP error, empty list), that IS a valid clean state — distinguish the
+  two explicitly in the report; do not conflate them.
+- **`read_note` fails mid-sweep (Step 10 recency-scoped sweep, step 3)** —
+  skip that note, name it in the report ("N of M recently-active notes could
+  not be read — sweep is partial"), and continue with the remaining notes.
+  Do not silently report the partial result as if it were the full recency
+  sweep.
 
 ## Workflow
 
@@ -589,13 +601,45 @@ Extract the target name from the relation `title` (format:
 from manifest parsing, add "(also wiki-linked)" annotation rather than
 listing it twice.
 
+**Recency-scoped sweep (large-directory blind spot):** the relevance-ranked
+query above is biased toward old, frequently-linked notes — in a large,
+active ecosystem directory (e.g. `brew/`, ~190 notes) the top 50
+relevance-ranked rows can be entirely old resolved links, never reaching
+notes created that same session. Confirmed empirically: a `brew-` prefix
+relation query returned only resolved old links, while 8 `brew-*` notes
+created that day carried 11 dangling edges that were only found by reading
+those notes directly — the relevance sweep reported a false-clean for the
+largest, most-active directory in the graph. Run this sweep in addition to
+the relevance-ranked query above, not instead of it:
+
+1. Get recently-active ecosystem/tool notes in one call:
+   ```
+   recent_activity(timeframe="7d", type="entity", output_format="json")
+   ```
+2. Filter the result to titles matching a detected ecosystem/tool prefix
+   (`npm-`, `crate-`, `go-`, `composer-`, `pypi-`, `gem-`, `brew-`,
+   `action-`, `docker-`, `vscode-`) — the same prefixes queried above.
+3. For each surviving note, `read_note` it and extract every `[[Target]]`
+   wiki-link in its `## Relations` section.
+4. For each target that itself matches an ecosystem/tool prefix, check it
+   against the `list_directory` results already gathered in Steps 2 and 8 —
+   a target absent from that title set is a dangling edge the relevance
+   sweep may have missed.
+
+This is O(recently-active notes), not O(corpus) — it stays cheap because it
+is bounded by the 7-day window rather than directory size, and it is
+recency-complete regardless of how large or old-link-dominated the
+directory is. Merge findings from both sweeps into one table, deduplicating
+by target.
+
 Add dead-link findings to the gap report:
 
 ```
 #### Referenced but not documented (dead wiki-links)
-| Link | Referenced in |
-|------|--------------|
-| [[npm-some-pkg]] | npm-fastify, engineering/patterns/http |
+| Link | Referenced in | Detected via |
+|------|--------------|--------------|
+| [[npm-some-pkg]] | npm-fastify, engineering/patterns/http | relevance |
+| [[brew-some-tool]] | brew-newly-added | recency |
 ```
 
 Add dead-link counts to the Overall Summary:
@@ -606,11 +650,17 @@ Add dead-link counts to the Overall Summary:
 When offering enrichment (Steps 5, 9), include dead-link targets annotated
 with "(wiki-linked in N notes)" to show organic graph momentum.
 
-**Limitation:** `page_size=50` per prefix is a sample, not exhaustive — the
-graph may have more unresolved relations than one page returns. This is
-acceptable for a gap detection tool (the gardener handles comprehensive
-auditing). The highest-scored results surface the most commonly referenced
-dead links.
+**Limitation:** `page_size=50` per prefix on the relevance-ranked query is a
+sample, not exhaustive — the graph may have more unresolved relations than
+one page returns, and in a large directory the sample skews toward old,
+frequently-linked notes rather than recent ones (see the recency-scoped
+sweep above, which exists specifically to cover that blind spot). Even with
+both sweeps combined this remains a bounded gap-detection pass, not a full
+audit — a note edited outside the 7-day window whose dangling edge also
+falls outside the top-50 relevance-ranked sample is still missed by design
+(the gardener handles comprehensive auditing). The highest-scored results
+surface the most commonly referenced dead links; the recency sweep surfaces
+the most recently introduced ones.
 
 ---
 

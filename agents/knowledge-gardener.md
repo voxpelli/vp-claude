@@ -589,6 +589,31 @@ Apply rules in order; first match wins.
 2. script `upstream_state == "not-in-api"` AND `bm_tap_present == false` AND `bm_version == "unparseable"` → **`Not in registry`** *(no tap recorded but the 404 + unparseable combination still strongly suggests tap/renamed/removed — same actionable advice: re-run `/tool-intel`)*
 3. script `upstream_state ∈ {"deprecated", "disabled"}` → **`Archive candidates`**
 4. `bm_version == "unparseable"` (and rule 1/2 did not fire) → **`Unparseable`**
+4a. **Ahead-of-registry guard** — `bm_version` cleanly ahead of
+`upstream_version` per `isAheadOfRegistry()` in `lib/version-distance.mjs`
+(guard (a): same-scheme, cleanly semver-parseable comparison — never true for
+a CalVer version on either side or an unparseable split, since "ahead" can't
+be reliably distinguished from a malformed extraction without clean
+structure — this is exactly the 0.31.4 yaml/semver incident's failure mode)
+**AND** the note's frontmatter `updated_at` is more recent than the upstream
+registry's last-observed movement (guard (b): the upstream release date,
+derivable from today's date minus the script's `days_stale` — the established
+`updated_at` freshness field also used by package-intel/tool-intel/
+people-intel) → **treated as current, no bucket entry** — a real, legitimate
+state (a note tracks a `@latest` channel that moves faster than a versioned
+registry entry — `cask-claude-code` tracking `claude-code@latest 2.1.170`
+against an unsuffixed registry token at `2.1.153` is a real case). Add it to
+the `#### Summary` as an informational annotation line, never a `####`
+bucket, never the drift verdict — the same "annotation only" shape as the
+vscode `marketplace_version` precedent in 5b-iii above.
+4b. `bm_version` cleanly ahead of `upstream_version` per guard (a) but guard
+(b) fails or is indeterminate (e.g. no `updated_at`) → falls through to rules
+5–8 below unchanged, but the rendered bullet carries an extra
+`[ahead-of-registry?]` tag (trailing `?`) alongside its `[<distance-class>]`
+tag — flags it for human judgment instead of auto-resolving as benign. This
+guards against permanently masking a real mis-grab: an old stale note that
+merely carries a higher version number for an unrelated reason stays visible
+in `Drifted`, not silently suppressed.
 5. versions differ AND **distance is `semver-major`** → **`Drifted >30d`** *(semver-major **escalates** regardless of `days_stale` — a major-version gap is forward-compatibility risk that the age axis hides. Document the actual `days_stale` value in the bullet so the maintainer knows the escalation was distance-driven.)* **Scheme-homogeneity prerequisite:** apply this rule ONLY when both versions share a scheme. If one has a leading numeric component ≥ 2000 (CalVer) and the other does not, distance is `distance-unknown` — skip to rules 6–8 (age-based). A CalVer year (e.g. `2026`) MUST NOT be treated as a semver major against `3`.
 6. versions differ AND `age-stale` → **`Drifted >30d`**
 7. versions differ AND `age-fresh` → **`Drifted <30d`** *(annotate `semver-minor-multi` distance inline so the maintainer can spot near-major risk even when age is fresh)*
@@ -919,6 +944,78 @@ nothing.
 > — an auto-resolved wrong URL is false provenance, worse than the gap. A
 > systematic backfill remains a separate, human-confirmed decision.
 
+### 12. Observation category hygiene
+
+Three narrow, read-only checks on observation `[category]` usage. This step
+**proposes** findings only — it never recategorizes, strips text, or deletes
+observations itself; that is the maintainer's job.
+
+**12a. `[raindrop]`/`[readwise]` category misuse.** Per the preloaded
+`vp-note-quality` skill (rule 6), `[raindrop]`/`[readwise]` exist to record
+*provenance* — a specific bookmark URL, title, or highlight is the point.
+When the observation instead carries the actual insight (a relationship, a
+citation-only reference, a direct quote) with no citable artifact attached,
+it belongs under `[connection]`, `[source]`, or `[quote]` instead —
+`[raindrop]`/`[readwise]` is being used as a content-relationship category
+when it should be a source-tracking one, or vice versa.
+
+Search:
+```
+search_notes(search_type="text", query="[raindrop]", entity_types=["observation"], page_size=20)
+search_notes(search_type="text", query="[readwise]", entity_types=["observation"], page_size=20)
+```
+For each hit, read the observation text and classify:
+- **Recategorize → `[connection]`**: states a relationship between the
+  subject and another subject/idea, with no bookmark artifact cited.
+- **Recategorize → `[source]`**: bare citation-only content (a domain,
+  title, author) with no bookmarked insight attached.
+- **Recategorize → `[quote]`**: contains a direct quote or extracted
+  passage without framing it as provenance evidence.
+- **Leave as-is**: cites a specific bookmark URL, title, or highlight where
+  the provenance itself is the point (rule 6's carve-out).
+
+Report each miscategorized hit under **Warning** with the note title, the
+offending observation text, and the suggested target category.
+
+**12b. Stale inventory-state `[gap]` observations.** Per rule 5, a `[gap]`
+observation should record something unknown or missing about the *subject
+itself* — not a coverage state that can silently go stale as the subject
+evolves. Time-boxed phrasing is the tell: a `[gap]` observation that names a
+version, release, or "not yet" condition is liable to have been filled by a
+later release while the note itself was never revisited to check.
+
+Search:
+```
+search_notes(search_type="text", query="[gap]", entity_types=["observation"], page_size=30)
+```
+For each hit, flag as a stale-inventory candidate when the observation text
+contains time-boxed or version-scoped phrasing (e.g., "not yet", "does not
+currently", "still missing", "as of v", "not yet supported", "no support
+for ... yet"). Cross-reference the note's age against Step 5's stale-note
+set when available — a stale-inventory-shaped `[gap]` on a note Step 5
+already flagged as 90+ days untouched is higher-confidence (the gap
+language is old AND the note hasn't been revisited to check if it still
+holds).
+
+Report each candidate under **Warning** with the note title and observation
+text, suggesting the maintainer verify the gap still holds upstream before
+deleting the observation.
+
+**12c. `'saved YYYY-MM-DD'` bookmark-date boilerplate.** Basic Memory already
+tracks note creation/update timestamps — a bookmark-date suffix baked into
+observation text (e.g., `(saved 2024-05-12)`) duplicates that metadata as
+prose and adds no information the graph doesn't already carry elsewhere.
+
+Search:
+```
+search_notes(search_type="text", query="saved 20", entity_types=["observation"], page_size=30)
+```
+For each hit, verify the match is a genuine bookmark-date suffix (a `saved
+YYYY` or `saved YYYY-MM-DD` fragment), not a coincidental use of "saved" in
+prose (e.g., "saved 20 minutes of setup time"). Report confirmed hits under
+**Warning** with the note title and the full observation text, suggesting
+the date suffix be stripped while leaving the substantive content intact.
+
 ## Output Format
 
 ````markdown
@@ -945,6 +1042,13 @@ nothing.
 - [note-title] — title scope mismatch: title covers "Patterns" but content only addresses brew
 - [note-title] — 25 flat observations, candidate for subsection splitting
 - [note-title] — fourth-wall violation (severity B): "This topic has zero presence in Raindrop"
+
+#### Observation category hygiene (Step 12)
+*(Emitted by Step 12. Proposes recategorizations and flags stale/boilerplate
+observation text — never applies fixes itself; the maintainer does.)*
+- [note-title] — `[raindrop]` observation "..." carries the insight itself with no cited artifact; recategorize to `[connection]`
+- [note-title] — `[gap]` observation "Does not yet support X (as of v2.1)" is time-boxed; verify still-current before keeping
+- [note-title] — `[source]` observation "... (saved 2024-05-12)" carries bookmark-date boilerplate; strip the date suffix
 
 #### Silent drift (unmatched categories / verbs by type)
 *(Emitted by Step 2. Lists `unmatched_observations` and `unmatched_relations`
@@ -982,6 +1086,7 @@ character-exact.)*
 
 #### Drifted <30d
 - **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago) [<distance-class>] — refresh via `/tool-intel brew:<name>`
+- **brew-stale-tracker** v3.4.0 → v3.2.1 (released 2d ago) [patch] [ahead-of-registry?] — refresh via `/tool-intel brew:stale-tracker` *(example: rule 4b — guard (a) holds (3.4.0 is cleanly ahead of 3.2.1) but the note's `updated_at` predates this release, so it stays in Drifted flagged for human judgment rather than auto-resolved as benign)*
 
 #### Drifted, age unknown
 - **brew-<name>** v<bm_version> → v<upstream_version> (release date not available) — refresh via `/tool-intel brew:<name>`
@@ -991,6 +1096,9 @@ character-exact.)*
 
 #### Not in registry
 - brew-<name1>, brew-<name2> — tap-installed formulae (or renamed/removed) not in central API; drift check skipped
+
+#### Summary
+- Ahead of registry (informational, not drift): 1 note — cask-claude-code (2.1.170 vs 2.1.153, updated 2026-06-30) *(4a's guarded ahead-of-registry annotation — no bucket, never the verdict)*
 
 ### Graph Statistics
 - Total relations: N

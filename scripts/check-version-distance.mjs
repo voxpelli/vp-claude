@@ -6,7 +6,7 @@
  * fixtures rather than trusted. Wired into `npm run check` as `check:distance`.
  */
 
-import { classifyVersionDistance, isCalVer } from '../lib/version-distance.mjs'
+import { classifyVersionDistance, isAheadOfRegistry, isCalVer } from '../lib/version-distance.mjs'
 
 let passed = 0
 let failed = 0
@@ -69,6 +69,45 @@ check('identical versions → patch', classifyVersionDistance('3.6.1', '3.6.1'),
 check('isCalVer: 2026.x → true', isCalVer('2026.3.311859'), true)
 check('isCalVer: 3.6.1 → false', isCalVer('3.6.1'), false)
 check('isCalVer: 1999.x boundary → false', isCalVer('1999.1.1'), false)
+
+// --- isAheadOfRegistry: the ahead-of-registry annotation's ordering guard ---
+// (cask-claude-code shape: note tracks @latest, registry lags on an
+// unsuffixed token)
+check('cask-claude-code shape: note ahead on clean semver → true',
+  isAheadOfRegistry('2.1.170', '2.1.153'), true)
+check('note behind upstream → false (not ahead)',
+  isAheadOfRegistry('2.1.153', '2.1.170'), false)
+check('identical versions → false (not ahead)',
+  isAheadOfRegistry('3.6.1', '3.6.1'), false)
+check('CalVer bm side → false (must stay in normal drift path)',
+  isAheadOfRegistry('2026.3.311859', '3.6.1'), false)
+check('CalVer upstream side → false (must stay in normal drift path)',
+  isAheadOfRegistry('3.6.1', '2026.3.311859'), false)
+check('both CalVer, bm ahead → false (same-scheme CalVer still excluded)',
+  isAheadOfRegistry('2026.3.2', '2026.3.1'), false)
+check('malformed bm → false (cannot distinguish ahead from mis-extraction)',
+  isAheadOfRegistry('unparseable', '1.0.0'), false)
+check('malformed upstream → false',
+  isAheadOfRegistry('1.0.0', 'nightly'), false)
+check('ahead by minor → true', isAheadOfRegistry('1.5.0', '1.4.9'), true)
+check('ahead by major → true', isAheadOfRegistry('2.0.0', '1.9.9'), true)
+
+// --- isAheadOfRegistry: pre-release / build-metadata handling (current,
+// chosen behavior — parseSemver only reads the leading MAJOR.MINOR[.PATCH]
+// and ignores everything after, so a pre-release or build-metadata suffix
+// does not block an "ahead" verdict. Pinned so a future regex tightening
+// can't silently flip this with nothing to catch the change.) ---
+check('pre-release suffix on bm side still counts as ahead → true',
+  isAheadOfRegistry('1.0.1-beta.1', '1.0.0'), true)
+check('build-metadata suffix on bm side is ignored, still ahead → true',
+  isAheadOfRegistry('1.0.1+build', '1.0.0'), true)
+
+// --- isAheadOfRegistry: falsy-input guard ---
+check('empty bm string → false', isAheadOfRegistry('', '1.0.0'), false)
+check('empty upstream string → false', isAheadOfRegistry('1.0.0', ''), false)
+check('null bm → false', isAheadOfRegistry(/** @type {string} */ (/** @type {unknown} */ (null)), '1.0.0'), false)
+// eslint-disable-next-line unicorn/no-useless-undefined -- deliberately exercising the `!upstreamVersion` falsy-input branch, not an accidental default
+check('undefined upstream → false', isAheadOfRegistry('1.0.0', /** @type {string} */ (/** @type {unknown} */ (undefined))), false)
 
 console.log(`${passed}/${passed + failed} passed`)
 if (failed > 0) process.exit(1)

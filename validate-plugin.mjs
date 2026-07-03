@@ -3,6 +3,9 @@ import { readdir, readFile } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 
 import yaml from 'js-yaml'
+import remarkFrontmatter from 'remark-frontmatter'
+import remarkParse from 'remark-parse'
+import { unified } from 'unified'
 
 import { collectScannableText } from './lib/mdast.mjs'
 import { checkStalenessConsume, checkStalenessEmit } from './lib/staleness-contract.mjs'
@@ -99,6 +102,37 @@ const KNOWN_MCP_PREFIXES = [
   'mcp__homebrew__',
 ]
 
+// Built-in Claude Code tool names this plugin's skills/agents can reference in
+// workflow prose. AskUserQuestion is deliberately excluded: skill-development.md
+// documents it as NEVER declared in allowed-tools (declaring it auto-approves
+// the interaction, bypassing the UI prompt — anthropics/claude-code#29547) yet
+// still referenced by name in prose — including it here would be a permanent,
+// unfixable false positive.
+const KNOWN_BUILTIN_TOOLS = new Set([
+  'Read', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit',
+  'Bash', 'BashOutput', 'KillShell',
+  'Glob', 'Grep', 'WebFetch', 'WebSearch',
+  'Agent', 'Task', 'Skill', 'TodoWrite',
+  'ExitPlanMode', 'SlashCommand', 'Artifact',
+  'TaskCreate', 'TaskGet', 'TaskList', 'TaskOutput',
+])
+
+// Smoke-test pattern for the unclosed-fence vacuous-pass guard below — mirrors
+// the mcp__ token test but for bare built-in tool names.
+const BARE_BUILTIN_TOOL_PATTERN = new RegExp('`(?:' + [...KNOWN_BUILTIN_TOOLS].join('|') + ')[`(]')
+
+// A tool named in prose to explain why a skill deliberately does NOT use it
+// (a design-decision mention), not to invoke it. This is grammatically
+// indistinguishable from a genuine use by any local rule — e.g. nudge-sync's
+// "`Write` creates missing..." (real use, declared) and nudge-adoption's
+// "`Glob` caps its returned file list..." (historical non-use, undeclared) are
+// both third-person descriptions of the tool. Key: "<path from repo root>:<Tool>".
+const BUILTIN_MENTION_EXCEPTIONS = new Set([
+  // Discusses a former Glob-based working-set design this skill deliberately
+  // does NOT use (see the skill's own "Gather evidence" step for why).
+  'skills/nudge-adoption/SKILL.md:Glob',
+])
+
 /**
  * @param {string} file
  * @param {string[]} tools
@@ -109,6 +143,67 @@ function validateMcpPrefixes (file, tools) {
       error(file, `Unknown MCP prefix in tool: ${tool}`)
     }
   }
+}
+
+// Local remark processor for extracting ONLY inline-code (`backtick`) spans.
+// lib/mdast.mjs's collectScannableText deliberately merges `text` + `inlineCode`
+// into one flat array — fine for the mcp__ check, where the token itself is
+// unambiguous regardless of whether it sits in prose or a code span. Bare
+// built-in tool names (Read, Bash, Agent, ...) are ordinary English words, so
+// this check needs the stronger "code span" signal this plugin's own convention
+// already uses for genuine tool references (see skill-development.md's tool
+// list hygiene) — scanning plain prose too would flag ordinary sentences like
+// "Read the file first."
+const inlineCodeProcessor = unified().use(remarkParse).use(remarkFrontmatter, ['yaml'])
+
+/**
+ * @param {string} content
+ * @returns {string[]} inline-code span values, outside fenced blocks + frontmatter
+ */
+function collectInlineCodeSpans (content) {
+  const tree = inlineCodeProcessor.parse(content)
+  /** @type {string[]} */
+  const spans = []
+  /** @param {import('mdast').Nodes} node */
+  function walk (node) {
+    if (node.type === 'code' || node.type === 'yaml') return
+    if (node.type === 'inlineCode') {
+      spans.push(node.value)
+      return
+    }
+    if ('children' in node && Array.isArray(node.children)) {
+      for (const child of node.children) walk(child)
+    }
+  }
+  walk(tree)
+  return spans
+}
+
+/**
+ * Find bare built-in tool names (in backtick code spans, e.g. `Read` or
+ * `Glob(pattern=...)` call syntax) that are missing from the declared tools
+ * list. Pure — no file I/O, no error()/warn() side effects — so it is directly
+ * unit-testable (see the self-test below).
+ *
+ * @param {string} content
+ * @param {string[]} declaredTools
+ * @returns {string[]} unique undeclared built-in tool names, first-seen order
+ */
+function findUndeclaredBuiltinTools (content, declaredTools) {
+  const toolSet = new Set(declaredTools)
+  const seen = new Set()
+  /** @type {string[]} */
+  const found = []
+  for (const span of collectInlineCodeSpans(content)) {
+    const match = span.trim().match(/^([A-Z][A-Za-z]*)(?:\(|$)/)
+    if (!match) continue
+    const tool = match[1]
+    if (KNOWN_BUILTIN_TOOLS.has(tool) && !toolSet.has(tool) && !seen.has(tool)) {
+      seen.add(tool)
+      found.push(tool)
+    }
+  }
+  return found
 }
 
 /**
@@ -138,8 +233,8 @@ function auditToolReferences (file, content, declaredTools, fieldName) {
   // (beaded) — a per-token "raw must be in segments" cross-check is infeasible
   // because legitimate CLOSED fenced examples are also raw-but-not-collected.
   const body = content.replace(/^---\n[\s\S]*?\n---\n?/, '')
-  if (segments.length === 0 && /mcp__[\w-]+__[\w-]+/.test(body)) {
-    error(file, `${fieldName}: no scannable prose but the body has mcp__ tokens — likely an unclosed code fence; fix the markdown`)
+  if (segments.length === 0 && (/mcp__[\w-]+__[\w-]+/.test(body) || BARE_BUILTIN_TOOL_PATTERN.test(body))) {
+    error(file, `${fieldName}: no scannable prose but the body has mcp__ or built-in-tool tokens — likely an unclosed code fence; fix the markdown`)
     return
   }
   for (const text of segments) {
@@ -150,6 +245,91 @@ function auditToolReferences (file, content, declaredTools, fieldName) {
         error(file, `Tool "${tool}" referenced in prose but missing from ${fieldName}`)
       }
     }
+  }
+  // Bare built-in tool names — see findUndeclaredBuiltinTools' doc comment for
+  // why this needs a separate inline-code-only pass instead of reusing `segments`.
+  // warn() (not error()), unlike the mcp__ check above: a bare tool name in a
+  // backtick span is an ordinary English word, and this codebase's own prose
+  // can genuinely mention a tool to explain why it is NOT used (e.g. "an
+  // earlier version used `Glob` to build a working set" — nudge-adoption,
+  // exempted below) — grammatically indistinguishable from real use by any
+  // local rule. A hard error() here would make legitimate "why we don't use X"
+  // documentation break CI. See scripts-and-validation.md for the house
+  // error()-vs-warn() convention this follows.
+  const relFile = relative(ROOT, file)
+  for (const tool of findUndeclaredBuiltinTools(content, declaredTools)) {
+    if (BUILTIN_MENTION_EXCEPTIONS.has(`${relFile}:${tool}`)) continue
+    warn(file, `Built-in tool "${tool}" referenced in prose but missing from ${fieldName} — verify this is a real reference, not just a documentation mention`)
+  }
+}
+
+// Self-test: findUndeclaredBuiltinTools must fire on a planted violation and
+// stay silent on a fixture where every referenced tool is declared. Guards the
+// detector itself against silently regressing to a no-op — the exact failure
+// mode this check exists to close (a skill called a built-in tool in prose
+// without declaring it, and `npm run check:plugin` passed silently). Uses
+// synthetic fixture strings only, never real plugin files, so it can assert
+// "fires on X" without depending on — or polluting — the real report above.
+{
+  const violationFixture = 'Use the `Read` tool to check the manifest.'
+  const violationFound = findUndeclaredBuiltinTools(violationFixture, [])
+  if (!violationFound.includes('Read')) {
+    error(join(ROOT, '<self-test>'), 'findUndeclaredBuiltinTools self-test failed: did not detect the planted undeclared "Read" reference')
+  }
+  const cleanFixture = 'Use the `Read` tool to check the manifest, then call `mcp__basic-memory__search_notes`.'
+  const cleanFound = findUndeclaredBuiltinTools(cleanFixture, ['Read'])
+  if (cleanFound.length > 0) {
+    error(join(ROOT, '<self-test>'), `findUndeclaredBuiltinTools self-test failed: false positive(s) on a fixture where every tool is declared: ${cleanFound.join(', ')}`)
+  }
+}
+
+// Self-test: auditToolReferences must route a genuine undeclared bare
+// built-in tool mention to warn() (not error()) — the split the module-level
+// comment above documents — and must fully suppress a BUILTIN_MENTION_EXCEPTIONS
+// allowlisted mention (no warn, no error at all). findUndeclaredBuiltinTools'
+// own self-test above only proves the pure detector fires; this proves the
+// detected name actually reaches the right severity bucket through
+// auditToolReferences, and that the allowlist match logic works. Uses
+// synthetic file paths + content (the real allowlisted key, reused rather
+// than duplicated, since exercising the real entry is exactly the point) and
+// unwinds every warnings/errors entry it adds afterward so this synthetic
+// exercise never leaks into the real report below.
+{
+  const selfTestFile = join(ROOT, '<self-test-audit-tool-references>')
+  const warningsSnapshot = warnings.length
+  const errorsSnapshot = errors.length
+  /** @type {string[]} */
+  const failures = []
+
+  // (a) genuine undeclared mention → exactly one warning, zero errors
+  auditToolReferences(selfTestFile, 'Use the `Bash` tool to run the command.', [], 'allowed-tools')
+  if (warnings.length !== warningsSnapshot + 1) {
+    failures.push('a genuine undeclared built-in tool mention did not produce exactly one warning')
+  }
+  if (errors.length !== errorsSnapshot) {
+    failures.push('a bare built-in tool mention incorrectly escalated to error()')
+  }
+  warnings.length = warningsSnapshot
+  errors.length = errorsSnapshot
+
+  // (b) allowlisted mention (BUILTIN_MENTION_EXCEPTIONS) → fully suppressed
+  const [exceptionKey] = BUILTIN_MENTION_EXCEPTIONS
+  if (exceptionKey) {
+    const sepIndex = exceptionKey.lastIndexOf(':')
+    const exceptionRelPath = exceptionKey.slice(0, sepIndex)
+    const exceptionTool = exceptionKey.slice(sepIndex + 1)
+    auditToolReferences(join(ROOT, exceptionRelPath), `Use the \`${exceptionTool}\` tool for X.`, [], 'allowed-tools')
+    if (warnings.length !== warningsSnapshot || errors.length !== errorsSnapshot) {
+      failures.push(`allowlisted mention "${exceptionKey}" was not fully suppressed`)
+    }
+    warnings.length = warningsSnapshot
+    errors.length = errorsSnapshot
+  } else {
+    failures.push('BUILTIN_MENTION_EXCEPTIONS is empty — cannot exercise the allowlist-suppression path')
+  }
+
+  for (const message of failures) {
+    error(join(ROOT, '<self-test>'), `auditToolReferences self-test failed: ${message}`)
   }
 }
 
