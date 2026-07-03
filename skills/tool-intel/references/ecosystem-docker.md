@@ -29,11 +29,12 @@ and fall back to Tavily:
 
 ## Docker Hub API: Repository Metadata
 
-```
-tavily_extract(
-  urls=["https://hub.docker.com/v2/repositories/<namespace>/<name>/"],
-  query="description full_description star_count pull_count"
-)
+This is a raw JSON registry endpoint, not HTML — fetch it directly via `Bash`
+with `curl`+`jq` rather than `tavily_extract`: cheaper (no MCP round-trip) and
+shape-exact (no HTML-extraction lossiness):
+
+```bash
+curl -fsSL --max-time 30 "https://hub.docker.com/v2/repositories/<namespace>/<name>/" | jq .
 ```
 
 For official images, `<namespace>` is `library`. Response fields:
@@ -50,11 +51,10 @@ For official images, `<namespace>` is `library`. Response fields:
 
 ## Docker Hub API: Tags
 
-```
-tavily_extract(
-  urls=["https://hub.docker.com/v2/repositories/<namespace>/<name>/tags/?page_size=10"],
-  query="name last_updated digest"
-)
+This is also a raw JSON registry endpoint — fetch it the same way:
+
+```bash
+curl -fsSL --max-time 30 "https://hub.docker.com/v2/repositories/<namespace>/<name>/tags/?page_size=10" | jq .
 ```
 
 Tag naming patterns to document in `## Tags`:

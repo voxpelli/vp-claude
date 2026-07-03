@@ -5,19 +5,13 @@ ecosystem is `gem`.
 
 ## Resolve Gem Metadata
 
-RubyGems provides a free, no-auth JSON API:
+RubyGems provides a free, no-auth JSON API. This is a raw JSON registry
+endpoint, not HTML — fetch it directly via `Bash` with `curl`+`jq` rather than
+`tavily_extract`: cheaper (no MCP round-trip) and shape-exact (no
+HTML-extraction lossiness). No `User-Agent` header is required:
 
-**Option A — tavily_extract (preferred):**
-```
-tavily_extract(
-  urls=["https://rubygems.org/api/v1/gems/<name>.json"],
-  query="source_code_uri repository description version license"
-)
-```
-
-**Option B — Bash curl (fallback):**
 ```bash
-curl -s "https://rubygems.org/api/v1/gems/<name>.json"
+curl -fsSL --max-time 30 "https://rubygems.org/api/v1/gems/<name>.json" | jq .
 ```
 
 ## Key Response Fields

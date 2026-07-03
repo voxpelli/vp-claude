@@ -5,19 +5,13 @@ ecosystem is `pypi`.
 
 ## Resolve Package Metadata
 
-PyPI provides a free, no-auth JSON API:
+PyPI provides a free, no-auth JSON API. This is a raw JSON registry endpoint,
+not HTML — fetch it directly via `Bash` with `curl`+`jq` rather than
+`tavily_extract`: cheaper (no MCP round-trip) and shape-exact (no
+HTML-extraction lossiness):
 
-**Option A — tavily_extract (preferred):**
-```
-tavily_extract(
-  urls=["https://pypi.org/pypi/<name>/json"],
-  query="repository description version license homepage"
-)
-```
-
-**Option B — Bash curl (fallback):**
 ```bash
-curl -s "https://pypi.org/pypi/<name>/json"
+curl -fsSL --max-time 30 "https://pypi.org/pypi/<name>/json" | jq .
 ```
 
 ## Key Response Fields

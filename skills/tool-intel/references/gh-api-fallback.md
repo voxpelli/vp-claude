@@ -66,7 +66,7 @@ path: `gh api repos/<owner>/<repo>/contents` returns an array.
 ## Recovering a Version/Changelog from Tags
 
 When the release list lags the true latest version, recover from tags —
-but four GitHub API behaviors will silently mislead a naive read:
+but five GitHub API/CHANGELOG behaviors will silently mislead a naive read:
 
 - **`/tags` is ordered by creation/reachability, not semver.** Do not
   treat `.[0]` (or the first line) as "newest." Collect the tags, parse
@@ -91,6 +91,24 @@ but four GitHub API behaviors will silently mislead a naive read:
   exited 0; the quickest check is to re-run without `2>/dev/null`. On
   error, surface it and record nothing — never let a suppressed failure
   become a recorded version, changelog, or `runtime_shape`.
+- **A hand-maintained `CHANGELOG.md` can lag its own git tags.** Repos
+  that cut `## [Unreleased]` into versioned headers by hand (rather than
+  via an automated release tool) don't always cut on the same cadence as
+  they push tags. Before trusting `## [Unreleased]` prose to attribute a
+  feature to a *single* version, compare the newest version header in
+  `CHANGELOG.md` against the newest semver tag from `/tags`. If the cut
+  header is behind the newest tag, the `Unreleased` section is blending
+  multiple releases with no boundary markers — do not attribute any of
+  its content to one version. Instead derive the changelog for each
+  affected version from `gh api
+  repos/<owner>/<repo>/compare/<tagA>...<tagB>` commit ranges. Real case:
+  `brew-sem-cli`'s note attributed two features to v0.16.2 based on
+  `Unreleased` prose; `compare/v0.16.2...v0.17.0` proved both actually
+  shipped in v0.17.0 (3 commits: #449/#450/#451-452), while
+  v0.16.1→v0.16.2 was only a rustfmt tweak and an MCP-registry
+  namespace-casing fix. At correction time the CHANGELOG's newest cut
+  header (`## [0.15.1]`) was four releases behind the newest tag
+  (`v0.17.0`). Corrected 2026-07-03.
 
 ## Per-Prefix Notes
 

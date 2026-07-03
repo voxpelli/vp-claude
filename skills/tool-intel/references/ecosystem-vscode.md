@@ -29,13 +29,12 @@ Example: `esbenp.prettier-vscode` where `esbenp` is the publisher and
 ## Primary Source: Open VSX Registry
 
 Open VSX (`open-vsx.org`) is the open-source alternative registry with a
-clean REST API. Try it first:
+clean REST API. Try it first. This is a raw JSON registry endpoint, not HTML —
+fetch it directly via `Bash` with `curl`+`jq` rather than `tavily_extract`:
+cheaper (no MCP round-trip) and shape-exact (no HTML-extraction lossiness):
 
-```
-tavily_extract(
-  urls=["https://open-vsx.org/api/<publisher>/<extension-id>"],
-  query="displayName description version license repository"
-)
+```bash
+curl -fsSL --max-time 30 "https://open-vsx.org/api/<publisher>/<extension-id>" | jq .
 ```
 
 ### Key fields from Open VSX API response

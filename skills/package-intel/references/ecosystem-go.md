@@ -25,11 +25,13 @@ Only needed for proxy.golang.org URLs — use the original path everywhere else.
 ## Resolve Module Metadata
 
 **Option A — Go proxy (version + timestamp only):**
-```
-tavily_extract(
-  urls=["https://proxy.golang.org/<encoded-module-path>/@latest"],
-  query="version timestamp"
-)
+
+This is a raw JSON registry endpoint, not HTML — fetch it directly via `Bash`
+with `curl`+`jq` rather than `tavily_extract`: cheaper (no MCP round-trip) and
+shape-exact (no HTML-extraction lossiness):
+
+```bash
+curl -fsSL --max-time 30 "https://proxy.golang.org/<encoded-module-path>/@latest" | jq .
 ```
 This returns `{"Version": "v1.2.3", "Time": "..."}` — no description or license.
 

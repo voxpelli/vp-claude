@@ -42,23 +42,17 @@ Useful fields: `version`, `description`, `license`, `repository.url`,
 ## Download Stats
 
 The npm downloads API provides weekly download counts. Fetch alongside
-the `npm view` call — the data is at a separate endpoint.
+the `npm view` call — the data is at a separate endpoint. This is a raw JSON
+registry endpoint, not HTML — fetch it directly via `Bash` with `curl`+`jq`
+rather than `tavily_extract`: cheaper (no MCP round-trip) and shape-exact (no
+HTML-extraction lossiness):
 
-**Option A — tavily\_extract (preferred):**
-```
-tavily_extract(
-  urls=["https://api.npmjs.org/downloads/point/last-week/<package-name>"],
-  query="downloads"
-)
+```bash
+curl -fsSL --max-time 30 "https://api.npmjs.org/downloads/point/last-week/<package-name>" | jq '.downloads'
 ```
 
 For scoped packages, URL-encode the scope:
 `https://api.npmjs.org/downloads/point/last-week/%40scope%2Fname`
-
-**Option B — Bash curl (fallback):**
-```bash
-curl -s "https://api.npmjs.org/downloads/point/last-week/<package-name>" | jq '.downloads'
-```
 
 The response is JSON: `{"downloads": <integer>, "start": "...", "end": "...", "package": "..."}`.
 Extract `.downloads`. If the call fails or returns `null`, skip the popularity

@@ -11,19 +11,13 @@ unscoped Composer packages.
 
 ## Resolve Package Metadata
 
-Packagist provides a JSON API at `packagist.org`:
+Packagist provides a JSON API at `packagist.org`. This is a raw JSON registry
+endpoint, not HTML — fetch it directly via `Bash` with `curl`+`jq` rather than
+`tavily_extract`: cheaper (no MCP round-trip) and shape-exact (no
+HTML-extraction lossiness):
 
-**Option A — tavily_extract (preferred):**
-```
-tavily_extract(
-  urls=["https://packagist.org/packages/<vendor>/<package>.json"],
-  query="repository description downloads version license"
-)
-```
-
-**Option B — Bash curl (fallback):**
 ```bash
-curl -s "https://packagist.org/packages/<vendor>/<package>.json"
+curl -fsSL --max-time 30 "https://packagist.org/packages/<vendor>/<package>.json" | jq .
 ```
 
 **Note:** Packagist responses are cached for ~12 hours. The response may not

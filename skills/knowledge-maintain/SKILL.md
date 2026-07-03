@@ -1,6 +1,6 @@
 ---
 name: knowledge-maintain
-description: "This skill should be used when the user asks to fix, repair, or tidy one or more SPECIFIC named notes — 'fix these notes', 'fix the issues in [note]', 'add the missing relations to [note]', 'tidy up [note]', 'fix orphan [note]', 'apply the gardener findings for [note]'. Applies fixes inline so the user sees and confirms each edit. NOT for read-only auditing (use /knowledge-garden), NOT for creating new notes (use /package-intel or /tool-intel), and NOT for graph-wide or autonomous remediation ('fix the whole audit', 'remediate the graph', research-and-document sweeps) — those belong to the knowledge-maintainer agent, which this skill delegates to when invoked broadly."
+description: "This skill should be used when the user asks to fix, repair, or tidy one or more SPECIFIC named notes — 'fix these notes', 'fix the issues in [note]', 'add the missing relations to [note]', 'tidy up [note]', 'fix orphan [note]', 'apply the gardener findings for [note]'. Applies structural fixes (missing sections, relation-verb drift, frontmatter case) directly and inline, and confirms content-level changes (prose rewrites, merges, archival) with the user before applying them. NOT for read-only auditing (use /knowledge-garden), NOT for creating new notes (use /package-intel or /tool-intel), and NOT for graph-wide or autonomous remediation ('fix the whole audit', 'remediate the graph', research-and-document sweeps) — those belong to the knowledge-maintainer agent, which this skill delegates to when invoked broadly."
 user-invocable: true
 disable-model-invocation: true
 argument-hint: "[note ...]"
@@ -62,9 +62,30 @@ clear set of findings (roughly 1–8 notes). Proceed to step 2. If scope grows
 mid-task (e.g. a "fix this note" turns into needing a new note), stop and
 recommend the agent or the relevant intel skill rather than expanding inline.
 
-## 2. Load and verify
+## 2. Resolve and load each target
 
-For each target note, read the live content as the source of truth:
+For each named target, resolve it to a canonical note before reading:
+
+- Plain title (e.g. `npm-umzeption`) → confirm it exists with
+  `read_note` directly; if not found, fall back to `search_notes`.
+- Prefixed identifier (`brew:ripgrep`) → map the prefix to its directory and
+  locate via `list_directory(dir_name="<dir>", file_name_glob="*<name>*")`.
+- Topic phrase → `search_notes(query="<phrase>", page_size=10)`, take the
+  matching cluster, and present the candidates as the notes to fix (if the
+  match is ambiguous, confirm with the user before editing anything).
+
+Prefix-to-directory mapping (same table `/knowledge-garden` uses):
+`npm:`→`npm/`, `crate:`→`crates/`, `go:`→`go/`, `composer:`→`composer/`,
+`pypi:`→`pypi/`, `gem:`→`gems/`, `brew:`→`brew/`, `cask:`→`casks/`,
+`action:`→`actions/`, `docker:`→`docker/`, `vscode:`→`vscode/`, `gh:`→`gh/`,
+`plugin:`→`plugins/`, `skill:`→`plugins/`, `git:`→`engineering/git/`
+(git_builtin notes are conventionally plain-titled like `git-replay` and also
+resolve via the plain-title path above).
+
+Exclude schema notes (permalinks under `/schema/`) — they are structural
+definitions, not subject content.
+
+Once each target resolves, read the live content as the source of truth:
 
 ```
 read_note(identifier="<permalink-or-title>", output_format="json")
@@ -106,8 +127,24 @@ step 2. Typical patterns:
   only after a re-read confirms the lines now appear in `## Observations`, strip
   the stray trailing heading and its now-duplicated lines. Never strip-before-
   insert: that leaves the note content-less if the insert no-matches.
-- **Add a relation** — anchor on the last existing relation line, append the new
-  `relates_to [[target]]` line after it.
+- **Add a relation** — before appending, verify the target exists with
+  `read_note(identifier="<exact-target-title-or-permalink>")`; if not found,
+  fall back to `search_notes(query="<target-title>")` for a closer match.
+  `read_note` is an exact-match lookup and is the only correct primitive for
+  this binary exists/doesn't-exist gate — `build_context` does fuzzy/related
+  resolution (it can return an unrelated note that merely *mentions* the
+  target phrase in its own prose as a "related" hit) and must never be used
+  to decide whether a target exists. `build_context` is only appropriate
+  *after* existence is confirmed via `read_note`, to surface additional
+  related/inbound context. If `read_note` resolves the target directly,
+  anchor on the last existing relation line and append the new
+  `relates_to [[target]]` line after it. If only the `search_notes` fallback
+  finds a candidate, that is a **fuzzy match, not a resolved target** —
+  mirror step 2's Topic-phrase rule and confirm the exact title with the user
+  before appending anything; never auto-write a relation to a fuzzy match.
+  If neither `read_note` nor `search_notes` finds anything, do NOT add the
+  relation — report it as an unresolvable target in step 5 instead of
+  silently dropping or silently adding it.
 - **Fix a verb** — find the exact malformed line, replace with the canonical verb.
 
 Preserve meaning exactly — moves and verb fixes are not rewrites. When dropping
@@ -143,10 +180,16 @@ Then report per note:
 - The `find_replace` operations run.
 - The post-edit validation result.
 - Anything left out of scope (e.g. a schema question deferred to
-  `/schema-evolve`, or a content change the user declined).
+  `/schema-evolve`, a content change the user declined, or a relation whose
+  target didn't resolve via `read_note`/`search_notes`).
 
 ## Edge Cases
 
+- **Unresolvable relation target** — a proposed `relates_to [[target]]` whose
+  target doesn't resolve via `read_note`/`search_notes` is never added and
+  never silently dropped: report it as an unresolvable target and suggest
+  `/package-intel` or `/tool-intel` if it looks like an undocumented
+  package/tool, or ask the user to confirm the correct title.
 - **`edit_note` re-parse gotcha** — `edit_note` re-parses the ENTIRE note after
   a raw string replacement, so a pre-existing unrelated issue can trip on your
   edit. Report it; do not expand scope to fix unrelated problems.

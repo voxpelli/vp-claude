@@ -14,21 +14,15 @@ ecosystem is `crate`.
 crates.io provides a free JSON API. **A `User-Agent` header is required** — the
 API will reject requests without it. The rate limit is 1 request/second.
 
-Prefer `tavily_extract` over `Bash curl` because tavily handles headers
-automatically. Use `Bash curl` only if tavily is unavailable:
+This is a raw JSON registry endpoint, not HTML — fetch it directly via `Bash`
+with `curl`+`jq` rather than `tavily_extract`: cheaper (no MCP round-trip) and
+shape-exact (no HTML-extraction lossiness). The required `User-Agent` header
+must be set explicitly on the `curl` call (tavily would have handled headers
+automatically, but curl does not):
 
-**Option A — tavily_extract (preferred):**
-```
-tavily_extract(
-  urls=["https://crates.io/api/v1/crates/<name>"],
-  query="repository version license downloads"
-)
-```
-
-**Option B — Bash curl (fallback, includes required User-Agent):**
 ```bash
-curl -s -H "User-Agent: package-intel/vp-knowledge" \
-  "https://crates.io/api/v1/crates/<name>"
+curl -fsSL --max-time 30 -H "User-Agent: package-intel/vp-knowledge" \
+  "https://crates.io/api/v1/crates/<name>" | jq .
 ```
 
 ## Key Response Fields
@@ -61,6 +55,5 @@ source — include it in your Tavily search terms.
 
 ## Rate Limit Note
 
-If making multiple crates.io API calls in sequence, add a 1-second delay between
-`curl` requests. `tavily_extract` batches are handled server-side and do not
-require manual rate limiting.
+If making multiple crates.io API calls in sequence, add a 1-second delay
+between `curl` requests to stay within the 1 request/second limit.
