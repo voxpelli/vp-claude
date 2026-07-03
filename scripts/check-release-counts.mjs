@@ -1,15 +1,19 @@
 // Regression test + live check for the release-count contract
 // (lib/release-counts.mjs). Mirrors check-staleness-contract.mjs: it both
-// (1) asserts the live CLAUDE.md Components counts match disk, and (2)
-// fixture-tests the pure parse/compare functions so the guard is proven to
-// catch drift. Wired into `npm run check` via run-p check:*.
+// (1) asserts the live counts stated across gated release surfaces (CLAUDE.md
+// headings + schema-count comment, README.md's hooks sentence) match disk,
+// and (2) fixture-tests the pure parse/compare functions so the guard is
+// proven to catch drift. Wired into `npm run check` via run-p check:*.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   compareCounts,
+  compareSingleCount,
   COUNTED_COMPONENTS,
+  parseReadmeHooksCount,
+  parseSchemaCountComment,
   parseStatedCounts,
 } from '../lib/release-counts.mjs'
 
@@ -54,11 +58,17 @@ function countHooks () {
   }
   return n
 }
+function countSchemas () {
+  return readdirSync(join(ROOT, 'schemas'), { withFileTypes: true })
+    .filter((d) => d.isFile() && d.name.endsWith('.md'))
+    .length
+}
 
 const actual = { Skills: countSkills(), Agents: countAgents(), Hooks: countHooks() }
+const actualSchemas = countSchemas()
 
 console.log('\nrelease-counts: CLAUDE.md Components index ↔ disk')
-console.log(`  disk: Skills ${actual.Skills}, Agents ${actual.Agents}, Hooks ${actual.Hooks}`)
+console.log(`  disk: Skills ${actual.Skills}, Agents ${actual.Agents}, Hooks ${actual.Hooks}, Schemas ${actualSchemas}`)
 const claudeMd = readFileSync(join(ROOT, 'CLAUDE.md'), 'utf8')
 const stated = parseStatedCounts(claudeMd)
 const liveErrors = compareCounts(stated, actual)
@@ -67,7 +77,21 @@ for (const label of COUNTED_COMPONENTS) {
   check(`${label}: disk ${actual[label]} == CLAUDE.md ${stated[label] ?? '(missing)'}`, stated[label] === actual[label])
 }
 check('CLAUDE.md component counts all match disk', liveErrors.length === 0)
-console.log('  note: only CLAUDE.md is gated here — README.md, MEMORY.md, marketplace.json counts stay in sync via the release checklist (no footgun-free heading anchor).')
+
+console.log('\nrelease-counts: CLAUDE.md schema-count comment ↔ disk')
+const schemaStated = parseSchemaCountComment(claudeMd)
+const schemaErrors = compareSingleCount('CLAUDE.md schema-count comment', 'Schemas', schemaStated, actualSchemas)
+for (const e of schemaErrors) console.log(`    ${e}`)
+check(`Schemas: disk ${actualSchemas} == CLAUDE.md schema-count comment ${schemaStated ?? '(missing)'}`, schemaErrors.length === 0)
+
+console.log('\nrelease-counts: README.md hooks sentence ↔ disk')
+const readmeMd = readFileSync(join(ROOT, 'README.md'), 'utf8')
+const readmeHooksStated = parseReadmeHooksCount(readmeMd)
+const readmeErrors = compareSingleCount('README.md', 'Hooks', readmeHooksStated, actual.Hooks)
+for (const e of readmeErrors) console.log(`    ${e}`)
+check(`Hooks: disk ${actual.Hooks} == README.md stated ${readmeHooksStated ?? '(missing)'}`, readmeErrors.length === 0)
+
+console.log('  note: plugin.json and marketplace.json state no raw skill/agent/hook/schema count in prose (verified by grep) — those two surfaces stay in sync via the release checklist; extend this module if that ever changes.')
 
 console.log('\nrelease-counts: fixture self-test')
 const FIX = '## Components\n\n### Skills (3)\n\nfoo\n\n### Agents (2)\n\n### Hooks (1)\n'
@@ -83,6 +107,24 @@ check('level-1 heading ignored (out-of-range)', parseStatedCounts('# Skills (14)
 check('level-5 heading ignored (out-of-range)', parseStatedCounts('##### Skills (14)\n').Skills === undefined)
 check('duplicate headings: last value wins (documented behavior)', parseStatedCounts('### Skills (3)\n### Skills (99)\n').Skills === 99)
 check('count heading inside a fenced block is NOT matched (mdast skips code nodes)', parseStatedCounts('```\n### Skills (99)\n```\n').Skills === undefined)
+
+// --- parseReadmeHooksCount fixtures ---
+check('parses a spelled-out README hooks sentence', parseReadmeHooksCount('Five hooks run automatically in the background:') === 5)
+check('parses a digit README hooks sentence too', parseReadmeHooksCount('5 hooks run automatically in the background:') === 5)
+check('near-miss "these hooks run in order" does not match (no anchor phrase)', parseReadmeHooksCount('These hooks run in order, not in parallel.') === undefined)
+check('README hooks sentence inside a fenced block is NOT matched (mdast skips code nodes)', parseReadmeHooksCount('```\nFive hooks run automatically in the background:\n```\n') === undefined)
+check('README with no hooks sentence at all returns undefined', parseReadmeHooksCount('# Nothing to see here\n') === undefined)
+
+// --- parseSchemaCountComment fixtures ---
+check('parses the schema-count anchor comment', parseSchemaCountComment('<!-- schema-count: 23 -->') === 23)
+check('parses the schema-count anchor comment amid other prose', parseSchemaCountComment('It contains twenty-three files:\n<!-- schema-count: 23 -->\n') === 23)
+check('parses the anchor with trailing prose before the close (real CLAUDE.md shape)', parseSchemaCountComment('<!-- schema-count: 23 — keep in sync with `ls schemas/*.md | wc -l` -->') === 23)
+check('missing schema-count comment returns undefined', parseSchemaCountComment('It contains twenty-three files, no anchor here.') === undefined)
+
+// --- compareSingleCount fixtures ---
+check('compareSingleCount passes silently on a match', compareSingleCount('README.md', 'Hooks', 5, 5).length === 0)
+check('compareSingleCount catches a planted mismatch', compareSingleCount('README.md', 'Hooks', 5, 6).some((e) => e.includes('README.md') && e.includes('Hooks')))
+check('compareSingleCount flags a missing stated value — not a vacuous pass', compareSingleCount('README.md', 'Hooks', undefined, 5).length === 1)
 
 console.log(`\n${passed}/${passed + failed} passed`)
 if (failed > 0) process.exit(1)

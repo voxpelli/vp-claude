@@ -57,8 +57,11 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
 - **`check:release-counts` (`check-release-counts.mjs`)** — live + fixture check
   that CLAUDE.md's `### Skills/Agents/Hooks (N)` headings match on-disk counts
   (`lib/release-counts.mjs`); fixtures prove the parser is heading-anchored and a
-  count mismatch fails. CLAUDE.md only — other release surfaces stay in sync via
-  the release checklist.
+  count mismatch fails. Also gates README.md's hooks-count sentence and CLAUDE.md's
+  `<!-- schema-count: N -->` comment anchor against disk. `plugin.json`/
+  `marketplace.json` carry no raw count to check (verified, not just unimplemented)
+  and stay in sync via the release checklist; MEMORY.md is out-of-repo, also
+  checklist-only.
 - **`check:mdast` (`check-mdast.mjs`)** — fixture self-test for `lib/mdast.mjs`
   `collectScannableText`, which `validate-plugin.mjs` `auditToolReferences` uses
   to scan prose + inline-code for `mcp__*` tokens while skipping fenced blocks
