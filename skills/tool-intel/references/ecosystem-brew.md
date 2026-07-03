@@ -5,13 +5,13 @@ ecosystem is `brew`.
 
 ## Fetch Formula Metadata
 
-Use `tavily_extract` on the formulae.brew.sh JSON API:
+This is a raw JSON registry endpoint, not HTML — fetch it directly via `Bash`
+with `curl`+`jq` rather than `tavily_extract`: cheaper (no MCP round-trip),
+shape-exact (no HTML-extraction lossiness), and consistent with how
+`scripts/fetch-brew-upstream.sh` fetches the equivalent bulk data:
 
-```
-tavily_extract(
-  urls=["https://formulae.brew.sh/api/formula/<name>.json"],
-  query="description homepage version license dependencies"
-)
+```bash
+curl -fsSL --max-time 30 "https://formulae.brew.sh/api/formula/<name>.json" | jq .
 ```
 
 ### Key fields from the JSON response

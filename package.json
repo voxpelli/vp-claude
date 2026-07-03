@@ -14,9 +14,11 @@
     "check:lint": "eslint",
     "check:md": "remark . --quiet --frail",
     "check:mdast": "node scripts/check-mdast.mjs",
+    "check:obs-metadata": "node scripts/check-observation-metadata.mjs",
     "check:plugin": "node validate-plugin.mjs",
     "check:plugin-load-paths": "node scripts/check-plugin-load-paths.mjs",
     "check:release-counts": "node scripts/check-release-counts.mjs",
+    "check:schema-vocab": "node scripts/check-schema-vocab.mjs",
     "check:sh": "shellcheck hooks/*.sh scripts/*.sh && shfmt -d hooks/*.sh scripts/*.sh",
     "check:tsc": "tsc",
     "check:type-coverage": "type-coverage --at-least 99"
@@ -39,7 +41,8 @@
     "remark-validate-links": "^13.1.0",
     "type-coverage": "^2.29.7",
     "typescript": "~5.9.3",
-    "unified": "^11.0.5"
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.1.0"
   },
   "remarkConfig": {
     "settings": {

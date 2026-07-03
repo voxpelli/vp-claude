@@ -8,6 +8,7 @@ import remarkParse from 'remark-parse'
 import { unified } from 'unified'
 
 import { collectScannableText, findUnclosedFence } from './lib/mdast.mjs'
+import { buildCanonicalRelationVerbs, checkRelationVocabDrift } from './lib/schema-vocab.mjs'
 import { checkStalenessConsume, checkStalenessEmit } from './lib/staleness-contract.mjs'
 
 const ROOT = new URL('.', import.meta.url).pathname.replace(/\/$/, '')
@@ -793,6 +794,41 @@ if (existsSync(maintainerPath)) {
 }
 if (stalenessBucketsSeen === 0) {
   error(gardenerStalenessPath, 'Staleness contract check matched zero canonical bucket headings across emit files — the heading regex or fences likely changed; refusing to pass vacuously')
+}
+
+// --- Relation-vocabulary drift (Relation Vocabulary prose ↔ picoschema) ---
+//
+// The CI-automation piece of a 3-bead relation-verb-lint workstream
+// (vp-claude-fwnq.4; see lib/schema-vocab.mjs for the full rationale and the
+// scope boundary vs. vp-claude-7cq's interactive /schema-evolve
+// reconciliation, which owns the well-formed-but-undeclared-verb class).
+// Builds the canonical Note-typed relation-verb set as a GLOBAL UNION across
+// every schemas/*.md file, then checks each file's own `## Relation
+// Vocabulary` prose section for a malformed surface variant (space instead
+// of underscore, trailing colon) of a verb that IS canonical somewhere in
+// the corpus — the exact historical bug class fixed in v0.29.1.
+
+const schemasDir = join(ROOT, 'schemas')
+if (existsSync(schemasDir)) {
+  const schemaEntries = await readdir(schemasDir)
+  const schemaFiles = schemaEntries
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => join(schemasDir, f))
+  const schemaContents = await Promise.all(schemaFiles.map((f) => readFile(f, 'utf8')))
+  const canonicalRelationVerbs = buildCanonicalRelationVerbs(schemaContents)
+  if (canonicalRelationVerbs.size === 0) {
+    error(schemasDir, 'Relation-vocabulary drift check found zero canonical Note-typed picoschema fields across schemas/*.md — the extraction regex or the schema block markers likely changed; refusing to pass vacuously')
+  } else {
+    let relationVocabCandidatesChecked = 0
+    for (const [file, content] of schemaFiles.map((f, i) => /** @type {[string, string]} */ ([f, schemaContents[i] ?? '']))) {
+      const { checked, errors: relationVocabErrors } = checkRelationVocabDrift(content, canonicalRelationVerbs)
+      relationVocabCandidatesChecked += checked
+      for (const message of relationVocabErrors) error(file, message)
+    }
+    if (relationVocabCandidatesChecked === 0) {
+      error(schemasDir, 'Relation-vocabulary drift check found a non-empty canonical verb set but zero `## Relation Vocabulary` bullet candidates across every schemas/*.md file — the heading marker or bullet-extraction regex likely changed; refusing to pass vacuously')
+    }
+  }
 }
 
 // --- CLAUDE.md size guard ---

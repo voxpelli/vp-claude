@@ -1084,6 +1084,118 @@ conflicting category, the distinct values found, and a suggestion to add a
 never writes — it only surfaces the gap; that is consistent with every other
 step in this agent.
 
+### 14. Observation `Verified:` staleness cross-check
+
+**Live-BM only — NOT part of `npm run check`.** This is the gardener-side
+half of vp-claude-fwnq.3 (Phase A). `lib/observation-metadata.mjs` parses the
+optional trailing ` — Verified: <date> [· Since: <version>] [· Ownership:
+<upstream|shared|us>]` metadata block a `Verified:`-carrying observation may
+end with, and its fixture self-test (`npm run check:obs-metadata`) proves the
+parser itself is correct against synthetic examples — but neither of those
+touches a real note, since there is no way to fixture "is this timestamp
+plausible relative to a live note's edit history" without a live graph. This
+step is that missing half: it cross-references real `Verified:` observations
+against the notes that carry them.
+
+**Scope:**
+```
+search_notes(search_type="text", entity_types=["observation"], query="Verified:", page_size=25)
+```
+Paginate with `page`, stop when a page returns fewer than `page_size` hits
+(same no-`has_more`-on-this-shape caveat as Step 13's `recent_activity`
+sweep — verify empirically for this call rather than assuming). For each
+hit, resolve the owning note and read it:
+```
+read_note(identifier="<permalink>", output_format="json")
+```
+to get both the full observation text (for the trailer) and the note's own
+`updated_at` frontmatter timestamp. If the `search_notes` call itself errors,
+report "Step 14 sweep unavailable" rather than silently treating it as "zero
+`Verified:` observations found" — same error-vs-empty distinction Step 13
+draws. If a `read_note` call fails for one flagged hit, name it and continue
+with the rest ("N of M flagged notes could not be read — Step 14 sweep is
+partial").
+
+**Detection rule.** For each `Verified:`-carrying observation found:
+1. Extract the `Verified: YYYY-MM-DD` token (the trailer always starts with
+   ` — `; a bare `verified` appearing mid-sentence as ordinary prose, or a
+   lowercase `verified:`, is NOT this trailer — see
+   `lib/observation-metadata.mjs`'s near-miss fixtures for the exact shape to
+   require before treating a match as a real trailer).
+2. **Physically impossible** — the `Verified:` date is later than today's
+   actual date. Flag unconditionally; this can only be a typo (e.g. a
+   transposed year).
+3. **Staler than the note** — the `Verified:` date predates the note's
+   `updated_at` frontmatter by more than 90 days (the same staleness window
+   Step 5 already uses project-wide, kept consistent rather than inventing a
+   second threshold). This does not mean the observation is wrong — the note
+   may have been edited for an unrelated reason since the fact was last
+   checked — but it is worth a human glance: was this fact re-verified at
+   the same time, or does the `Verified:` stamp now lag the note itself?
+
+**Report** flagged observations under **Warning**, in a
+`#### Verified: staleness cross-check (Step 14)` subsection: note title, the
+observation text, the `Verified:` date, the note's `updated_at`, and which of
+the two conditions fired. This step never writes — no `[gotcha]` is added, no
+`Verified:` value is corrected; it only surfaces the gap, consistent with
+every other step in this agent.
+
+### 15. Relation-vocabulary drift — schema-declared vs. live graph usage
+
+**Live-BM only — NOT part of `npm run check`.** This is the gardener-side
+half of vp-claude-fwnq.4 (the third bead of a 3-bead relation-verb-lint
+workstream: 7cq's `/schema-evolve` audit → 9n0's maintainer pre-write guard →
+fwnq.4). `npm run check:schema-vocab` + the `validate-plugin.mjs` offline
+cross-check catch only ONE narrow class — a malformed surface variant
+(`see also` instead of `see_also`) of a verb that IS declared somewhere in
+the `schemas/*.md` picoschema corpus. Neither of those can see the live
+graph, so neither can catch the complementary class: a relation verb that is
+actually IN USE on real notes but was never declared in any schema's
+picoschema at all (typo at write time, or a genuinely new verb nobody
+formalized yet). That is this step's job.
+
+**Scope:**
+```
+list_directory(dir_name="schema")
+```
+to enumerate the ~23 schema notes, then for each:
+```
+read_note(identifier="schema/<type>", output_format="json")
+```
+Extract every field in the note's `schema` frontmatter whose declared type is
+`Note` (the picoschema convention for a wiki-linkable relation field, e.g.
+`relates_to?(array): Note, related notes`) — union these into one canonical
+relation-verb set across all schema notes (a global union, not scoped
+per-schema; see `lib/schema-vocab.mjs`'s header for why a schema's own prose
+routinely documents verbs declared in a *different* schema's picoschema, e.g.
+`extended_by` on the inverse side of a host/extension relation — that is
+legitimate, not drift). Then, separately:
+```
+Bash("bm project info main --json | jq .statistics.relation_types")
+```
+which returns every relation verb actually used on the live graph, mapped to
+its true usage count — including non-canonical residuals that
+`search_notes(entity_types=["relation"])` silently undercounts (see
+`knowledge-maintainer.md`'s Baseline-counting rules section: a documented
+38× undercount from using the wrong tool for this comparison; `bm project
+info` is the only correct source of truth for this step).
+
+**Detection rule.** Any key in `statistics.relation_types` that is NOT a
+member of the canonical schema-declared set is a candidate. Cross-check each
+candidate against the malformed-variant class Step-14's CI sibling already
+catches (space/colon variant of a canonical verb) — if it normalizes to a
+canonical verb, note that instead of double-reporting it as a bare gap.
+Otherwise it is a genuinely undeclared verb: either a typo worth fixing at
+the source note, or a real gap `/schema-evolve` should be run against to
+formalize.
+
+**Report** under **Info** (this is a maintenance suggestion, not a
+correctness break — the note itself is not malformed, only unformalized), in
+a `#### Undeclared relation verbs on the live graph (Step 15)` subsection:
+verb, live usage count, and a suggestion (`/schema-evolve <likely-type>` for
+a real gap, or "verify — possible typo of `<canonical-verb>`" for a
+near-miss). This step never writes and never runs `/schema-evolve` itself.
+
 ## Output Format
 
 ````markdown
@@ -1125,6 +1237,12 @@ recall claim. Read-only; never writes a `[gotcha]` itself, only flags the
 gap.)*
 - [note-title] — `[version]` conflict: "5.8.5" vs "5.9.0" (touched within 7d), no `[gotcha]` explaining the discrepancy
 
+#### Verified: staleness cross-check (Step 14)
+*(Emitted by Step 14. Live-BM only, not part of `npm run check`. Read-only;
+never writes or corrects a `Verified:` value, only flags the gap.)*
+- [note-title] — `[gotcha]` "... — Verified: 2026-03-01" predates the note's `updated_at` (2026-06-20) by 111d — re-verify or drop the stamp
+- [note-title] — `[convention]` "... — Verified: 2026-08-01" is later than today — physically impossible, likely a typo
+
 #### Silent drift (unmatched categories / verbs by type)
 *(Emitted by Step 2. Lists `unmatched_observations` and `unmatched_relations`
 returned by `schema_validate` — the validator absorbs these silently, so
@@ -1142,6 +1260,15 @@ with a `/schema-evolve` suggestion.)*
 #### Source-URL provenance nudge (emerging — informational)
 *(Emitted by Step 11. Aggregate, NOT per-note. Omit entirely if no note has a `## Sources` section citing in bare text.)*
 - N notes have a `## Sources`/`## Key Sources` section citing sources as bare text (no resolvable URL) — e.g. [note-a], [note-b]. Convert those citations to markdown links `[title](url)` (or set a `source:` frontmatter URL). Informational only — a systematic backfill is a separate human-confirmed decision; the gardener never resolves URLs itself.
+
+#### Undeclared relation verbs on the live graph (Step 15)
+*(Emitted by Step 15. Live-BM only, not part of `npm run check` — the CI
+sibling (`check:schema-vocab` + the `validate-plugin.mjs` cross-check) only
+catches malformed variants of an already-canonical verb; this step catches
+the complementary "in use but never declared anywhere" class. Read-only;
+never runs `/schema-evolve` itself.)*
+- `composes_with` — 4 uses on the live graph, not declared in any schema's picoschema — verify then run `/schema-evolve brew_formula` (or the likely owning type) to formalize
+- `relates to` — 1 use — possible typo of canonical `relates_to`
 
 ### Version Drift — brew
 *(Emitted by Step 5b — one `### Version Drift — <eco>` section per cohort with

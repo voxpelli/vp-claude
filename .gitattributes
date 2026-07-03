@@ -1,0 +1,14 @@
+# Force text handling for this repo's plain-text source files so a future
+# git binary-content-detection false positive (e.g. a stray NUL byte, an
+# unusual Unicode sequence) can't silently break `git diff`/merge on them.
+# This is defense-in-depth, not a fix for a live bug: the one incident that
+# actually tripped git's binary heuristic here — a literal NUL byte embedded
+# in a template-literal sentinel in lib/installed-plugins.mjs — has already
+# been fixed at the source (the NUL byte is now a proper `\0` escape). Kept
+# narrow to the extensions this repo's source actually uses; not an attempt
+# to cover every possible file type.
+*.mjs text
+*.js text
+*.md text
+*.sh text
+*.json text

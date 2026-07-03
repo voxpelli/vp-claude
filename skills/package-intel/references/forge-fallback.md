@@ -105,10 +105,10 @@ This is reference material only — adding a token facility is out of scope.
 
 ## tangled.org / AT Protocol forges — deferred (Phase 3)
 
-`tangled.sh` is an ATProto-based code forge; its public API is not stable as of
-2026-05. Forge landscape documented in Basic Memory
-(`Tangled - AT Protocol Code Forge`). **Revival trigger:** when
-`https://tangled.sh/api/v1` (or its successor) exposes a stable
+`tangled.org` (formerly `tangled.sh`) is an ATProto-based code forge; its
+public API is not stable as of 2026-05. Forge landscape documented in Basic
+Memory (`Tangled - AT Protocol Code Forge`). **Revival trigger:** when
+`https://tangled.org/api/v1` (or its successor) exposes a stable
 `/repos/{owner}/{repo}/tags`-equivalent endpoint, add a tangled adapter
 following the Codeberg pattern above. Until then, tangled URLs fall through to
 the unknown-forge fallback.

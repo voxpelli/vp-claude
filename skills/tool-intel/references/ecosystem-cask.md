@@ -11,13 +11,13 @@ ecosystem is `cask`.
 
 ## Fetch Cask Metadata
 
-Use `tavily_extract` on the formulae.brew.sh cask JSON API:
+This is a raw JSON registry endpoint, not HTML — fetch it directly via `Bash`
+with `curl`+`jq` rather than `tavily_extract`: cheaper (no MCP round-trip),
+shape-exact (no HTML-extraction lossiness), and consistent with how
+`scripts/fetch-cask-upstream.sh` fetches the equivalent bulk data:
 
-```
-tavily_extract(
-  urls=["https://formulae.brew.sh/api/cask/<name>.json"],
-  query="description homepage version artifacts caveats"
-)
+```bash
+curl -fsSL --max-time 30 "https://formulae.brew.sh/api/cask/<name>.json" | jq .
 ```
 
 ### Key fields from the JSON response
