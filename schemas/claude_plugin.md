@@ -8,10 +8,15 @@ schema:
   purpose?: string, what the plugin adds to Claude Code and its primary use case
   version?: string, latest plugin.json version — the drift-detectable field
   source?: string, canonical GitHub repo (owner/repo) that ships the plugin
-  marketplace?(array): string, marketplace(s) it ships in — first-party via /plugin, a named community marketplace, or direct-repo; note single-plugin vs aggregating
-  install_mode?(array): string, install methods — /plugin install <name>@<marketplace>, direct .claude/ clone, or npx skills add for the skill subset
-  security?(array): string, trust ladder (first-party-Anthropic / claimed-community-marketplace / unverified-third-party=squattable-name / direct-repo-only) plus allowed-tools grant risk and unsandboxed-script risk
-  components?(array): string, what the plugin ships — skills (count + names), agents, hooks (which lifecycle events), commands, MCP servers
+  marketplace?(array): string, marketplace(s) it ships in — first-party via /plugin,
+    a named community marketplace, or direct-repo; note single-plugin vs aggregating
+  install_mode?(array): string, install methods — /plugin install <name>@<marketplace>,
+    direct .claude/ clone, or npx skills add for the skill subset
+  security?(array): string, trust ladder (first-party-Anthropic / claimed-community-marketplace
+    / unverified-third-party=squattable-name / direct-repo-only) plus allowed-tools
+    grant risk and unsandboxed-script risk
+  components?(array): string, what the plugin ships — skills (count + names), agents,
+    hooks (which lifecycle events), commands, MCP servers
   author_trust?(array): string, author identity vs repo owner (stewardship-succession signal)
   architecture?(array): string, structural and distribution facts about the plugin
   convention?(array): string, conventions the plugin follows or documents

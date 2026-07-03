@@ -8,16 +8,24 @@ schema:
   pattern?(array): string, recurring patterns and idioms in how the command is used
   gotcha?(array): string, surprising behaviors, pitfalls, and operational footguns
   convention?(array): string, established conventions for using the command effectively
-  comparison?(array): string, "vs X" framings against analogous tools, primitives, or post-git alternatives
+  comparison?(array): string, "vs X" framings against analogous tools, primitives,
+    or post-git alternatives
 
-  stability?(array): string, stability state and lifecycle position (experimental, stable, deprecated) and how it has evolved across Git versions
-  since?(array): string, version-introduction notes and feature timeline within Git core
-  bare-repo?(array): string, bare-repository support and worktree-dependency observations — whether the command operates without a working tree
+  stability?(array): string, stability state and lifecycle position (experimental,
+    stable, deprecated) and how it has evolved across Git versions
+  since?(array): string, version-introduction notes and feature timeline within Git
+    core
+  bare-repo?(array): string, bare-repository support and worktree-dependency observations
+    — whether the command operates without a working tree
 
-  adoption?(array): string, adoption signals from stacking tools, libraries, dotfiles, and downstream wrappers
-  reference?(array): string, citations and source pointers external to this graph (mailing lists, blog posts, release notes)
-  security?(array): string, security and supply-chain considerations specific to the command
-  calibration?(array): string, criteria for whether the note should exist at all (non-obvious knowledge vs man-page duplication)
+  adoption?(array): string, adoption signals from stacking tools, libraries, dotfiles,
+    and downstream wrappers
+  reference?(array): string, citations and source pointers external to this graph
+    (mailing lists, blog posts, release notes)
+  security?(array): string, security and supply-chain considerations specific to the
+    command
+  calibration?(array): string, criteria for whether the note should exist at all (non-obvious
+    knowledge vs man-page duplication)
 
   relates_to(array): Note, related knowledge notes
   uses?(array): Note, primitives, tools, or other git built-ins this command depends on
