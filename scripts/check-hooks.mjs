@@ -383,6 +383,47 @@ test('no permalink → silent', () => {
   return { ok: true }
 })
 
+test('note body with a fourth-wall violation → flagged in additionalContext, still 1 object', () => {
+  const { stdout } = runHook(join(HOOKS_DIR, 'post-bm-write-validate.sh'),
+    JSON.stringify({
+      tool_response: { permalink: 'npm/my-package' },
+      tool_input: { content: 'my-package does X. It has zero presence in Raindrop.' },
+    }))
+  const { count, objects, parseError } = parseJsonObjects(stdout)
+  if (parseError) return { ok: false, reason: parseError }
+  if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count} — multi-object bug!` }
+  const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
+  if (!ctx.includes('schema_validate')) return { ok: false, reason: 'missing schema_validate instruction alongside the fourth-wall flag' }
+  if (!ctx.includes('fw-inventory-claim')) return { ok: false, reason: 'missing fourth-wall violation id in additionalContext' }
+  return { ok: true }
+})
+
+test('clean note body → no fourth-wall flag, still 1 object', () => {
+  const { stdout } = runHook(join(HOOKS_DIR, 'post-bm-write-validate.sh'),
+    JSON.stringify({
+      tool_response: { permalink: 'npm/my-package' },
+      tool_input: { content: 'my-package is a solid little utility for doing X.' },
+    }))
+  const { count, objects, parseError } = parseJsonObjects(stdout)
+  if (parseError) return { ok: false, reason: parseError }
+  if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count} — multi-object bug!` }
+  const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
+  if (ctx.includes('fw-') || ctx.includes('Fourth-wall check flagged')) return { ok: false, reason: 'unexpected fourth-wall flag on a clean note body — false positive' }
+  return { ok: true }
+})
+
+test('schema permalink with a violating body → still fully silent (schema skip wins)', () => {
+  const { status, stdout } = runHook(join(HOOKS_DIR, 'post-bm-write-validate.sh'),
+    JSON.stringify({
+      tool_response: { permalink: 'main/schema/npm_package' },
+      tool_input: { content: 'zero presence in Raindrop' },
+    }))
+  if (status !== 0) return { ok: false, reason: `non-zero exit ${status}` }
+  const { count } = parseJsonObjects(stdout)
+  if (count !== 0) return { ok: false, reason: `expected silent, got ${count} objects` }
+  return { ok: true }
+})
+
 // --- post-bm-failure-classify.sh ---
 console.log('\npost-bm-failure-classify.sh')
 
