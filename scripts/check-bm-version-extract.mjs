@@ -271,6 +271,64 @@ check('priority-order sweep: all 6 patterns present in one note, pattern 1 wins'
   ),
   { version: '1.0.0', pattern: 1 })
 
+// --- vp-claude-9q7e regression: npm_package notes try Pattern 3 before
+//     Pattern 1 (the misparse-shield actually fires); every other note type
+//     keeps the original 1-first order unchanged ---
+check('9q7e fix: an npm_package-typed note with both a header pipe and a [version] observation reads the observation (Pattern 3), not the pipe',
+  extractBmVersion(
+    '---\ntitle: npm-yaml\ntype: npm_package\n---\n\nGitHub: [eemeli/yaml](https://github.com/eemeli/yaml) | v1.1 | ISC\n\n## Observations\n\n- [version] 2.7.0\n',
+    'npm-yaml'
+  ),
+  { version: '2.7.0', pattern: 3 })
+
+check('9q7e scope guard: a non-npm note (type: crate_package) with the same both-slots shape still reads the header pipe (Pattern 1) — override is npm-only',
+  extractBmVersion(
+    '---\ntitle: crate-foo\ntype: crate_package\n---\n\nGitHub: [foo/foo](https://github.com/foo/foo) | v1.0.0 | MIT\n\n## Observations\n\n- [version] 2.0.0\n',
+    'crate-foo'
+  ),
+  { version: '1.0.0', pattern: 1 })
+
+check('9q7e scope guard: a note with no type: field at all (legacy/untyped) still reads the header pipe (Pattern 1) — same as pre-fix behavior',
+  extractBmVersion(
+    '---\ntitle: npm-foo\n---\n\nGitHub: [foo/foo](https://github.com/foo/foo) | v1.0.0 | MIT\n\n## Observations\n\n- [version] 2.0.0\n',
+    'npm-foo'
+  ),
+  { version: '1.0.0', pattern: 1 })
+
+check('9q7e: an npm_package note with only the header pipe (no [version] observation) still falls through to Pattern 1 correctly',
+  extractBmVersion(
+    '---\ntitle: npm-foo\ntype: npm_package\n---\n\nGitHub: [foo/foo](https://github.com/foo/foo) | v1.0.0 | MIT\n',
+    'npm-foo'
+  ),
+  { version: '1.0.0', pattern: 1 })
+
+check('9q7e: full priority-order sweep on an npm_package note now yields pattern 3, not pattern 1',
+  extractBmVersion(
+    [
+      '---',
+      'title: npm-foo',
+      'type: npm_package',
+      'version: 4.0.0',
+      '---',
+      '',
+      'GitHub: [foo/foo](https://github.com/foo/foo) | v1.0.0 | MIT',
+      '',
+      '| Version | 2.0.0 |',
+      '',
+      '## Observations',
+      '',
+      '- [version] 3.0.0',
+      '',
+      '## Release Highlights',
+      '- **v5.0.0** (2026-01-01) — desc',
+      '',
+      '- **Version**: 6.0.0 (registry)',
+      '',
+    ].join('\n'),
+    'npm-foo'
+  ),
+  { version: '3.0.0', pattern: 3 })
+
 console.log(`${passed}/${passed + failed} passed`)
 
 if (PATTERN_SIGNATURES.length !== 6 || PATTERN_SIGNATURES.some((p, i) => p.id !== i + 1)) {

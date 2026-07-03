@@ -461,12 +461,16 @@ guard and the semver-range/channel-mismatch regressions.
 
 Pattern 3 reads the version straight from the note's `observations` array — the
 canonical `[version]` slot. The `/package-intel` npm template **emits it since
-0.31.4** (71 npm notes backfilled); `f3zx` tracks extending it to the other five
-package cohorts (crate/go/composer/pypi/gem). **But "emitted" is not "read
-first":** under first-hit-wins, Pattern 1 (the inline pipe) outranks Pattern 3
-and the npm template emits *both*, so for a standard npm note the pipe is what
-wins and the `[version]` observation is a redundant secondary slot today (the
-read-ordering fix is bead `vp-claude-9q7e`). Accept
+0.31.4** (71 npm notes backfilled); the other five package cohorts
+(crate/go/composer/pypi/gem) **emit it since bead `f3zx`**. **"Emitted" is not
+"read first" for most cohorts:** under the base first-hit-wins order, Pattern 1
+(the inline pipe) outranks Pattern 3 — but `npm_package` notes are the
+exception (bead `vp-claude-9q7e`, shipped): the extractor detects `type:
+npm_package` in frontmatter and tries Pattern 3 before Pattern 1 for those
+notes only, so the misparse-shield actually fires for npm. Every other cohort
+(including the tool cohorts and the other five package cohorts) still reads
+the pipe first — extending the override is tracked as bead `vp-claude-xux8`.
+Accept
 `[version]` or `[version-range]`; for a range take the first concrete version
 token (strip a leading range operator: `^`, `~`, `>=`, `>`, `<=`, `<`, `=`).
 Pattern 5 takes the **highest semver** among the versions referenced in the

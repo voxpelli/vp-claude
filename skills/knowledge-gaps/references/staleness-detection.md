@@ -151,16 +151,18 @@ side effect of that verification pass; every other existing note acquires the
 slot organically the next time it's refreshed (`/tool-intel` write path, or a
 `--stale` S7 batched refresh). `action`, `gh`, `go`, and `docker` stay outside `--stale`'s supported
 cohort set entirely (per the "Cohort configuration" table above), so they have
-no `[version]` slot and none is planned. **But "emitted" is not "read first":**
-under the first-hit-wins ordering above, Pattern 1 (the inline header pipe)
-outranks Pattern 3, and the npm/brew/cask/vscode templates all emit *both* — so
-for a standard note in any of these four cohorts `--stale` actually reads the
-pipe, and the `[version]` observation is a redundant secondary slot today, not
-the effective one. (Making Pattern 3 win — so the slot can shield
-version-string packages like `yaml`/`semver`, or version-named tools, from
-misparse as originally intended — is tracked separately as bead
-`vp-claude-9q7e`, scoped to npm today and not yet extended to the tool
-cohorts.) Accept
+no `[version]` slot and none is planned. **"Emitted" still is not "read first"
+for most cohorts:** under the base first-hit-wins ordering, Pattern 1 (the
+inline header pipe) outranks Pattern 3, and the brew/cask/vscode templates
+emit *both* — so for a standard note in any of these three cohorts `--stale`
+still reads the pipe, and the `[version]` observation remains a redundant
+secondary slot. **`npm_package` notes are the one exception** (bead
+`vp-claude-9q7e`, shipped): `lib/bm-version-extract.mjs` detects the note's
+`type: npm_package` frontmatter and tries Pattern 3 *before* Pattern 1 for
+those notes only, so the misparse-shield for version-string packages
+(`yaml`, `semver`) actually fires now. Extending the same override to the
+tool cohorts (brew/cask/vscode) or the other five package cohorts is tracked
+separately as bead `vp-claude-xux8`. Accept
 either `[version]` or `[version-range]`; for a range, take the first concrete
 version token (strip a leading range operator: `^`, `~`, `>=`, `>`, `<=`, `<`,
 `=`). Pattern 5 takes the **highest semver** among the versions referenced in
