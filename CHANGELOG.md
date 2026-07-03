@@ -5,6 +5,95 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.2][] - 2026-07-03
+
+### Added
+
+- **`tsc`/`type-coverage` are now real CI gates** (`check:tsc`, `check:type-coverage`
+  at 99%), adopted from a stalled branch's infra-only commits — the branch's
+  own `deep-intel` skill work stays deferred. `tsconfig.json` extends
+  `@voxpelli/tsconfig/node22.json`; no `.ts` files, JSDoc types checked
+  in-place. Closed 33 real pre-existing type errors this surfaced, all via
+  honest narrowing (guards, early returns) — never `!`/`as`/`@ts-ignore`
+  suppressions.
+- **`knowledge-gardener` gains four new audit steps**: observation category
+  hygiene (`[raindrop]`/`[readwise]` miscategorization, stale inventory-state
+  `[gap]`s); a session-refresh version/maintainer contradiction audit (the
+  one mechanically-checkable sliver of "verify-before-capture"); a
+  `Verified:`/`Since:`/`Ownership:` trailer age cross-check; and a live
+  schema-vocab comparison against the graph's actual relation-verb usage.
+  All read-only, all narrowly scoped, none wired into CI (they need the live
+  graph).
+- **`fetch-cask-upstream.sh` gains opportunistic Tier-2 bump-date
+  enrichment**, mirroring brew's Tier 2 — matches the leading comma-segment
+  of a cask's version against `Homebrew/homebrew-cask` commit history so
+  `--stale cask` can resolve `days_stale` instead of always landing in
+  "age unknown." Font-token 3-level path shard handled; degrades cleanly
+  for pre-sharding/pre-fonts-migration casks, renamed tokens, or no `gh`.
+- **New drift guards**: `check:analytics-guidance` (guards against a
+  regression class this project already hit once — brew/cask docs claiming
+  the JSON API lacks analytics data when it doesn't); `check:schema-vocab`
+  (malformed relation-verb variants vs. the 23 schemas' picoschema);
+  `check:obs-metadata` (a new optional `Verified:`/`Since:`/`Ownership:`
+  observation-trailer format, Phase A parser only — no schema changes yet).
+- **`validate-plugin.mjs`'s bare-built-in-tool-name audit hardened**: the
+  `subagent_type=` phantom-agent scan now uses the same mdast-based
+  fenced-block exclusion as the `mcp__*` audit (the repo's only two real
+  delegation call-sites were un-fenced to keep this check meaningful — see
+  Fixed); a structural fence-balance detector (`findUnclosedFence`) replaces
+  a heuristic that only caught a fence opening before all prose, missing the
+  realistic prose-then-unclosed-fence case.
+- **`.gitattributes`** forces `text` handling for source files — defense in
+  depth against git's binary-content heuristic misfiring again (see Fixed).
+
+### Changed
+
+- **`lib/mdast.mjs`'s three hand-rolled AST walkers now share
+  `unist-util-visit`**, eliminating manual `'children' in node` narrowing.
+- **`validate-plugin.mjs` and `lib/installed-plugins.mjs` adopt
+  `@voxpelli/typed-utils`** for untrusted-input narrowing, replacing
+  hand-rolled `Record<string, unknown>` casts and `typeof` ladders.
+- **The two upgrade-haul adapter sections realigned** (`package-intel` and
+  `tool-intel` now share an identical `## Batch mode: upgrade haul` heading
+  and placement) and the Axis-B `[version]` narrative-reel is now documented
+  as intentionally distinct from the canonical `[version]` slot, not a
+  pending decision.
+- **`ecosystem-brew.md`/`ecosystem-cask.md`'s JSON-API fetch instructions
+  now use `curl|jq`** instead of `tavily_extract`, matching this repo's own
+  fetch scripts (cheaper, shape-exact, no MCP hop). The other ~10 ecosystem
+  reference files are a tracked follow-up, not silently dropped.
+- **The `check()` fixture-test harness duplicated across all 12
+  `scripts/check-*.mjs` files is now one shared `lib/check-harness.mjs`**
+  (net -123 lines; pure refactor, identical pass/fail results throughout).
+
+### Fixed
+
+- **A raw NUL byte, silently committed to `lib/installed-plugins.mjs` since
+  its first commit a month ago, made git treat the file as binary** —
+  invisible to every existing check, caught only because it broke a
+  cherry-pick's 3-way merge. Replaced with the equivalent `\0` escape
+  sequence (same runtime value).
+- **The new cask Tier-2 enrichment initially matched commit headlines via a
+  bare substring test**, which could silently attribute a later, unrelated
+  commit's date when one cask version was a substring of another (e.g.
+  `4.8.0` inside `4.8.0.1`) — understating staleness, the failure direction
+  that hides real drift. Two independent gate reviewers converged on this
+  from different angles; fixed with a boundary-anchored match before this
+  release shipped.
+- **A 9-agent pre-release review fleet** (3 `plugin-validator` + 6
+  `skill-reviewer`, mixed adversarial/naive/normal postures) found several
+  real, pre-existing bugs verified against actual code/script behavior:
+  `knowledge-maintainer.md`'s Rule 3 instructed an `Edit` the agent has no
+  tool to perform (now delegates to `/schema-evolve`); a 7-file doc
+  inversion describing npm's version-slot read order backwards (the code
+  proves `9q7e` shipped npm-only, but package-intel/tool-intel/
+  upgrade-haul.md/3 schemas still said the header pipe was authoritative);
+  `knowledge-prime`'s `build_context` template hardcoded to `npm/`
+  regardless of actual project ecosystem; a stop-vs-continue contradiction
+  in `tag-sync`; a factually wrong `days_stale_source` claim and an
+  under-specified distance-classification row in `staleness-detection.md`;
+  missing `plugin:`/`skill:`/`git:` prefixes in two skills' dispatch maps.
+
 ## [0.32.1][] - 2026-07-03
 
 ### Changed
@@ -1951,6 +2040,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.32.2]: https://github.com/voxpelli/vp-claude/compare/v0.32.1...v0.32.2
 [0.32.1]: https://github.com/voxpelli/vp-claude/compare/v0.32.0...v0.32.1
 [0.32.0]: https://github.com/voxpelli/vp-claude/compare/v0.31.12...v0.32.0
 [0.31.12]: https://github.com/voxpelli/vp-claude/compare/v0.31.11...v0.31.12

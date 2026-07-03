@@ -544,22 +544,29 @@ scripts/
   check-list-installed-plugins.mjs     Installed-plugin/skill resolver tests (npm run check:installed-plugins)
   check-plugin-load-paths.mjs          ${CLAUDE_PLUGIN_ROOT} cross-load path resolution tests (npm run check:plugin-load-paths)
   check-bm-version-extract.mjs         S2 version-extractor tests (npm run check:bm-version-extract)
+  check-analytics-guidance.mjs         Brew/cask analytics-source doc-rot guard (npm run check:analytics-guidance)
+  check-observation-metadata.mjs       Verified:/Since:/Ownership: trailer parser tests (npm run check:obs-metadata)
+  check-schema-vocab.mjs               Relation-verb drift guard tests (npm run check:schema-vocab)
   list-installed-plugins.mjs           CLI: emit NDJSON of installed plugins/skills for /knowledge-gaps --global
   fetch-brew-upstream.sh               API-only upstream facts for brew formulae (stdin: names; never reads ~/basic-memory)
-  fetch-cask-upstream.sh               API-only upstream facts for casks (bulk cask.json; comma-segment version)
+  fetch-cask-upstream.sh               API-only upstream facts for casks (bulk cask.json; comma-segment version; opportunistic Tier-2 tap-bump-date enrichment)
   fetch-npm-upstream.sh                API-only upstream facts for npm packages (abbreviated packument)
   fetch-crate-upstream.sh              API-only upstream facts for crates (crates.io; UA + 1s rate-limit)
   fetch-vscode-upstream.sh             API-only upstream facts for VSCode exts (Open VSX + VS Marketplace)
 lib/
   staleness-contract.mjs               Pure emit↔consume bucket-contract logic (imported by validate-plugin.mjs + check:contract)
-  version-distance.mjs                 Semver↔calver version-distance classifier (check:distance)
+  version-distance.mjs                 Semver↔calver version-distance classifier + ahead-of-registry ordering guard (check:distance)
   fourth-wall-rules.mjs                Fourth-wall rule registry + parity contracts (check:fourthwall)
   release-counts.mjs                   Component-count parse/compare (check:release-counts)
-  mdast.mjs                            Shared mdast prose/heading collectors (check:mdast; used by validate-plugin)
+  mdast.mjs                            Shared mdast prose/heading collectors + unclosed-fence detector (check:mdast; used by validate-plugin)
   installed-plugins.mjs                Pure installed-plugin/skill resolver (used by list-installed-plugins.mjs)
   plugin-load-paths.mjs                Pure ${CLAUDE_PLUGIN_ROOT} path extractor (check:plugin-load-paths)
   bm-version-extract.mjs               Pure S2 version extractor, 6 priority patterns (check:bm-version-extract)
-validate-plugin.mjs                    Plugin validator (color enum, frontmatter, MCP prefixes, staleness-bucket contract)
+  analytics-guidance.mjs               Brew/cask analytics-source doc-rot detector (check:analytics-guidance)
+  observation-metadata.mjs             Verified:/Since:/Ownership: observation-trailer parser (check:obs-metadata)
+  schema-vocab.mjs                     Canonical relation-verb extraction + drift check (check:schema-vocab)
+  check-harness.mjs                    Shared check()/done() fixture-test harness, used by all scripts/check-*.mjs
+validate-plugin.mjs                    Plugin validator (color enum, frontmatter, MCP prefixes, staleness-bucket contract, relation-vocabulary drift, fence-balance, bare built-in tool audit)
 VOICE.md                               Plugin identity, agent colors, description-tone conventions
 ```
 
