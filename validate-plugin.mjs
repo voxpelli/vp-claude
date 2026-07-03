@@ -233,6 +233,7 @@ function findUndeclaredBuiltinTools (content, declaredTools) {
     const match = span.trim().match(/^([A-Z][A-Za-z]*)(?:\(|$)/)
     if (!match) continue
     const tool = match[1]
+    if (tool === undefined) continue
     if (KNOWN_BUILTIN_TOOLS.has(tool) && !toolSet.has(tool) && !seen.has(tool)) {
       seen.add(tool)
       found.push(tool)
