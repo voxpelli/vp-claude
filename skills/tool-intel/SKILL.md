@@ -535,6 +535,24 @@ disagree on a load-bearing fact (version, maintainer, license, behavior), record
 both values with their provenance as a `[gotcha]` observation — prefer the more
 recent or authoritative source and name which — rather than silently picking
 one.
+
+**Confidence scales with source count.** A load-bearing claim backed by only
+one source in this run carries lower confidence than the same claim
+independently confirmed by 2+ sources. Apply the hedging rule above (capability
+phrasing, date-qualified) to single-source claims even when nothing in this
+run's sources contradicts them — the absence of a second source is not
+confirmation, and a persisted note should not read as more certain than its
+evidence supports.
+
+**Genuinely unresolved contradictions.** The "prefer the more recent or
+authoritative source and name which" guidance above assumes one source can be
+judged more trustworthy. When neither can be — both current, both plausible,
+no canonical/official source among them — do not force a pick. Record the
+contradiction as still-open in the same `[gotcha]` observation, e.g.
+`- [gotcha] Contested: registry says v5.8.5 (fetched 2026-07-03), README badge
+says v5.9.0 (undated) — unresolved, neither source clearly more authoritative`.
+This flags the fact for a future refresh instead of quietly asserting a
+resolution the evidence doesn't support.
 ### Step 5: Write or update the note
 
 <!-- This pattern is mirrored in package-intel — update both when changing -->

@@ -245,6 +245,23 @@ category for disputes, criticisms, and unresolved source conflicts) — prefer t
 more recent or authoritative source and name which — rather than silently
 picking one.
 
+**Confidence scales with source count.** A biographical claim backed by only
+one source in this run carries lower confidence than the same claim
+independently confirmed by 2+ sources. Apply the hedging rule above ("appears
+to", "is associated with") to single-source claims even when nothing in this
+run's sources contradicts them — the absence of a second source is not
+confirmation.
+
+**Genuinely unresolved contradictions.** The "prefer the more recent or
+authoritative source and name which" guidance above assumes one source can be
+judged more trustworthy. When neither can be — both current, both plausible,
+no canonical/official source among them — do not force a pick. Record the
+contradiction as still-open in the same `[controversy]` observation, e.g.
+`- [controversy] Contested: Tavily bio says current role is X (2026-06),
+Raindrop-bookmarked profile says Y (undated) — unresolved, neither source
+clearly more authoritative`. This flags the fact for a future refresh instead
+of quietly asserting a resolution the evidence doesn't support.
+
 ### Step 4: Write or update the note
 
 <!-- This pattern is mirrored in package-intel and tool-intel — update all when changing -->
