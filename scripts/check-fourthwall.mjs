@@ -9,6 +9,7 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createCheckHarness } from '../lib/check-harness.mjs'
 import {
   CANONICAL_FOURTH_WALL_RULES,
   checkDetectionColumnParity,
@@ -17,22 +18,7 @@ import {
 } from '../lib/fourth-wall-rules.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-let passed = 0
-let failed = 0
-
-/**
- * @param {string} name
- * @param {boolean} cond
- */
-function check (name, cond) {
-  if (cond) {
-    passed++
-    console.log(`  PASS  ${name}`)
-  } else {
-    failed++
-    console.log(`  FAIL  ${name}`)
-  }
-}
+const { check, done } = createCheckHarness()
 
 console.log('\nfourth-wall: registry')
 check('registry is non-empty', CANONICAL_FOURTH_WALL_RULES.length > 0)
@@ -139,5 +125,4 @@ check('parity flags every registry rule when the table is absent', checkDetectio
 check('checklistMissingRuleIds catches an omitted id', checklistMissingRuleIds(skillMd.split('fw-session-boundary').join('')).missing.includes('fw-session-boundary'))
 check('checklistMissingRuleIds reports all ids on empty content', checklistMissingRuleIds('').missing.length === CANONICAL_FOURTH_WALL_RULES.length)
 
-console.log(`\n${passed}/${passed + failed} passed`)
-if (failed > 0) process.exit(1)
+done()

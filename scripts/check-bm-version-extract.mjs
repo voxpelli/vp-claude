@@ -11,11 +11,16 @@
  */
 
 import { extractBmVersion, PATTERN_SIGNATURES } from '../lib/bm-version-extract.mjs'
+import { createCheckHarness } from '../lib/check-harness.mjs'
 
-let passed = 0
-let failed = 0
+const { getCounts, record } = createCheckHarness()
 
 /**
+ * Richer form of `check-harness.mjs`'s `check(name, cond)`: a custom
+ * structural equality over `{ version, pattern, isRange }`, silent on pass.
+ * Built on the shared harness's `record()` so the pass/fail bookkeeping
+ * stays centralized.
+ *
  * `isRange` in `expected` is optional — most fixtures aren't about the
  * range-pin signal and omit it, in which case `actual.isRange` is not
  * checked. Fixtures that ARE about Pattern 3's `[version-range]` behavior
@@ -27,12 +32,11 @@ let failed = 0
  */
 function check (name, actual, expected) {
   const isRangeOk = !('isRange' in expected) || actual.isRange === expected.isRange
-  if (actual.version === expected.version && actual.pattern === expected.pattern && isRangeOk) {
-    passed++
-  } else {
-    failed++
+  const cond = actual.version === expected.version && actual.pattern === expected.pattern && isRangeOk
+  if (!cond) {
     console.error(`  FAIL  ${name}  (got: ${JSON.stringify(actual)}, want: ${JSON.stringify(expected)})`)
   }
+  record(cond)
 }
 
 // --- Pattern 1: inline header pipe ---
@@ -335,13 +339,13 @@ check('9q7e: full priority-order sweep on an npm_package note now yields pattern
   ),
   { version: '3.0.0', pattern: 3 })
 
-console.log(`${passed}/${passed + failed} passed`)
+console.log(`${getCounts().passed}/${getCounts().passed + getCounts().failed} passed`)
 
 if (PATTERN_SIGNATURES.length !== 6 || PATTERN_SIGNATURES.some((p, i) => p.id !== i + 1)) {
   console.error('  FAIL  PATTERN_SIGNATURES must list exactly 6 entries with ids 1..6 in order')
-  failed++
+  record(false)
 }
 
 console.log(`PATTERN_SIGNATURES: ${PATTERN_SIGNATURES.length} entries`)
 
-if (failed > 0) process.exit(1)
+if (getCounts().failed > 0) process.exit(1)

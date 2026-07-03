@@ -4,28 +4,14 @@
 // itself be proven to CATCH drift — a guard that silently stops guarding is
 // worse than no guard. Wired into `npm run check` via check:plugin's sibling.
 
+import { createCheckHarness } from '../lib/check-harness.mjs'
 import {
   CANONICAL_STALENESS_BUCKETS,
   checkStalenessConsume,
   checkStalenessEmit,
 } from '../lib/staleness-contract.mjs'
 
-let passed = 0
-let failed = 0
-
-/**
- * @param {string} name
- * @param {boolean} cond
- */
-function check (name, cond) {
-  if (cond) {
-    passed++
-    console.log(`  PASS  ${name}`)
-  } else {
-    failed++
-    console.log(`  FAIL  ${name}`)
-  }
-}
+const { check, done } = createCheckHarness()
 
 // A canonical emit section, as it appears inside a fenced example block (the
 // headings are real `####` lines that a line-regex sees but an AST parser
@@ -121,5 +107,4 @@ console.log('\nstaleness-contract: canonical list')
 check('canonical bucket list is non-empty', CANONICAL_STALENESS_BUCKETS.length > 0)
 check('canonical bucket list has no duplicates', new Set(CANONICAL_STALENESS_BUCKETS).size === CANONICAL_STALENESS_BUCKETS.length)
 
-console.log(`\n${passed}/${passed + failed} passed`)
-if (failed > 0) process.exit(1)
+done()

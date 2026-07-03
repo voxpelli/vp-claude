@@ -11,12 +11,17 @@ import { voxpelli } from '@voxpelli/eslint-config'
 //   - semi:false keep the existing no-semicolon style (neostandard's own default).
 //   - cliFiles:  scripts/ + validate-plugin.mjs ARE CLI tools, so process.exit(),
 //                console, and sync I/O are correct there — relax those rules for
-//                them only (lib/ stays library-strict).
+//                them only (lib/ stays library-strict). lib/check-harness.mjs is
+//                the one deliberate exception: it's shared test-runner plumbing
+//                for the scripts/check-*.mjs self-tests (PASS/FAIL logging +
+//                process.exit(1) on failure ARE its job), not business logic, so
+//                it gets the same CLI treatment rather than being forced to
+//                return data for every caller to print/exit itself.
 export default [
   ...voxpelli({
     noMocha: true,
     semi: false,
-    cliFiles: ['scripts/**/*.mjs', 'validate-plugin.mjs'],
+    cliFiles: ['scripts/**/*.mjs', 'validate-plugin.mjs', 'lib/check-harness.mjs'],
   }),
   {
     name: 'vp-knowledge/repo-style',

@@ -10,6 +10,7 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createCheckHarness } from '../lib/check-harness.mjs'
 import {
   ANALYTICS_GUIDANCE_FILES,
   detectInvertedAnalyticsClaims,
@@ -18,22 +19,7 @@ import {
 } from '../lib/analytics-guidance.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-let passed = 0
-let failed = 0
-
-/**
- * @param {string} name
- * @param {boolean} cond
- */
-function check (name, cond) {
-  if (cond) {
-    passed++
-    console.log(`  PASS  ${name}`)
-  } else {
-    failed++
-    console.log(`  FAIL  ${name}`)
-  }
-}
+const { check, done } = createCheckHarness()
 
 // --- live check ---
 
@@ -84,5 +70,4 @@ check('detects the fallback mention in corrected schema wording (reverse order)'
 check('does NOT detect a fallback mention when analytics/JSON are unrelated and far apart', !hasAnalyticsJsonFallbackMention('Homebrew analytics are popular.' + ' filler'.repeat(100) + ' This uses JSON elsewhere in an unrelated file.'))
 check('does NOT detect a fallback mention when the text never mentions JSON at all', !hasAnalyticsJsonFallbackMention('Homebrew install analytics come from the MCP server only.'))
 
-console.log(`\n${passed}/${passed + failed} passed`)
-if (failed > 0) process.exit(1)
+done()

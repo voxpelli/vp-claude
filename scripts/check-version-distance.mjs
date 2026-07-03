@@ -6,23 +6,26 @@
  * fixtures rather than trusted. Wired into `npm run check` as `check:distance`.
  */
 
+import { createCheckHarness } from '../lib/check-harness.mjs'
 import { classifyVersionDistance, isAheadOfRegistry, isCalVer } from '../lib/version-distance.mjs'
 
-let passed = 0
-let failed = 0
+const { done, record } = createCheckHarness()
 
 /**
+ * Richer form of `check-harness.mjs`'s `check(name, cond)`: reports both the
+ * actual and expected value on failure, silent on pass. Built on the shared
+ * harness's `record()` so the pass/fail bookkeeping stays centralized.
+ *
  * @param {string} name
  * @param {unknown} actual
  * @param {unknown} expected
  */
 function check (name, actual, expected) {
-  if (actual === expected) {
-    passed++
-  } else {
-    failed++
+  const cond = actual === expected
+  if (!cond) {
     console.error(`  FAIL  ${name}  (got: ${String(actual)}, want: ${String(expected)})`)
   }
+  record(cond)
 }
 
 // --- Scheme-mismatch guard (the bug this fix exists for) ---
@@ -115,5 +118,4 @@ check('null bm → false', isAheadOfRegistry(/** @type {string} */ (/** @type {u
 // eslint-disable-next-line unicorn/no-useless-undefined -- deliberately exercising the `!upstreamVersion` falsy-input branch, not an accidental default
 check('undefined upstream → false', isAheadOfRegistry('1.0.0', /** @type {string} */ (/** @type {unknown} */ (undefined))), false)
 
-console.log(`${passed}/${passed + failed} passed`)
-if (failed > 0) process.exit(1)
+done()

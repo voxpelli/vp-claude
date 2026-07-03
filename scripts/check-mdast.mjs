@@ -5,24 +5,10 @@
 // frontmatter is NOT collected, while a prose token AND an inline-backtick token
 // ARE (a backticked tool name is a real use in this plugin's convention).
 
+import { createCheckHarness } from '../lib/check-harness.mjs'
 import { collectScannableText } from '../lib/mdast.mjs'
 
-let passed = 0
-let failed = 0
-
-/**
- * @param {string} name
- * @param {boolean} cond
- */
-function check (name, cond) {
-  if (cond) {
-    passed++
-    console.log(`  PASS  ${name}`)
-  } else {
-    failed++
-    console.log(`  FAIL  ${name}`)
-  }
-}
+const { check, done } = createCheckHarness()
 
 const scan = (/** @type {string} */ s) => collectScannableText(s).join('\n')
 const TOKEN = 'mcp__foo__bar'
@@ -45,5 +31,4 @@ check('indented-code token is NOT collected', !scan('    ' + TOKEN).includes(TOK
 check('unclosed fence with a token yields no segments', collectScannableText('```\n' + TOKEN + '\nno closing fence\n').length === 0)
 check('unclosed fence without a token also yields no segments', collectScannableText('```\njust prose\nno closing fence\n').length === 0)
 
-console.log(`\n${passed}/${passed + failed} passed`)
-if (failed > 0) process.exit(1)
+done()

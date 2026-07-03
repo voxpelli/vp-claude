@@ -10,25 +10,11 @@ import { existsSync, readFileSync } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createCheckHarness } from '../lib/check-harness.mjs'
 import { extractPluginLoadPaths, PLUGIN_ROOT_TOKEN } from '../lib/plugin-load-paths.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-let passed = 0
-let failed = 0
-
-/**
- * @param {string} name
- * @param {boolean} cond
- */
-function check (name, cond) {
-  if (cond) {
-    passed++
-    console.log(`  PASS  ${name}`)
-  } else {
-    failed++
-    console.log(`  FAIL  ${name}`)
-  }
-}
+const { check, done } = createCheckHarness()
 
 // --- live check ---
 
@@ -123,5 +109,4 @@ check('extracts multiple distinct paths from one document', extractPluginLoadPat
 const liveContent = readFileSync(join(ROOT, 'skills/package-intel/SKILL.md'), 'utf8')
 check('a known real skill file extracts at least one path (corpus sanity)', extractPluginLoadPaths(liveContent).length > 0)
 
-console.log(`\n${passed}/${passed + failed} passed`)
-if (failed > 0) process.exit(1)
+done()

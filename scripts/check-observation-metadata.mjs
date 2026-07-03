@@ -8,28 +8,14 @@
 // `[source]`-style provenance — see the module header for why that shape is
 // off-limits even in test data (the BM observation-drop bug).
 
+import { createCheckHarness } from '../lib/check-harness.mjs'
 import {
   isObservationOwnership,
   OBSERVATION_OWNERSHIP_VALUES,
   parseObservationMetadataTrailer,
 } from '../lib/observation-metadata.mjs'
 
-let passed = 0
-let failed = 0
-
-/**
- * @param {string} name
- * @param {boolean} cond
- */
-function check (name, cond) {
-  if (cond) {
-    passed++
-    console.log(`  PASS  ${name}`)
-  } else {
-    failed++
-    console.log(`  FAIL  ${name}`)
-  }
-}
+const { check, done } = createCheckHarness()
 
 console.log('\nobservation-metadata: valid trailers')
 {
@@ -121,5 +107,4 @@ check('canonical Ownership list is non-empty', OBSERVATION_OWNERSHIP_VALUES.leng
 check('isObservationOwnership accepts every canonical value', OBSERVATION_OWNERSHIP_VALUES.every((v) => isObservationOwnership(v)))
 check('isObservationOwnership rejects an unknown value', !isObservationOwnership('contractor'))
 
-console.log(`\n${passed}/${passed + failed} passed`)
-if (failed > 0) process.exit(1)
+done()

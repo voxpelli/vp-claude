@@ -8,6 +8,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createCheckHarness } from '../lib/check-harness.mjs'
 import {
   compareCounts,
   compareSingleCount,
@@ -18,22 +19,7 @@ import {
 } from '../lib/release-counts.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-let passed = 0
-let failed = 0
-
-/**
- * @param {string} name
- * @param {boolean} cond
- */
-function check (name, cond) {
-  if (cond) {
-    passed++
-    console.log(`  PASS  ${name}`)
-  } else {
-    failed++
-    console.log(`  FAIL  ${name}`)
-  }
-}
+const { check, done } = createCheckHarness()
 
 // --- on-disk counts ---
 function countSkills () {
@@ -128,5 +114,4 @@ check('compareSingleCount passes silently on a match', compareSingleCount('READM
 check('compareSingleCount catches a planted mismatch', compareSingleCount('README.md', 'Hooks', 5, 6).some((e) => e.includes('README.md') && e.includes('Hooks')))
 check('compareSingleCount flags a missing stated value — not a vacuous pass', compareSingleCount('README.md', 'Hooks', undefined, 5).length === 1)
 
-console.log(`\n${passed}/${passed + failed} passed`)
-if (failed > 0) process.exit(1)
+done()

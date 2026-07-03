@@ -2,27 +2,13 @@
 // branches (the drift-prone business logic Step 7c delegates to the script). Inline
 // JSON strings (no fixture dirs), like check-fourthwall. Wired into `npm run check`.
 
+import { createCheckHarness } from '../lib/check-harness.mjs'
 import {
   resolveInstalledPlugins,
   resolveInstalledSkills,
 } from '../lib/installed-plugins.mjs'
 
-let passed = 0
-let failed = 0
-
-/**
- * @param {string} name
- * @param {boolean} cond
- */
-function check (name, cond) {
-  if (cond) {
-    passed++
-    console.log(`  PASS  ${name}`)
-  } else {
-    failed++
-    console.log(`  FAIL  ${name}`)
-  }
-}
+const { check, done } = createCheckHarness()
 
 console.log('\ninstalled-plugins: source-shape resolution')
 
@@ -123,5 +109,4 @@ check('single-skill source resolves', skills.some((s) => s.identifier === 'skill
 check('skill title normalizes -> skill-<owner>-<repo>', skills.some((s) => s.title === 'skill-basicmachines-co-basic-memory-skills'))
 check('source-less dir -> name-only, sourceResolved:false', skills.some((s) => s.identifier === 'skill:hand-copied' && s.sourceResolved === false))
 
-console.log(`\n${passed}/${passed + failed} passed`)
-if (failed > 0) process.exit(1)
+done()

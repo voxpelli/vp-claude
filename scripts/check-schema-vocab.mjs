@@ -6,6 +6,7 @@
 // not this guard's — see the module header). Wired into `npm run check` via
 // check:schema-vocab.
 
+import { createCheckHarness } from '../lib/check-harness.mjs'
 import {
   buildCanonicalRelationVerbs,
   checkRelationVocabDrift,
@@ -13,22 +14,7 @@ import {
   extractRelationVocabCandidates,
 } from '../lib/schema-vocab.mjs'
 
-let passed = 0
-let failed = 0
-
-/**
- * @param {string} name
- * @param {boolean} cond
- */
-function check (name, cond) {
-  if (cond) {
-    passed++
-    console.log(`  PASS  ${name}`)
-  } else {
-    failed++
-    console.log(`  FAIL  ${name}`)
-  }
-}
+const { check, done } = createCheckHarness()
 
 const FIXTURE_SCHEMA_A = [
   '---',
@@ -168,5 +154,4 @@ console.log('\nschema-vocab: malformed-variant drift detection')
   check('well-formed but undeclared verb → zero errors (out of scope for this guard)', errors.length === 0)
 }
 
-console.log(`\n${passed}/${passed + failed} passed`)
-if (failed > 0) process.exit(1)
+done()

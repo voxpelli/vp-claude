@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url'
 import {
   mkdirSync, mkdtempSync, readFileSync, writeFileSync,
 } from 'node:fs'
+import { createCheckHarness } from '../lib/check-harness.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const HOOKS_DIR = join(__dirname, '..', 'hooks')
@@ -119,10 +120,14 @@ function parseJsonObjects (stdout) {
 
 // --- Test runner ---
 
-let passed = 0
-let failed = 0
+const { done, getCounts, record } = createCheckHarness()
 
 /**
+ * Richer form of `check-harness.mjs`'s `check(name, cond)`: runs a check
+ * function that returns `{ ok, reason }` (or throws), logging the reason on
+ * failure. Built on the shared harness's `record()` so the pass/fail
+ * bookkeeping stays centralized.
+ *
  * @param {string} label
  * @param {() => { ok: boolean, reason?: string }} check
  */
@@ -131,16 +136,15 @@ function test (label, check) {
     const result = check()
     if (result.ok) {
       console.log(`  PASS  ${label}`)
-      passed++
     } else {
       console.error(`  FAIL  ${label}`)
       console.error(`        ${result.reason ?? 'no reason given'}`)
-      failed++
     }
+    record(result.ok)
   } catch (/** @type {unknown} */ err) {
     console.error(`  FAIL  ${label}`)
     console.error(`        threw: ${err instanceof Error ? err.message : String(err)}`)
-    failed++
+    record(false)
   }
 }
 
@@ -616,9 +620,6 @@ test('bash script from gardener → allowed', () => {
 })
 
 // --- Summary ---
-const total = passed + failed
-console.log(`\n${passed}/${total} passed`)
-if (failed > 0) {
-  console.error(`${failed} test(s) failed`)
-  process.exit(1)
-}
+const { failed } = getCounts()
+if (failed > 0) console.error(`${failed} test(s) failed`)
+done()
