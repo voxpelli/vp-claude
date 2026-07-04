@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.3][] - 2026-07-04
+
+### Added
+
+- **`/knowledge-gaps --stale plugin`** — revives the deferred `vp-claude-5s83`
+  epic now that its own revival trigger fired (22 documented `plugin-*`/
+  `skill-*` notes, past the ~10 threshold). Claude Code plugins have no
+  central registry, so `scripts/fetch-plugin-upstream.sh` resolves the
+  current version by fetching `plugin.json` directly from GitHub via `gh
+  api` — a marketplace-hosted identifier's path is resolved live via
+  `marketplace.json` (never stored, mirroring `tool-intel`'s bare-name
+  formula/cask auto-routing precedent). `lib/cohort-table-contract.mjs` +
+  `check:cohort-lockstep` close a previously-unguarded drift risk between
+  `staleness-detection.md`'s and `knowledge-gardener.md`'s cohort
+  configuration tables. Verified end-to-end against the real graph.
+- **Bespoke `.ast-grep/rules/` lint suite** (`@ast-grep/cli` devDependency):
+  four JS rules enforcing existing house conventions (ESM-only, no
+  identifier-shadowing, JSDoc `@typedef`/`@any` conventions — one with a
+  surgical transform-based auto-fix), plus three new bash rules for the
+  `fetch-<eco>-upstream.sh` script family (mandatory `set -euo pipefail`,
+  injection-safe `jq` construction — filling a gap ShellCheck's own
+  maintainers knowingly left open, and the documented
+  "never touches `~/basic-memory/`" invariant). `check:ast-grep` (CI-annotated
+  via `--format github`) and `check:ast-grep-test` wire into `npm run check`;
+  `fix:ast-grep` is reachable via a new top-level `npm run fix`.
+- **`remark-gfm` + `remark-lint-no-hidden-table-cell`** added so `check:md`
+  can finally see markdown table structure — previously invisible to the
+  lint pipeline entirely (plain `remark-parse` doesn't produce `table` nodes
+  without the GFM extension). `remark-lint-table-cell-padding` is disabled
+  (cosmetic noise, not correctness).
+
+### Fixed
+
+- **A real pre-existing bug in the 9-rule version-drift bucketing model**
+  (`knowledge-gardener.md` Step 5b-iv, rules 2/2b): a `not-in-api` or
+  `api-unavailable` note with a *parseable* recorded version fell through to
+  the versions-differ rules, comparing against an empty `upstream_version`
+  string and landing in a nonsensical `Drifted, age unknown` bucket instead
+  of `Not in registry`/`API unavailable`. Cohort-agnostic — could have
+  affected any past `--stale` run across brew/npm/cask/crate/vscode, not
+  just the new plugin cohort that surfaced it.
+- **`lib/installed-plugins.mjs`'s `ownerRepoFromUrl`** silently failed to
+  resolve a `git-subdir` marketplace source whose `url` is a bare
+  `owner/repo` shorthand with no domain (a verified real-world shape) —
+  affects `/knowledge-gaps --global` plugin coverage.
+- Two unescaped-bracket / bare-URL markdown findings caught by this
+  session's own new lint additions (`\[degraded\]` escaping in the new
+  `UPSTREAM-brew--sem-cli.md`; two `[upstream: ...]` bare URLs in
+  `UPSTREAM-claude-code.md` reformatted to this repo's established link
+  convention).
+
 ## [0.32.2][] - 2026-07-03
 
 ### Added
@@ -2040,6 +2091,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.32.3]: https://github.com/voxpelli/vp-claude/compare/v0.32.2...v0.32.3
 [0.32.2]: https://github.com/voxpelli/vp-claude/compare/v0.32.1...v0.32.2
 [0.32.1]: https://github.com/voxpelli/vp-claude/compare/v0.32.0...v0.32.1
 [0.32.0]: https://github.com/voxpelli/vp-claude/compare/v0.31.12...v0.32.0
