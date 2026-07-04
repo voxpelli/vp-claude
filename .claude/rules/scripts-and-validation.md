@@ -140,6 +140,46 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
   avoiding the three banned phrasings). Deliberately narrow — this is not a
   general doc-matches-behavior framework, only a guard against this one
   regression class reappearing.
+- **`check:upstream-headings` (`check-upstream-headings.mjs`)** — live +
+  fixture guard against a bug-shaped entry landing under an invented or
+  misspelled `## ` heading in an `UPSTREAM-*.md` file. `lib/upstream-heading-
+  vocab.mjs` exports a canonical six-name vocabulary (Feature Requests, Bugs,
+  Upstream Opportunities, Cross-Vendor Inconsistencies, Trend Reviews,
+  Resolved) and a pure `detectInvalidHeadings` membership check. Deliberately
+  a MEMBERSHIP check only — it does NOT enforce heading order (some
+  conforming files legitimately space sections far apart) and does NOT
+  enforce completeness (some conforming files legitimately omit optional
+  sections). `UPSTREAM-basic-memory.md` is allowlisted and excluded from the
+  check entirely, because it uses an unrelated heading scheme by design
+  ("## Latest upstream activity", "## Open items") — rewriting a
+  user-maintained tracking file's structure to fit a template would be
+  exactly the kind of "changing what you don't understand" this project's
+  conventions warn against. `UPSTREAM-vp-git.md`'s extra `## Resolved`
+  section needed no allowlist entry once `Resolved` was added to the
+  vocabulary itself.
+- **`check:cohort-lockstep` (`check-cohort-lockstep.mjs`)** — live + fixture
+  guard that the `--stale` cohort configuration table in
+  `staleness-detection.md` and its mirrored table in `knowledge-gardener.md`
+  Step 5b list the same cohort set. `lib/cohort-table-contract.mjs` extracts
+  each table's cohort tokens via LINE-REGEX anchored on the shared header-row
+  labels (`Prefix`/`Fetch script`/`Deprecation?`), not a markdown AST — written
+  before `remark-gfm` was added to this repo (see below); now that it IS
+  installed, this module deliberately stays line-regex anyway since the logic
+  is already correct and tested, and migrating it to an AST walk would be
+  churn with no functional benefit. (`remark-gfm` + `remark-lint-no-hidden-
+  table-cell` were added to `check:md`'s own `remarkConfig` the same session,
+  for a DIFFERENT reason — catching malformed table structure, e.g. an
+  inconsistent column count, repo-wide via generic lint rather than this
+  check's narrow cohort-specific comparison; `remark-lint-table-cell-padding`
+  is explicitly disabled since it's cosmetic noise, not structural.) This is a
+  DIFFERENT lockstep risk from the one flagged at
+  `agents/knowledge-gardener.md`'s own "Version-extraction patterns mirrored
+  ... update both in lockstep (no machine contract couples them)" comment —
+  that comment is about the S2 version-extraction PATTERN PROSE (the six
+  priority-ordered pattern descriptions), which this check does not cover and
+  which still has no machine contract. The cohort TABLE this check does cover
+  had no comment flagging it at all before this check existed — a more silent
+  gap, not a more visible one.
 
 When adding a new "X must agree with Y" invariant, follow this family: a hard
 `error()` for mechanically-unambiguous checks (counts, sizes), a `warn()` for

@@ -46,7 +46,11 @@ hooks/
   hooks.json                         # PreToolUse, PostToolUse, PostToolUseFailure, SessionStart
 schemas/                             # 23 BM note-schema definitions — source of truth (see ## Schemas)
 scripts/                             # CLI-first audit + npm-run-check utilities (see ## Scripts)
-lib/                                 # JS modules imported by check scripts (staleness-contract, version-distance, fourth-wall-rules, release-counts, mdast, installed-plugins, plugin-load-paths, bm-version-extract, analytics-guidance, observation-metadata, schema-vocab, check-harness)
+lib/                                 # JS modules imported by check scripts (staleness-contract, version-distance, fourth-wall-rules, release-counts, mdast, installed-plugins, plugin-load-paths, bm-version-extract, analytics-guidance, observation-metadata, schema-vocab, check-harness, cohort-table-contract)
+sgconfig.yml                         # ast-grep config — auto-discovers .ast-grep/rules/ (see .claude/rules/ast-grep-rules.md)
+.ast-grep/
+  rules/                              # Bespoke ast-grep lint rules enforcing house JS conventions over lib/+scripts/
+  rule-tests/                         # ast-grep test fixtures + snapshots proving each rule fires/stays silent correctly
 .claude/rules/                       # Path-scoped dev conventions, load on edit of matching files (see ## Detailed conventions)
 ```
 
@@ -145,9 +149,12 @@ Skills and agents reference tools from multiple MCP servers. When editing, use e
 
 ## Validation
 
-`npm run check` — runs `check:plugin` (validate-plugin.mjs, incl. the CLAUDE.md size guard and the offline relation-vocabulary drift cross-check) + `check:lint` (eslint, `@voxpelli/eslint-config`) + `check:tsc` (`tsc --checkJs --allowJs` against JSDoc types; `tsconfig.json` extends `@voxpelli/tsconfig/node22.json`) + `check:type-coverage` (`type-coverage --at-least 99`) + `check:contract` (staleness drift-bucket contract self-test) + `check:md` (remark) + `check:sh` (shellcheck + shfmt) + `check:hooks` (hook integration tests) + `check:distance` (version-distance classifier self-test) + `check:fourthwall` (fourth-wall rule-registry self-test) + `check:release-counts` (CLAUDE.md/README.md component counts ↔ disk) + `check:mdast` (mdast prose/fenced split self-test) + `check:installed-plugins` (installed-plugin/skill resolver self-test) + `check:plugin-load-paths` (`${CLAUDE_PLUGIN_ROOT}` cross-load paths in skill prose resolve on disk) + `check:bm-version-extract` (S2 version-extractor self-test) + `check:analytics-guidance` (brew/cask analytics-source doc guidance self-test, guards against the v0.31.5 inverted-claim regression) + `check:obs-metadata` (observation `Verified:`/`Since:`/`Ownership:` trailer parser self-test) + `check:schema-vocab` (relation-verb malformed-variant drift guard self-test).
+`npm run check` — runs `check:plugin` (validate-plugin.mjs, incl. the CLAUDE.md size guard and the offline relation-vocabulary drift cross-check) + `check:lint` (eslint, `@voxpelli/eslint-config`) + `check:tsc` (`tsc --checkJs --allowJs` against JSDoc types; `tsconfig.json` extends `@voxpelli/tsconfig/node22.json`) + `check:type-coverage` (`type-coverage --at-least 99`) + `check:contract` (staleness drift-bucket contract self-test) + `check:md` (remark) + `check:sh` (shellcheck + shfmt) + `check:hooks` (hook integration tests) + `check:distance` (version-distance classifier self-test) + `check:fourthwall` (fourth-wall rule-registry self-test) + `check:release-counts` (CLAUDE.md/README.md component counts ↔ disk) + `check:mdast` (mdast prose/fenced split self-test) + `check:installed-plugins` (installed-plugin/skill resolver self-test) + `check:plugin-load-paths` (`${CLAUDE_PLUGIN_ROOT}` cross-load paths in skill prose resolve on disk) + `check:bm-version-extract` (S2 version-extractor self-test) + `check:analytics-guidance` (brew/cask analytics-source doc guidance self-test, guards against the v0.31.5 inverted-claim regression) + `check:obs-metadata` (observation `Verified:`/`Since:`/`Ownership:` trailer parser self-test) + `check:schema-vocab` (relation-verb malformed-variant drift guard self-test) + `check:upstream-headings` (UPSTREAM-*.md `## ` heading-membership drift guard self-test) + `check:ast-grep` (bespoke `.ast-grep/rules/` structural lint over `lib/`+`scripts/` source enforcing house JS conventions — ESM-only, no identifier-shadowing, JSDoc `@typedef`/`any` conventions; error-severity findings fail CI, warning-severity ones don't) + `check:ast-grep-test` (`ast-grep test` — snapshot self-test proving each bespoke rule fires on a planted violation and stays silent on the correct form) + `check:cohort-lockstep` (`--stale` cohort-table lockstep drift guard between `staleness-detection.md` and `knowledge-gardener.md` Step 5b self-test).
 Shell scripts are validated with `shellcheck` (linting) and `shfmt -d`
 (format verification). Requires `brew install shfmt` if not already present.
+`npm run fix:ast-grep` (`ast-grep scan --update-all`) applies any auto-fixable
+finding — deliberately NOT part of `npm run check`, since a check step must
+only detect, never mutate; see `.claude/rules/ast-grep-rules.md`.
 
 ## Scripts
 
@@ -179,6 +186,9 @@ full drift-guard picture live in `.claude/rules/scripts-and-validation.md`.
 | `check-analytics-guidance.mjs` | Live + fixture check: the two `tool-intel` brew/cask ecosystem references, both note templates, and the `brew_formula`/`brew_cask` schemas (imports `lib/analytics-guidance.mjs`) never reintroduce the inverted "JSON API does not expose analytics" claim fixed in v0.31.5, and each still mentions the JSON `analytics` fallback | `npm run check:analytics-guidance` |
 | `check-observation-metadata.mjs` | Fixture tests for the observation `Verified:`/`Since:`/`Ownership:` trailer parser (imports `lib/observation-metadata.mjs`) — valid trailers, near-miss non-matches that must not parse (lowercase field names, missing colon, ordinary em-dash prose), and malformed field values (non-ISO date, invalid calendar date, non-version `Since`, unenumerated `Ownership`) | `npm run check:obs-metadata` |
 | `check-schema-vocab.mjs` | Fixture tests for the relation-vocabulary malformed-variant drift guard (imports `lib/schema-vocab.mjs`) — picoschema Note-field extraction, `## Relation Vocabulary` bullet-candidate extraction, the space/colon malformed-variant detector (the v0.29.1 bug class), and confirms a well-formed-but-undeclared verb is deliberately left unflagged (that class belongs to `/schema-evolve`'s interactive reconciliation, not this guard) | `npm run check:schema-vocab` |
+| `check-upstream-headings.mjs` | Live + fixture check: every `## ` heading in a non-allowlisted `UPSTREAM-*.md` file (imports `lib/upstream-heading-vocab.mjs`) is a member of the canonical vocabulary (Feature Requests, Bugs, Upstream Opportunities, Cross-Vendor Inconsistencies, Trend Reviews, Resolved) — a membership check only, not order or completeness; `UPSTREAM-basic-memory.md` is allowlisted (genuinely different heading scheme by design) | `npm run check:upstream-headings` |
+| `check-ast-grep.mjs` | Runs the `.ast-grep/rules/` bespoke lint suite (via the `@ast-grep/cli` devDependency) over `lib/`+`scripts/`; in CI (`GITHUB_ACTIONS`) passes `--format github` so ast-grep's own native workflow-command annotations cover these findings, the same CI-visible-warnings treatment `validate-plugin.mjs`'s hand-rolled `warn()` gets, with no reimplementation needed. Detect-only — never mutates; see `npm run fix:ast-grep` and `.claude/rules/ast-grep-rules.md` | `npm run check:ast-grep` |
+| `check-cohort-lockstep.mjs` | Live + fixture check: the `--stale` cohort configuration table in `staleness-detection.md` and its mirrored table in `knowledge-gardener.md` Step 5b (imports `lib/cohort-table-contract.mjs`) list the same cohort set — line-regex anchored on the shared header-row labels (`Prefix`/`Fetch script`/`Deprecation?`), not a markdown AST (no `remark-gfm` table-parsing dependency installed) | `npm run check:cohort-lockstep` |
 
 ### bd CLI quirks
 
@@ -224,6 +234,7 @@ in the matching area, that rule is the authority:
 | `hook-development.md` | `hooks/**` | hook conventions, `additionalContext` pattern, full hook inventory |
 | `schema-and-notes.md` | `schemas/**` | schema lifecycle, BM search patterns, cross-linking, source citations, note-output shapes |
 | `scripts-and-validation.md` | `scripts/**`, `lib/**`, `validate-plugin.mjs` | drift-guard family, `bm` CLI quirks, script conventions |
+| `ast-grep-rules.md` | `.ast-grep/**`, `sgconfig.yml` | bespoke structural-lint rule authoring, `ast-grep test` snapshot mechanics, check-vs-fix CI/dev split, extraction-to-shareable-package possibilities |
 
 These are Claude Code path-scoped rules, so they do **not** load at session start
 (no context cost until relevant) — that is the mechanism keeping `CLAUDE.md`
