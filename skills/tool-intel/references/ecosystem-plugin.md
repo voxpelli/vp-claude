@@ -49,7 +49,9 @@ Tags") — filter `{plugin-name}--v*` tags for monorepo marketplaces, else plain
 `vX.Y.Z` tags. DeepWiki applies (it is a GitHub repo) but is conditional, like
 `gh:` — only when the repo is well-known enough to be indexed.
 
-`--stale plugin` is DEFERRED (`bd vp-claude-5s83` notes): there is no central
-registry API, and many plugins SHA-track without bumping `version`. This is
-research-only — no `--stale` drift cohort. Revive when a queryable aggregating
-plugin-registry version API exists, or documented plugin notes exceed ~10.
+`--stale plugin` is supported (since `bd vp-claude-uchu`, reviving the
+`vp-claude-5s83` deferral once documented plugin notes exceeded the ~10
+revival trigger): there is no central registry API, so drift is resolved by
+fetching `plugin.json` directly from GitHub via `gh api` instead of a
+registry — see `skills/knowledge-gaps/references/staleness-detection.md`'s
+Cohort configuration table and `scripts/fetch-plugin-upstream.sh`.

@@ -146,5 +146,6 @@ One row per source repo (skill dirs sharing a repo collapse to one note).
 - Installed skill bundles: P total, Q documented (Z%)
 ```
 
-`--stale plugin` is deferred (no registry API); `--stale skill` is unsupported
-(no comparable version) — this section is coverage-only.
+`--stale plugin` is supported (see `references/staleness-detection.md`);
+`--stale skill` is unsupported (no comparable version) — this section stays
+coverage-only for skill bundles.

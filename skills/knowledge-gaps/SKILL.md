@@ -1,8 +1,8 @@
 ---
 name: knowledge-gaps
-description: "This skill should be used when the user asks about 'knowledge gaps', 'tool coverage', 'undocumented dependencies', 'undocumented tools', 'concept gaps', 'installed plugins', 'plugin coverage', 'undocumented skills', 'globally installed plugins/skills', 'what is installed on this machine', 'stale/outdated/drifted notes', 'version drift', or 'which tools/packages need updating'. Audits project dependency and tool manifests — and installed Claude Code plugins + skills.sh bundles — against Basic Memory coverage, and detects concept-level hub gaps. Two flag modes: `--stale [brew|npm|cask|crate|vscode]` checks version drift instead of coverage; `--global` audits what is installed on this machine — Claude Code plugins + skills.sh bundles today — against coverage. Supported ecosystems and full flag mechanics are documented in the skill body."
+description: "This skill should be used when the user asks about 'knowledge gaps', 'tool coverage', 'undocumented dependencies', 'undocumented tools', 'concept gaps', 'installed plugins', 'plugin coverage', 'undocumented skills', 'globally installed plugins/skills', 'what is installed on this machine', 'stale/outdated/drifted notes', 'version drift', or 'which tools/packages need updating'. Audits project dependency and tool manifests — and installed Claude Code plugins + skills.sh bundles — against Basic Memory coverage, and detects concept-level hub gaps. Two flag modes: `--stale [brew|npm|cask|crate|vscode|plugin]` checks version drift instead of coverage; `--global` audits what is installed on this machine — Claude Code plugins + skills.sh bundles today — against coverage. Supported ecosystems and full flag mechanics are documented in the skill body."
 user-invocable: true
-argument-hint: "[--stale [brew|npm|cask|crate|vscode] [--limit N] [--since <date>] [--sample N]] [--global]"
+argument-hint: "[--stale [brew|npm|cask|crate|vscode|plugin] [--limit N] [--since <date>] [--sample N]] [--global]"
 allowed-tools:
   - Read
   - Grep
@@ -26,8 +26,8 @@ crates, Go modules, PHP Composer, PyPI, and RubyGems.
 
 When invoked with `--stale [<ecosystem>]`, the skill instead runs an
 alternative version-drift workflow (Mode A below) that flags documented
-brew/npm/cask/crate/vscode notes whose recorded version has fallen behind
-upstream — not a coverage audit.
+brew/npm/cask/crate/vscode/plugin notes whose recorded version has fallen
+behind upstream — not a coverage audit.
 
 ## Edge Cases
 
@@ -91,16 +91,15 @@ phrases like "stale notes", "outdated formulae", "drifted notes", "which tools
 need updating".
 
 **Argument parsing:** `--stale` takes an optional ecosystem token —
-`--stale [brew|npm|cask|crate|vscode]`:
+`--stale [brew|npm|cask|crate|vscode|plugin]`:
 
-- **bare `--stale`** → check all five supported cohorts.
-- **`--stale <token>`** where the token ∈ `brew|npm|cask|crate|vscode` → check
-  only that cohort.
-- **any other token** (e.g. `action`, `gh`, `go`, `docker`, `pypi`, `gem`,
-  `composer`) → reject with: "`--stale` supports brew, npm, cask, crate, vscode.
-  `action`/`gh`/`go`/`docker` have no single canonical comparable version;
-  `plugin` is deferred (no central registry API; many plugins SHA-track without
-  bumping version) and `skill` is unsupported (no comparable version);
+- **bare `--stale`** → check all six supported cohorts.
+- **`--stale <token>`** where the token ∈ `brew|npm|cask|crate|vscode|plugin`
+  → check only that cohort.
+- **any other token** (e.g. `action`, `gh`, `go`, `docker`, `skill`, `pypi`,
+  `gem`, `composer`) → reject with: "`--stale` supports brew, npm, cask, crate,
+  vscode, plugin. `action`/`gh`/`go`/`docker` have no single canonical
+  comparable version; `skill` is unsupported (no comparable version);
   `pypi`/`gem`/`composer` are deferred." Do NOT silently fall back to all.
 
 **Scope modifiers (additive):** after the ecosystem token, `--stale` also
@@ -108,8 +107,8 @@ accepts three optional scoping flags, in any order —
 `--stale [<eco>] [--limit N] [--since <date>] [--sample N]`. These exist for
 large cohorts (e.g. a 388-note `npm` directory) where the default full sweep
 is impractical in one turn. Applied **per cohort** — a bare `--stale --limit
-50` run against all five cohorts checks up to 50 notes in EACH of
-brew/npm/cask/crate/vscode, not 50 total.
+50` run against all six cohorts checks up to 50 notes in EACH of
+brew/npm/cask/crate/vscode/plugin, not 50 total.
 
 - **`--since <date>`** — the highest-leverage flag: it restricts the cohort to
   notes NOT touched since `<date>` (ISO `YYYY-MM-DD`), and does so BEFORE the
@@ -140,7 +139,7 @@ full — do NOT execute any of the Mode B steps below in the same session:
 
 `${CLAUDE_PLUGIN_ROOT}/skills/knowledge-gaps/references/staleness-detection.md`
 
-Pass the parsed ecosystem scope (one cohort, or all five) AND any parsed
+Pass the parsed ecosystem scope (one cohort, or all six) AND any parsed
 `--limit`/`--since`/`--sample` values to that workflow; it runs the per-cohort
 drift check and renders one `### Version Drift — <eco>` section per checked
 cohort.

@@ -19,7 +19,7 @@ skills/
     references/                      # 15 files: 6 ecosystem + 6 note templates + gh-api-fallback + forge-fallback + upgrade-haul (shared, also loaded by tool-intel)
   tool-intel/SKILL.md                # Six-source dev-tool research (brew/cask/action/docker/vscode/gh)
     references/                      # 16 files: 8 ecosystem + 7 note templates + gh-api-fallback
-  knowledge-gaps/SKILL.md            # Cross-reference deps + tool manifests vs BM coverage; --stale for version drift (brew/npm/cask/crate/vscode); --global for installed plugin/skill coverage
+  knowledge-gaps/SKILL.md            # Cross-reference deps + tool manifests vs BM coverage; --stale for version drift (brew/npm/cask/crate/vscode/plugin); --global for installed plugin/skill coverage
     references/                      # 4 files: standard-detection, concept-detection, staleness-detection, report-templates
   knowledge-prime/SKILL.md           # On-demand project context priming from BM
   schema-evolve/SKILL.md             # Frequency-driven schema drift detection and dual-sync
@@ -66,7 +66,7 @@ component type — see [Detailed conventions](#detailed-conventions).
 
 - **package-intel** — seven-source package research (npm/crate/go/composer/pypi/gem) → BM note. `/package-intel <pkg>`
 - **tool-intel** — six-source dev-tool research (brew/cask/action/docker/vscode/gh/plugin/skill) → BM note. `/tool-intel <prefix>:<name>`
-- **knowledge-gaps** — dep + tool-manifest coverage audit; `--stale [brew|npm|cask|crate|vscode]` for version drift; `--global` for installed plugin/skill coverage. `/knowledge-gaps`
+- **knowledge-gaps** — dep + tool-manifest coverage audit; `--stale [brew|npm|cask|crate|vscode|plugin]` for version drift; `--global` for installed plugin/skill coverage. `/knowledge-gaps`
 - **knowledge-prime** — on-demand project context brief from BM. `/knowledge-prime`
 - **schema-evolve** — schema-drift detection + dual-sync. `/schema-evolve <type>`
 - **session-reflect** — conversation → BM capture with preview/approve. `/session-reflect`
@@ -172,6 +172,7 @@ full drift-guard picture live in `.claude/rules/scripts-and-validation.md`.
 | `fetch-npm-upstream.sh` (stdin: names) | API-only: abbreviated packument per name; `dist-tags.latest`, `.modified` age, latest-version `deprecated`. Scoped names work unencoded. | gardener Step 5b, `/knowledge-gaps --stale npm` |
 | `fetch-crate-upstream.sh` (stdin: names) | API-only: crates.io per name; `max_stable_version` + matching `created_at`. Required User-Agent, 1 s rate-limit between calls. | gardener Step 5b, `/knowledge-gaps --stale crate` |
 | `fetch-vscode-upstream.sh` (stdin: ids) | API-only: dual-source per `publisher.ext` id — Open VSX (authoritative verdict, `.version`/`.timestamp`) + VS Marketplace `extensionquery` (best-effort `marketplace_version` annotation). | gardener Step 5b, `/knowledge-gaps --stale vscode` |
+| `fetch-plugin-upstream.sh` (stdin: `owner/repo[#name]`) | `gh api`-only (no registry exists): resolves a marketplace-hosted identifier's `plugin.json` path live via `marketplace.json`, then reads `.version`. Composite join-back key — `name` in NDJSON output echoes the full input identifier, not a package name. | gardener Step 5b, `/knowledge-gaps --stale plugin` |
 | `audit-helpers.sh <subcommand>` | Dispatcher: bm-stats, scope-leak-summary, scope-leak-detail | gardener Step 0.5, 7b |
 | `check-hooks.mjs` | Integration tests verifying each hook emits exactly one JSON object | `npm run check:hooks` |
 | `check-staleness-contract.mjs` | Fixture tests for the emit↔consume staleness drift-bucket contract (imports `lib/staleness-contract.mjs`) — proves the validator check catches bucket-string drift | `npm run check:contract` |
