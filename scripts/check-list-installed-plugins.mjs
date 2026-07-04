@@ -27,6 +27,7 @@ const INSTALLED = JSON.stringify({
     'barewidget@slashless-mkt': [{ version: 'unknown', installedAt: '2026-05-21T00:00:00Z' }], // local-string, slash-less marketplace repo
     'acme@casemkt': [{ version: 'unknown', installedAt: '2026-05-22T00:00:00Z' }], // local-string, repo Acme/Acme vs name acme (case mismatch)
     'mangled@badmkt': [{ version: 'unknown', installedAt: '2026-05-23T00:00:00Z' }], // local-string, KNOWN repo "a/b/c" has slashes but isn't owner/repo
+    'databricks@claude-plugins-official': [{ version: 'unknown', installedAt: '2026-05-24T00:00:00Z' }], // git-subdir, bare "owner/repo" shorthand url (no domain) — real-world shape
     'ghost@vanished-marketplace': [{ version: 'unknown', installedAt: '2026-01-01T00:00:00Z' }],
   },
 })
@@ -54,6 +55,7 @@ const MP = new Map([
       { name: 'agent-sdk-dev', source: './plugins/agent-sdk-dev' }, // local nested subpath
       { name: 'api-security', source: { source: 'git-subdir', url: 'https://github.com/42Crunch-AI/claude-plugins.git', path: 'plugins/api-security' } },
       { name: 'widgets', source: { source: 'git-subdir', url: 'https://github.com/acme/widgets.git', path: 'plugins/widgets' } }, // git-subdir namesake (repo last segment == name) — must RETAIN #name
+      { name: 'databricks', source: { source: 'git-subdir', url: 'databricks/databricks-agent-skills', path: 'plugins/databricks/claude' } }, // git-subdir, bare owner/repo shorthand url (verified real-world shape, no domain at all)
     ],
   })],
   // Dedicated-repo plugin at the SAME acme/widgets as the git-subdir namesake above:
@@ -80,6 +82,7 @@ check('local "./plugins/x" nested subpath resolves', !!find('plugin:anthropics/c
 check('git-subdir source -> owner/repo from url + #name (non-namesake keeps suffix)', !!find('plugin:42Crunch-AI/claude-plugins#api-security'))
 check('git-subdir namesake (repo==name) -> #name RETAINED, never collapsed (widgets)', !!find('plugin:acme/widgets#widgets'))
 check('git-subdir namesake vs dedicated-repo homonym -> two DISTINCT records (no conflation)', plugins.some((p) => p.identifier === 'plugin:acme/widgets#widgets') && plugins.some((p) => p.identifier === 'plugin:acme/widgets'))
+check('git-subdir bare "owner/repo" shorthand url (no domain) resolves (regression guard, vp-claude-mmae)', !!find('plugin:databricks/databricks-agent-skills#databricks'))
 check('local-string slash-less repo -> falls through to sourceResolved:false (shape guard)', plugins.some((p) => p.identifier === 'plugin:barewidget@slashless-mkt' && p.sourceResolved === false))
 check('local-string case-mismatch (Acme/Acme vs acme) -> #name kept, no collapse', !!find('plugin:Acme/Acme#acme'))
 check('local-string malformed-with-slash repo ("a/b/c") -> sourceResolved:false (tightened shape guard)', plugins.some((p) => p.identifier === 'plugin:mangled@badmkt' && p.sourceResolved === false))
