@@ -1,0 +1,12 @@
+id: bash-require-set-euo-pipefail
+snapshots:
+  ? |
+    #!/bin/bash
+    echo hi
+  : labels:
+    - source: |
+        #!/bin/bash
+        echo hi
+      style: primary
+      start: 0
+      end: 20

@@ -1,0 +1,16 @@
+id: fetch-upstream-no-basic-memory-path
+language: bash
+message: >-
+  fetch-*-upstream.sh scripts are documented as NEVER touching
+  ~/basic-memory/ — the calling agent does BM access via MCP and pipes
+  identifiers here on stdin. A literal `basic-memory` path reference breaks
+  that contract (see .claude/rules/scripts-and-validation.md).
+severity: error
+files:
+  - "scripts/fetch-*-upstream.sh"
+rule:
+  regex: basic-memory
+  any:
+    - kind: word
+    - kind: string
+    - kind: raw_string

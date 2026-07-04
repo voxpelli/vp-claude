@@ -1,0 +1,13 @@
+id: bash-require-set-euo-pipefail
+language: bash
+message: >-
+  scripts/*.sh must run `set -euo pipefail` — an undetected failure in a
+  fetch-*-upstream.sh worker silently emits wrong NDJSON instead of crashing
+  loudly (see .claude/rules/scripts-and-validation.md)
+severity: error
+rule:
+  kind: program
+  not:
+    has:
+      pattern: set -euo pipefail
+      stopBy: end

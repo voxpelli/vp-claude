@@ -1,0 +1,10 @@
+id: bash-require-set-euo-pipefail
+valid:
+- |
+  #!/bin/bash
+  set -euo pipefail
+  echo hi
+invalid:
+- |
+  #!/bin/bash
+  echo hi

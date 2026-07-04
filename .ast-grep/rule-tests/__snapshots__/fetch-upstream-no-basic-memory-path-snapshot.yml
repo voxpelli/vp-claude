@@ -1,0 +1,18 @@
+id: fetch-upstream-no-basic-memory-path
+snapshots:
+  ? |
+    #!/bin/bash
+    cat "$HOME/basic-memory/foo.md"
+  : labels:
+    - source: '"$HOME/basic-memory/foo.md"'
+      style: primary
+      start: 16
+      end: 43
+  ? |
+    #!/bin/bash
+    cat ~/basic-memory/foo.md
+  : labels:
+    - source: ~/basic-memory/foo.md
+      style: primary
+      start: 16
+      end: 37

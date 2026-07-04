@@ -1,0 +1,12 @@
+id: fetch-upstream-no-basic-memory-path
+valid:
+- |
+  #!/bin/bash
+  printf '%s\n' "$1" | bash fetch-brew-upstream.sh
+invalid:
+- |
+  #!/bin/bash
+  cat ~/basic-memory/foo.md
+- |
+  #!/bin/bash
+  cat "$HOME/basic-memory/foo.md"
