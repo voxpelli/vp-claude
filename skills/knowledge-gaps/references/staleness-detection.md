@@ -5,10 +5,13 @@ The mode replaces the normal manifest-driven coverage workflow with a focused
 upstream-drift check: it compares the version recorded in a Basic Memory note
 against the current upstream version and buckets the notes.
 
-`--stale` takes an optional ecosystem token: `--stale [brew|npm|cask|crate|vscode]`.
+`--stale` takes an optional ecosystem token: `--stale [brew|npm|cask|crate|vscode|plugin]`.
 A bare `--stale` checks **all** supported cohorts. Drift detection is only valid
-for registry-backed, single-canonical-latest, stable-channel ecosystems — these
-five qualify. `action`, `gh`, `go`, and `docker` are deliberately excluded
+for ecosystems that have a **single authoritative current version** — five are
+registry-backed (brew/npm/cask/crate/vscode); `plugin` is the first non-registry
+cohort, resolving its current version by fetching `plugin.json` directly from
+GitHub via `gh api` instead of a registry (see the Cohort configuration table
+below). `action`, `gh`, `go`, and `docker` are deliberately excluded
 (floating-major pins, HEAD-installs, module-path majors, mutable tags — no
 canonical comparable version); reject those tokens with an error listing the
 valid set.
@@ -54,6 +57,7 @@ script, and the upstream version field the script returns:
 | `cask` | `cask-` | `casks/` | `fetch-cask-upstream.sh` | `.version` (leading comma-segment) | yes |
 | `crate` | `crate-` | `crates/` | `fetch-crate-upstream.sh` | `.crate.max_stable_version` | no |
 | `vscode` | `vscode-` | `vscode/` | `fetch-vscode-upstream.sh` | Open VSX latest **stable** (non-pre-release); falls back to `.version` | no |
+| `plugin` | `plugin-` | `plugins/` | `fetch-plugin-upstream.sh` | `plugin.json` `.version` (resolved live via marketplace.json → path → plugin.json; no schema field stores the path) | no |
 
 Run the workflow below **once per selected cohort**, emitting one
 `### Version Drift — <eco>` section per cohort.
@@ -242,6 +246,40 @@ The upstream name is not always the title minus the prefix:
   (single leading occurrence only; internal hyphens and dots are preserved:
   `cask-font-fira-code` → `font-fira-code`, `crate-async-trait` →
   `async-trait`, `vscode-esbenp.prettier-vscode` → `esbenp.prettier-vscode`).
+- **plugin — `marketplace.json` and `plugin.json` are two distinct files at
+  two different paths; do not conflate them.** `marketplace.json` (fetched
+  once per marketplace repo) is an INDEX — its `plugins[]` entries carry a
+  `source` field (used to resolve a path) and sometimes a redundant, possibly-
+  stale `version` annotation. `plugin.json` (fetched per plugin, at the
+  resolved path) is the plugin's OWN manifest and the sole authoritative
+  source for `upstream_version` — `fetch-plugin-upstream.sh` never reads
+  `.version` from `marketplace.json`. The identifier shape below depends on
+  whether the note carries a `[marketplace] <name>@<marketplace>` observation,
+  NOT on whether `url:` frontmatter is present. Recover the plugin name from
+  `[marketplace]` when present. **Do not naively concatenate the plugin's own
+  `url:`/
+  `[source]` repo with an unrelated third-party marketplace's name** — verified
+  real-world failure mode: `plugin-voxpelli-claude-git`'s `url:` is
+  `voxpelli/claude-git` (the plugin's own dedicated repo) but its
+  `[marketplace]` observation names `vp-git@vp-plugins`, a DIFFERENT repo
+  (`voxpelli/vp-claude`) hosting that aggregating marketplace — concatenating
+  them as `voxpelli/claude-git#vp-git` queries the wrong repo's
+  `marketplace.json` and 404s.
+  - **No `[marketplace]` observation at all** — a standalone dedicated repo;
+    emit bare `owner/repo` from `url:`/`[source]`.
+  - **`[marketplace]` observation present, and the note's own prose/
+    observations confirm the marketplace is self-hosted** (the marketplace
+    lives in the SAME repo as `url:`/`[source]` — the common case, e.g. a
+    single-plugin repo whose one plugin may still live in a subdirectory, not
+    root) — emit `owner/repo#name` using that same repo.
+  - **`[marketplace]` observation present, but the note's own prose confirms
+    it names a THIRD-PARTY aggregating marketplace hosted in a different
+    repo** (e.g. "distributed via the aggregating `vp-plugins` marketplace...
+    the repo itself carries no marketplace.json") — prefer bare `owner/repo`
+    from the plugin's OWN `url:`/`[source]` instead: that repo's root
+    `plugin.json` is what the note actually documents, and it resolves
+    correctly without needing to know which repo hosts the third-party
+    marketplace by name.
 
 Pipe the recovered names (one per line) to the cohort's fetch script:
 
@@ -268,6 +306,10 @@ Join each NDJSON row back to its source note via the `name` field — it equals
 the recovered name you piped in (npm `packages[0]` or the prefix-stripped
 name). S4 then keys the bucket back to the note's full title (e.g. join
 `fastify` → `npm-fastify`), since the report and refresh commands use titles.
+**plugin is the one exception:** its join-back key is the FULL `owner/repo#name`
+(or bare `owner/repo`) identifier, echoed unchanged by the fetch script — not a
+simple package name — since owner/repo/name can't be losslessly recovered from
+a title-derived short name the way every other cohort's prefix-strip can.
 
 `upstream_state` describes the *upstream fact* only — drift is computed by this
 skill, in S4, by comparing `upstream_version` against `bm_version`.
@@ -296,6 +338,18 @@ skill, in S4, by comparing `upstream_version` against `bm_version`.
   resolve installs against it — flag it as a security exposure in S6, not a
   benign gap (see `tool-intel`'s `references/ecosystem-vscode.md`
   "Open VSX Trust Signal").
+- **plugin** is **per-identifier via `gh api`**, not a registry call —
+  `marketplace.json` is fetched and cached once per distinct marketplace repo
+  (not once per plugin sharing it), then each identifier's `plugin.json` is
+  fetched individually. A missing/unauthenticated `gh` is cohort-wide
+  `api-unavailable` (checked once via preflight, not per identifier); a 404 on
+  `plugin.json`, a marketplace.json with no matching `plugins[]` entry, or a
+  `plugin.json` present but with no `.version` field (verified via a live
+  end-to-end run, 2026-07-04: version presence is per-PLUGIN, not
+  per-marketplace — of Anthropic's 18 official plugins, 13 are version-less
+  and 5 carry real `.version` fields; do not assume a whole marketplace is
+  uniformly version-less from one plugin's example) is that one note's
+  `not-in-api`; any other fetch failure is that one note's `api-unavailable`.
 
 ### S4. Compute drift and bucket (two-dimensional)
 
@@ -390,7 +444,9 @@ higher version number visible in `Drifted`, not silently suppressed.
 
 **Per-cohort distance notes:**
 
-- **brew / npm / crate** are clean semver → the model applies directly.
+- **brew / npm / crate / plugin** are clean semver → the model applies
+  directly (most `plugin.json` `version` fields are semver in practice; a
+  non-semver value falls through to `distance-unknown` like any other cohort).
 - **vscode** is nominally semver but some extensions run a dual-channel model
   (stable=semver, pre-release=CalVer, e.g. `biomejs.biome`). The fetch script
   resolves `upstream_version` to the latest stable version; only a
@@ -411,6 +467,13 @@ end of the drifted section.
   staleness check skipped for this cohort" and omit that cohort's section.
 - **Per-name cohort (npm/crate/vscode)** — individual `api-unavailable` rows are
   listed under the `API unavailable` bucket; they do not abort the cohort.
+- **plugin, missing/unauthenticated `gh`** — every identifier reports
+  `upstream_state="api-unavailable"` from a single preflight check; report
+  "Could not authenticate to the GitHub API — staleness check skipped for the
+  plugin cohort" and omit that cohort's section, the same treatment as the
+  bulk-cohort case above. A per-identifier `not-in-api`/`api-unavailable` (gh
+  authenticated, but one plugin's fetch failed) does NOT abort the cohort,
+  same as the per-name case.
 - **All current** — if every note in a cohort resolves to current+OK, report
   "All N documented `<eco>` notes are current with upstream." and skip that
   cohort's S6 section.
@@ -471,8 +534,13 @@ No comparable upstream version in the registry API — unpublished, renamed, or
 removed; for brew, tap-distributed; for vscode, present only on the VS
 Marketplace (not Open VSX); for crate, published but with no stable release yet
 (prerelease-only — the crate exists, so this is not literal absence, but there
-is nothing stable to compare). Drift cannot be checked automatically. For
-vscode, show the Marketplace version as an annotation when available.
+is nothing stable to compare); for plugin, `plugin.json` is missing or carries
+no `.version` field — **a per-plugin state, not a per-marketplace one**
+(verified via a live run: 13 of Anthropic's 18 official plugins are
+version-less while the other 5 carry real versions — do not generalize from
+one plugin's example to its whole marketplace), or the plugin has been
+renamed/removed from its marketplace. Drift cannot be checked automatically.
+For vscode, show the Marketplace version as an annotation when available.
 
 **vscode security split — not all "not in registry" is benign.** When a vscode
 note is `not-in-api` AND `marketplace_version` is non-empty, it is
@@ -500,16 +568,19 @@ A `not-in-api` with an *empty* `marketplace_version` is the benign
 - Ahead of registry (informational, not drift): V notes — cask-claude-code (2.1.170 vs 2.1.153, updated 2026-06-30)
 ````
 
-For cohorts whose ecosystem has no deprecation flag (`crate`, `vscode`), the
-`Archive candidates` bucket is omitted — its absence is expected by both this
-report and the maintainer.
+For cohorts whose ecosystem has no deprecation flag (`crate`, `vscode`,
+`plugin`), the `Archive candidates` bucket is omitted — its absence is
+expected by both this report and the maintainer.
 
 ### S7. Offer batched refresh
 
 If 2 or more notes are in a cohort's `Drifted >30d` bucket, offer to refresh the
 top 5 in parallel via the cohort's routed command (prefix → skill):
 `brew-`/`cask-`/`vscode-` → `/tool-intel <prefix>:<name>`; `npm-` →
-`/package-intel npm:<name>`; `crate-` → `/package-intel crate:<name>`.
+`/package-intel npm:<name>`; `crate-` → `/package-intel crate:<name>`;
+`plugin-` → `/tool-intel plugin:<owner>/<repo>[#<name>]` (reconstruct the
+colon-prefixed form from the recovered `owner/repo#name` join-back key — S3's
+composite key IS this form already, just add the `plugin:` prefix).
 
 > Want me to refresh the top 5 stale notes (released >30 days ago) now?
 > I can run them as parallel calls — they're file-disjoint so this is safe.
@@ -562,14 +633,14 @@ is its reverse partner.
 
 After the report, include a one-line footnote acknowledging scope:
 
-> *Staleness detection covers registry-backed, stable-channel ecosystems: brew,
-> npm, cask, crate, and vscode (vscode checks both Open VSX and the VS
-> Marketplace). `action`, `gh`, `go`, and `docker` are excluded by construction
-> — they have no single canonical comparable version. `plugin` is deferred (no
-> central registry API; many plugins SHA-track without bumping version) and
-> `skill` is unsupported (no comparable version — ships off a moving `main`);
-> both are covered by `/knowledge-gaps --global` (coverage, not drift). `pypi`,
-> `gem`, and `composer` are deferred until their cohorts grow.*
+> *Staleness detection covers brew, npm, cask, crate, vscode (vscode checks
+> both Open VSX and the VS Marketplace), and plugin (resolved live via
+> GitHub's API rather than a registry). `action`, `gh`, `go`, and `docker` are
+> excluded by construction — they have no single canonical comparable
+> version. `skill` is unsupported (no comparable version — ships off a moving
+> `main`); it is covered by `/knowledge-gaps --global` (coverage, not drift)
+> instead. `pypi`, `gem`, and `composer` are deferred until their cohorts
+> grow.*
 
 **Floating-package / range-pin exclusion footnote:** always append a line
 reporting the combined count of notes the S1 `@types/*` filter and the S2

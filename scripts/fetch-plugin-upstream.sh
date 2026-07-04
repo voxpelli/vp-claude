@@ -52,8 +52,11 @@ set -euo pipefail
 #   upstream_state    ok | not-in-api | api-unavailable
 #                     (not-in-api covers: marketplace.json 404, no matching
 #                     plugins[] entry, plugin.json 404, or plugin.json present
-#                     but missing/null .version — e.g. Anthropic's official
-#                     marketplace, confirmed version-less by design)
+#                     but missing/null .version — verified via a live
+#                     end-to-end run against real data: this is a PER-PLUGIN
+#                     state, not per-marketplace — 13 of Anthropic's 18
+#                     official plugins are version-less while the other 5
+#                     carry real versions)
 #
 # Usage:
 #   printf '%s\n' 'pbakaus/impeccable' 'anthropics/claude-plugins-official#code-review' | bash fetch-plugin-upstream.sh
@@ -285,8 +288,9 @@ while IFS= read -r identifier; do
 
 	if [[ -z "$version" ]]; then
 		# plugin.json exists but carries no version field — a known, expected
-		# state for some marketplaces (e.g. Anthropic's official bundle), not a
-		# fetch failure.
+		# per-PLUGIN state (verified: 13 of Anthropic's 18 official plugins lack
+		# one while 5 siblings in the same marketplace carry real versions), not
+		# a fetch failure.
 		emit "$identifier" "" "https://github.com/$resolved_repo" "1" "null" "not-in-api"
 		continue
 	fi

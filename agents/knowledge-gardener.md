@@ -396,9 +396,12 @@ releases. This is distinct from Step 5's date-based staleness — a note may
 have been edited recently while its `Version` value silently aged past the
 upstream stable release.
 
-Drift is valid only for registry-backed, single-canonical-latest,
-stable-channel ecosystems. **Run 5b-i through 5b-v once per supported cohort,
-emitting one `### Version Drift — <eco>` subsection per cohort:**
+Drift is valid only for ecosystems with a **single authoritative current
+version**. Five are registry-backed, single-canonical-latest, stable-channel
+ecosystems; `plugin` is the first non-registry cohort, resolving its current
+version by fetching `plugin.json` directly from GitHub via `gh api` instead of
+a registry. **Run 5b-i through 5b-v once per supported cohort, emitting one
+`### Version Drift — <eco>` subsection per cohort:**
 
 | Cohort | Prefix | BM dir | Fetch script | Upstream version | Deprecation? | Tap dim? |
 |--------|--------|--------|--------------|------------------|--------------|----------|
@@ -407,6 +410,7 @@ emitting one `### Version Drift — <eco>` subsection per cohort:**
 | cask | `cask-` | `casks/` | `fetch-cask-upstream.sh` | `.version` (leading comma-segment) | yes | no |
 | crate | `crate-` | `crates/` | `fetch-crate-upstream.sh` | `.crate.max_stable_version` | no | no |
 | vscode | `vscode-` | `vscode/` | `fetch-vscode-upstream.sh` | Open VSX latest **stable** (non-pre-release); falls back to `.version` | no | no |
+| plugin | `plugin-` | `plugins/` | `fetch-plugin-upstream.sh` | `plugin.json` `.version` (resolved live via marketplace.json → path → plugin.json; no schema field stores the path) | no | no |
 
 `action`, `gh`, `go`, `docker` are excluded by construction (no single
 canonical comparable version). The **brew cohort below is the worked
@@ -523,6 +527,39 @@ always the title minus the prefix:
 - **brew/cask/crate/vscode** — strip the anchored leading `<prefix>-`
   (internal hyphens and dots preserved: `cask-font-fira-code` → `font-fira-code`,
   `vscode-esbenp.prettier-vscode` → `esbenp.prettier-vscode`).
+- **plugin** — `marketplace.json` and `plugin.json` are two distinct files at
+  two different paths; do not conflate them. `marketplace.json` (fetched once
+  per marketplace repo) is an INDEX — its `plugins[]` entries carry a `source`
+  field (used to resolve a path) and sometimes a redundant, possibly-stale
+  `version` annotation. `plugin.json` (fetched per plugin, at the resolved
+  path) is the plugin's OWN manifest and the sole authoritative source for
+  `upstream_version` — `fetch-plugin-upstream.sh` never reads `.version` from
+  `marketplace.json`. The identifier shape depends on whether the note carries
+  a `[marketplace] <name>@<marketplace>` observation, NOT on whether `url:`
+  frontmatter is present. Recover the plugin name from `[marketplace]` when
+  present. **Do not naively concatenate the plugin's own `url:`/`[source]`
+  repo with an unrelated third-party marketplace's name** — verified
+  real-world failure mode: `plugin-voxpelli-claude-git`'s `url:` is
+  `voxpelli/claude-git` (the plugin's own dedicated repo) but its
+  `[marketplace]` observation names `vp-git@vp-plugins`, a DIFFERENT repo
+  (`voxpelli/vp-claude`) hosting that aggregating marketplace — concatenating
+  them as `voxpelli/claude-git#vp-git` queries the wrong repo's
+  `marketplace.json` and 404s.
+  - **No `[marketplace]` observation at all** — a standalone dedicated repo;
+    emit bare `owner/repo` from `url:`/`[source]`.
+  - **`[marketplace]` observation present, and the note's own prose/
+    observations confirm the marketplace is self-hosted** (lives in the SAME
+    repo as `url:`/`[source]` — the common case, e.g. a single-plugin repo
+    whose one plugin may still live in a subdirectory, not root) — emit
+    `owner/repo#name` using that same repo.
+  - **`[marketplace]` observation present, but the note's own prose confirms
+    it names a THIRD-PARTY aggregating marketplace hosted in a different
+    repo** (e.g. "distributed via the aggregating `vp-plugins` marketplace...
+    the repo itself carries no marketplace.json") — prefer bare `owner/repo`
+    from the plugin's OWN `url:`/`[source]` instead: that repo's root
+    `plugin.json` is what the note actually documents, and it resolves
+    correctly without needing to know which repo hosts the third-party
+    marketplace by name.
 
 *Recorded tap (`bm_tap`) — brew cohort ONLY.* Inspect the `observations` array
 for any `[tap]` item (e.g., `[tap] codescene-oss/tap`); accept a plain
@@ -549,9 +586,21 @@ Each script emits NDJSON per name with core fields `upstream_version`,
 **brew/cask are bulk** (one curl failure is
 cohort-wide `api-unavailable`); **npm/crate/vscode are per-name** (a 404 is
 that note's `not-in-api`, a 5xx/timeout that note's `api-unavailable`; the rest
-of the cohort still reports). `upstream_state` describes the *upstream fact*
-only — drift is computed by this step by comparing `upstream_version` against
-the per-note `bm_version` from 5b-ii.
+of the cohort still reports). **plugin is per-identifier via `gh api`**, not a
+registry call — `marketplace.json` is fetched and cached once per distinct
+marketplace repo (not once per plugin sharing it), then each identifier's
+`plugin.json` is fetched individually; a missing/unauthenticated `gh` is
+cohort-wide `api-unavailable` (checked once via preflight); a 404 on
+`plugin.json`, no matching `plugins[]` entry, or a `plugin.json` with no
+`.version` field (verified via a live end-to-end run, 2026-07-04: version
+presence is per-PLUGIN, not per-marketplace — of Anthropic's 18 official
+plugins, 13 are version-less and 5 carry real `.version` fields; do not
+assume a whole marketplace is uniformly version-less from one plugin's
+example) is that one note's `not-in-api`. **Unlike every other cohort, plugin's join-back
+key is the FULL `owner/repo#name` (or bare `owner/repo`) identifier, echoed
+unchanged by the fetch script — not a simple package name.** `upstream_state`
+describes the *upstream fact* only — drift is computed by this step by
+comparing `upstream_version` against the per-note `bm_version` from 5b-ii.
 
 **Step 5b-iv. Classify and bucket (two-dimensional):** For each note,
 combine its `bm_version` and `bm_tap_present` (from MCP) with the script's
@@ -586,9 +635,10 @@ canonical names below are character-exact.
 Apply rules in order; first match wins.
 
 1. `bm_tap_present == true` **AND** script `upstream_state ∈ {"not-in-api", "api-unavailable"}` → **`Not in registry`** *(checked before `Unparseable` — a tap-distributed formula naturally 404s on `formulae.brew.sh` and that is not a parse failure)*
-2. script `upstream_state == "not-in-api"` AND `bm_tap_present == false` AND `bm_version == "unparseable"` → **`Not in registry`** *(no tap recorded but the 404 + unparseable combination still strongly suggests tap/renamed/removed — same actionable advice: re-run `/tool-intel`)*
+2. script `upstream_state == "not-in-api"` AND `bm_tap_present == false` → **`Not in registry`**, **regardless of whether `bm_version` parsed** *(fixed 2026-07-04 — the precondition used to require `bm_version == "unparseable"`, but `upstream_state == "not-in-api"` alone already means there is no upstream value to compare against; a parseable `bm_version` fell through to rules 5–8 instead, which trivially treat it as "versions differ" against the not-in-api script line's EMPTY `upstream_version` string. `classifyVersionDistance()` returns `distance-unknown` for an empty operand, `days_stale` is `null` for a not-in-api row, so rule 8 fired: a note with, say, a real `bm_version: 1.0.0` and no upstream comparison possible at all was wrongly reported as `Drifted, age unknown` instead of `Not in registry`. Caught via a live end-to-end `--stale plugin` dogfooding run — a `not-in-api` plugin whose note records a version scraped from its README, not `plugin.json` (the confirmed real case for `plugin-anthropics-claude-plugins-official-code-review`), hit exactly this path. Verified against the real `classifyVersionDistance('1.0.0', '')` → `"distance-unknown"`.)*
+2b. script `upstream_state == "api-unavailable"` AND `bm_tap_present == false` → **`API unavailable`** *(added 2026-07-04 alongside the rule-2 fix — the identical fallthrough bug applied here too: nothing previously routed a per-note, non-tap `api-unavailable` row before rules 5–8, even though S5/the per-cohort fetch-shape notes above already document per-note `api-unavailable` as an expected, non-aborting outcome for npm/crate/vscode/plugin. Distinct from rule 9 below, which is a report-rendering shortcut for when the ENTIRE cohort's fetch failed, not a per-note classification rule.)*
 3. script `upstream_state ∈ {"deprecated", "disabled"}` → **`Archive candidates`**
-4. `bm_version == "unparseable"` (and rule 1/2 did not fire) → **`Unparseable`**
+4. `bm_version == "unparseable"` (and no earlier rule fired) → **`Unparseable`**
 4a. **Ahead-of-registry guard** — `bm_version` cleanly ahead of
 `upstream_version` per `isAheadOfRegistry()` in `lib/version-distance.mjs`
 (guard (a): same-scheme, cleanly semver-parseable comparison — never true for
@@ -624,7 +674,10 @@ Notes where `bm_version == upstream_version` and `upstream_state == "ok"` are
 current and need no report entry.
 
 *Per-cohort application of this one model (do not fork a simplified variant):*
-- **brew / npm / crate** are clean semver — the distance dimension applies directly.
+- **brew / npm / crate / plugin** are clean semver — the distance dimension
+  applies directly (most `plugin.json` `version` fields are semver in
+  practice; a non-semver value falls through to `distance-unknown` like any
+  other cohort).
 - **vscode** is nominally semver, but some extensions run a dual-channel model
   (stable=semver, pre-release=CalVer, e.g. `biomejs.biome`). The fetch script
   resolves `upstream_version` to the latest stable version; only a
@@ -638,8 +691,8 @@ current and need no report entry.
   `unparseable`) still correctly routes any cohort's missing-from-registry
   notes to `Not in registry`.
 - **`Archive candidates` (rule 3)** fires only where the registry exposes a
-  deprecation flag — brew, cask, npm. crate and vscode never populate it; its
-  absence is expected by both this step and the maintainer.
+  deprecation flag — brew, cask, npm. crate, vscode, and plugin never populate
+  it; its absence is expected by both this step and the maintainer.
 
 *Why this matters for the maintainer.* The maintainer's Section 3b enqueues
 the **`Drifted >30d`** bucket into its routine Refresh Queue lane (it does not
@@ -665,6 +718,7 @@ findings**, at the peer level, named for the cohort:
 ### Version Drift — cask
 ### Version Drift — crate
 ### Version Drift — vscode
+### Version Drift — plugin
 ```
 
 Inside each, emit a `####` sub-heading for every non-empty canonical bucket,
@@ -674,9 +728,12 @@ HIGH PRIORITY / IMMEDIATE ACTION, or "Needs Your Approval") — it does not
 auto-fix anything itself; see the current Section 3b in
 `agents/knowledge-maintainer.md`. The refresh command in each bullet follows the
 note prefix: `brew`/`cask`/`vscode` → `/tool-intel <prefix>:<name>`; `npm` →
-`/package-intel npm:<name>`; `crate` → `/package-intel crate:<name>` (use the
-recovered upstream name — `packages[0]` for npm). The bullet examples below are
-shown for the brew cohort; substitute the prefix and refresh command per cohort.
+`/package-intel npm:<name>`; `crate` → `/package-intel crate:<name>`; `plugin`
+→ `/tool-intel plugin:<owner>/<repo>[#<name>]` (reconstruct the colon-prefixed
+form from the recovered `owner/repo#name` join-back key — just add the
+`plugin:` prefix). Use the recovered upstream name — `packages[0]` for npm.
+The bullet examples below are shown for the brew cohort; substitute the prefix
+and refresh command per cohort.
 
 Bullet formats per bucket:
 
@@ -715,6 +772,14 @@ removed from the core API):
 ```
 - brew-<name1>, brew-<name2>, ... — tap-installed formulae (or renamed/removed) not in central API; drift check skipped
 ```
+**plugin-specific meaning:** for the plugin cohort, this bucket covers
+`plugin.json` missing or with no `.version` field — **a per-plugin state, not
+a per-marketplace one** (verified via a live run: 13 of Anthropic's 18
+official plugins are version-less while the other 5 carry real versions — do
+not generalize from one plugin's example to its whole marketplace), a
+marketplace with no matching `plugins[]` entry, or a plugin renamed/removed
+from its marketplace.
+
 **vscode security split:** a vscode `not-in-api` row with a non-empty
 `marketplace_version` is **marketplace-only** — the Open VSX namespace is
 unclaimed/squattable and fork-IDEs (Cursor/Windsurf/Codium) resolve installs
