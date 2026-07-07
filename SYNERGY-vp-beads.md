@@ -262,11 +262,14 @@ of maintaining both halves catches drift cases a single-source record misses.
   without a committed entry naming it — `PRIVATE-SYNERGY-` made the *content*
   private, but *registration* (the relationship's existence) is still forced
   public. vp-claude wants local-only registration for proprietary partners.
-  Convergence path: propose-shared · Status: drifting · Last verified: 2026-06-03
-  Reason: filed as a feature request in `UPSTREAM-vp-beads.md` ("synergy-registry:
-  support local-only sibling entries"). Until shipped, the workaround is either a
-  committed entry (public footprint) or a hand-maintained
-  `PRIVATE-SYNERGY-<sibling>.md` doc kept outside the registry machinery.
+  Convergence path: propose-shared · Status: converged · Last verified: 2026-07-07
+  Reason: RESOLVED — vp-beads shipped `.local.json` private-add mode in v0.18.0
+  (2026-06-04): a `.local.json`-only entry whose `file` is
+  `PRIVATE-SYNERGY-<name>.md` now registers as a recognized, sibling-syncable
+  private sibling with zero committed footprint. Our own FR is annotated
+  `_(Resolved 2026-06-16)_` in `UPSTREAM-vp-beads.md`, and vp-claude now registers
+  a proprietary open-core-partner sibling via exactly this mechanism (confirmed
+  live in a `/sibling-sync --auto-reciprocate` run, 2026-07-07).
 
 ## Extraction Candidates
 
