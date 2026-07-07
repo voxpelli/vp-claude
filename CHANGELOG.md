@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.4][] - 2026-07-07
+
+### Added
+
+- **`tool-intel` library-formula handling** — a `brew:` formula can be a
+  *library* consumed as a transitive dependency (e.g. `tree-sitter`, `icu4c`),
+  not a leaf CLI tool. `references/ecosystem-brew.md` gains a self-contained
+  `## Library formulae` branch (mirroring the third-party-tap branch):
+  detection (a `caveats` library/CLI split, a `desc` ending in "library", no
+  shipped binary, a low install-on-request ratio), real-dependent verification
+  via `brew uses --installed` / `brew deps` / `brew linkage`, and a mandatory
+  `## Upgrade Impact on Dependents` note section (statically-vendored consumers
+  unaffected vs dynamically-linked consumers tracking the dylib soname).
+  Generalized in the Basic Memory note "Homebrew Library Dependency Impact -
+  Static Vendoring vs Dynamic Linking"; exemplars `brew-tree-sitter`,
+  `brew-tree-sitter-cli`, `brew-icu4c@78`.
+- **Relation-verb convention for brew notes (the root-cause guard)** —
+  `references/note-template-brew.md` now documents that a dependency claim is
+  load-bearing and must be verified against the package manager, never inferred
+  from technology: `depends_on` only for a real Homebrew dependency (confirm
+  with `brew deps` / `brew uses --installed`); `built_with` / `used_by` (both
+  already declared `brew_formula` schema verbs) for a technology relationship
+  where the consumer statically vendors the library. Prevents the class of
+  wrong-dependent claim where a Rust/Go tool "built on" a C library gets
+  mislabelled a formula dependent.
+- **`install_on_request` in the `[popularity]` observation** — the
+  formulae.brew.sh analytics already exposed `install_on_request`; it is now
+  recorded (`… · R on-request/30d · …`) and its ratio to total installs drives a
+  `[pattern]` library-vs-tool signal (near 1 = deliberately installed; far below
+  1 = mostly a transitive dependency). Kept distinct from the per-host
+  `Installed (on request)` line, which stays machine-specific and unrecorded.
+
 ## [0.32.3][] - 2026-07-04
 
 ### Added
@@ -2091,6 +2123,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.32.4]: https://github.com/voxpelli/vp-claude/compare/v0.32.3...v0.32.4
 [0.32.3]: https://github.com/voxpelli/vp-claude/compare/v0.32.2...v0.32.3
 [0.32.2]: https://github.com/voxpelli/vp-claude/compare/v0.32.1...v0.32.2
 [0.32.1]: https://github.com/voxpelli/vp-claude/compare/v0.32.0...v0.32.1
