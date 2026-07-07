@@ -29,6 +29,73 @@ curl -fsSL --max-time 30 "https://formulae.brew.sh/api/formula/<name>.json" | jq
 | `deprecated` | Boolean — if true, flag prominently |
 | `disabled` | Boolean — if true, formula can't be installed |
 
+## Library formulae
+
+Some formulae are **libraries** — mostly installed as a transitive dependency of
+other formulae, not run directly (e.g. `tree-sitter`/`libtree-sitter`, `icu4c`,
+`openssl@3`). They warrant different note content than a leaf CLI tool: the
+"Common Usage" is C-API / linkage rather than flags, and — most importantly — the
+note must state **who is actually affected when the library upgrades** without
+over-claiming dependents. This branch is triggered by inspecting the Step-2
+metadata below; the BM directory, note type, and template are otherwise the
+normal `brew/` / `brew_formula` / `note-template-brew.md`.
+
+### Detecting a library formula
+
+Read the metadata already fetched above. Any one strong signal (or several weak
+ones) is enough:
+
+- **`caveats` announcing a library/CLI split** — e.g. tree-sitter's "This formula
+  now installs only the `tree-sitter` library (`libtree-sitter`). To install the
+  CLI tool: `brew install tree-sitter-cli`". The strongest signal.
+- **`desc` ending in "library"** (e.g. "Incremental parsing library").
+- **Ships no user-facing binary** — installs headers + `lib*.dylib`/`.a` but no
+  CLI (aliases like `libtree-sitter`).
+- **Low install-on-request ratio** — `analytics.install_on_request ÷
+  analytics.install` well below 1 (corroborating, not sole: it means the formula
+  is mostly pulled in as a dependency).
+
+### Verifying real dependents (never infer them from technology)
+
+A tool being *built on* the library is a technology fact, NOT a Homebrew
+dependency: Rust/Go tools statically vendor C libraries into their own binary and
+declare no formula dependency, so `brew upgrade <lib>` does nothing to them. Only
+*dynamically-linked* consumers actually depend on the formula. Establish the real
+set with the package manager, not domain knowledge:
+
+```bash
+brew uses --installed <formula>   # installed formulae that DECLARE a dependency on <formula> (authoritative)
+brew deps <consumer>              # does a given formula declare <formula> as a dep?
+brew linkage <consumer>           # (or: otool -L <binary>) — the shared libs a built binary actually loads
+```
+
+`brew uses --installed <formula>` is the authoritative "who is actually affected"
+list. A consumer absent from it but "built on" the library vendors it statically
+and is upgrade-independent — record it with a technology verb
+(`used_by`/`built_with`, see `note-template-brew.md` → Relations), never
+`depends_on`.
+
+### Note conventions for library formulae
+
+In addition to the standard `brew_formula` template:
+
+- **Add an `## Upgrade Impact on Dependents` section** describing how
+  `brew upgrade <formula>` affects each class of consumer: *statically-vendored*
+  consumers (Rust/Go) are unaffected; *dynamically-linked* consumers track the
+  dylib soname (a within-minor upgrade drops in behind the same
+  `lib.MAJOR.MINOR.dylib` name with no rebuild; a soname bump requires dependents
+  to be rebuilt, which homebrew-core triggers via revision bumps, so a
+  whole-system `brew upgrade` stays consistent). Note the separate plugin/grammar
+  ABI axis for a runtime that loads compiled plugins. `brew-tree-sitter` is the
+  worked exemplar; the reusable mechanics live in the Basic Memory note
+  **"Homebrew Library Dependency Impact - Static Vendoring vs Dynamic Linking."**
+- **Record a `[pattern]` observation** on the dependency-vs-deliberate nature,
+  citing the install-on-request ratio (e.g. "mostly pulled in as a dependency: R
+  on-request of N total installs/30d").
+- **Use the relation-verb convention** from `note-template-brew.md`: `depends_on`
+  only for verified formula dependents; `used_by`/`built_with` for
+  static-vendor/technology relationships.
+
 ## Fetch Install Analytics (MCP, optional)
 
 Install analytics are available from two sources. The formulae.brew.sh JSON
@@ -69,7 +136,12 @@ When analytics are present, extract the numbers and emit exactly one
 `(Homebrew MCP, YYYY-MM)` for the MCP, `(formulae.brew.sh API, YYYY-MM-DD)`
 for the JSON block — using this format:
 
-`[popularity] 70,654 installs/30d · 173,836/90d · 438,626/365d · 42 build errors/30d (Homebrew MCP, YYYY-MM)`
+`[popularity] 70,654 installs/30d · 173,836/90d · 438,626/365d · 52,500 on-request/30d · 42 build errors/30d (Homebrew MCP, YYYY-MM)`
+
+Include the install-on-request count (`analytics.install_on_request` in the JSON,
+or the MCP `install-on-request:` line) as shown. Its ratio to total installs is a
+library-vs-tool signal — see the `## Library formulae` section above and the
+ratio guidance in `note-template-brew.md`.
 
 If the response shape does not match a formula (contains `artifacts` but no
 `Dependencies` section), the user asked for a formula but received a cask —

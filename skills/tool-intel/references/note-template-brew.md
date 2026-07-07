@@ -37,11 +37,11 @@ Homepage: [<project-homepage>](<url>) | v<version> | <license>
 - [conflict] Conflicts with: brew-<other> — reason for conflict
 - [compatibility] macOS version requirements or architecture notes
 - [convention] Important shell setup or post-install steps from `caveats`
-- [popularity] X installs/30d · Y/90d · Z/365d · N build errors/30d (Homebrew MCP, YYYY-MM)
+- [popularity] X installs/30d · Y/90d · Z/365d · R on-request/30d · N build errors/30d (Homebrew MCP, YYYY-MM)
 
 ## Relations
 
-- relates_to [[brew-<dependency>]]
+- depends_on [[brew-<runtime-dep>]]
 - alternative_to [[cask-<gui-equivalent>]]
 ```
 
@@ -96,6 +96,18 @@ when reachable (stamp `(Homebrew MCP, YYYY-MM)`), otherwise from the
 analytics but can diverge via client-cache lag. Only omit when neither source
 yields analytics; never fabricate counts.
 
+Also record the **install-on-request** count in the same `[popularity]` line
+(e.g. `… · R on-request/30d · …`) — from `mcp__homebrew__info`'s
+`install-on-request:` line or the JSON `analytics.install_on_request` block. The
+**ratio** `on-request ÷ install` is a library-vs-tool signal: near 1 means the
+formula is deliberately installed (a leaf tool); far below 1 means it is mostly
+pulled in as a transitive dependency (a library). In the low-ratio case add one
+`[pattern]` observation noting it (e.g. "mostly pulled in as a dependency: R
+on-request of N total installs/30d"). Do NOT confuse the aggregate
+`install_on_request` analytics field with the per-host `Installed (on request)`
+line `mcp__homebrew__info` prints for the local machine — that per-host line is
+machine-specific and must never be written to a note.
+
 When updating an existing note that already has a `[popularity]` line,
 use `edit_note` with `find_replace` to replace the old line rather than
 `append` — install counts change continuously and duplicate lines
@@ -111,3 +123,10 @@ If the formula is "keg-only" (not linked to standard paths), document this as a
 - Use `[[brew-<dep>]]` for Homebrew formula dependencies
 - Use `[[cask-<name>]]` for a cask that provides the GUI equivalent
 - Use `[[npm-<pkg>]]` or other ecosystem links if the tool is related to packages
+
+**Relation-verb convention — a dependency claim is load-bearing; verify it, never infer it.** A tool being *built on* a library (a technology fact) is NOT the same as *depending on* its Homebrew formula (a packaging fact): Rust/Go tools statically vendor C libraries into their own binary and declare no formula dependency. Pick the verb by what the package manager reports, not by domain knowledge:
+
+- `depends_on [[brew-<lib>]]` — ONLY a real Homebrew dependency. Confirm with `brew deps <formula>` (does this formula declare it) or `brew uses --installed <lib>` (does `<lib>` list this formula as a dependent). Never write `depends_on` off "X is built on Y."
+- `built_with [[brew-<lib>]]` (consumer→library) / `used_by [[brew-<consumer>]]` (library→consumer) — a *technology* relationship where the consumer embeds/vendors the library rather than declaring a formula dependency. Prefer these declared verbs (both are in the `brew_formula` schema) over inventing `built_on`/`uses`.
+
+For a library formula (mostly a transitive dependency), see the `## Library formulae` section in `references/ecosystem-brew.md` for the full detection + `brew uses`/`deps`/`linkage` verification procedure and the required "Upgrade Impact on Dependents" note section.
