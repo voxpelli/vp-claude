@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.5][] - 2026-07-10
+
+### Fixed
+
+- **brew/cask `@`-suffixed operands are no longer blindly de-qualified** —
+  `references/upgrade-haul.md` Input parsing + both intel-skill adapters now
+  carry a dual-key rule: an `@`-suffixed brew/cask operand can be a real token
+  (`icu4c@78` is its own formula; `claude-code@latest` is a distinct cask
+  channel), so the haul fetches BOTH the literal and stripped forms in the
+  same stdin batch and prefers the literal hit. The Step-1 existence glob
+  stays on the stripped base name so a channel cask folds into its base note
+  (`cask-claude-code`) instead of forking a duplicate. (Dogfood 2026-07-10:
+  the old strip silently fetched the lagging standard cask, 2.1.197, while
+  the installed `@latest` channel was at 2.1.206.)
+- **Registry-vs-upstream-tip arbitration documented** — new Stale-cache
+  arbitration bullet: when upstream releases past the registry, the Axis-A
+  slot records the REGISTRY version (what `--stale` compares); the tip goes
+  in the Axis-B narrative with an "ahead of registry, not yet
+  bottled/published" stamp. (Dogfood: llmfit formula 1.0.1 vs upstream v1.1.2
+  same day.)
+
+### Added
+
+- **Batch full-listing rule** — for any upgrade-haul batch, the Step-1
+  existence check now runs as one full `list_directory` per distinct
+  ecosystem directory instead of per-name globs (O(dirs) vs O(2N) MCP calls;
+  two listings resolved a 7-operand haul). Single-identifier calls keep the
+  per-name glob.
+- **Modernize-on-touch convention** — a haul touching a note that records its
+  version only via a `| Version |` table row or prose (S2 Patterns 2/6) now
+  also installs the Pattern-1 header pipe + Pattern-3 `[version]` observation
+  in the same refresh (precedent: `brew-eza`), with a 40KB append-fallback
+  caveat.
+
 ## [0.32.4][] - 2026-07-07
 
 ### Added
@@ -2123,6 +2157,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.32.5]: https://github.com/voxpelli/vp-claude/compare/v0.32.4...v0.32.5
 [0.32.4]: https://github.com/voxpelli/vp-claude/compare/v0.32.3...v0.32.4
 [0.32.3]: https://github.com/voxpelli/vp-claude/compare/v0.32.2...v0.32.3
 [0.32.2]: https://github.com/voxpelli/vp-claude/compare/v0.32.1...v0.32.2
