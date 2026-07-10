@@ -87,8 +87,11 @@ adapter-specific extension needed.
    `go list -u -m all` / `composer outdated` / `pip list --outdated` /
    `bundle outdated`, leading `-`/`--` flags, and any trailing redirect — the
    operands are the identifiers. De-qualify each operand (`pkg@latest`,
-   `pkg@^1.2.0` → `pkg`). For an `npm outdated` / `npm -g outdated` table, the
-   first column of each row is the identifier; ignore the wanted/latest columns.
+   `pkg@^1.2.0` → `pkg`) — unconditional for these package ecosystems; the
+   literal-token exception for `@`-suffixed names is brew/cask-specific (see
+   the shared core's *Input parsing*). For an `npm outdated` /
+   `npm -g outdated` table, the first column of each row is the identifier;
+   ignore the wanted/latest columns.
 
 2. **Ecosystem routing.** Resolve each de-qualified operand to a canonical note
    the way a single call would — via **Step 0: Detect ecosystem**. Honour an
@@ -96,8 +99,10 @@ adapter-specific extension needed.
    line's tool fixes the ecosystem (an `npm outdated` paste is all `npm`,
    `bundle outdated` all `gem`, etc.), otherwise fall back to the Step-0
    project-context inference. Scoped npm names (`@scope/pkg`) stay npm. Run the
-   Step-1 existence check per operand, globbing the operand's ecosystem directory
-   (`npm/`, `crates/`, `go/`, `composer/`, `pypi/`, `gems/`).
+   Step-1 existence check per operand — as ONE full listing per distinct
+   ecosystem directory (`npm/`, `crates/`, `go/`, `composer/`, `pypi/`,
+   `gems/`) for the batch, per the shared core's *Batch orchestration*, rather
+   than per-operand globs.
 
 3. **Axis-B narrative target — `## Release Highlights`.** Write the curated
    changelog reel for each note's delta into its **`## Release Highlights`**
@@ -154,6 +159,9 @@ Fast existence check first (no content loaded):
 ```
 list_directory(dir_name="<ecosystem-dir>", file_name_glob="*<sanitized-pkg-name>*")
 ```
+(Single-identifier calls use this per-name glob; batch mode replaces it with
+one full directory listing per ecosystem — see the shared reference's
+*Batch orchestration*.)
 
 If found, read the existing note to understand what's already documented:
 ```

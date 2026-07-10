@@ -45,11 +45,26 @@ Normalization rules (ecosystem-agnostic):
 
 - **Strip the command word and flags.** `brew upgrade`, `npm i`, `npm outdated`,
   leading `-`/`--` flags, and a trailing redirect are not identifiers.
-- **Strip version qualifiers** off each operand: `claude-code@latest` →
-  `claude-code`, `pkg@^1.2.0` → `pkg`, `image:tag` → `image`. The qualifier is
-  an *instruction to the package manager*, never part of the canonical
-  identifier. (Dogfood 2026-06-24: `claude-code@latest` correctly resolved by
-  dropping `@latest`.)
+- **Strip version qualifiers** off each operand: `pkg@latest` → `pkg`,
+  `pkg@^1.2.0` → `pkg`, `image:tag` → `image`. The qualifier is an
+  *instruction to the package manager*, never part of the canonical
+  identifier — unconditional for the package ecosystems
+  (npm/crate/go/composer/pypi/gem).
+- **Exception — brew/cask `@`-suffixed names can be REAL tokens.** Homebrew
+  uses `@` inside genuine formula/cask tokens: `icu4c@78` is its own formula,
+  and `claude-code@latest` is a distinct cask *channel*, not a qualifier. For
+  a brew/cask operand carrying `@`, do NOT strip blindly — include BOTH the
+  literal and the stripped form in the same stdin fetch batch (the
+  `fetch-*-upstream.sh` scripts take name lists; an extra miss is free) and
+  prefer the literal hit when it resolves. The Step-1 existence glob still
+  runs on the *stripped base name*, so both note shapes are found: a
+  versioned formula with its own note (`brew-icu4c@78`) and a channel cask
+  that folds into its base note's dual-channel convention
+  (`claude-code@latest` → `cask-claude-code`). Never fork a separate
+  `<name>@latest` note when the base note exists. (Dogfood 2026-06-24
+  recorded the strip as "correctly resolved"; 2026-07-10 showed it silently
+  loses the channel — the stripped fetch returned the lagging standard cask,
+  2.1.197, while the installed `@latest` channel was at 2.1.206.)
 - **Resolve each operand to a canonical identifier** the way a single research
   call would, then proceed. Operand-level prefix inference, formula-vs-cask
   routing, and the ecosystem-specific dialect are the **adapter's** job — this
@@ -97,7 +112,13 @@ type supports them:
   round-trip even with the other slot fresh. (Heterogeneous corpus: an older
   note may record version only in a `| Version |` table row or prose —
   Patterns 2/6; refresh whichever slot S2 would read for *that* note,
-  defaulting to the cohort-authoritative slot for current-era notes.)
+  defaulting to the cohort-authoritative slot for current-era notes — and
+  **modernize on touch**: when the haul touches a Pattern-2/6-only note,
+  also install the Pattern-1 header pipe and the Pattern-3 `[version]`
+  observation in the same refresh so the note joins the current-era slot
+  layout (precedent: `brew-eza`, 2026-07-10). On notes past the ~40KB
+  `find_replace` limit this defers to the append-fallback — never
+  blind-anchor a pipe insert on a truncated read.)
 - **Axis B — the prose changelog narrative.** The human-readable reel from
   [Highlights-reel synthesis](#highlights-reel-synthesis). Its location is
   adapter-specific (see below).
@@ -129,6 +150,14 @@ figures disagree:
   read lagged the live `formulae.brew.sh` API.)
 - **Stamp the source and date** on the recorded figure so a later refresh knows
   which read won and how old it is (`MCP` vs `API`, plus the date).
+- **Registry outranks upstream tip for Axis A.** When the upstream repo has
+  released past the registry (formula stable at 1.0.1 while GitHub already
+  carries v1.1.2), the Axis-A slot still records the REGISTRY version — that
+  is the figure `--stale` compares against, so writing the tip there would
+  manufacture phantom drift on the next detector run. Record the tip in the
+  Axis-B narrative instead, with an explicit "ahead of registry, not yet
+  bottled/published as of YYYY-MM-DD" stamp. (Dogfood 2026-07-10: llmfit
+  formula 1.0.1 vs upstream v1.1.2, released the same day.)
 
 ## Batch orchestration
 
@@ -139,6 +168,15 @@ Defaults for running the haul over the resolved list:
   recorded version is the delta's left endpoint, and the freshness tier prunes
   the source pipeline. A haul is by definition a refresh, so most items hit the
   fast path.
+- **One listing per ecosystem directory, not per-name globs.** For any batch,
+  run the Step-1 existence check as ONE full
+  `list_directory(dir_name="<ecosystem-dir>")` per distinct ecosystem
+  directory in the batch, resolving every operand by filtering the listing —
+  O(distinct dirs) calls instead of O(operands) globs (double that when
+  formula-vs-cask is unknown and both directories must be globbed). Two
+  listings are never worse than four globs, so no size cutoff applies;
+  single-identifier (non-batch) calls keep the per-name glob. (Dogfood
+  2026-07-10: two listings resolved a 7-operand haul at once.)
 - **Per-note edits are file-disjoint.** Each note lives in its own file, so
   concurrent refreshes never corrupt each other's output.
 - **One central cross-link pass at the end.** Defer Step 7 cross-linking

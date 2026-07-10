@@ -96,8 +96,13 @@ Per-item outcomes and the batch-close summary follow the shared reference's
 **1. Input dialect.** Command words and flags that are noise:
 `brew upgrade`, `brew outdated`, `brew install`, `brew reinstall`, leading
 `-`/`--` flags, and a trailing redirect. The operands are the identifiers.
-Strip version qualifiers per the shared reference (`claude-code@latest` →
-`claude-code`).
+Strip version qualifiers per the shared reference — but apply its brew/cask
+exception: an `@`-suffixed operand can be a REAL token (`icu4c@78` is its own
+formula; `claude-code@latest` is a distinct cask channel), so fetch BOTH the
+literal and stripped forms in the same stdin batch and prefer the literal hit
+when it resolves. The Step-1 existence glob runs on the stripped base name
+either way, so a channel cask folds into its base note (`cask-claude-code`)
+instead of forking a duplicate.
 
 **2. Ecosystem routing — bare-name → formula/cask auto-routing.** A pasted
 `brew upgrade foo bar` yields **bare names with no `brew:`/`cask:` prefix**, so
@@ -125,6 +130,12 @@ list_directory(dir_name="casks", file_name_glob="*<name>*")
 Whichever directory holds the note fixes the class (and tells you the note
 already exists, so you update rather than fork). If neither matches, fall back to
 the `brew info` shape signal above to pick the class for a new note.
+
+For any multi-operand batch, replace the per-name globs with ONE full listing
+of each directory (`list_directory(dir_name="brew")` +
+`list_directory(dir_name="casks")`) and resolve every operand by filtering the
+two listings — 2 calls total instead of 2-per-operand (shared reference,
+*Batch orchestration*).
 
 **If the shape signal is ambiguous, do not guess.** A dependency-free formula
 (common for single-binary Go/Rust tools) exposes no `Dependencies` block; a
@@ -292,6 +303,9 @@ Fast existence check first (no content loaded):
 ```
 list_directory(dir_name="<ecosystem-dir>", file_name_glob="*<sanitized-name>*")
 ```
+(Single-identifier calls use this per-name glob; batch mode replaces it with
+one full directory listing per ecosystem — see the shared reference's
+*Batch orchestration*.)
 For `plugin:`/`skill:` two-part addresses, `<sanitized-name>` is the **leaf** segment —
 the last `/`- or `#`-segment (e.g. `impeccable` for `plugin:pbakaus/impeccable#impeccable`) —
 so the glob matches a note titled either with or without a namesake suffix.
