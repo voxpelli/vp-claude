@@ -13,21 +13,30 @@
     },
     {
       "name": "vp-beads",
-      "source": { "source": "github", "repo": "voxpelli/claude-beads" },
+      "source": {
+        "source": "github",
+        "repo": "voxpelli/claude-beads"
+      },
       "description": "Sprint workflow automation: backlog grooming, retrospectives, upstream vendor tracking, cross-project synergy tracking, swarm wave orchestration, vendor sync, and bilateral sibling reconciliation for projects using beads and Basic Memory",
       "version": "0.18.0"
     },
     {
       "name": "vp-git",
-      "source": { "source": "github", "repo": "voxpelli/claude-git" },
+      "source": {
+        "source": "github",
+        "repo": "voxpelli/claude-git"
+      },
       "description": "Git workflow safety skills for stacked-PR chains: rebase-validate (five-layer pipeline — range-diff, sem, weave, jscpd, tests), stack-cascade (safety-tagged rebase --update-refs with atomic force-with-lease push), and tag-audit (SHA-grouped triage of accumulated safety tags with KEEP/DROP confirmation gate). Installable as a Claude Code plugin or via the cross-agent Agent Skills standard (skills.sh)",
       "version": "0.8.0"
     },
     {
       "name": "vp-astgrep",
-      "source": { "source": "github", "repo": "voxpelli/claude-astgrep" },
-      "description": "Live ast-grep structural-lint diagnostics via the ast-grep language server: your .ast-grep/rules fire as you edit rather than only on an `ast-grep scan` run, with rule hot-reload and LSP quick-fixes. Claims JavaScript, bash, and the web/config formats (json, yaml, markdown, css, html) — 15 extensions, never the 15 owned by official language servers, since the first server registered for an extension wins and the others never start. It therefore cannot silently disable pyright/rust-analyzer/gopls; enforced by a check on every build. Requires an sgconfig.yml in the project root and the ast-grep binary on PATH; it is a feedback layer, so keep `ast-grep scan` as the CI gate",
-      "version": "0.3.0"
+      "source": {
+        "source": "github",
+        "repo": "voxpelli/claude-astgrep"
+      },
+      "description": "Live ast-grep structural-lint diagnostics via the ast-grep language server: your .ast-grep/rules fire as you edit rather than only on an `ast-grep scan` run, with LSP quick-fixes (note: changing a rule requires restarting Claude Code — its LSP client does not honour the server's file-watch registration, so rules are read once at startup). Claims JavaScript, bash, and the web/config formats (json, yaml, markdown, css, html) — 15 extensions, never the 15 owned by official language servers, since the first server registered for an extension wins and the others never start. It therefore cannot silently disable pyright/rust-analyzer/gopls; enforced by a check on every build. Requires an sgconfig.yml in the project root and the ast-grep binary on PATH; it is a feedback layer, so keep `ast-grep scan` as the CI gate",
+      "version": "0.3.1"
     }
   ]
 }
