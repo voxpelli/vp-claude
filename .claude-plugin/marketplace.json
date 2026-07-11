@@ -36,7 +36,7 @@
         "repo": "voxpelli/claude-astgrep"
       },
       "description": "Live ast-grep structural-lint diagnostics via the ast-grep language server: your .ast-grep/rules fire as you edit rather than only on an `ast-grep scan` run, with LSP quick-fixes. Rules hot-reload — edit a rule and the new rule applies immediately, no restart. That takes a stdio shim: ast-grep has no file watcher of its own and asks the client to watch for it, but Claude Code does not implement client-side file watching (it advertises didChangeWatchedFiles.dynamicRegistration as undefined and answers -32601), so ast-grep would otherwise serve its startup rule set forever. Both sides are behaving correctly; the gap is between them, and claude-code#32595 / #52693 are closed NOT_PLANNED. The shim answers the registration, watches the globs the server itself registered, and injects the notification the client never sends. An explicit stopgap: the durable fix is server-side in ast-grep (self-watch when the client declines, as rust-analyzer already does), and when that lands the shim becomes dead code and the Node requirement goes with it. Claims JavaScript, bash, and the web/config formats (json, yaml, markdown, css, html) — 15 extensions, never the 15 owned by official language servers, since a server that claims an extension and then dies still starves it. It therefore cannot silently disable pyright/rust-analyzer/gopls; enforced by a check on every build. Requires an sgconfig.yml in the project root, the ast-grep binary on PATH, and (since 0.4.0) Node >=20 on PATH — no node means no server at all, so pin 0.3.1 or set LSP_SHIM_DISABLE=1 to opt out. It is a feedback layer, so keep `ast-grep scan` as the CI gate",
-      "version": "0.4.2"
+      "version": "0.4.3"
     }
   ]
 }
