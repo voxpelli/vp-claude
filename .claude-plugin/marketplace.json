@@ -26,8 +26,8 @@
     {
       "name": "vp-astgrep",
       "source": { "source": "github", "repo": "voxpelli/claude-astgrep" },
-      "description": "Live ast-grep structural-lint diagnostics via the ast-grep language server: your .ast-grep/rules fire as you edit rather than only on an `ast-grep scan` run, with rule hot-reload and LSP quick-fixes. Claims JavaScript (.js/.mjs/.cjs/.jsx) and bash (.sh/.bash/.zsh) only — when two LSP servers claim one extension the first registered wins and the others never start, so it claims strictly what it lints and can never silently disable pyright/rust-analyzer/gopls (enforced by a check on every build). Requires an sgconfig.yml in the project root and the ast-grep binary on PATH; it is a feedback layer, so keep `ast-grep scan` as the CI gate",
-      "version": "0.2.0"
+      "description": "Live ast-grep structural-lint diagnostics via the ast-grep language server: your .ast-grep/rules fire as you edit rather than only on an `ast-grep scan` run, with rule hot-reload and LSP quick-fixes. Claims JavaScript, bash, and the web/config formats (json, yaml, markdown, css, html) — 15 extensions, never the 15 owned by official language servers, since the first server registered for an extension wins and the others never start. It therefore cannot silently disable pyright/rust-analyzer/gopls; enforced by a check on every build. Requires an sgconfig.yml in the project root and the ast-grep binary on PATH; it is a feedback layer, so keep `ast-grep scan` as the CI gate",
+      "version": "0.3.0"
     }
   ]
 }
