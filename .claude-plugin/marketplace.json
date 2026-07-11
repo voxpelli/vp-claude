@@ -22,6 +22,12 @@
       "source": { "source": "github", "repo": "voxpelli/claude-git" },
       "description": "Git workflow safety skills for stacked-PR chains: rebase-validate (five-layer pipeline — range-diff, sem, weave, jscpd, tests), stack-cascade (safety-tagged rebase --update-refs with atomic force-with-lease push), and tag-audit (SHA-grouped triage of accumulated safety tags with KEEP/DROP confirmation gate). Installable as a Claude Code plugin or via the cross-agent Agent Skills standard (skills.sh)",
       "version": "0.8.0"
+    },
+    {
+      "name": "vp-astgrep",
+      "source": { "source": "github", "repo": "voxpelli/claude-astgrep" },
+      "description": "Live ast-grep structural-lint diagnostics via the ast-grep language server: your .ast-grep/rules fire as you edit rather than only on an `ast-grep scan` run, with rule hot-reload and LSP quick-fixes. Registers the JavaScript family only (never .ts/.tsx, which would risk silently disabling typescript-lsp). Requires an sgconfig.yml in the project root and the ast-grep binary on PATH; it is a feedback layer, so keep `ast-grep scan` as the CI gate",
+      "version": "0.1.0"
     }
   ]
 }
