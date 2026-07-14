@@ -85,14 +85,15 @@ function deepMerge (target, source) {
 /**
  * Load config from disk, merged with defaults.
  *
+ * @param {string} [configFile]
  * @returns {VpKnowledgeConfig}
  */
-export function loadConfig () {
+export function loadConfig (configFile = CONFIG_FILE) {
   /** @type {VpKnowledgeConfig} */
   const config = structuredClone(DEFAULTS)
-  if (!existsSync(CONFIG_FILE)) return config
+  if (!existsSync(configFile)) return config
   try {
-    const raw = readFileSync(CONFIG_FILE, 'utf8')
+    const raw = readFileSync(configFile, 'utf8')
     /** @type {unknown} */
     const parsed = JSON.parse(raw)
     if (typeof parsed === 'object' && parsed !== null) {
@@ -112,16 +113,17 @@ export function loadConfig () {
  * truncating the existing file on crash.
  *
  * @param {VpKnowledgeConfig} config
+ * @param {string} [configFile]
  * @returns {void}
  */
-export function saveConfig (config) {
+export function saveConfig (config, configFile = CONFIG_FILE) {
   try {
     mkdirSync(CONFIG_DIR, { recursive: true })
     const content = `${JSON.stringify(config, null, 2)}\n`
-    const tmpFile = `${CONFIG_FILE}.${process.pid}.tmp`
+    const tmpFile = `${configFile}.${process.pid}.tmp`
     writeFileSync(tmpFile, content, 'utf8')
     // Atomic rename (POSIX same-filesystem guarantee within ~/.pi)
-    renameSync(tmpFile, CONFIG_FILE)
+    renameSync(tmpFile, configFile)
   } catch {
     // fail-soft: don't crash the extension on permission errors
   }

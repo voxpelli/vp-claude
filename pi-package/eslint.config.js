@@ -22,4 +22,12 @@ export default [
       'unicorn/no-array-sort': 'off',
     },
   },
+  {
+    name: 'vp-knowledge-pi/tests',
+    files: ['test/**/*.js'],
+    rules: {
+      // Tests use sync fs for setup/teardown — sequential and deterministic
+      'n/no-sync': 'off',
+    },
+  },
 ]
