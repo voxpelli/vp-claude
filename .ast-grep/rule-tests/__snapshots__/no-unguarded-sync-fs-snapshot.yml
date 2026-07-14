@@ -1,0 +1,187 @@
+id: no-unguarded-sync-fs
+snapshots:
+  ? |
+    appendFileSync(path, data)
+  : labels:
+    - source: appendFileSync(path, data)
+      style: primary
+      start: 0
+      end: 26
+    - source: appendFileSync
+      style: secondary
+      start: 0
+      end: 14
+  ? |
+    chmodSync(path, 0o755)
+  : labels:
+    - source: chmodSync(path, 0o755)
+      style: primary
+      start: 0
+      end: 22
+    - source: chmodSync
+      style: secondary
+      start: 0
+      end: 9
+  ? |
+    chownSync(path, uid, gid)
+  : labels:
+    - source: chownSync(path, uid, gid)
+      style: primary
+      start: 0
+      end: 25
+    - source: chownSync
+      style: secondary
+      start: 0
+      end: 9
+  ? |
+    copyFileSync(src, dest)
+  : labels:
+    - source: copyFileSync(src, dest)
+      style: primary
+      start: 0
+      end: 23
+    - source: copyFileSync
+      style: secondary
+      start: 0
+      end: 12
+  ? |
+    lstatSync(path)
+  : labels:
+    - source: lstatSync(path)
+      style: primary
+      start: 0
+      end: 15
+    - source: lstatSync
+      style: secondary
+      start: 0
+      end: 9
+  ? |
+    mkdirSync(AGENTS_DIR, { recursive: true })
+  : labels:
+    - source: 'mkdirSync(AGENTS_DIR, { recursive: true })'
+      style: primary
+      start: 0
+      end: 42
+    - source: mkdirSync
+      style: secondary
+      start: 0
+      end: 9
+  ? |
+    mkdtempSync(prefix)
+  : labels:
+    - source: mkdtempSync(prefix)
+      style: primary
+      start: 0
+      end: 19
+    - source: mkdtempSync
+      style: secondary
+      start: 0
+      end: 11
+  ? |
+    readFileSync(path, 'utf8')
+  : labels:
+    - source: readFileSync(path, 'utf8')
+      style: primary
+      start: 0
+      end: 26
+    - source: readFileSync
+      style: secondary
+      start: 0
+      end: 12
+  ? |
+    readdirSync(dir)
+  : labels:
+    - source: readdirSync(dir)
+      style: primary
+      start: 0
+      end: 16
+    - source: readdirSync
+      style: secondary
+      start: 0
+      end: 11
+  ? |
+    renameSync(oldPath, newPath)
+  : labels:
+    - source: renameSync(oldPath, newPath)
+      style: primary
+      start: 0
+      end: 28
+    - source: renameSync
+      style: secondary
+      start: 0
+      end: 10
+  ? |
+    rmSync(dir)
+  : labels:
+    - source: rmSync(dir)
+      style: primary
+      start: 0
+      end: 11
+    - source: rmSync
+      style: secondary
+      start: 0
+      end: 6
+  ? |
+    statSync(path)
+  : labels:
+    - source: statSync(path)
+      style: primary
+      start: 0
+      end: 14
+    - source: statSync
+      style: secondary
+      start: 0
+      end: 8
+  ? |
+    try { foo() } catch (e) { mkdirSync(dir) }
+  : labels:
+    - source: mkdirSync(dir)
+      style: primary
+      start: 26
+      end: 40
+    - source: mkdirSync
+      style: secondary
+      start: 26
+      end: 35
+  try { foo() } finally { writeFileSync(path, data) }:
+    labels:
+    - source: writeFileSync(path, data)
+      style: primary
+      start: 24
+      end: 49
+    - source: writeFileSync
+      style: secondary
+      start: 24
+      end: 37
+  ? |
+    unlinkSync(path)
+  : labels:
+    - source: unlinkSync(path)
+      style: primary
+      start: 0
+      end: 16
+    - source: unlinkSync
+      style: secondary
+      start: 0
+      end: 10
+  writeFileSync(path, data):
+    labels:
+    - source: writeFileSync(path, data)
+      style: primary
+      start: 0
+      end: 25
+    - source: writeFileSync
+      style: secondary
+      start: 0
+      end: 13
+  ? |
+    writeFileSync(path, data)
+  : labels:
+    - source: writeFileSync(path, data)
+      style: primary
+      start: 0
+      end: 25
+    - source: writeFileSync
+      style: secondary
+      start: 0
+      end: 13

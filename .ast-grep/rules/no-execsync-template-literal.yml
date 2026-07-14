@@ -1,0 +1,42 @@
+id: no-execsync-template-literal
+language: javascript
+message: >-
+  execSync with a dynamically-constructed command string is a shell-injection
+  vector — a value containing quotes, backticks, or $(…) escapes the intended
+  command. Use execFileSync(bin, [args…], opts) with an array of arguments
+  instead; it bypasses the shell entirely.
+  (CLAUDE.md/scripts-and-validation.md: prefer execFileSync over shell-spawning execSync.)
+severity: warning
+rule:
+  kind: call_expression
+  any:
+    - all:
+        - has:
+            field: function
+            kind: identifier
+            regex: ^execSync$
+        - has:
+            field: arguments
+            kind: arguments
+            has:
+              nthChild: 1
+              kind: template_string
+              has:
+                kind: template_substitution
+                stopBy: end
+              stopBy: end
+    - all:
+        - has:
+            field: function
+            kind: identifier
+            regex: ^execSync$
+        - has:
+            field: arguments
+            kind: arguments
+            has:
+              nthChild: 1
+              kind: binary_expression
+              has:
+                kind: string
+                stopBy: end
+              stopBy: end
