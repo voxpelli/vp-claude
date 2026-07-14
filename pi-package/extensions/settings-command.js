@@ -44,7 +44,7 @@ export function registerSettingsCommand (pi) {
             },
             {
               id: 'qualityChecks.fourthWall',
-              label: 'Fourth-wall check',
+              label: 'Flag AI self-references',
               description: 'Flag AI self-references in Basic Memory notes',
               currentValue: config.qualityChecks.fourthWall ? 'on' : 'off',
               values: ['on', 'off'],

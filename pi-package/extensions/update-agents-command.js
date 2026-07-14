@@ -43,7 +43,7 @@ export function registerUpdateAgentsCommand (pi) {
         return
       }
       const result = syncAgentProfiles(sourceDir, AGENTS_DIR, true)
-      const severity = result.errors.length > 0 ? 'warning' : 'info'
+      const severity = result.errors.length > 0 ? 'error' : 'info'
       ctx.ui.notify(formatResult(result), severity)
     },
   })
