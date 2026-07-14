@@ -23,7 +23,7 @@
     "README.md"
   ],
   "engines": {
-    "node": "^22.13.0 || >=24"
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "pi": {
     "extensions": ["./extensions"],
@@ -33,7 +33,7 @@
   "scripts": {
     "build": "node build.mjs",
     "check": "run-s clean && run-p check:* && run-s test",
-    "check:installed-check": "installed-check --ignore @earendil-works/pi-coding-agent --ignore @earendil-works/pi-tui --ignore npm-run-all2",
+    "check:installed-check": "installed-check",
     "check:knip": "knip",
     "check:lint": "eslint extensions/ test/",
     "check:tsc": "tsc",
