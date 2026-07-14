@@ -11,6 +11,7 @@
 import { readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { isKeyWithType } from '@voxpelli/typed-utils'
 import { resolveInstalledPlugins, resolveInstalledSkills } from '../lib/installed-plugins.mjs'
 
 const root = process.argv[2] || process.env.VPK_HOME || homedir()
@@ -37,10 +38,10 @@ if (installedPlugins && knownMarketplaces) {
   /** @type {Map<string, string>} */
   const mpContents = new Map()
   try {
-    const known = JSON.parse(knownMarketplaces)
+    const known = /** @type {Record<string, unknown>} */ (JSON.parse(knownMarketplaces))
     for (const [name, info] of Object.entries(known)) {
-      const loc = /** @type {any} */ (info)?.installLocation
-      if (typeof loc !== 'string') continue
+      const loc = isKeyWithType(info, 'installLocation', 'string') ? info.installLocation : null
+      if (!loc) continue
       const c = readOrNull(join(loc, '.claude-plugin/marketplace.json'))
       if (c) mpContents.set(name, c)
     }
