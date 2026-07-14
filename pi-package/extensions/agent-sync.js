@@ -10,7 +10,6 @@
  */
 
 import { createHash } from 'node:crypto'
-import { homedir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import {
   copyFileSync, existsSync, mkdirSync, readdirSync,
@@ -19,6 +18,8 @@ import {
 import {
   dirname, isAbsolute, join, resolve, sep,
 } from 'node:path'
+
+import { getAgentDir } from '@earendil-works/pi-coding-agent'
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 
@@ -276,7 +277,7 @@ export function syncAgentProfiles (sourceDir, targetDir, apply) {
 /* ── Source/target resolution ──────────────────────────────────────────── */
 
 /** Target directory for agent profiles. */
-export const AGENTS_DIR = join(homedir(), '.pi', 'agent', 'agents')
+export const AGENTS_DIR = join(getAgentDir(), 'agents')
 
 /**
  * Resolve the extension's install directory at runtime.

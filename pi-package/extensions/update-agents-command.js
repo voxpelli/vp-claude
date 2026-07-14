@@ -35,6 +35,8 @@ export function registerUpdateAgentsCommand (pi) {
   pi.registerCommand('vp-knowledge-update-agents', {
     description: 'Force-sync vp-knowledge agent profiles into ~/.pi/agent/agents/',
     handler: async (_args, ctx) => {
+      if (!ctx.hasUI) return
+
       const sourceDir = findAgentsSourceDir()
       if (!sourceDir) {
         ctx.ui.notify('Agent sync: could not find agent source directory', 'warning')

@@ -251,7 +251,7 @@ export default function vpKnowledgePiExtension (pi) {
         {
           customType: 'vp-knowledge-context',
           content: message,
-          display: true,
+          display: false,
         },
         { triggerTurn: false, deliverAs: 'nextTurn' }
       )
@@ -261,26 +261,47 @@ export default function vpKnowledgePiExtension (pi) {
   /* ── session_compact: post-compaction recovery ─────────────────────────── */
 
   pi.on('session_compact', async (_event, _ctx) => {
-    pi.sendMessage(
-      {
-        customType: 'vp-knowledge-context',
-        content: 'Post-compaction recovery: the Basic Memory knowledge graph is still available. If the ongoing task touches packages, tools, or the graph, recall context with `basic_memory_recent_activity(timeframe="7d")` or `/knowledge-prime`, and answer topic questions with `/knowledge-ask`. Research skills remain available — /package-intel (npm/crate/go/composer/pypi/gem), /tool-intel (brew/cask/action/docker/vscode/gh/plugin/skill), /knowledge-gaps (coverage; --stale drift; --global installed plugin/skill coverage). Schema edits dual-sync to schemas/*.md; never edit ~/basic-memory files directly — always use the basic_memory_* tools.',
-        display: true,
-      },
-      { triggerTurn: false, deliverAs: 'nextTurn' }
-    )
+    try {
+      pi.sendMessage(
+        {
+          customType: 'vp-knowledge-context',
+          content: 'Post-compaction recovery: the Basic Memory knowledge graph is still available. If the ongoing task touches packages, tools, or the graph, recall context with `basic_memory_recent_activity(timeframe="7d")` or `/knowledge-prime`, and answer topic questions with `/knowledge-ask`. Research skills remain available — /package-intel (npm/crate/go/composer/pypi/gem), /tool-intel (brew/cask/action/docker/vscode/gh/plugin/skill), /knowledge-gaps (coverage; --stale drift; --global installed plugin/skill coverage). Schema edits dual-sync to schemas/*.md; never edit ~/basic-memory files directly — always use the basic_memory_* tools.',
+          display: false,
+        },
+        { triggerTurn: false, deliverAs: 'nextTurn' }
+      )
+    } catch (err) {
+      // Auto-compaction races session disposal: pi-core may invalidate the
+      // extension runner while session_compact is still emitting, so `pi`
+      // becomes a stale proxy. Bail silently — the replacement session's
+      // session_start re-runs all guidance injection anyway.
+      if (err instanceof Error && /stale after session replacement/.test(err.message)) return
+      throw err
+    }
+  })
+
+  /* ── session_tree: branch navigation ─────────────────────────────────── */
+
+  pi.on('session_tree', async (_event, _ctx) => {
+    // Branch navigation occurred. State reconstruction happens here if needed.
+    // Currently no-op: all state is file-based (config, manifest) or rebuilt per-event.
   })
 
   /* ── session_shutdown: idempotent cleanup ────────────────────────────── */
 
   pi.on('session_shutdown', async (_event, _ctx) => {
-    // No long-lived resources to clean up yet.
-    // Registered per pi docs recommendation for future-proofing.
+    // Reserved for future session-scoped cleanup.
+    // startupMaintenanceDone is NOT reset here — module re-evaluation on /reload
+    // handles that naturally, and other session reasons (new/resume/fork) don't
+    // trigger the startup sync path anyway.
   })
 
   /* ── tool_result: consolidated handler ─────────────────────────────────── */
 
-  pi.on('tool_result', async (event, _ctx) => {
+  pi.on('tool_result', async (event, ctx) => {
+    // Respect user cancellation (Escape pressed during turn)
+    if (ctx.signal?.aborted) return
+
     const { toolName } = event
     const config = loadConfig()
 

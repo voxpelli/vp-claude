@@ -12,6 +12,8 @@ import {
   existsSync, mkdirSync, readFileSync, renameSync, writeFileSync,
 } from 'node:fs'
 
+import { CONFIG_DIR_NAME } from '@earendil-works/pi-coding-agent'
+
 /**
  * @typedef {object} AgentsConfig
  * @property {boolean} autoSync
@@ -40,7 +42,7 @@ export const DEFAULTS = {
   },
 }
 
-const CONFIG_DIR = join(homedir(), '.pi', 'agent', 'extensions')
+const CONFIG_DIR = join(homedir(), CONFIG_DIR_NAME, 'agent', 'extensions')
 const CONFIG_FILE = join(CONFIG_DIR, 'vp-knowledge.json')
 
 /**
