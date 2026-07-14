@@ -24,8 +24,8 @@ describe('extension factory', () => {
     vpKnowledgePiExtension(pi)
 
     const commands = new Set(calls.registerCommand.map((c) => c.name))
-    assert.ok(commands.has('vp-knowledge-update-agents'))
-    assert.ok(commands.has('vp-knowledge-settings'))
+    assert.ok(commands.has('vpk-sync'))
+    assert.ok(commands.has('vpk-setup'))
   })
 
   it('startupMaintenanceDone latch prevents duplicate sync', async () => {

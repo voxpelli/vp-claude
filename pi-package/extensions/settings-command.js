@@ -16,11 +16,11 @@ import { loadConfig, saveConfig } from './config.js'
  * @returns {void}
  */
 export function registerSettingsCommand (pi) {
-  pi.registerCommand('vp-knowledge-settings', {
+  const config = {
     description: 'Configure vp-knowledge-pi extension settings',
-    handler: async (_args, ctx) => {
+    handler: async (/** @type {string} */ _args, /** @type {import('@earendil-works/pi-coding-agent').ExtensionContext} */ ctx) => {
       if (ctx.mode !== 'tui') {
-        ctx.ui.notify('/vp-knowledge-settings requires TUI mode', 'error')
+        ctx.ui.notify('/vpk-setup requires TUI mode', 'error')
         return
       }
 
@@ -131,5 +131,7 @@ export function registerSettingsCommand (pi) {
         }
       })
     },
-  })
+  }
+
+  pi.registerCommand('vpk-setup', config)
 }

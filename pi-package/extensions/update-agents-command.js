@@ -32,9 +32,9 @@ function formatResult (result) {
  * @returns {void}
  */
 export function registerUpdateAgentsCommand (pi) {
-  pi.registerCommand('vp-knowledge-update-agents', {
+  const config = {
     description: 'Force-sync vp-knowledge agent profiles into ~/.pi/agent/agents/',
-    handler: async (_args, ctx) => {
+    handler: async (/** @type {string} */ _args, /** @type {import('@earendil-works/pi-coding-agent').ExtensionContext} */ ctx) => {
       if (!ctx.hasUI) return
 
       const sourceDir = findAgentsSourceDir()
@@ -46,5 +46,7 @@ export function registerUpdateAgentsCommand (pi) {
       const severity = result.errors.length > 0 ? 'error' : 'info'
       ctx.ui.notify(formatResult(result), severity)
     },
-  })
+  }
+
+  pi.registerCommand('vpk-sync', config)
 }
