@@ -33,7 +33,7 @@
   "scripts": {
     "build": "node build.mjs",
     "check": "run-s clean && run-p check:* && run-s test",
-    "check:installed-check": "installed-check --ignore @earendil-works/pi-coding-agent --ignore npm-run-all2",
+    "check:installed-check": "installed-check --ignore @earendil-works/pi-coding-agent --ignore @earendil-works/pi-tui --ignore npm-run-all2",
     "check:knip": "knip",
     "check:lint": "eslint extensions/ test/",
     "check:tsc": "tsc",
@@ -52,7 +52,7 @@
   },
   "devDependencies": {
     "@earendil-works/pi-coding-agent": "^0.80.6",
-    "@earendil-works/pi-tui": "^0.74.2",
+    "@earendil-works/pi-tui": "^0.80.6",
     "@voxpelli/eslint-config": "^25.1.0",
     "@voxpelli/tsconfig": "^16.2.1",
     "c8": "^11.0.0",
