@@ -1,14 +1,14 @@
-import { execFileSync } from 'node:child_process'
-import { homedir } from 'node:os'
+import { existsSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import {
-  copyFileSync, existsSync, mkdirSync, readdirSync,
-} from 'node:fs'
 
 import { getValueOfKeyWithType } from '@voxpelli/typed-utils'
 
+import { AGENTS_DIR, findAgentsSourceDir, syncAgentProfiles } from './agent-sync.js'
+import { loadConfig } from './config.js'
 import { MCP_MAPPINGS, VP_KNOWLEDGE_SKILL_NAMES } from './mcp-mapping.js'
+import { registerSettingsCommand } from './settings-command.js'
+import { registerUpdateAgentsCommand } from './update-agents-command.js'
 
 /** @typedef {import('@earendil-works/pi-coding-agent').ExtensionAPI} ExtensionAPI */
 /** @typedef {import('@earendil-works/pi-coding-agent').ExtensionContext} ExtensionContext */
@@ -19,47 +19,27 @@ import { MCP_MAPPINGS, VP_KNOWLEDGE_SKILL_NAMES } from './mcp-mapping.js'
 
 const FOURTH_WALL_MODULE = 'fourth-wall-rules.mjs'
 
-const AGENTS_DIR = join(homedir(), '.pi', 'agent', 'agents')
+/**
+ * Module-local latch for startup maintenance (agent sync). Pi fires
+ * `session_start` for every session including programmatic spawns, but
+ * agent sync targets the global `~/.pi/agent/agents/` dir whose source
+ * can't change mid-process — re-running just recomputes identical hashes.
+ * `/vp-knowledge-update-agents` and `/reload` are the explicit re-sync paths.
+ */
+let startupMaintenanceDone = false
 
-const AGENT_PROFILES = [
-  'knowledge-gardener.md',
-  'knowledge-maintainer.md',
-  'knowledge-primer.md',
-  'raindrop-gardener.md',
-]
+/** Test reset — wired into test setup. */
+export function __resetStartupMaintenance () {
+  startupMaintenanceDone = false
+}
 
 /**
  * Resolve the extension's install directory at runtime.
- * Used to locate bundled agents/ relative to this module.
  *
  * @returns {string}
  */
 function resolveExtensionDir () {
   return dirname(fileURLToPath(import.meta.url))
-}
-
-/**
- * Find the agents source directory.
- * Tries sibling `agents/` (npm/local dev) then grandparent `agents/` (git clone).
- *
- * @returns {string | undefined}
- */
-function findAgentsSourceDir () {
-  /** @type {string | undefined} */
-  let extDir
-  try {
-    extDir = resolveExtensionDir()
-  } catch {
-    return
-  }
-  const candidates = [
-    join(extDir, '..', 'agents'),
-    join(extDir, '..', '..', 'agents'),
-  ]
-  for (const dir of candidates) {
-    // eslint-disable-next-line n/no-sync
-    if (existsSync(dir)) return dir
-  }
 }
 
 /**
@@ -158,37 +138,6 @@ export function buildAuditReminder (cwd) {
 }
 
 /**
- * @returns {void}
- */
-export function installAgentProfiles () {
-  const sourceDir = findAgentsSourceDir()
-  if (!sourceDir) return
-
-  try {
-    // eslint-disable-next-line n/no-sync
-    if (!existsSync(AGENTS_DIR)) {
-      // eslint-disable-next-line n/no-sync
-      mkdirSync(AGENTS_DIR, { recursive: true })
-    }
-  } catch {
-    return
-  }
-  for (const file of AGENT_PROFILES) {
-    const src = join(sourceDir, file)
-    const dest = join(AGENTS_DIR, file)
-    // eslint-disable-next-line n/no-sync
-    if (existsSync(src) && !existsSync(dest)) {
-      try {
-        // eslint-disable-next-line n/no-sync
-        copyFileSync(src, dest)
-      } catch {
-        // silent — agent install is best-effort
-      }
-    }
-  }
-}
-
-/**
  * Classify a Basic Memory error message into a recovery category.
  *
  * @param {string} errorText
@@ -247,14 +196,34 @@ export default function vpKnowledgePiExtension (pi) {
 
   pi.on('session_start', async (event, ctx) => {
     const projectRoot = ctx.cwd
+    const config = loadConfig()
 
-    // Install agent profiles only on fresh startup (not on compact/reload)
-    if (event.reason === 'startup') {
-      try {
-        installAgentProfiles()
-      } catch {
-        // silent — agent profile install is best-effort; never abort
-        // session_start guidance (graph guidance, audit reminders, recovery)
+    // Startup maintenance runs once per process load — see startupMaintenanceDone doc
+    if (event.reason === 'startup' && !startupMaintenanceDone) {
+      startupMaintenanceDone = true
+      if (config.agents.autoSync) {
+        const sourceDir = findAgentsSourceDir()
+        if (sourceDir) {
+          try {
+            const result = syncAgentProfiles(sourceDir, AGENTS_DIR, false)
+            if (ctx.hasUI) {
+              if (result.added.length > 0) {
+                ctx.ui.notify(`Copied ${result.added.length} agent profile(s) to ~/.pi/agent/agents/`, 'info')
+              }
+              if (result.updated.length > 0) {
+                ctx.ui.notify(`Updated ${result.updated.length} agent profile(s)`, 'info')
+              }
+              if (result.pendingUpdate.length > 0) {
+                ctx.ui.notify(`${result.pendingUpdate.length} agent profile(s) have local edits — run /vp-knowledge-update-agents to force sync`, 'warning')
+              }
+              if (result.errors.length > 0) {
+                ctx.ui.notify(`Agent sync: ${result.errors.length} error(s)`, 'warning')
+              }
+            }
+          } catch {
+            // silent — agent sync is best-effort
+          }
+        }
       }
     }
 
@@ -262,9 +231,11 @@ export default function vpKnowledgePiExtension (pi) {
     /** @type {string[]} */
     const parts = [buildGraphGuidance()]
 
-    const auditReminder = buildAuditReminder(projectRoot)
-    if (auditReminder) {
-      parts.push(auditReminder)
+    if (config.guidance.auditReminders) {
+      const auditReminder = buildAuditReminder(projectRoot)
+      if (auditReminder) {
+        parts.push(auditReminder)
+      }
     }
 
     // On reload, append recovery note
@@ -309,32 +280,31 @@ export default function vpKnowledgePiExtension (pi) {
 
   /* ── tool_result: consolidated handler ─────────────────────────────────── */
 
-  pi.on('tool_result', async (event, ctx) => {
+  pi.on('tool_result', async (event, _ctx) => {
     const { toolName } = event
+    const config = loadConfig()
 
-    // ── Branch 1: BM write/edit + file edit quality checks ────────────────
+    // ── Branch 1: BM write quality checks ───────────────────────────────
     const isBmWrite =
       toolName === 'basic_memory_write_note' ||
       toolName === 'basic_memory_edit_note' ||
       toolName === 'mcp__basic-memory__write_note' ||
       toolName === 'mcp__basic-memory__edit_note'
 
-    const isFileEdit = toolName === 'edit' || toolName === 'write'
-
-    if (isBmWrite || isFileEdit) {
+    if (isBmWrite) {
       /** @type {{ content?: Array<{ type: 'text', text: string }> }} */
       const patches = {}
 
       // --- BM write: fourth-wall check + schema_validate reminder ---
       if (isBmWrite) {
         const noteContent = getValueOfKeyWithType(event.input, 'content', 'string') ?? ''
-        if (noteContent) {
+        if (noteContent && config.qualityChecks.fourthWall) {
           try {
             const modPath = findFourthWallModule()
             if (modPath) {
-              const { detectFourthWallViolations } = await import(modPath)
+              const mod = /** @type {{ detectFourthWallViolations: (content: string) => Array<{ id: string, name: string, match: string }> }} */ (await import(modPath))
               /** @type {FourthWallViolation[]} */
-              const violations = detectFourthWallViolations(noteContent)
+              const violations = mod.detectFourthWallViolations(noteContent)
               if (violations.length > 0) {
                 const text = `Fourth-wall check flagged ${violations.length} potential violation(s): ${violations.map((v) => `[${v.id}] ${v.name} (matched: "${v.match}")`).join('; ')}. Review against the vp-note-quality checklist before finalizing.`
                 patches.content = [{ type: 'text', text }]
@@ -345,9 +315,9 @@ export default function vpKnowledgePiExtension (pi) {
           }
         }
 
-        // schema_validate reminder
+        // schema_validate reminder (skip schema definition notes — they have no schema to validate against)
         const permalink = getValueOfKeyWithType(event.details, 'permalink', 'string') ?? ''
-        if (permalink) {
+        if (permalink && config.qualityChecks.schemaValidate && !permalink.includes('/schema/')) {
           const text = `A note was just written/edited (permalink: ${permalink}). Call basic_memory_schema_validate with that identifier. If validation reports errors, surface them. If the note type has no schema or validation passes, do nothing.`
           if (patches.content) {
             patches.content.push({ type: 'text', text })
@@ -357,33 +327,12 @@ export default function vpKnowledgePiExtension (pi) {
         }
       }
 
-      // --- File edit: shfmt drift detect + schema-sync reminder ---
-      if (isFileEdit) {
-        const path = getValueOfKeyWithType(event.input, 'path', 'string') ?? ''
-        if (path.endsWith('.sh')) {
-          try {
-            // eslint-disable-next-line n/no-sync
-            execFileSync('shfmt', ['-d', path], { cwd: ctx.cwd, timeout: 5000 })
-          } catch {
-            const text = `shfmt reports formatting drift in ${path}. Run \`shfmt -w "${path}"\` to fix.`
-            if (patches.content) {
-              patches.content.push({ type: 'text', text })
-            } else {
-              patches.content = [{ type: 'text', text }]
-            }
-          }
-        }
-
-        // schema-sync reminder for schema files
-        if (path.startsWith('schemas/') || path.includes('/schemas/')) {
-          const text = `Schema file edited: ${path}. Remember to dual-sync — edit the corresponding BM schema note (basic_memory_edit_note) and the local schema file in the same session. /schema-evolve <type> automates this.`
-          if (patches.content) {
-            patches.content.push({ type: 'text', text })
-          } else {
-            patches.content = [{ type: 'text', text }]
-          }
-        }
-      }
+      // --- File edit: removed ---
+      // shfmt and schema-sync reminders are plugin self-maintenance features
+      // scoped to ${CLAUDE_PLUGIN_ROOT} in Claude Code hooks. Pi has no
+      // equivalent path scoping, so these would fire on the user's project
+      // files instead of the plugin's own files. They remain as shell hooks
+      // for Claude Code only.
 
       if (patches.content) {
         return patches
@@ -419,4 +368,9 @@ export default function vpKnowledgePiExtension (pi) {
       }
     }
   })
+
+  /* ── Commands ──────────────────────────────────────────────────────────── */
+
+  registerUpdateAgentsCommand(pi)
+  registerSettingsCommand(pi)
 }

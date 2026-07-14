@@ -1,0 +1,128 @@
+/**
+ * Config loader for vp-knowledge-pi.
+ *
+ * Reads/writes `~/.pi/agent/extensions/vp-knowledge.json`.
+ * Deep-merges with defaults so partial configs work (user sets one
+ * toggle, the rest stay at their defaults).
+ */
+
+import { homedir } from 'node:os'
+import { join } from 'node:path'
+import {
+  existsSync, mkdirSync, readFileSync, renameSync, writeFileSync,
+} from 'node:fs'
+
+/**
+ * @typedef {object} AgentsConfig
+ * @property {boolean} autoSync
+ * @typedef {object} QualityChecksConfig
+ * @property {boolean} fourthWall
+ * @property {boolean} schemaValidate
+ * @typedef {object} GuidanceConfig
+ * @property {boolean} auditReminders
+ * @typedef {object} VpKnowledgeConfig
+ * @property {AgentsConfig} agents
+ * @property {QualityChecksConfig} qualityChecks
+ * @property {GuidanceConfig} guidance
+ */
+
+/** @type {VpKnowledgeConfig} */
+export const DEFAULTS = {
+  agents: {
+    autoSync: true,
+  },
+  qualityChecks: {
+    fourthWall: true,
+    schemaValidate: true,
+  },
+  guidance: {
+    auditReminders: true,
+  },
+}
+
+const CONFIG_DIR = join(homedir(), '.pi', 'agent', 'extensions')
+const CONFIG_FILE = join(CONFIG_DIR, 'vp-knowledge.json')
+
+/**
+ * @returns {string}
+ */
+export function getConfigPath () {
+  return CONFIG_FILE
+}
+
+/**
+ * Simple deep merge: recursively copy `source` properties into `target`.
+ * Only merges plain objects; arrays and other types are overwritten.
+ *
+ * @param {Record<string, unknown>} target
+ * @param {Record<string, unknown>} source
+ * @returns {Record<string, unknown>}
+ */
+function deepMerge (target, source) {
+  for (const key of Object.keys(source)) {
+    const sourceVal = source[key]
+    const targetVal = target[key]
+    // eslint-disable-next-line unicorn/prefer-ternary
+    if (
+      typeof sourceVal === 'object' &&
+      sourceVal !== null &&
+      !Array.isArray(sourceVal) &&
+      typeof targetVal === 'object' &&
+      targetVal !== null &&
+      !Array.isArray(targetVal)
+    ) {
+      target[key] = deepMerge(
+        /** @type {Record<string, unknown>} */ (targetVal),
+        /** @type {Record<string, unknown>} */ (sourceVal)
+      )
+    } else {
+      target[key] = sourceVal
+    }
+  }
+  return target
+}
+
+/**
+ * Load config from disk, merged with defaults.
+ *
+ * @returns {VpKnowledgeConfig}
+ */
+export function loadConfig () {
+  /** @type {VpKnowledgeConfig} */
+  const config = structuredClone(DEFAULTS)
+  if (!existsSync(CONFIG_FILE)) return config
+  try {
+    const raw = readFileSync(CONFIG_FILE, 'utf8')
+    /** @type {unknown} */
+    const parsed = JSON.parse(raw)
+    if (typeof parsed === 'object' && parsed !== null) {
+      deepMerge(
+        /** @type {Record<string, unknown>} */ (config),
+        /** @type {Record<string, unknown>} */ (parsed)
+      )
+    }
+  } catch {
+    // fail-soft: return defaults on parse error
+  }
+  return config
+}
+
+/**
+ * Save config to disk. Writes atomically (tmp + rename) to avoid
+ * truncating the existing file on crash.
+ *
+ * @param {VpKnowledgeConfig} config
+ * @returns {void}
+ */
+export function saveConfig (config) {
+  try {
+    mkdirSync(CONFIG_DIR, { recursive: true })
+    const content = `${JSON.stringify(config, null, 2)}\n`
+    const tmpFile = `${CONFIG_FILE}.${process.pid}.tmp`
+    writeFileSync(tmpFile, content, 'utf8')
+    // Atomic rename (POSIX same-filesystem guarantee within ~/.pi)
+    renameSync(tmpFile, CONFIG_FILE)
+  } catch {
+    // fail-soft: don't crash the extension on permission errors
+  }
+}
