@@ -1,0 +1,12 @@
+{
+  "extends": "@voxpelli/tsconfig/node22.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "skipLibCheck": true
+  },
+  "include": [
+    "extensions/**/*.js",
+    "test/**/*.js"
+  ]
+}

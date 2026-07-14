@@ -1,0 +1,64 @@
+{
+  "name": "vp-knowledge-pi",
+  "version": "0.0.0",
+  "description": "Pi overlay for vp-knowledge: Basic Memory knowledge-graph skills, session hooks, and guidance injection",
+  "type": "module",
+  "keywords": ["pi-package", "pi-extension", "knowledge-graph", "basic-memory"],
+  "author": "Pelle Wessman <pelle@kodfabrik.se> (https://kodfabrik.se/)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/voxpelli/vp-claude.git",
+    "directory": "pi-package"
+  },
+  "files": [
+    "extensions/",
+    "skills/",
+    "agents/",
+    "lib/",
+    "scripts/",
+    "schemas/",
+    "prompts/",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24"
+  },
+  "pi": {
+    "extensions": ["./extensions"],
+    "skills": ["./skills", "../skills"],
+    "prompts": ["./prompts"]
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "run-s clean && run-p check:* && run-s test",
+    "check:installed-check": "installed-check --ignore @earendil-works/pi-coding-agent --ignore npm-run-all2",
+    "check:knip": "knip",
+    "check:lint": "eslint extensions/ test/",
+    "check:tsc": "tsc",
+    "check:type-coverage": "type-coverage --detail --strict --at-least 99 --ignore-files 'test/*'",
+    "clean": "rm -f *.d.ts *.d.ts.map",
+    "prepublishOnly": "node build.mjs",
+    "test:node": "c8 --reporter=cobertura --reporter=lcov --reporter=text node --test",
+    "test": "run-s test:*"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "dependencies": {
+    "@voxpelli/typed-utils": "^5.0.0"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@voxpelli/eslint-config": "^25.1.0",
+    "@voxpelli/tsconfig": "^16.2.1",
+    "c8": "^11.0.0",
+    "eslint": "^9.39.4",
+    "installed-check": "^10.0.1",
+    "knip": "^6.14.2",
+    "npm-run-all2": "^9.0.0",
+    "type-coverage": "^2.29.7",
+    "typescript": "~5.9.3"
+  }
+}

@@ -22,6 +22,10 @@ export default [
     noMocha: true,
     semi: false,
     cliFiles: ['scripts/**/*.mjs', 'validate-plugin.mjs', 'lib/check-harness.mjs'],
+    // pi-package has its own eslint config and check:lint script.
+    // The build script copies lib/scripts/skills into pi-package/ — those
+    // are duplicates already linted at their original repo-root locations.
+    ignores: ['pi-package/**'],
   }),
   {
     name: 'vp-knowledge/repo-style',

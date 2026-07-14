@@ -27,7 +27,9 @@
     "check:type-coverage": "type-coverage --at-least 99",
     "check:upstream-headings": "node scripts/check-upstream-headings.mjs",
     "fix": "run-s fix:*",
-    "fix:ast-grep": "ast-grep scan --update-all lib/ scripts/"
+    "fix:ast-grep": "ast-grep scan --update-all --globs '!scripts/check-*.mjs' lib/ scripts/ pi-package/extensions/",
+    "test": "npm run test --workspace=pi-package",
+    "test-ci": "npm run test:node --workspace=pi-package"
   },
   "devDependencies": {
     "@ast-grep/cli": "^0.44.1",
@@ -55,6 +57,7 @@
     "unified": "^11.0.5",
     "unist-util-visit": "^5.1.0"
   },
+  "workspaces": ["pi-package"],
   "remarkConfig": {
     "settings": {
       "bullet": "-",

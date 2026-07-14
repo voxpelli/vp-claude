@@ -1,0 +1,26 @@
+name: Test
+
+permissions:
+  contents: read
+  code-quality: write
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    uses: voxpelli/ghatemplates/.github/workflows/test.yml@main
+    permissions:
+      checks: write
+      contents: read
+      code-quality: write
+    with:
+      node-versions: '20,22'
+      npm-test-script: 'test-ci'
+      coverage-file: 'pi-package/coverage/cobertura-coverage.xml'
+      coverage-language: 'JavaScript'
+      coverage-label: 'vp-knowledge-pi'
+      lockfile: false
