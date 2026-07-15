@@ -1,5 +1,5 @@
 // Runs the `.ast-grep/rules/` structural lint suite over `lib/`, `scripts/`,
-// and `pi-package/extensions/`. Test/check scripts (`scripts/check-*.mjs`)
+// and `extensions/` (the Pi extension). Test/check scripts (`scripts/check-*.mjs`)
 // are excluded — their unguarded sync fs calls are intentional fail-fast.
 // In CI, ast-grep's native `--format github` emits `::error`/
 // `::warning` workflow-command annotations directly, matching the CI
@@ -17,7 +17,7 @@ const result = spawnSync('ast-grep', [
   'scan',
   ...formatArgs,
   '--globs', '!scripts/check-*.mjs',
-  'lib/', 'scripts/', 'pi-package/extensions/',
+  'lib/', 'scripts/', 'extensions/',
 ], {
   stdio: 'inherit',
 })

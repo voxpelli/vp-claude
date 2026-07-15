@@ -3,6 +3,7 @@
 .serena/
 .liggare/
 node_modules/
+coverage/
 RETRO-*.md
 SWARM-*.md
 PLAN-*.md

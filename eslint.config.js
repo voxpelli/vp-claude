@@ -21,11 +21,10 @@ export default [
   ...voxpelli({
     noMocha: true,
     semi: false,
-    cliFiles: ['scripts/**/*.mjs', 'validate-plugin.mjs', 'lib/check-harness.mjs'],
-    // pi-package has its own eslint config and check:lint script.
-    // The build script copies lib/scripts/skills into pi-package/ — those
-    // are duplicates already linted at their original repo-root locations.
-    ignores: ['pi-package/**'],
+    // extensions/ is the Pi extension (JS with JSDoc types); agent-sync + config
+    // do intentional sync file I/O (atomic copy, manifest/config read-write), so
+    // they get the same CLI relaxation as scripts/.
+    cliFiles: ['scripts/**/*.mjs', 'validate-plugin.mjs', 'lib/check-harness.mjs', 'extensions/agent-sync.js', 'extensions/config.js'],
   }),
   {
     name: 'vp-knowledge/repo-style',
@@ -45,6 +44,17 @@ export default [
       'security/detect-non-literal-regexp': 'off',
       // Keep no-warning-comments (fixme) on — a `// fixme` is the only warning we
       // intentionally surface; everything else is resolved or off.
+      //
+      // agent-sync sorts manifest keys in place — intentional and harmless.
+      'unicorn/no-array-sort': 'off',
+    },
+  },
+  {
+    name: 'vp-knowledge/tests',
+    files: ['test/**/*.js'],
+    rules: {
+      // Tests use sync fs for setup/teardown — sequential and deterministic.
+      'n/no-sync': 'off',
     },
   },
 ]

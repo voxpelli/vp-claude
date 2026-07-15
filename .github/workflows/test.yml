@@ -20,7 +20,7 @@ jobs:
     with:
       node-versions: '22,24'
       npm-test-script: 'test-ci'
-      coverage-file: 'pi-package/coverage/cobertura-coverage.xml'
+      coverage-file: 'coverage/cobertura-coverage.xml'
       coverage-language: 'JavaScript'
       coverage-label: 'vp-knowledge-pi'
       lockfile: false
