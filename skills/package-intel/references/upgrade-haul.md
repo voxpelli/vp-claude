@@ -1,7 +1,12 @@
 # Upgrade Haul — Batch Note Refresh from an Upgrade/Outdated Line
 
-Shared reference for `package-intel` and `tool-intel`. Both skills point here
-via `${CLAUDE_PLUGIN_ROOT}/skills/package-intel/references/upgrade-haul.md`.
+Shared reference for `package-intel` and `tool-intel`. The file lives under
+`package-intel/references/`; both skills point here via the full
+`${CLAUDE_PLUGIN_ROOT}/skills/package-intel/references/upgrade-haul.md` path
+— `tool-intel` is a separate skill directory, so it must use this full
+plugin-relative path rather than a bare `references/...` path, which would
+resolve relative to its own directory instead. This cross-skill reference is an
+accepted, documented portability trade-off (see `docs/design/triple-harness-notes.md`).
 
 ## Contents
 

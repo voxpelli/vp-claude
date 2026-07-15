@@ -54,13 +54,17 @@ for (const file of skillMdFiles) {
 }
 
 console.log(`  scanned ${skillMdFiles.length} files: ${sameSkill} same-skill, ${crossSkill.length} cross-skill, ${tooling.length} tooling`)
+if (sameSkill > 0) {
+  console.log(`  ⚠ same-skill (${sameSkill}): fixable portability debt — these break under a standalone skills.sh`)
+  console.log(`               install (${PLUGIN_ROOT_TOKEN} undefined); convertible to a bare references/... path. Deferred to Wave 3.`)
+}
 for (const { file, ref } of crossSkill) {
   console.log(`  ⚠ cross-skill  ${relative(ROOT, file)} → ${ref.raw} (skill "${ref.targetSkill}" absent from a standalone install of the referrer)`)
 }
 for (const { file, ref } of tooling) {
   console.log(`  ⚠ tooling      ${relative(ROOT, file)} → ${ref.raw} (plugin runtime, absent from any skills.sh install)`)
 }
-console.log('  (warn-only: these are accepted portability trade-offs, not CI failures)')
+console.log('  (warn-only: cross-skill/tooling are accepted trade-offs; same-skill is deferred debt — not CI failures)')
 
 // --- fixture self-test (hard) ---
 

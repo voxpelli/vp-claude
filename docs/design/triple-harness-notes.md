@@ -71,3 +71,35 @@ and `devDependencies` (a pinned range). A reviewer flagged this as redundant; it
 
 So the dual declaration is correct: peer for the runtime contract, dev for local type-checking and tests. A
 Pi extension's core deps belong in peer (`*`) + dev (a pinned range), never in `dependencies`.
+
+## Accepted portability trade-offs (as of 0.32.7)
+
+0.32.7 ships portability **gates + visibility** (`check:portability`, the D3 description-limit trim) but does
+NOT yet convert same-skill references — that scrub is deferred to Wave 3's holistic skill re-extraction (the
+package-intel + tool-intel merge rewrites those same lines anyway; relative paths are rename-resilient, so
+nothing is lost by waiting). The reference-path resolution rule, verified this cycle (official Claude Code
+docs + Agent Skills spec + the vp-git production precedent + Claude Code's per-skill base-directory injection):
+a **bare relative `references/x.md` path resolves against the active skill's own directory** in both Claude
+Code and a standalone skills.sh install; `${CLAUDE_PLUGIN_ROOT}` (plugin-only) and `${CLAUDE_SKILL_DIR}`
+(Claude-Code bash-injection-only) are both undefined under skills.sh.
+
+The `${CLAUDE_PLUGIN_ROOT}` references in the skill tree fall into three buckets (measured by
+`check:portability` / `lib/portability-scan.mjs`):
+
+- **Same-skill (25 refs) — fixable, DEFERRED to Wave 3.** A skill referencing its OWN
+  `${CLAUDE_PLUGIN_ROOT}/skills/<self>/references/…` file. These break under a standalone skills.sh install
+  (undefined variable) and are convertible to a bare `references/…` path that resolves in both harnesses.
+  Not done in 0.32.7 (Wave-3-bound skills); `check:portability` reports the count as the outstanding debt.
+- **Cross-skill (4 refs) — ACCEPTED, cannot be relative.** A skill referencing a *sibling* skill's file
+  (`tool-intel`→`package-intel/references/{forge-fallback,upgrade-haul}.md`,
+  `nudge-adoption`→`nudge-sync/references/tip-cache-contract.md`). A bare relative path would resolve against
+  the *referrer's* own dir, not the target's, so these MUST keep the full `${CLAUDE_PLUGIN_ROOT}` path — and
+  they simply don't resolve under a standalone single-skill install of the referrer (the sibling isn't
+  present). This is inherent to a shared reference used across two skills; the shared-reference file headers
+  document it. `check:portability` warns on these as the accepted trade-off.
+- **Tooling (fenced, prose-scan-invisible) — skills.sh-DEGRADED, documented.** `knowledge-gaps --global`
+  shells into `${CLAUDE_PLUGIN_ROOT}/scripts/list-installed-plugins.mjs`. That path lives inside a fenced
+  code block, so the prose scanners (`check:plugin-load-paths`, `check:portability`) correctly skip it — it is
+  a CLI-invocation example, not a doc cross-reference. Under a standalone skills.sh install the `scripts/`
+  tree isn't present, so `--global` degrades. Accepted (do NOT vendor a script copy into the skill dir);
+  documented here rather than surfaced as a warning, since it's structurally invisible to prose scanning.
