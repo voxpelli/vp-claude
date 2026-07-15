@@ -26,6 +26,7 @@ schema:
   relates_to(array): Note, related knowledge notes
   extends?(array): Note, parent notes this note specializes or builds upon
   depends_on?(array): Note, package dependencies relevant to topic
+  uses?(array): Note, tool or package this note's subject actively uses (e.g. a stack note listing its member tools)
   references?(array): Note, knowledge notes or specs this references (directional, distinct from `relates_to`)
   documents?(array): Note, protocols/services/projects this note documents
   informs?(array): Note, knowledge notes whose direction this informs
