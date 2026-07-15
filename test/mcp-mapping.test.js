@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import { describe, it } from 'node:test'
 
-import { flattenMcpToolName, VP_KNOWLEDGE_SKILL_NAMES } from '../extensions/mcp-mapping.js'
+import { flattenMcpToolName, parseMcpToolName, VP_KNOWLEDGE_SKILL_NAMES } from '../extensions/mcp-mapping.js'
 
 describe('MCP mappings', () => {
   it('flattens the server hyphens and keeps the tool name verbatim', () => {
@@ -38,8 +38,21 @@ describe('MCP mappings', () => {
     assert.ok(VP_KNOWLEDGE_SKILL_NAMES.has('schema-evolve'))
   })
 
-  it('VP_KNOWLEDGE_SKILL_NAMES does not contain nudge skills', () => {
-    assert.strictEqual(VP_KNOWLEDGE_SKILL_NAMES.has('nudge-sync'), false)
-    assert.strictEqual(VP_KNOWLEDGE_SKILL_NAMES.has('nudge-adoption'), false)
+  it('VP_KNOWLEDGE_SKILL_NAMES contains the nudge pair (they call mcp__basic-memory__ tools)', () => {
+    // Regression: a prior comment wrongly excluded these as "no mcp__* tools".
+    assert.ok(VP_KNOWLEDGE_SKILL_NAMES.has('nudge-sync'))
+    assert.ok(VP_KNOWLEDGE_SKILL_NAMES.has('nudge-adoption'))
+  })
+
+  it('parseMcpToolName splits server and tool (the raw split the proxy path uses)', () => {
+    assert.deepStrictEqual(parseMcpToolName('mcp__basic-memory__write_note'), { server: 'basic-memory', tool: 'write_note' })
+    // context7: the server SEGMENT is the Claude plugin-prefixed name; guidance
+    // maps it to the user's mcp.json key (commonly `context7`) separately.
+    assert.deepStrictEqual(
+      parseMcpToolName('mcp__plugin_context7_context7__resolve-library-id'),
+      { server: 'plugin_context7_context7', tool: 'resolve-library-id' }
+    )
+    assert.strictEqual(parseMcpToolName('Read'), null)
+    assert.strictEqual(parseMcpToolName('mcp__incomplete'), null)
   })
 })

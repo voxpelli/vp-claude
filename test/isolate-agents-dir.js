@@ -22,5 +22,16 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-// eslint-disable-next-line n/no-process-env -- the override IS the isolation seam
+/* eslint-disable n/no-process-env -- these env overrides ARE the isolation seam */
+
+// Redirect the agent-profile sync target to a throwaway tmpdir.
 process.env.VP_KNOWLEDGE_AGENTS_DIR ||= mkdtempSync(join(tmpdir(), 'vpk-agents-'))
+
+// Pin the config read to a nonexistent path so loadConfig() returns DEFAULTS
+// deterministically (autoSync + quality checks ON), independent of the
+// contributor's real ~/.pi/agent/extensions/vp-knowledge.json — otherwise a
+// contributor with autoSync/fourthWall disabled would silently skip the very
+// code paths these tests exercise.
+process.env.VP_KNOWLEDGE_CONFIG_FILE ||= join(tmpdir(), 'vpk-no-such-config.json')
+
+/* eslint-enable n/no-process-env */

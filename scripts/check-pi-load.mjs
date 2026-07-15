@@ -42,15 +42,20 @@ check(`Pi discovers every on-disk skill (${skills.length}/${onDisk})`, skills.le
 check('every skill parses a non-empty name', skills.every((s) => typeof s.name === 'string' && s.name.length > 0))
 check('every skill parses a non-empty description', skills.every((s) => typeof s.description === 'string' && s.description.trim().length > 0))
 
-// Pi's loader emits diagnostics (e.g. description > 1024 chars). Fail on
-// error-level ones; surface warnings without failing — warn-only matches the
-// skills.sh portability posture, and the tool-intel over-length description is
-// a known Wave 2 fix that should not block the hybrid landing.
+// Pi's loader emits diagnostics (types: "warning" | "error" | "collision").
+// Fail on error AND collision — a collision means two skills resolved to the
+// same name and one is silently NOT loaded, which is exactly the kind of
+// coverage gap this smoke test exists to catch. Only genuine `warning`s (e.g.
+// an over-length description, a known Wave 2 fix) stay warn-only, matching the
+// skills.sh portability posture.
+const FAILING_DIAG_TYPES = new Set(['error', 'collision'])
 const diags = diagnostics ?? []
-const errorDiags = diags.filter((d) => d.type === 'error')
-const warnDiags = diags.filter((d) => d.type !== 'error')
-check(`no error-level skill diagnostics (${errorDiags.length})`, errorDiags.length === 0)
-for (const d of errorDiags) console.log(`    ERROR  ${d.path}: ${d.message}`)
+// One-pass partition (ES2024 Map.groupBy): error|collision fail, the rest warn.
+const byBucket = Map.groupBy(diags, (d) => (FAILING_DIAG_TYPES.has(d.type) ? 'fail' : 'warn'))
+const errorDiags = byBucket.get('fail') ?? []
+const warnDiags = byBucket.get('warn') ?? []
+check(`no error/collision skill diagnostics (${errorDiags.length})`, errorDiags.length === 0)
+for (const d of errorDiags) console.log(`    FAIL   ${d.path}: ${d.message} [${d.type}]`)
 for (const d of warnDiags) console.log(`    warn   ${d.path}: ${d.message}`)
 
 // ── 2. Extension factory imports cleanly ─────────────────────────────────────

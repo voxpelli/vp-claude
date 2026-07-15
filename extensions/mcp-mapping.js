@@ -1,22 +1,22 @@
 /**
- * Flatten a Claude-style MCP tool reference (`mcp__<server>__<tool>`) to the
- * direct-tool name a Pi MCP shim (e.g. pi-mcp-adapter) exposes: drop the
- * `mcp__` prefix, replace the server's hyphens with underscores, and append the
- * tool name UNCHANGED (hyphens inside the tool name are preserved, e.g.
- * `resolve-library-id`). Returns null for anything that is not a Claude MCP
- * reference.
+ * Split a Claude-style MCP tool reference (`mcp__<server>__<tool>`) into its
+ * server and tool segments. Returns null for anything that is not a Claude MCP
+ * reference. This is the raw split that both `flattenMcpToolName` (the
+ * `directTools:true` direct-tool name) and the `mcp` proxy path build on.
  *
- * This replaces a hand-maintained lookup table. A rule covers every server and
- * tool without enumeration, so a skill referencing a tool the table forgot can
- * no longer silently break, and the mapping cannot promise a `directTools:false`
- * tool that does not actually exist. Where a Pi host registered a server under a
- * different name than the Claude prefix implies, the injected guidance points the
- * model at the `mcp` proxy fallback (see `buildMappingGuidance` in index.js).
+ * NOTE ON THE SERVER SEGMENT: `server` here is the segment of the CLAUDE name,
+ * which is not always the key a Pi host registers the server under. Claude
+ * plugin-hosted servers carry a `plugin_<plugin>_<server>` prefix (e.g.
+ * `mcp__plugin_context7_context7__…` → server segment `plugin_context7_context7`,
+ * while the Pi `mcp.json` key is typically just `context7`). Servers wired
+ * directly (e.g. `basic-memory`, `socket-mcp`) match 1:1. The injected guidance
+ * (see `buildMappingGuidance` in index.js) tells the model the proxy `server`
+ * arg is the user's `mcp.json` key, and calls out the context7 case.
  *
  * @param {string} claudeName
- * @returns {string | null}
+ * @returns {{ server: string, tool: string } | null}
  */
-export function flattenMcpToolName (claudeName) {
+export function parseMcpToolName (claudeName) {
   if (!claudeName.startsWith('mcp__')) return null
   const rest = claudeName.slice('mcp__'.length)
   const sep = rest.indexOf('__')
@@ -24,13 +24,38 @@ export function flattenMcpToolName (claudeName) {
   const server = rest.slice(0, sep)
   const tool = rest.slice(sep + 2)
   if (!server || !tool) return null
-  return `${server.replaceAll('-', '_')}_${tool}`
+  return { server, tool }
+}
+
+/**
+ * Flatten a Claude-style MCP tool reference to the direct-tool name a Pi MCP
+ * shim exposes WHEN `directTools:true` is set: drop the `mcp__` prefix, replace
+ * the server's hyphens with underscores, and append the tool name UNCHANGED
+ * (hyphens inside the tool name are preserved, e.g. `resolve-library-id`).
+ * Returns null for anything that is not a Claude MCP reference.
+ *
+ * Direct-tool names DO NOT EXIST on the default pi-mcp-adapter config
+ * (`directTools:false`), where every MCP tool is reachable only through the
+ * single `mcp` proxy tool. So the injected guidance leads with the proxy and
+ * treats these flat names as the opt-in `directTools:true` path — never assume a
+ * flat name is callable without confirming it is in the tool list.
+ *
+ * @param {string} claudeName
+ * @returns {string | null}
+ */
+export function flattenMcpToolName (claudeName) {
+  const parsed = parseMcpToolName(claudeName)
+  if (!parsed) return null
+  return `${parsed.server.replaceAll('-', '_')}_${parsed.tool}`
 }
 
 /**
  * The set of skill names whose activation triggers MCP-guidance injection.
- * Skills that reference no `mcp__*` tools (the nudge pair) are deliberately
- * omitted so the guidance only appears when it is relevant.
+ * These are the vp-knowledge skills that reference `mcp__*` tools and therefore
+ * need the Claude→Pi mapping guidance. The nudge pair is included: both
+ * `nudge-sync` and `nudge-adoption` call `mcp__basic-memory__read_note` (and
+ * `nudge-adoption` also `…__edit_note`), so on a Pi host they need the mapping
+ * too — a prior comment wrongly claimed they reference no `mcp__*` tools.
  *
  * @type {Set<string>}
  */
@@ -40,6 +65,8 @@ export const VP_KNOWLEDGE_SKILL_NAMES = new Set([
   'knowledge-garden',
   'knowledge-maintain',
   'knowledge-prime',
+  'nudge-adoption',
+  'nudge-sync',
   'package-intel',
   'people-intel',
   'raindrop-triage',

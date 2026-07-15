@@ -6,7 +6,7 @@ import {
   mkdirSync, readFileSync, rmSync, writeFileSync,
 } from 'node:fs'
 
-import { getAgentsDir, syncAgentProfiles } from '../extensions/agent-sync.js'
+import { formatSyncErrors, getAgentsDir, syncAgentProfiles } from '../extensions/agent-sync.js'
 
 describe('agent-sync', () => {
   const testBase = join(tmpdir(), 'vp-knowledge-sync-test')
@@ -47,6 +47,19 @@ describe('agent-sync', () => {
     assert.deepStrictEqual(result.errors, [])
 
     assert.strictEqual(readFileSync(join(targetDir, 'agent-a.md'), 'utf8'), 'updated source content')
+  })
+
+  it('skips an identical dest: reports neither added nor updated', () => {
+    clean()
+    writeFileSync(join(sourceDir, 'agent-a.md'), 'identical content', 'utf8')
+    writeFileSync(join(targetDir, 'agent-a.md'), 'identical content', 'utf8')
+
+    const result = syncAgentProfiles(sourceDir, targetDir)
+
+    // Content-diff: an unchanged file is a no-op, not an "update".
+    assert.deepStrictEqual(result.added, [])
+    assert.deepStrictEqual(result.updated, [])
+    assert.deepStrictEqual(result.errors, [])
   })
 
   it('ignores non-.md files in source', () => {
@@ -196,3 +209,21 @@ describe('getAgentsDir', () => {
   })
 })
 /* eslint-enable n/no-process-env */
+
+describe('formatSyncErrors', () => {
+  it('returns empty string when there are no errors', () => {
+    assert.strictEqual(formatSyncErrors({ added: [], updated: [], errors: [] }), '')
+  })
+
+  it('names op, file, and message for each error (file optional)', () => {
+    const msg = formatSyncErrors({
+      added: [],
+      updated: [],
+      errors: [
+        { file: 'a.md', op: 'copy', message: 'EACCES' },
+        { op: 'mkdir', message: 'ENOTDIR' },
+      ],
+    })
+    assert.strictEqual(msg, '2 error(s): copy a.md: EACCES; mkdir: ENOTDIR')
+  })
+})

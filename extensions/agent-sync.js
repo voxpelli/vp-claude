@@ -8,7 +8,7 @@
 
 import { fileURLToPath } from 'node:url'
 import {
-  copyFileSync, existsSync, mkdirSync, readdirSync,
+  copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync,
 } from 'node:fs'
 import {
   dirname, isAbsolute, join, resolve, sep,
@@ -90,7 +90,9 @@ export function syncAgentProfiles (sourceDir, targetDir) {
   /** @type {string[]} */
   let sourceEntries
   try {
-    sourceEntries = readdirSync(sourceDir).filter((f) => f.endsWith('.md'))
+    sourceEntries = readdirSync(sourceDir, { withFileTypes: true })
+      .filter((e) => e.isFile() && e.name.endsWith('.md'))
+      .map((e) => e.name)
   } catch (err) {
     result.errors.push({
       op: 'read-src',
@@ -115,6 +117,12 @@ export function syncAgentProfiles (sourceDir, targetDir) {
     const existedBefore = existsSync(dest)
 
     try {
+      // Content-diff before overwrite: skip an identical dest so `updated`
+      // counts only real changes, not every no-op sync. Both reads are inside
+      // this try, so an I/O error is collected like any other copy failure.
+      if (existedBefore && readFileSync(src).equals(readFileSync(dest))) {
+        continue
+      }
       copyFileSync(src, dest)
       if (existedBefore) {
         result.updated.push(entry)
@@ -131,6 +139,22 @@ export function syncAgentProfiles (sourceDir, targetDir) {
   }
 
   return result
+}
+
+/**
+ * Format a SyncResult's errors into one human line naming each op/file/message,
+ * or '' when there were none. Shared so the startup path and `/vpk-sync` report
+ * errors identically rather than as a bare count.
+ *
+ * @param {SyncResult} result
+ * @returns {string}
+ */
+export function formatSyncErrors (result) {
+  if (result.errors.length === 0) return ''
+  const detail = result.errors
+    .map((e) => `${e.op}${e.file ? ` ${e.file}` : ''}: ${e.message}`)
+    .join('; ')
+  return `${result.errors.length} error(s): ${detail}`
 }
 
 /* ── Source/target resolution ──────────────────────────────────────────── */

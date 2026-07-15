@@ -6,7 +6,9 @@
  * ctx.ui.notify().
  */
 
-import { findAgentsSourceDir, getAgentsDir, syncAgentProfiles } from './agent-sync.js'
+import {
+  findAgentsSourceDir, formatSyncErrors, getAgentsDir, syncAgentProfiles,
+} from './agent-sync.js'
 
 /**
  * @param {import('./agent-sync.js').SyncResult} result
@@ -14,8 +16,7 @@ import { findAgentsSourceDir, getAgentsDir, syncAgentProfiles } from './agent-sy
  */
 function formatResult (result) {
   if (result.errors.length > 0) {
-    const errorMsgs = result.errors.map((e) => e.message)
-    return `Agent sync: ${result.errors.length} error(s): ${errorMsgs.join('; ')}`
+    return `Agent sync: ${formatSyncErrors(result)}`
   }
   /** @type {string[]} */
   const parts = []

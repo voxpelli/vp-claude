@@ -33,7 +33,7 @@
     "check:sh": "shellcheck hooks/*.sh scripts/*.sh && shfmt -d hooks/*.sh scripts/*.sh",
     "check:test": "node --test --import ./test/isolate-agents-dir.js",
     "check:tsc": "tsc",
-    "check:type-coverage": "type-coverage --at-least 99",
+    "check:type-coverage": "type-coverage --detail --strict --at-least 99 --ignore-files 'test/*'",
     "check:upstream-headings": "node scripts/check-upstream-headings.mjs",
     "fix": "run-s fix:*",
     "fix:ast-grep": "ast-grep scan --update-all --globs '!scripts/check-*.mjs' lib/ scripts/ extensions/",

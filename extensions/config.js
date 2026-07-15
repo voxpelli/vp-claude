@@ -69,15 +69,50 @@ function readSection (parsed, key) {
   }
 }
 
+/** @type {Map<string, VpKnowledgeConfig>} */
+const configCache = new Map()
+
 /**
- * Load config from disk, overlaying the four known boolean leaves onto a
- * fresh copy of DEFAULTS. Read-only and fail-soft: any missing file,
- * parse error, or non-object shape returns defaults unchanged.
+ * Clear the config cache. The module-scope cache is naturally reset by a
+ * `/reload` (which re-evaluates the module); this export exists for tests.
+ * Safe because config is read-only — nothing mutates a cached value.
+ *
+ * @returns {void}
+ */
+export function __resetConfigCache () {
+  configCache.clear()
+}
+
+/**
+ * Load config from disk, overlaying the four known boolean leaves onto a fresh
+ * copy of DEFAULTS. Read-only and fail-soft: any missing file, parse error, or
+ * non-object shape returns defaults unchanged. Cached per resolved path (config
+ * does not change within a process without a `/reload`).
+ *
+ * The default path honors `VP_KNOWLEDGE_CONFIG_FILE` so tests (and unusual
+ * installs) can redirect the read away from the real
+ * `~/.pi/agent/extensions/vp-knowledge.json` — matching the VP_KNOWLEDGE_* env
+ * isolation used by `test/isolate-agents-dir.js` and `scripts/check-hooks.mjs`.
  *
  * @param {string} [configFile]
  * @returns {VpKnowledgeConfig}
  */
-export function loadConfig (configFile = CONFIG_FILE) {
+export function loadConfig (configFile = process.env.VP_KNOWLEDGE_CONFIG_FILE || CONFIG_FILE) {
+  const cached = configCache.get(configFile)
+  if (cached) return cached
+  const config = readConfigFile(configFile)
+  configCache.set(configFile, config)
+  return config
+}
+
+/**
+ * Read and parse a config file into a full VpKnowledgeConfig. Uncached; the
+ * fail-soft parsing body that `loadConfig` memoizes.
+ *
+ * @param {string} configFile
+ * @returns {VpKnowledgeConfig}
+ */
+function readConfigFile (configFile) {
   /** @type {VpKnowledgeConfig} */
   const config = structuredClone(DEFAULTS)
   if (!existsSync(configFile)) return config

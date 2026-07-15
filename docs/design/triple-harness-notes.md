@@ -56,3 +56,18 @@ than shelling out to a live `pi` process. Worth a general note in `voxpelli/ai-m
   can promise non-existent tools).
 - **Verify the extension offline** with `check-pi-load.mjs` (loadSkillsFromDir + factory import) — CI-portable,
   no running agent. Template could ship this as a `check:pi-load` when a plugin adds a Pi extension.
+
+## Pi-core deps: peer AND dev (why the "redundant deps" review flag was a false positive)
+
+`@earendil-works/pi-coding-agent` and `@earendil-works/pi-tui` are declared BOTH as `peerDependencies` (`*`)
+and `devDependencies` (a pinned range). A reviewer flagged this as redundant; it is not:
+
+- **peerDependency (`*`)** — the Pi HOST provides the real instance at runtime. Pi's loader rewrites an
+  extension's `import` of a pi core to the host's own instance (a `VIRTUAL_MODULES` alias table), so the
+  extension must NOT bundle or pin its own copy. The peer range declares "whatever the host runs."
+- **devDependency (pinned)** — local `tsc` (JSDoc types resolve against the installed package) and
+  `node --test` (the extension imports `getAgentDir`, `CONFIG_DIR_NAME`, `loadSkillsFromDir` directly) need a
+  concrete version present in the repo.
+
+So the dual declaration is correct: peer for the runtime contract, dev for local type-checking and tests. A
+Pi extension's core deps belong in peer (`*`) + dev (a pinned range), never in `dependencies`.

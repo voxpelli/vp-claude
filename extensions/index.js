@@ -4,10 +4,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { getValueOfKeyWithType } from '@voxpelli/typed-utils'
 
-import { findAgentsSourceDir, getAgentsDir, syncAgentProfiles } from './agent-sync.js'
 import { loadConfig } from './config.js'
 import { flattenMcpToolName, VP_KNOWLEDGE_SKILL_NAMES } from './mcp-mapping.js'
 import { registerUpdateAgentsCommand } from './update-agents-command.js'
+import {
+  findAgentsSourceDir, formatSyncErrors, getAgentsDir, syncAgentProfiles,
+} from './agent-sync.js'
 
 /** @typedef {import('@earendil-works/pi-coding-agent').ExtensionAPI} ExtensionAPI */
 /** @typedef {import('@earendil-works/pi-coding-agent').ExtensionContext} ExtensionContext */
@@ -78,29 +80,38 @@ export function hasVpKnowledgeSkill (skills = []) {
  * @returns {string}
  */
 export function buildMappingGuidance () {
-  // Examples are computed through flattenMcpToolName so the documented output
-  // can never drift from the rule the model is told to apply.
-  const examples = [
+  // The directTools examples are computed through flattenMcpToolName so that
+  // documented output can never drift from the rule the model is told to apply.
+  const directExamples = [
     'mcp__basic-memory__write_note',
     'mcp__socket-mcp__depscore',
-    'mcp__plugin_context7_context7__resolve-library-id',
   ]
 
   return [
     '## MCP Tool Names (Pi Compatibility)',
     '',
     'The skills you are using reference MCP tools with Claude-style names (`mcp__<server>__<tool>`).',
-    'On a Pi host these are exposed as flattened direct-tool names by the MCP shim (e.g. pi-mcp-adapter).',
-    'Translate any `mcp__*` reference by dropping the `mcp__` prefix, replacing the server\'s hyphens',
-    'with underscores, and appending the tool name unchanged (hyphens inside the tool name stay):',
+    'Pi has no native MCP; a shim such as pi-mcp-adapter exposes them. On the shim\'s DEFAULT config',
+    '(`directTools:false`) there are NO flattened tool names — every MCP tool is reachable ONLY through a',
+    'single `mcp` proxy tool. This is the primary path. Call it as:',
     '',
-    ...examples.map((claudeName) => `- \`${claudeName}\` → \`${flattenMcpToolName(claudeName)}\``),
+    '    mcp({ server: "<server>", tool: "<tool>", args: "<JSON string of the params>" })',
     '',
-    'Pass the same flat parameter object to the direct tool that the skill shows for the `mcp__*` form.',
+    '- `server` is the key from the user\'s `~/.pi/agent/mcp.json`, NOT the Claude `mcp__` prefix. For a',
+    '  Claude name `mcp__<server>__<tool>` the `<server>` segment is usually the mcp.json key verbatim',
+    '  (e.g. `basic-memory`, `socket-mcp`). EXCEPTION: context7 is `mcp__plugin_context7_context7__…` in',
+    '  Claude but is conventionally keyed `context7` in mcp.json — use `context7`, not the prefixed form.',
+    '- `tool` is the segment after the server, unchanged (hyphens preserved, e.g. `resolve-library-id`).',
+    '- `args` is a JSON STRING — stringify the parameter object the skill shows; do not pass a raw object.',
     '',
-    'If a tool by the computed name is not in your available tool list — the Pi host may have registered',
-    'the MCP server under a different name — call it through the `mcp` proxy tool with the server and',
-    'tool names instead, rather than skipping the step.',
+    'Examples (Claude name → proxy call):',
+    '- `mcp__basic-memory__write_note` → `mcp({ server: "basic-memory", tool: "write_note", args: "{…}" })`',
+    '- `mcp__plugin_context7_context7__resolve-library-id` → `mcp({ server: "context7", tool: "resolve-library-id", args: "{…}" })`',
+    '',
+    'If the host sets `directTools:true`, each tool ALSO appears as a flattened direct name (drop `mcp__`,',
+    'server hyphens→`_`, tool unchanged) callable with the plain parameter object:',
+    ...directExamples.map((claudeName) => `- \`${claudeName}\` → \`${flattenMcpToolName(claudeName)}\``),
+    'Only call a flat name if it is actually in your available tool list; otherwise use the `mcp` proxy above.',
   ].join('\n')
 }
 
@@ -125,7 +136,8 @@ export function buildGraphGuidance () {
 export function buildAuditReminder (cwd) {
   try {
     // eslint-disable-next-line n/no-sync
-    const count = readdirSync(cwd).filter((f) => /^RETRO-.*\.md$/.test(f)).length
+    const count = readdirSync(cwd, { withFileTypes: true })
+      .filter((e) => e.isFile() && /^RETRO-.*\.md$/.test(e.name)).length
     // Audit every 4th sprint: sprint N is an audit sprint iff N % 4 === 0.
     // `count` = completed sprints (RETRO files), so the sprint about to start is
     // `upcoming`. Fire the do-it-now message when the upcoming sprint IS an audit
@@ -180,6 +192,78 @@ const RECOVERY_MESSAGES = {
   unknown: 'Review the error message and retry. If it persists, consider restarting the basic-memory MCP server.',
 }
 
+/**
+ * Basic Memory tools whose write-time output gets quality checks (fourth-wall +
+ * schema_validate reminder), and the broader set whose errors get recovery
+ * classification. Bare tool names (no server prefix) so they match across all
+ * three call shapes that normalizeBmToolCall collapses.
+ */
+const BM_WRITE_TOOLS = new Set(['write_note', 'edit_note'])
+const BM_TOOLS = new Set([
+  'write_note', 'edit_note', 'schema_validate', 'schema_diff', 'schema_infer',
+  'read_note', 'search_notes', 'recent_activity', 'list_directory', 'build_context',
+])
+
+/**
+ * Parse a JSON string into a plain object, or `{}` for anything that is not a
+ * JSON object (malformed, array, primitive, null). Used for the proxy path,
+ * where the params arrive as a JSON string.
+ *
+ * @param {string} raw
+ * @returns {Record<string, unknown>}
+ */
+function parseJsonObject (raw) {
+  try {
+    /** @type {unknown} */
+    const parsed = JSON.parse(raw)
+    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+      return /** @type {Record<string, unknown>} */ (parsed)
+    }
+  } catch { /* malformed args — treat as no params */ }
+  return {}
+}
+
+/**
+ * Normalize a tool_result event to the Basic Memory tool it represents plus that
+ * tool's input params, across the three shapes a BM call arrives as on Pi:
+ *   - flat direct name (`directTools:true`): toolName `basic_memory_write_note`, params = event.input
+ *   - Claude-style verbatim (some shims):    toolName `mcp__basic-memory__write_note`, params = event.input
+ *   - `mcp` proxy (default pi-mcp-adapter):  toolName `mcp`; real tool in event.input.tool,
+ *                                            params in the JSON-STRING event.input.args
+ * Returns `{ tool, params }` with a bare BM tool name, or null when not a BM
+ * call. The `basic_memory_` / `mcp__basic-memory__` prefixes are flattenMcpToolName's
+ * output / the Claude form for the fixed `basic-memory` server.
+ *
+ * @param {{ toolName?: string, input?: unknown }} event
+ * @returns {{ tool: string, params: Record<string, unknown> } | null}
+ */
+export function normalizeBmToolCall (event) {
+  const toolName = event.toolName ?? ''
+
+  // Proxy path: toolName is the literal 'mcp'; the real call is inside input.
+  if (toolName === 'mcp') {
+    const server = getValueOfKeyWithType(event.input, 'server', 'string')
+    const tool = getValueOfKeyWithType(event.input, 'tool', 'string')
+    if (server !== 'basic-memory' || !tool) return null
+    const rawArgs = getValueOfKeyWithType(event.input, 'args', 'string') ?? ''
+    return { tool, params: parseJsonObject(rawArgs) }
+  }
+
+  // Direct paths: flat name or Claude-style verbatim.
+  /** @type {string | null} */
+  let bare = null
+  if (toolName.startsWith('basic_memory_')) {
+    bare = toolName.slice('basic_memory_'.length)
+  } else if (toolName.startsWith('mcp__basic-memory__')) {
+    bare = toolName.slice('mcp__basic-memory__'.length)
+  }
+  if (!bare) return null
+  const params = (typeof event.input === 'object' && event.input !== null)
+    ? /** @type {Record<string, unknown>} */ (event.input)
+    : {}
+  return { tool: bare, params }
+}
+
 /* ── Extension Factory ─────────────────────────────────────────────────── */
 
 /**
@@ -213,6 +297,12 @@ export default function vpKnowledgePiExtension (pi) {
         if (sourceDir) {
           try {
             const result = syncAgentProfiles(sourceDir, getAgentsDir())
+            // Errors get an UNCONDITIONAL sink: syncAgentProfiles never throws
+            // (it collects mkdir/copy/read failures into result.errors), so a
+            // headless session with no ctx.ui must not drop them silently.
+            if (result.errors.length > 0) {
+              process.stderr.write(`[vp-knowledge] agent sync: ${formatSyncErrors(result)} — edit agents/, not the installed copies\n`)
+            }
             if (ctx.hasUI) {
               if (result.added.length > 0) {
                 ctx.ui.notify(`Copied ${result.added.length} agent profile(s) to ~/.pi/agent/agents/`, 'info')
@@ -221,7 +311,7 @@ export default function vpKnowledgePiExtension (pi) {
                 ctx.ui.notify(`Updated ${result.updated.length} agent profile(s)`, 'info')
               }
               if (result.errors.length > 0) {
-                ctx.ui.notify(`Agent sync: ${result.errors.length} error(s)`, 'warning')
+                ctx.ui.notify(`Agent sync: ${formatSyncErrors(result)}`, 'warning')
               }
             }
           } catch (err) {
@@ -289,7 +379,7 @@ export default function vpKnowledgePiExtension (pi) {
 
   pi.on('session_tree', async (_event, _ctx) => {
     // Branch navigation occurred. State reconstruction happens here if needed.
-    // Currently no-op: all state is file-based (config, manifest) or rebuilt per-event.
+    // Currently no-op: all state is file-based (config) or rebuilt per-event.
   })
 
   /* ── session_shutdown: idempotent cleanup ────────────────────────────── */
@@ -307,79 +397,61 @@ export default function vpKnowledgePiExtension (pi) {
     // Respect user cancellation (Escape pressed during turn)
     if (ctx.signal?.aborted) return
 
-    const { toolName } = event
+    // Normalize across the direct-name, Claude-verbatim, and `mcp` proxy shapes
+    // so these checks fire on the DEFAULT Pi config, where every BM call arrives
+    // as toolName 'mcp' — they were previously dead on that path.
+    const bm = normalizeBmToolCall(event)
+    if (!bm) return
+
     const config = loadConfig()
 
     // ── Branch 1: BM write quality checks ───────────────────────────────
-    const isBmWrite =
-      toolName === 'basic_memory_write_note' ||
-      toolName === 'basic_memory_edit_note' ||
-      toolName === 'mcp__basic-memory__write_note' ||
-      toolName === 'mcp__basic-memory__edit_note'
-
-    if (isBmWrite) {
+    if (BM_WRITE_TOOLS.has(bm.tool)) {
       /** @type {{ content?: Array<{ type: 'text', text: string }> }} */
       const patches = {}
 
-      // --- BM write: fourth-wall check + schema_validate reminder ---
-      if (isBmWrite) {
-        const noteContent = getValueOfKeyWithType(event.input, 'content', 'string') ?? ''
-        if (noteContent && config.qualityChecks.fourthWall) {
-          try {
-            const modPath = findFourthWallModule()
-            if (modPath) {
-              const mod = /** @type {{ detectFourthWallViolations: (content: string) => Array<{ id: string, name: string, match: string }> }} */ (await import(pathToFileURL(modPath).href))
-              /** @type {FourthWallViolation[]} */
-              const violations = mod.detectFourthWallViolations(noteContent)
-              if (violations.length > 0) {
-                const text = `Fourth-wall check flagged ${violations.length} potential violation(s): ${violations.map((v) => `[${v.id}] ${v.name} (matched: "${v.match}")`).join('; ')}. Review against the vp-note-quality checklist before finalizing.`
-                patches.content = [{ type: 'text', text }]
-              }
+      // `content` is an input param: from the parsed JSON args on the proxy path,
+      // from event.input on the direct paths — normalizeBmToolCall unifies both.
+      const noteContent = typeof bm.params.content === 'string' ? bm.params.content : ''
+      if (noteContent && config.qualityChecks.fourthWall) {
+        try {
+          const modPath = findFourthWallModule()
+          if (modPath) {
+            const mod = /** @type {{ detectFourthWallViolations: (content: string) => Array<{ id: string, name: string, match: string }> }} */ (await import(pathToFileURL(modPath).href))
+            /** @type {FourthWallViolation[]} */
+            const violations = mod.detectFourthWallViolations(noteContent)
+            if (violations.length > 0) {
+              const text = `Fourth-wall check flagged ${violations.length} potential violation(s): ${violations.map((v) => `[${v.id}] ${v.name} (matched: "${v.match}")`).join('; ')}. Review against the vp-note-quality checklist before finalizing.`
+              patches.content = [{ type: 'text', text }]
             }
-          } catch (err) {
-            // advisory, but not silent: surface the failure without blocking the write
-            process.stderr.write(`[vp-knowledge] fourth-wall check skipped: ${err instanceof Error ? err.message : String(err)}\n`)
           }
-        }
-
-        // schema_validate reminder (skip schema definition notes — they have no schema to validate against)
-        const permalink = getValueOfKeyWithType(event.details, 'permalink', 'string') ?? ''
-        if (permalink && config.qualityChecks.schemaValidate && !permalink.includes('/schema/')) {
-          const text = `A note was just written/edited (permalink: ${permalink}). Call basic_memory_schema_validate with that identifier. If validation reports errors, surface them. If the note type has no schema or validation passes, do nothing.`
-          if (patches.content) {
-            patches.content.push({ type: 'text', text })
-          } else {
-            patches.content = [{ type: 'text', text }]
-          }
+        } catch (err) {
+          // advisory, but not silent: surface the failure without blocking the write
+          process.stderr.write(`[vp-knowledge] fourth-wall check skipped: ${err instanceof Error ? err.message : String(err)}\n`)
         }
       }
 
-      // --- File edit: removed ---
-      // shfmt and schema-sync reminders are plugin self-maintenance features
-      // scoped to ${CLAUDE_PLUGIN_ROOT} in Claude Code hooks. Pi has no
-      // equivalent path scoping, so these would fire on the user's project
-      // files instead of the plugin's own files. They remain as shell hooks
-      // for Claude Code only.
+      // schema_validate reminder (skip schema definition notes). permalink is a
+      // RESULT field (event.details); on the proxy path the host may not surface
+      // it, in which case the reminder simply does not fire — the fourth-wall
+      // check above still runs from the input content.
+      const permalink = getValueOfKeyWithType(event.details, 'permalink', 'string') ?? ''
+      if (permalink && config.qualityChecks.schemaValidate && !permalink.includes('/schema/')) {
+        const text = `A note was just written/edited (permalink: ${permalink}). Call basic_memory_schema_validate with that identifier. If validation reports errors, surface them. If the note type has no schema or validation passes, do nothing.`
+        if (patches.content) {
+          patches.content.push({ type: 'text', text })
+        } else {
+          patches.content = [{ type: 'text', text }]
+        }
+      }
 
       if (patches.content) {
         return patches
       }
     }
 
-    // ── Branch 2: BM error classification ─────────────────────────────────
-    const isBmTool =
-      toolName === 'basic_memory_write_note' ||
-      toolName === 'basic_memory_edit_note' ||
-      toolName === 'basic_memory_schema_validate' ||
-      toolName === 'basic_memory_schema_diff' ||
-      toolName === 'basic_memory_schema_infer' ||
-      toolName === 'mcp__basic-memory__write_note' ||
-      toolName === 'mcp__basic-memory__edit_note' ||
-      toolName === 'mcp__basic-memory__schema_validate' ||
-      toolName === 'mcp__basic-memory__schema_diff' ||
-      toolName === 'mcp__basic-memory__schema_infer'
-
-    if (isBmTool && event.isError && event.content) {
+    // ── Branch 2: BM error classification (incl. the read family) ─────────
+    if (BM_TOOLS.has(bm.tool) && event.isError && event.content) {
       const errorText = event.content.map((c) => (c.type === 'text' ? c.text : '')).join('\n')
 
       let category = classifyBmError(errorText)
