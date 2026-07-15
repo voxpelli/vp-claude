@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.7][] - 2026-07-15
+
+Triple-harness portability **gates and visibility**, plus standards compliance.
+This release measures and documents the skills.sh single-skill-install
+portability of the skill tree and brings the largest description under the Agent
+Skills spec limit; it does not yet convert same-skill references (that scrub, and
+the `skill-check` spec gate, are deferred to Wave 3's holistic skill
+re-extraction, which rewrites those same lines).
+
+### Added
+
+- **`check:portability`** — a new `npm run check` gate (the pure classifier
+  `lib/portability-scan.mjs` with `scripts/check-portability.mjs`) that classifies every `${CLAUDE_PLUGIN_ROOT}`
+  reference in skill prose as same-skill (fixable portability debt — breaks under a
+  standalone skills.sh install where the variable is undefined), cross-skill (an
+  accepted sibling-skill dependency), or tooling. Warn-only live scan plus a hard
+  classifier self-test. Orthogonal to `check:plugin-load-paths`: that gate asks
+  "does this path resolve on disk"; this one asks "would this reference survive a
+  standalone single-skill install".
+
+### Changed
+
+- **`tool-intel` description trimmed 1127 → 929 characters** to fit the 1024-char
+  Agent Skills (agentskills.io / skills.sh) spec limit. All eight prefix mappings
+  (brew/cask/action/docker/vscode/gh/plugin/skill) and one strong trigger per tool
+  type are preserved; only redundant `'what does [X] do'` variants were collapsed.
+
+### Documentation
+
+- **Accepted portability trade-offs ledger** in `docs/design/triple-harness-notes.md`:
+  the verified relative-path resolution rule (a bare `references/...` path resolves
+  against the active skill's own directory in both Claude Code and skills.sh) and
+  the three reference buckets (same-skill fixable/deferred, cross-skill accepted,
+  tooling degraded). The `forge-fallback.md` / `upgrade-haul.md` shared-reference
+  headers now explain, like `tip-cache-contract.md` already did, why a cross-skill
+  shared reference must keep the full plugin-relative path.
+
+### Deferred to Wave 3 (0.33.0)
+
+- The same-skill reference scrub (`${CLAUDE_PLUGIN_ROOT}/skills/<self>/...` → bare
+  `references/...`) and the `skill-check` spec gate (`check:spec`). Both touch skills
+  that Wave 3's package-intel + tool-intel merge rewrites; doing them now would be
+  churn, and relative paths are rename-resilient, so nothing is lost by waiting.
+
 ## [0.32.6][] - 2026-07-15
 
 The plugin now runs on the Pi coding agent from a single-root hybrid, and — the
@@ -2198,6 +2242,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.32.7]: https://github.com/voxpelli/vp-claude/compare/v0.32.6...v0.32.7
 [0.32.6]: https://github.com/voxpelli/vp-claude/compare/v0.32.5...v0.32.6
 [0.32.5]: https://github.com/voxpelli/vp-claude/compare/v0.32.4...v0.32.5
 [0.32.4]: https://github.com/voxpelli/vp-claude/compare/v0.32.3...v0.32.4
