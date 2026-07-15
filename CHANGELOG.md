@@ -5,6 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.0][] - 2026-07-16
+
+Wave 3 skill consolidation: four skills merge into two (skill count **16 → 14**).
+One research lifecycle now serves both packages and dev tools, and the two nudge
+skills become one mode-routed skill. This is a leaning-down release — no research
+or nudge capability is lost, but the old command names are gone.
+
+### ⚠️ Breaking
+
+- **`/package-intel` and `/tool-intel` are removed — use `/intel`.** The two are
+  merged into one **`/intel <prefix>:<name>`** skill (shared-core, two families).
+  The prefixes are unchanged (`npm:`/`crate:`/`go:`/`composer:`/`pypi:`/`gem:` for
+  the package family; `brew:`/`cask:`/`action:`/`docker:`/`vscode:`/`gh:`/`plugin:`/
+  `skill:` for the tool family; no prefix still defaults to npm). A single call may
+  now **mix families** (`/intel npm:fastify brew:ripgrep`) — a capability gain.
+- **`/nudge-sync` and `/nudge-adoption` are removed — use `/nudge`.** Merged into a
+  mode-routed **`/nudge`** skill: bare `/nudge` syncs the tip cache (was
+  `/nudge-sync`); `/nudge check` runs the adoption scan (was `/nudge-adoption`).
+- Any `settings.local.json` allowlist entries or muscle memory referencing the four
+  old command names must be updated.
+
+### Added
+
+- **`/intel`** — one research lifecycle (detect → check → resolve → enrich →
+  synthesize → write → cross-link) routed by a provably-disjoint 14-prefix table,
+  branching only at enrichment. Shared mechanics (note lookup/freshness, write
+  mechanics, verify-before-capture, cross-linking, the upgrade-haul batch core, the
+  forge/gh-api fallbacks) live in `skills/intel/references/`; the two families keep
+  their distinct source rosters (package: seven sources incl. Context7 + Socket;
+  tool: six sources incl. man-page, Homebrew analytics, Open VSX).
+- **`/nudge`** — mode-routed (`disable-model-invocation`), with the transcript
+  evidence-detection procedure and accepted-limitations extracted to references.
+- **`check:spec`** — a new `npm run check` gate running `skill-check` (the
+  agentskills.io SKILL.md linter, added as a devDependency) with a 500-line body
+  limit as errors; the ~42 Claude-Code-vs-spec divergence findings stay non-gating
+  warnings.
+
+### Changed
+
+- The reconciled `gh-api-fallback.md` unions the two previously-drifted copies
+  (restoring a citation the tool copy had dropped) and extends its applicability
+  ladder to all 14 prefixes.
+- All intra-skill reference cross-loads are now **bare-relative** rather than
+  `${CLAUDE_PLUGIN_ROOT}`-prefixed, discharging the deferred same-skill portability
+  debt (`check:portability` now reports it clear) and fixing two silent-broken
+  relative paths. The crates.io worker's `User-Agent` gains an RFC-3463 contact URL.
+
+### Removed
+
+- `skills/package-intel/`, `skills/tool-intel/`, `skills/nudge-sync/`,
+  `skills/nudge-adoption/` and their reference trees (content relocated, not lost).
+- `docs/design/tool-intel-next-gen.md` retired in place (its premise — the two
+  skills staying separate — no longer holds; kept with a revival trigger).
+
 ## [0.32.7][] - 2026-07-15
 
 Triple-harness portability **gates and visibility**, plus standards compliance.
@@ -2242,6 +2296,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.33.0]: https://github.com/voxpelli/vp-claude/compare/v0.32.7...v0.33.0
 [0.32.7]: https://github.com/voxpelli/vp-claude/compare/v0.32.6...v0.32.7
 [0.32.6]: https://github.com/voxpelli/vp-claude/compare/v0.32.5...v0.32.6
 [0.32.5]: https://github.com/voxpelli/vp-claude/compare/v0.32.4...v0.32.5
