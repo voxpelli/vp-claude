@@ -42,4 +42,17 @@ than shelling out to a live `pi` process. Worth a general note in `voxpelli/ai-m
   Claude's loader ignores `package.json` entirely, so this is invisible to the Claude side.
 - **Never a root `themes/` dir** (Pi parses JSON there as color themes).
 - The `pi.skills` path is the SAME `skills/` tree the Claude plugin and skills.sh use — one source of truth.
-- (more to come as Waves proceed)
+- **Claude-reachable shared scripts must be node_modules-free.** A Claude marketplace install is a whole-tree
+  copy with NO `npm install` and gitignored node_modules, so any script a skill shells into (and its lib
+  imports) must import only `node:*` builtins + relative paths. Verify by running it from a node_modules-free
+  temp dir. (This was a live bug in the shipped plugin, not hybrid-introduced.)
+- **The Pi extension MAY keep runtime deps** (Pi runs `npm install --omit=dev` on `git:` install) — put them
+  in `dependencies`, not `devDependencies`. Only the *Claude-reachable* code path has the no-install constraint.
+- **Runtime path resolution** in the extension should assume the single-root layout: `extensions/../lib`,
+  `extensions/../agents` — one candidate, no dual-probe for a build-copy layout. Import dynamic modules via
+  `pathToFileURL(path).href` (a bare absolute path is not a valid import specifier on Windows).
+- **MCP tool names**: express Claude↔Pi mapping as a RULE (`mcp__<server>__<tool>` → server hyphens→`_`,
+  tool verbatim) + an `mcp`-proxy fallback in injected guidance — never a hand-maintained table (it rots and
+  can promise non-existent tools).
+- **Verify the extension offline** with `check-pi-load.mjs` (loadSkillsFromDir + factory import) — CI-portable,
+  no running agent. Template could ship this as a `check:pi-load` when a plugin adds a Pi extension.
