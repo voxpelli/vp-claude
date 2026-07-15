@@ -1,6 +1,6 @@
 # Ecosystem reference: agent-skill bundles (`skill:`)
 
-Fetch + research recipe for `/tool-intel skill:<owner>/<repo>` (optionally
+Fetch + research recipe for `/intel skill:<owner>/<repo>` (optionally
 `#<skill-name>`). A skills.sh / agentskills.io skill bundle is a pure
 `owner/repo` git artifact with no central registry and frequently no version
 tags — its closest analog is `gh:`. Writes a `claude_plugin` note (the

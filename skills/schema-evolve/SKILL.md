@@ -76,7 +76,7 @@ unaffected by `--prescribed`.
 
 - **No schema found** — if `schema_diff` returns `schema_found: false`, report
   "No schema registered in Basic Memory for type `<note_type>`." Direct the
-  user to run `/package-intel` or `/tool-intel` first (they auto-seed schemas
+  user to run `/intel` first (it auto-seeds the schema
   on first use), or to use `/memory-schema` to create the schema manually. Stop.
 - **No drift detected** — if `schema_diff` returns empty `new_fields`,
   `dropped_fields`, and `cardinality_changes`, AND `--prescribed` was not

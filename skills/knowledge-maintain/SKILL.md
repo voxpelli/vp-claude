@@ -1,6 +1,6 @@
 ---
 name: knowledge-maintain
-description: "This skill should be used when the user asks to fix, repair, or tidy one or more SPECIFIC named notes — 'fix these notes', 'fix the issues in [note]', 'add the missing relations to [note]', 'tidy up [note]', 'fix orphan [note]', 'apply the gardener findings for [note]'. Applies structural fixes (missing sections, relation-verb drift, frontmatter case) directly and inline, and confirms content-level changes (prose rewrites, merges, archival) with the user before applying them. NOT for read-only auditing (use /knowledge-garden), NOT for creating new notes (use /package-intel or /tool-intel), and NOT for graph-wide or autonomous remediation ('fix the whole audit', 'remediate the graph', research-and-document sweeps) — those belong to the knowledge-maintainer agent, which this skill delegates to when invoked broadly."
+description: "This skill should be used when the user asks to fix, repair, or tidy one or more SPECIFIC named notes — 'fix these notes', 'fix the issues in [note]', 'add the missing relations to [note]', 'tidy up [note]', 'fix orphan [note]', 'apply the gardener findings for [note]'. Applies structural fixes (missing sections, relation-verb drift, frontmatter case) directly and inline, and confirms content-level changes (prose rewrites, merges, archival) with the user before applying them. NOT for read-only auditing (use /knowledge-garden), NOT for creating new notes (use /intel), and NOT for graph-wide or autonomous remediation ('fix the whole audit', 'remediate the graph', research-and-document sweeps) — those belong to the knowledge-maintainer agent, which this skill delegates to when invoked broadly."
 user-invocable: true
 disable-model-invocation: true
 argument-hint: "[note ...]"
@@ -27,7 +27,7 @@ user sees each edit) and delegates heavy, autonomous remediation to the agent.
 - `edit_note` with `find_replace` ONLY. Never `append` with `section=` — it
   appends to end-of-**file**, not end-of-section, the documented BM footgun.
 - `write_note` and `delete_note` are intentionally excluded. Create new notes
-  via `/package-intel` or `/tool-intel`; archive via `move_note` to `archive/`.
+  via `/intel`; archive via `move_note` to `archive/`.
 - Read the live note before every edit (verify-before-fix). A flagged issue may
   be a parse artifact, or the note may already be correct.
 - `schema_validate` after every edit. If its output appears to repeat the same
@@ -41,7 +41,7 @@ Classify the request first:
 **Delegate to the agent** when the work is heavy or autonomous — any of:
 - "Fix the whole audit", "remediate the graph", "fix everything".
 - The fix requires creating notes or running research: "research and document
-  missing packages", anything that would spawn `/package-intel` / `/tool-intel`.
+  missing packages", anything that would spawn `/intel`.
 - Brew-note refresh batches, graph-wide orphan linking, or any sweep across a
   whole ecosystem/type.
 
@@ -188,7 +188,7 @@ Then report per note:
 - **Unresolvable relation target** — a proposed `relates_to [[target]]` whose
   target doesn't resolve via `read_note`/`search_notes` is never added and
   never silently dropped: report it as an unresolvable target and suggest
-  `/package-intel` or `/tool-intel` if it looks like an undocumented
+  `/intel` if it looks like an undocumented
   package/tool, or ask the user to confirm the correct title.
 - **`edit_note` re-parse gotcha** — `edit_note` re-parses the ENTIRE note after
   a raw string replacement, so a pre-existing unrelated issue can trip on your

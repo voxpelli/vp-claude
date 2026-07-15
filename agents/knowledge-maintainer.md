@@ -40,7 +40,7 @@ Four representative scenarios:
 - **Gap-filling research.** The user wants undocumented but important
   packages or tools researched and documented ("research and document any
   important packages that are missing from the knowledge graph") — combines
-  knowledge-gaps detection with `/package-intel` or `/tool-intel`.
+  knowledge-gaps detection with `/intel`.
 
 This agent is the **sole write path** for the knowledge graph among the four
 agents in this plugin — knowledge-gardener, knowledge-primer, and
@@ -56,7 +56,7 @@ diagnostic report is wanted.
 - Fix `type` frontmatter to match the correct schema (e.g., `npm-package` → `npm_package`)
 - Link orphan notes to related notes via `## Relations`
 - Add missing `[[wiki-links]]` (hyphen-prefixed, e.g., `[[npm-fastify]]`) where two notes clearly reference each other
-- Run `/package-intel` for Tier 1 undocumented packages (3+ imports in codebase)
+- Run `/intel` for Tier 1 undocumented packages (3+ imports in codebase)
 
 **Confirm before applying** (content-level, higher-risk):
 - Merging duplicate notes (show both, propose merged version)
@@ -486,14 +486,14 @@ If the user's project has undocumented Tier 1 packages:
    manifest, check BM coverage, count imports.
 
 3. For packages with 3+ imports and no dedicated note, invoke the
-   `package-intel` skill via the Skill tool with the appropriate prefix:
+   `intel` skill via the Skill tool with the appropriate prefix:
    ```
-   Skill(skill: "package-intel", args: "crate:serde")
-   Skill(skill: "package-intel", args: "pypi:requests")
-   Skill(skill: "package-intel", args: "go:github.com/gin-gonic/gin")
-   Skill(skill: "package-intel", args: "composer:laravel/framework")
-   Skill(skill: "package-intel", args: "gem:rails")
-   Skill(skill: "package-intel", args: "fastify")  # npm (no prefix)
+   Skill(skill: "intel", args: "crate:serde")
+   Skill(skill: "intel", args: "pypi:requests")
+   Skill(skill: "intel", args: "go:github.com/gin-gonic/gin")
+   Skill(skill: "intel", args: "composer:laravel/framework")
+   Skill(skill: "intel", args: "gem:rails")
+   Skill(skill: "intel", args: "fastify")  # npm (no prefix)
    ```
 
 4. **Detect tool manifests** — check for tool manifest files:
@@ -502,15 +502,15 @@ If the user's project has undocumented Tier 1 packages:
    - `Read("./Dockerfile")`, `Glob(pattern="*.dockerfile")`, `Glob(pattern="Dockerfile.*")` → Docker images
    - `Read("./.vscode/extensions.json")` → VSCode extensions
 
-5. For undocumented tools from detected manifests, invoke the `tool-intel`
+5. For undocumented tools from detected manifests, invoke the `intel`
    skill via the Skill tool with the appropriate prefix:
    ```
-   Skill(skill: "tool-intel", args: "brew:ripgrep")
-   Skill(skill: "tool-intel", args: "cask:warp")
-   Skill(skill: "tool-intel", args: "action:actions/checkout")
-   Skill(skill: "tool-intel", args: "docker:node")
-   Skill(skill: "tool-intel", args: "vscode:esbenp.prettier-vscode")
-   Skill(skill: "tool-intel", args: "gh:meiji163/gh-notify")
+   Skill(skill: "intel", args: "brew:ripgrep")
+   Skill(skill: "intel", args: "cask:warp")
+   Skill(skill: "intel", args: "action:actions/checkout")
+   Skill(skill: "intel", args: "docker:node")
+   Skill(skill: "intel", args: "vscode:esbenp.prettier-vscode")
+   Skill(skill: "intel", args: "gh:meiji163/gh-notify")
    ```
 
 6. Report what was created, grouped by ecosystem and tool type.
@@ -532,11 +532,11 @@ re-read/refresh *name* vary by prefix:
 
 | Prefix | Refresh command | Upstream name |
 |--------|-----------------|---------------|
-| `brew-` | `/tool-intel brew:<name>` | strip leading `brew-` |
-| `cask-` | `/tool-intel cask:<name>` | strip leading `cask-` |
-| `vscode-` | `/tool-intel vscode:<name>` | strip leading `vscode-` |
-| `npm-` | `/package-intel npm:<name>` | frontmatter `packages[0]` (NOT prefix-strip — scoped/non-prefixed titles exist) |
-| `crate-` | `/package-intel crate:<name>` | strip leading `crate-` |
+| `brew-` | `/intel brew:<name>` | strip leading `brew-` |
+| `cask-` | `/intel cask:<name>` | strip leading `cask-` |
+| `vscode-` | `/intel vscode:<name>` | strip leading `vscode-` |
+| `npm-` | `/intel npm:<name>` | frontmatter `packages[0]` (NOT prefix-strip — scoped/non-prefixed titles exist) |
+| `crate-` | `/intel crate:<name>` | strip leading `crate-` |
 
 **Mandatory behavior — Section 3b is a queue, not an actor**
 
@@ -545,7 +545,7 @@ Section 3b NEVER performs a refresh itself. Two paths are both forbidden:
 1. A minimal `edit_note` appending a single `[release] vX.Y.Z` observation
    ("the version-bump path") — this demonstrably loses security signal (see
    the cosign case below).
-2. Invoking `/tool-intel` or `/package-intel` via the Skill tool from
+2. Invoking `/intel` via the Skill tool from
    *within* this agent to run the full research pipeline on the
    maintainer's own behalf ("the recursive-spawn path") — spawning agents
    from within an unattended background agent adds exactly the kind of
@@ -557,13 +557,13 @@ Instead, every `Drifted >30d` target (and every security-flagged target in
 any bucket — see the override below) is emitted as one entry in the
 **Refresh Queue** report (format below), naming the target and the exact
 refresh command from the table above. A human running the main, foreground
-session then actions the queue by invoking `/tool-intel` / `/package-intel`
+session then actions the queue by invoking `/intel`
 directly — the queue is the Section 3b deliverable, not the refresh.
 
 Empirical motivation (Sprint 23 field-test of v0.29.3): when this section
 was previously executed as "auto-batch up to 5 minimal version bumps", a
 cosign 3.0.5 → 3.0.6 refresh recorded as a single `[release]` line. A
-subsequent manual `/tool-intel brew:cosign` running the full pipeline
+subsequent manual `/intel brew:cosign` running the full pipeline
 surfaced **three** 2026 CVEs the bump-only path missed (CVE-2026-22703
 bundle verification bypass, CVE-2026-39395 auth bypass, CVE-2026-24122
 cert chain timing). Treat "skip the skill, write the version directly" as
@@ -578,7 +578,7 @@ way.
 **Pre-enqueue re-read (mandatory before EACH target)**
 
 Audit findings have a ~30-minute wall-clock staleness window in practice
-— another agent or a manual `/tool-intel` run may have refreshed the
+— another agent or a manual `/intel` run may have refreshed the
 note between gardener and maintainer. Before adding each Drifted-target
 entry to the queue, re-read the target and re-confirm the audit input
 still holds:
@@ -653,7 +653,8 @@ sub-headings exactly — load-bearing strings to search for):
 
 **Refresh Queue report format**, emitted after all pre-enqueue re-reads
 complete (the refresh command is chosen per the prefix table above, so a
-mixed-cohort queue interleaves `/tool-intel` and `/package-intel` entries —
+mixed-cohort queue interleaves `/intel` entries across different prefixes (e.g.
+`brew:` alongside `npm:`) —
 use the upstream name, `packages[0]` for npm):
 
 ```markdown
@@ -661,14 +662,14 @@ use the upstream name, `packages[0]` for npm):
 
 #### HIGH PRIORITY / IMMEDIATE ACTION (security-flagged — do not defer)
 1. **brew-cosign** — prior `[security]` observation on file; currently
-   `Drifted >30d`. Run: `/tool-intel brew:cosign`
+   `Drifted >30d`. Run: `/intel brew:cosign`
 
 #### Routine (Drifted >30d)
-1. **brew-bat** `[patch]` — Run: `/tool-intel brew:bat`
-2. **brew-deno** `[semver-minor-multi]` — Run: `/tool-intel brew:deno`
-3. **npm-fastify** `[patch]` — Run: `/package-intel npm:fastify`
-4. **crate-serde** `[patch]` — Run: `/package-intel crate:serde`
-5. **cask-warp** `[patch]` — Run: `/tool-intel cask:warp`
+1. **brew-bat** `[patch]` — Run: `/intel brew:bat`
+2. **brew-deno** `[semver-minor-multi]` — Run: `/intel brew:deno`
+3. **npm-fastify** `[patch]` — Run: `/intel npm:fastify`
+4. **crate-serde** `[patch]` — Run: `/intel crate:serde`
+5. **cask-warp** `[patch]` — Run: `/intel cask:warp`
 ```
 
 Nothing in this report has been executed by this agent — it is the Section
@@ -768,7 +769,7 @@ Report everything done:
 - Added ## Relations to 3 notes
 - Fixed frontmatter type on 2 npm notes
 - Linked 4 orphan notes
-- Created 2 new npm notes via /package-intel
+- Created 2 new npm notes via /intel
 
 ### Applied after confirmation (N items)
 - Merged npm-lodash + npm-lodash-es

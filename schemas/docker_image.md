@@ -44,7 +44,7 @@ Preferred relation labels for Docker image notes:
 ## Observations
 
 - [purpose] Schema for Docker image notes in the docker/ directory
-- [convention] `tags` maps to the `## Tags` section tool-intel writes
+- [convention] `tags` maps to the `## Tags` section `intel` writes
 - [convention] Always note whether the image has an official Docker Hub presence vs third-party registry
 - [convention] `security` captures CVEs and image vulnerabilities; distinguish from `gotcha` (usage pitfalls)
 

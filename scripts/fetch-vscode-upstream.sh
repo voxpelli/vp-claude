@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# spec: skills/tool-intel/references/ecosystem-vscode.md
+# spec: skills/intel/references/ecosystem-vscode.md
 #
 # Fetch upstream facts for a list of VSCode extension IDs from BOTH the Open
 # VSX registry (authoritative — what the note links to and what a refresh

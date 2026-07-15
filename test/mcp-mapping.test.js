@@ -32,16 +32,18 @@ describe('MCP mappings', () => {
   })
 
   it('VP_KNOWLEDGE_SKILL_NAMES contains expected skills', () => {
-    assert.ok(VP_KNOWLEDGE_SKILL_NAMES.has('package-intel'))
+    assert.ok(VP_KNOWLEDGE_SKILL_NAMES.has('intel'))
     assert.ok(VP_KNOWLEDGE_SKILL_NAMES.has('knowledge-prime'))
-    assert.ok(VP_KNOWLEDGE_SKILL_NAMES.has('tool-intel'))
+    assert.ok(VP_KNOWLEDGE_SKILL_NAMES.has('nudge'))
     assert.ok(VP_KNOWLEDGE_SKILL_NAMES.has('schema-evolve'))
   })
 
-  it('VP_KNOWLEDGE_SKILL_NAMES contains the nudge pair (they call mcp__basic-memory__ tools)', () => {
-    // Regression: a prior comment wrongly excluded these as "no mcp__* tools".
-    assert.ok(VP_KNOWLEDGE_SKILL_NAMES.has('nudge-sync'))
-    assert.ok(VP_KNOWLEDGE_SKILL_NAMES.has('nudge-adoption'))
+  it('VP_KNOWLEDGE_SKILL_NAMES no longer carries the pre-0.33.0 merged-away skills', () => {
+    // Wave 3 (0.33.0) merged package-intel + tool-intel -> intel and
+    // nudge-sync + nudge-adoption -> nudge. Guard against a stale re-add.
+    for (const gone of ['package-intel', 'tool-intel', 'nudge-sync', 'nudge-adoption']) {
+      assert.ok(!VP_KNOWLEDGE_SKILL_NAMES.has(gone), `${gone} should be gone after the 0.33.0 merge`)
+    }
   })
 
   it('parseMcpToolName splits server and tool (the raw split the proxy path uses)', () => {

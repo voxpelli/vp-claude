@@ -25,7 +25,7 @@ answer includes a confidence tier (Direct, Partial, or No Coverage) so the user
 knows how much the graph actually covers.
 
 Read-only -- never writes or modifies notes. When coverage is incomplete, suggests
-`/package-intel`, `/tool-intel`, or `/knowledge-gaps` to fill the gap.
+`/intel` or `/knowledge-gaps` to fill the gap.
 
 ## Arguments
 
@@ -46,7 +46,7 @@ a fast existence check via `list_directory` in addition to the hybrid search.
 ## Edge Cases
 
 - **No results** -- assign "No Coverage" confidence. Report "Basic Memory has no
-  notes matching this question." Suggest `/package-intel <pkg>` or `/tool-intel`
+  notes matching this question." Suggest `/intel <pkg>`
   if the query looks like a package or tool name.
 - **BM unavailable** -- report the error and suggest trying again later. The
   PostToolUseFailure hook covers BM write-tool errors only; read-tool failures
@@ -56,7 +56,7 @@ a fast existence check via `list_directory` in addition to the hybrid search.
   topics\] -- narrow your query for those."
 - **Package/tool not in BM** -- if a prefixed query (e.g., `npm:undici`) has no
   `list_directory` match and no search results, report "No note found for
-  `npm:undici`." and suggest `/package-intel undici` to create it.
+  `npm:undici`." and suggest `/intel undici` to create it.
 - **Very broad query** -- if the query maps to an entire ecosystem directory
   (e.g., "what do I know about npm packages"), use
   `list_directory(dir_name="npm", depth=1)` to report directory-level counts
@@ -168,7 +168,7 @@ never hallucinate facts not present in the loaded notes.>
 
 ### Coverage Gaps
 <Only if Partial or No Coverage>
-- **<subject>** -- Not documented. Run `/package-intel <pkg>` to create.
+- **<subject>** -- Not documented. Run `/intel <pkg>` to create.
 ````
 
 **Rules:**
@@ -189,6 +189,6 @@ never hallucinate facts not present in the loaded notes.>
 - **Cite sources** -- every factual claim must reference a `[[note-title]]`
 - **Prefer precision** -- a narrow accurate answer beats a broad speculative one
 - **Gap-fill suggestions** -- when coverage is incomplete, suggest the right
-  skill to fill it (`/package-intel`, `/tool-intel`, or `/knowledge-gaps`)
+  skill to fill it (`/intel` or `/knowledge-gaps`)
 - **Max 1-hop traversal** -- stop at direct neighbors to keep latency low and
   avoid context bloat

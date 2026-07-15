@@ -330,8 +330,8 @@ Report knowledge gaps — burst topics with 0 or weak BM coverage:
 
 | Burst Topic | BM Coverage | Suggestion |
 |-------------|-------------|------------|
-| stylelint | 1 note (thin) | Run `/package-intel npm:stylelint` |
-| react-testing | 0 notes | Consider `/package-intel` or concept note |
+| stylelint | 1 note (thin) | Run `/intel npm:stylelint` |
+| react-testing | 0 notes | Consider `/intel` or concept note |
 | GitHub Marketplace | 0 notes | Low priority — browsing, not research |
 ````
 

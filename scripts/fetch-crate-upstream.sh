@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# spec: skills/package-intel/references/ecosystem-crates.md
+# spec: skills/intel/references/ecosystem-crates.md
 #
 # Fetch upstream facts for a list of Rust crate names from the crates.io API.
 # Reads crate names from stdin (one per line), emits NDJSON per name to stdout.

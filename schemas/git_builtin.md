@@ -58,7 +58,7 @@ Beyond the schema-required fields above, git_builtin notes typically carry:
 - `url:` — canonical `git-scm.com/docs/git-<cmd>` documentation URL
 - `since_version:` — Git version that introduced the subcommand (e.g. `2.44.0`)
 - `stability:` — current state (`experimental` | `stable` | `deprecated`)
-- `source:` — provenance stamp (`memory-research`, `tool-intel`, etc.)
+- `source:` — provenance stamp (`memory-research`, `intel`, etc.)
 - `tags:` — must include `git-builtin`; other tags vary by command domain
 
 ## Calibration rule

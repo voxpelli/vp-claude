@@ -45,7 +45,7 @@ argument as the person's name.
 
 ### Step 1: Check for existing note
 
-<!-- This pattern is mirrored in package-intel and tool-intel — update all when changing -->
+<!-- This pattern is mirrored in intel's shared references/note-lookup-and-freshness.md (both families) — update all when changing -->
 
 Search by name across person notes:
 ```
@@ -86,7 +86,7 @@ Launch these research queries simultaneously:
 
 People are key connectors in the knowledge graph — a single person may be
 referenced across engineering, indieweb, security, and accessibility clusters.
-The BM step is therefore deeper than in package-intel or tool-intel.
+The BM step is therefore deeper than in either of `intel`'s families.
 
 If a note exists, build context with depth 2 to discover second-hop connections:
 ```
@@ -180,7 +180,7 @@ ask_question(repo="<github-username>/<primary-repo>", question="What are this pr
 ```
 
 The goal is understanding the person's approach through their work, not
-documenting the package API (that's what `/package-intel` does).
+documenting the package API (that's what `/intel` does).
 
 If no GitHub presence is evident, skip and note "source e: no GitHub
 presence found".
@@ -221,7 +221,7 @@ lines. BM's parser treats any `[[` as a relation boundary — the text before it
 becomes the `relation_type` field (max 200 chars), causing validation failures.
 Put all wiki-links in `## Relations` only.
 
-<!-- people-intel's verify/contradiction block is the shaped (non-byte-identical) variant of the package-intel/tool-intel verify-before-capture block — it diverges on person claims + the [controversy] category, so keep its SHAPE aligned by review (it is not byte-mirrored). -->
+<!-- people-intel's verify/contradiction block is the shaped (non-byte-identical) variant of intel's shared references/verify-before-capture.md block — it diverges on person claims + the [controversy] category, so keep its SHAPE aligned by review (it is not byte-mirrored). -->
 **Verify before capture (mandatory self-check — not CI-enforced).** This step is
 required for the conditions below — not enforced by CI, but the same class of
 obligation as the LLM-judgment fourth-wall rules. Unlike the Step 1 freshness
@@ -269,7 +269,7 @@ of quietly asserting a resolution the evidence doesn't support.
 
 ### Step 4: Write or update the note
 
-<!-- This pattern is mirrored in package-intel and tool-intel — update all when changing -->
+<!-- This pattern is mirrored in intel's shared references/note-lookup-and-freshness.md (both families) — update all when changing -->
 
 **New person:** Use `write_note` with the full template. Set
 `note_type="person"`. Emit `aliases: ["<Full Name>"]` in the frontmatter — the
@@ -349,7 +349,7 @@ in their body text or observations but lack a wiki-link back to them:
 search_notes(query="<name>", search_type="text", page_size=15)
 ```
 
-The page size is larger than in package-intel because person names appear in
+The page size is larger than in `intel`'s package family because person names appear in
 prose more often than package names. Filter carefully — only add links where
 the mention is substantive (attributing a quote, citing their work, listing
 them as a creator). Do not link notes that mention the name only in passing.

@@ -128,7 +128,7 @@ one repo share a note). No tiering — every installed item is equally "used".
 ## Plugin/Skill Coverage Report (user-global)
 
 ### Claude Code Plugins: X/Y documented
-| Plugin | /tool-intel address | BM coverage |
+| Plugin | /intel address | BM coverage |
 |--------|---------------------|-------------|
 | vp-knowledge (voxpelli/vp-claude) | plugin:voxpelli/vp-claude#vp-knowledge | ✓ documented |
 | context7 (anthropics/claude-plugins-official) | plugin:anthropics/claude-plugins-official#context7 | ✗ undocumented |
@@ -136,7 +136,7 @@ one repo share a note). No tiering — every installed item is equally "used".
 
 ### Agent Skills (skills.sh): X/Y documented
 One row per source repo (skill dirs sharing a repo collapse to one note).
-| Skill bundle | /tool-intel address | Skills installed | BM coverage |
+| Skill bundle | /intel address | Skills installed | BM coverage |
 |--------------|---------------------|------------------|-------------|
 | basicmachines-co/basic-memory-skills | skill:basicmachines-co/basic-memory-skills | memory-research, memory-notes (+7) | ✗ undocumented |
 | vercel-labs/skills | skill:vercel-labs/skills | find-skills | ✓ documented |

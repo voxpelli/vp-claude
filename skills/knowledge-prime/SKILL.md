@@ -209,16 +209,16 @@ Produce a structured context brief:
 ### Gaps worth filling
 - Top undocumented dep: `undici`
 - Run `/knowledge-gaps` for full coverage analysis
-- Run `/package-intel undici` to document the top gap
+- Run `/intel undici` to document the top gap
 ````
 
 ### 7. Suggest next steps
 
 Based on the brief:
 - If undocumented deps exist in the detected stack: suggest
-  `/package-intel <pkg>` for the top one
+  `/intel <pkg>` for the top one
 - If no manifest files found: suggest running in a project directory
 - If knowledge graph is empty for all detected ecosystems: suggest
-  `/knowledge-gaps` first, then batch `/package-intel`
+  `/knowledge-gaps` first, then batch `/intel`
 - If all deps are documented: note good coverage, suggest checking
   for staleness with the knowledge-gardener agent

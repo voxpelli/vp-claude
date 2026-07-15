@@ -95,7 +95,7 @@ Always `github_action` (snake_case). Not `github-action` or `gh_action`.
 
 This template file uses `````markdown` (4 backticks) as the outer fence
 because the note content contains inner ` ``` ` fences (YAML blocks). The
-same pattern is used in the crates/go/pypi templates in package-intel.
+same pattern is used in the crates/go/pypi templates.
 
 ### Relations
 

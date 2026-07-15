@@ -60,20 +60,18 @@ export function flattenMcpToolName (claudeName) {
  * @type {Set<string>}
  */
 export const VP_KNOWLEDGE_SKILL_NAMES = new Set([
+  'intel',
   'knowledge-ask',
   'knowledge-gaps',
   'knowledge-garden',
   'knowledge-maintain',
   'knowledge-prime',
-  'nudge-adoption',
-  'nudge-sync',
-  'package-intel',
+  'nudge',
   'people-intel',
   'raindrop-triage',
   'schema-evolve',
   'session-bookmarks',
   'session-reflect',
   'tag-sync',
-  'tool-intel',
   'vp-note-quality',
 ])

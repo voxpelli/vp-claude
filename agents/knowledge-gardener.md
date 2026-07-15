@@ -247,8 +247,8 @@ zero-link but `build_context` finds relations, or vice versa) indicate an
 index-vs-file divergence worth flagging in the audit report. Notes
 appearing in BOTH the Pass 0 set AND the Pass 1+2 set are high-confidence
 zero-link orphans — report them under **Warning** with the suggested
-remediation: add appropriate wiki-links via `/package-intel`,
-`/tool-intel`, or a manual `edit_note`.
+remediation: add appropriate wiki-links via `/intel`,
+`/intel`, or a manual `edit_note`.
 
 **Gate:** If Step 0.5 ran and `isolated_entities == 0`, skip Pass 1 entirely —
 the graph has no zero-link notes. Record "0 zero-link orphans (confirmed via
@@ -320,8 +320,8 @@ Ecosystem → directory mapping:
 - `[[gh-*]]` → `gh/`
 
 Report frequently-referenced but undocumented packages as candidates for
-`/package-intel` with the appropriate prefix (e.g., `/package-intel crate:serde`).
-Report undocumented tools as candidates for `/tool-intel` (e.g., `/tool-intel brew:ripgrep`).
+`/intel` with the appropriate prefix (e.g., `/intel crate:serde`).
+Report undocumented tools as candidates for `/intel` (e.g., `/intel brew:ripgrep`).
 
 ### 4b. Cross-plugin friction awareness
 
@@ -475,7 +475,7 @@ guard and the semver-range/channel-mismatch regressions.
 | 6 | Registry/prose fallback | `- **Version**: 0.11.13 (…)` / `Current: v3.2.4 (…)` |
 
 Pattern 3 reads the version straight from the note's `observations` array — the
-canonical `[version]` slot. The `/package-intel` npm template **emits it since
+canonical `[version]` slot. The `/intel` npm template **emits it since
 0.31.4** (71 npm notes backfilled); the other five package cohorts
 (crate/go/composer/pypi/gem) **emit it since bead `f3zx`**. **"Emitted" is not
 "read first" for most cohorts:** under the base first-hit-wins order, Pattern 1
@@ -648,7 +648,7 @@ structure — this is exactly the 0.31.4 yaml/semver incident's failure mode)
 **AND** the note's frontmatter `updated_at` is more recent than the upstream
 registry's last-observed movement (guard (b): the upstream release date,
 derivable from today's date minus the script's `days_stale` — the established
-`updated_at` freshness field also used by package-intel/tool-intel/
+`updated_at` freshness field also used by intel/
 people-intel) → **treated as current, no bucket entry** — a real, legitimate
 state (a note tracks a `@latest` channel that moves faster than a versioned
 registry entry — `cask-claude-code` tracking `claude-code@latest 2.1.170`
@@ -727,9 +727,9 @@ rules key off these strings to decide each target's queue lane (Routine,
 HIGH PRIORITY / IMMEDIATE ACTION, or "Needs Your Approval") — it does not
 auto-fix anything itself; see the current Section 3b in
 `agents/knowledge-maintainer.md`. The refresh command in each bullet follows the
-note prefix: `brew`/`cask`/`vscode` → `/tool-intel <prefix>:<name>`; `npm` →
-`/package-intel npm:<name>`; `crate` → `/package-intel crate:<name>`; `plugin`
-→ `/tool-intel plugin:<owner>/<repo>[#<name>]` (reconstruct the colon-prefixed
+note prefix: `brew`/`cask`/`vscode` → `/intel <prefix>:<name>`; `npm` →
+`/intel npm:<name>`; `crate` → `/intel crate:<name>`; `plugin`
+→ `/intel plugin:<owner>/<repo>[#<name>]` (reconstruct the colon-prefixed
 form from the recovered `owner/repo#name` join-back key — just add the
 `plugin:` prefix). Use the recovered upstream name — `packages[0]` for npm.
 The bullet examples below are shown for the brew cohort; substitute the prefix
@@ -742,7 +742,7 @@ inline — the maintainer keys off `[semver-major]` to order its Refresh
 Queue's Routine lane):
 ```
 - **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago) [<distance-class>]
-  — refresh via `/tool-intel brew:<name>`
+  — refresh via `/intel brew:<name>`
 ```
 Where `<distance-class>` is `semver-major`, `semver-minor-multi`, `patch`,
 or `distance-unknown`. Omit the bracketed annotation only when distance
@@ -752,7 +752,7 @@ needed).
 `Drifted, age unknown`:
 ```
 - **brew-<name>** v<bm_version> → v<upstream_version> (release date not available)
-  — refresh via `/tool-intel brew:<name>`
+  — refresh via `/intel brew:<name>`
 ```
 
 `Archive candidates`:
@@ -763,7 +763,7 @@ needed).
 
 `Unparseable` (one bullet listing all):
 ```
-- brew-<name1>, brew-<name2>, ... — version not extractable from note content; run `/tool-intel brew:<name>` to restore the metadata layer
+- brew-<name1>, brew-<name2>, ... — version not extractable from note content; run `/intel brew:<name>` to restore the metadata layer
 ```
 
 `Not in registry` (one bullet listing all — covers formulae routed here by
@@ -784,10 +784,10 @@ from its marketplace.
 `marketplace_version` is **marketplace-only** — the Open VSX namespace is
 unclaimed/squattable and fork-IDEs (Cursor/Windsurf/Codium) resolve installs
 against it. Annotate these as a ⚠ security exposure and recommend a
-`/tool-intel vscode:<id>` refresh (which records the Open VSX trust signal);
+`/intel vscode:<id>` refresh (which records the Open VSX trust signal);
 an empty `marketplace_version` is the benign not-published-anywhere case:
 ```
-- vscode-<pub>.<ext> (Marketplace v<x> — not on Open VSX) ⚠ squattable namespace (fork-IDE exposure); refresh via `/tool-intel vscode:<pub>.<ext>`
+- vscode-<pub>.<ext> (Marketplace v<x> — not on Open VSX) ⚠ squattable namespace (fork-IDE exposure); refresh via `/intel vscode:<pub>.<ext>`
 ```
 
 `API unavailable` (one line):
@@ -1084,8 +1084,9 @@ the date suffix be stripped while leaving the substantive content intact.
 ### 13. Session-refresh version/maintainer contradiction audit
 
 **Narrow and high-precision by design — this is the one mechanically
-checkable sliver of the "verify-before-capture" convention (documented
-identically in `package-intel`/`tool-intel` SKILL.md), not a general
+checkable sliver of the "verify-before-capture" convention (documented in
+`skills/intel/references/verify-before-capture.md`, shared by both research
+families), not a general
 contradiction-recall or coverage claim.** That convention says a
 contradiction discovered while refreshing a note should be recorded as a
 `[gotcha]` observation; everything else about verify-before-capture (source-
@@ -1274,7 +1275,7 @@ near-miss). This step never writes and never runs `/schema-evolve` itself.
 ### Critical (broken or incomplete)
 - [note-title] — missing ## Observations section
 - [note-title] — missing ## Relations section
-- [note-title] — file-missing orphan (BM index row points at a markdown file that no longer exists on disk; surfaced by Step 3 Pass 0 via `bm orphan`) — re-run `/package-intel` / `/tool-intel` to restore, or remove the dead index row
+- [note-title] — file-missing orphan (BM index row points at a markdown file that no longer exists on disk; surfaced by Step 3 Pass 0 via `bm orphan`) — re-run `/intel` to restore, or remove the dead index row
 
 ### Warning (quality issues)
 - [note-title] — zero-link orphan note (file exists, zero incoming + outgoing links)
@@ -1345,21 +1346,21 @@ for these headings and the canonical `#### <bucket>` sub-headings — keep them
 character-exact.)*
 
 #### Drifted >30d
-- **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago) [<distance-class>] — refresh via `/tool-intel brew:<name>`
-- **brew-dolt** v1.84.0 → v2.0.1 (released 4d ago) [semver-major] — refresh via `/tool-intel brew:dolt` *(example: escalated by distance, not age)*
+- **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago) [<distance-class>] — refresh via `/intel brew:<name>`
+- **brew-dolt** v1.84.0 → v2.0.1 (released 4d ago) [semver-major] — refresh via `/intel brew:dolt` *(example: escalated by distance, not age)*
 
 #### Archive candidates
 - **brew-<name>** v<bm_version> — formula deprecated upstream; archive via `move_note(identifier="brew-<name>", new_path="archive/brew-<name>")`
 
 #### Drifted <30d
-- **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago) [<distance-class>] — refresh via `/tool-intel brew:<name>`
-- **brew-stale-tracker** v3.4.0 → v3.2.1 (released 2d ago) [patch] [ahead-of-registry?] — refresh via `/tool-intel brew:stale-tracker` *(example: rule 4b — guard (a) holds (3.4.0 is cleanly ahead of 3.2.1) but the note's `updated_at` predates this release, so it stays in Drifted flagged for human judgment rather than auto-resolved as benign)*
+- **brew-<name>** v<bm_version> → v<upstream_version> (released <days_stale>d ago) [<distance-class>] — refresh via `/intel brew:<name>`
+- **brew-stale-tracker** v3.4.0 → v3.2.1 (released 2d ago) [patch] [ahead-of-registry?] — refresh via `/intel brew:stale-tracker` *(example: rule 4b — guard (a) holds (3.4.0 is cleanly ahead of 3.2.1) but the note's `updated_at` predates this release, so it stays in Drifted flagged for human judgment rather than auto-resolved as benign)*
 
 #### Drifted, age unknown
-- **brew-<name>** v<bm_version> → v<upstream_version> (release date not available) — refresh via `/tool-intel brew:<name>`
+- **brew-<name>** v<bm_version> → v<upstream_version> (release date not available) — refresh via `/intel brew:<name>`
 
 #### Unparseable
-- brew-<name1>, brew-<name2> — version not extractable from note content; run `/tool-intel brew:<name>` to restore the metadata layer
+- brew-<name1>, brew-<name2> — version not extractable from note content; run `/intel brew:<name>` to restore the metadata layer
 
 #### Not in registry
 - brew-<name1>, brew-<name2> — tap-installed formulae (or renamed/removed) not in central API; drift check skipped
@@ -1385,7 +1386,7 @@ character-exact.)*
 - **Prioritize**: Report Critical items first, then Warnings, then Info.
 - **Be specific**: Include note titles, missing sections, and exact issues.
 - **Suggest fixes**: For each issue, suggest what action to take (e.g.,
-  "run /package-intel for \<pkg\>", "add ## Relations to \<note\>").
+  "run /intel for \<pkg\>", "add ## Relations to \<note\>").
 - **Be efficient**: Use `list_directory` before `search_notes`. Use
   `page_size` and `max_related` to control response sizes. Paginate
   rather than requesting everything at once.

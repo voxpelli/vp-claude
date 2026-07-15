@@ -1,12 +1,9 @@
 # Upgrade Haul — Batch Note Refresh from an Upgrade/Outdated Line
 
-Shared reference for `package-intel` and `tool-intel`. The file lives under
-`package-intel/references/`; both skills point here via the full
-`${CLAUDE_PLUGIN_ROOT}/skills/package-intel/references/upgrade-haul.md` path
-— `tool-intel` is a separate skill directory, so it must use this full
-plugin-relative path rather than a bare `references/...` path, which would
-resolve relative to its own directory instead. This cross-skill reference is an
-accepted, documented portability trade-off (see `docs/design/triple-harness-notes.md`).
+Shared by both `/intel` families (package and tool). Loaded as a bare
+`upgrade-haul.md` from the skill body. It is the ecosystem-agnostic **executor**
+core; each family supplies an adapter (see
+[Per-family adapter contract](#per-family-adapter-contract)).
 
 ## Contents
 
@@ -17,7 +14,7 @@ accepted, documented portability trade-off (see `docs/design/triple-harness-note
 - [Stale-cache arbitration](#stale-cache-arbitration)
 - [Batch orchestration](#batch-orchestration)
 - [Relationship to `--stale`](#relationship-to---stale)
-- [Per-skill adapter contract](#per-skill-adapter-contract)
+- [Per-family adapter contract](#per-family-adapter-contract)
 
 ## When to use this file
 
@@ -28,13 +25,13 @@ version + changelog brought current. This is the **executor** side of version
 drift: `/knowledge-gaps --stale` *detects* drift; an upgrade haul *closes* it,
 either from a `--stale` handoff or directly from a pasted upgrade line.
 
-It is distinct from a single `/package-intel <pkg>` / `/tool-intel <prefix>:<name>`
+It is distinct from a single `/intel <prefix>:<name>`
 research call in three ways: the input is a **batch** (and often prefix-less),
 the unit of work is a **version delta** (not a from-scratch note), and the
 synthesis is a **curated changelog reel** for that delta rather than a full
 note rebuild. The ecosystem-agnostic core lives here; input dialect, ecosystem
-routing, and the prose target are delegated to each skill — see
-[Per-skill adapter contract](#per-skill-adapter-contract).
+routing, and the prose target are delegated to each family — see
+[Per-family adapter contract](#per-family-adapter-contract).
 
 ## Input parsing
 
@@ -90,7 +87,7 @@ not a raw commit dump:
   flipped, a feature gated off. (Dogfood: a `glab` flag rename and a `biome`
   default flip were caught only because the reel was curated, not skimmed.)
 - **One reel per note**, scoped to that note's own delta. Recover the changelog
-  through the skill's normal changelog source (release notes → tags/compare
+  through the family's normal changelog source (release notes → tags/compare
   fallback); this file does not re-document that pipeline.
 
 ## Two recording axes
@@ -130,7 +127,7 @@ type supports them:
 
 **Slot-hardening is complete.** The canonical `[version]` schema slot has
 shipped across all package cohorts (bead `f3zx`) and brew/cask/vscode (bead
-`80r4`) — every cohort this skill or `tool-intel` touches now defines it. The
+`80r4`) — every cohort this skill touches now defines it. The
 haul records the `[version]` observation by convention on every refresh, no
 cohort-specific gating remains.
 
@@ -169,7 +166,7 @@ figures disagree:
 Defaults for running the haul over the resolved list:
 
 - **Each item starts on the freshness fast-path.** Run every identifier through
-  the skill's **Step 1: Check for existing note** — the existing note plus its
+  the family's **Step 1: Check for existing note** — the existing note plus its
   recorded version is the delta's left endpoint, and the freshness tier prunes
   the source pipeline. A haul is by definition a refresh, so most items hit the
   fast path.
@@ -235,8 +232,8 @@ Upgrade haul is the **executor** half of a bidirectional pair with the
 `--stale` **detector**:
 
 - **Detector → executor:** `knowledge-gaps --stale` finds drifted notes and, in
-  its *S7 Offer batched refresh* step, routes the top stale items into these
-  skills as a batch. That handoff IS an upgrade haul.
+  its *S7 Offer batched refresh* step, routes the top stale items into this
+  skill as a batch. That handoff IS an upgrade haul.
 - **Executor → detector:** a haul refreshes the same Axis-A slot `--stale` reads
   — the `[version]` observation (**Pattern 3**) for npm, the inline header
   pipe (**Pattern 1**) for every other cohort — plus, for every package
@@ -247,9 +244,9 @@ The detector side is documented in
 `skills/knowledge-gaps/references/staleness-detection.md` (S7 offer + S2
 version-extraction patterns); that file carries the reverse pointer back here.
 
-## Per-skill adapter contract
+## Per-family adapter contract
 
-Three things are **delegated to each skill's adapter section** — the core above
+Three things are **delegated to each family's adapter section** — the core above
 deliberately does not hardcode them. An adapter MUST define:
 
 1. **Input dialect** — how its identifiers look and how to recognize its
@@ -259,14 +256,14 @@ deliberately does not hardcode them. An adapter MUST define:
    sub-routing (e.g. formula-vs-cask auto-routing on a `not-in-api` signal, and
    globbing every relevant note directory in the Step-1 existence check).
 3. **Axis-B narrative target** — *where* the curated reel is written:
-   `## Release Highlights` for `package-intel`; inline `[feature]` / `[version]`
-   observations for `tool-intel`. Target resolution need not be a fixed
-   section/inline convention — an adapter may resolve it dynamically instead,
-   e.g. by checking the subject note's Relations for a linked timeline note and
-   routing the reel there when one exists, falling back to its default target
-   otherwise (see the tool-intel adapter's linked-timeline-note check for the
-   worked mechanics).
+   `## Release Highlights` for the **package** family; inline `[feature]` /
+   `[version]` observations for the **tool** family. Target resolution need not
+   be a fixed section/inline convention — an adapter may resolve it dynamically
+   instead, e.g. by checking the subject note's Relations for a linked timeline
+   note and routing the reel there when one exists, falling back to its default
+   target otherwise (see the tool family adapter `upgrade-haul-adapter-tool.md`
+   linked-timeline-note check for the worked mechanics).
 
 Axis A (the machine-readable version slot, per its cohort-dependent
 definition above) and everything else above are shared and identical across
-both skills.
+both families.

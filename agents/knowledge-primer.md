@@ -181,13 +181,13 @@ Produce the context brief:
 ### Gaps worth filling
 - Top undocumented dep: `prefix-name` (N imports)
 - Run `/knowledge-gaps` for full coverage analysis
-- Run `/package-intel <pkg>` to document the top gap
+- Run `/intel <pkg>` to document the top gap
 ````
 
 ### 7. Suggest next steps
 
 Based on the brief:
-- Undocumented deps exist → suggest `/package-intel <pkg>` for the top one
+- Undocumented deps exist → suggest `/intel <pkg>` for the top one
 - No manifest files found → suggest running in a project directory
 - Graph empty for all detected ecosystems → suggest `/knowledge-gaps` first
 - All deps documented → note good coverage, suggest knowledge-gardener for

@@ -1,21 +1,35 @@
 # `gh api` Fallback for Niche or Poorly-Indexed Repos
 
-When DeepWiki (Step 3a) returns empty, wrong-repo, or hallucinated
-answers, use `gh api` against the tool's source repository as a
-structured-data fallback. **Scope**: applies fully to `action:`, `gh:`,
-and `docker:` prefixes — the GitHub-rooted ecosystems where `gh` is most
-useful — and **conditionally to `brew:`** (see below). Skip for `cask:`
-and `vscode:`.
+When DeepWiki (in tool enrichment) or Context7 (package family only) return
+empty, wrong-repo, or hallucinated answers, use `gh api` against the target's
+source repository as a structured-data fallback. The endpoints below produce
+stable JSON on documented GitHub REST API paths.
 
-For `brew:`, the registry stable version (`versions.stable` from
-formulae.brew.sh) is the authoritative version source — so you do not
-need `gh api` for the version itself. But git tags are still useful when
-the formula's stable version is *newer* than the upstream repo's newest
-GitHub Release (the maintainer tagged and shipped to the formula without
-cutting a Release — the `brew:sem` shape). In that case
-`gh api repos/<owner>/<repo>/tags` recovers the changelog-bearing tag
-that the release list omits. The `brew:` changelog step (Step 3d) points
-here for exactly this case.
+## Applicability by prefix
+
+`gh api` is GitHub-rooted, so its usefulness varies by ecosystem. Each cell
+below is grounded in a documented behavior — the only genuinely inferential
+rows are `plugin:`/`skill:`, which **invert** the fallback framing (see the note
+after the table).
+
+| Prefix | Family | `gh api` role | Basis |
+|--------|--------|---------------|-------|
+| `npm` | package | **Fallback** — when Context7 misses or the package is poorly indexed; and for changelog-from-tags | Context7-miss + poor-indexing triggers below |
+| `crate`, `go`, `composer`, `pypi`, `gem` | package | **Fallback (often primary structural source)** — Context7 coverage is sparse or absent for non-npm ecosystems | "Context7 returns 'no library found' / unrelated match for non-npm ecosystems" trigger below |
+| `brew` | tool | **Conditional** — registry `versions.stable` (formulae.brew.sh) is authoritative for the version; use `gh api .../tags` only to recover a changelog-bearing tag when the stable version is newer than the upstream repo's newest GitHub Release | tool enrichment brew changelog step |
+| `cask` | tool | **Skip** — `cask.json` is authoritative; the artifact is a prebuilt app and its changelog is rarely GitHub-rooted | tool enrichment scope |
+| `vscode` | tool | **Skip** — Open VSX / VS Marketplace are authoritative for version and changelog | tool enrichment scope |
+| `action` | tool | **Full** — GitHub-rooted; `action.yml` is the canonical inputs/outputs source | Per-Prefix Notes below |
+| `gh` | tool | **Full** — `gh release list` drives `runtime_shape`; `contents/` inspects the script entry point | Per-Prefix Notes below |
+| `docker` | tool | **Full** — find the GitHub source repo (Docker Hub `source` field / description link), then use the contents/commits/contributors endpoints | Per-Prefix Notes below |
+| `plugin` | tool | **Primary (not a fallback)** — no registry exists; `plugin.json` is resolved live via `gh api`, and the changelog comes from tags/commits | `--stale plugin` is "gh-api-based, not registry-based" |
+| `skill` | tool | **Source-only** — the bundle's `owner/repo` source lives on GitHub (`contents`/`commits`), but there is no canonical registry version | `--stale skill` unsupported |
+
+**`plugin:`/`skill:` framing note.** For every other prefix, `gh api` is what
+you reach for *after* DeepWiki/Context7 miss. For `plugin:` it is the
+*first-line* source of truth (there is no registry and DeepWiki rarely indexes a
+plugin repo), and for `skill:` it is the only structural source for the bundle's
+contents. The same endpoints apply — you just don't wait for a miss to use them.
 
 ## Contents
 
@@ -23,6 +37,7 @@ here for exactly this case.
 - [Endpoints](#endpoints)
 - [Recovering a Version/Changelog from Tags](#recovering-a-versionchangelog-from-tags)
 - [Per-Prefix Notes](#per-prefix-notes)
+- [Cross-Contributor Discovery](#cross-contributor-discovery)
 - [Verification Rule](#verification-rule)
 - [Cross-Link](#cross-link)
 
@@ -43,6 +58,11 @@ Trigger conditions:
   but DeepWiki has no useful answer (alpha-quality bash extensions
   are commonly missing from DeepWiki's index even when they have
   releases).
+- **(package family)** Context7 returns "no library found" or an unrelated
+  package match for non-npm ecosystems (Go modules, Composer packages, Python
+  with sparse coverage).
+- The target is small, recently published, or maintained by an
+  individual (poor-indexing risk).
 - DeepWiki cites specific issue or PR numbers — verify they are
   actually open and current, not closed years ago.
 
@@ -50,7 +70,7 @@ Trigger conditions:
 
 | Goal | Command |
 |------|---------|
-| README, action.yml, manifest, source files | `gh api repos/<owner>/<repo>/contents/<path>` |
+| README, `action.yml`, manifest, source files | `gh api repos/<owner>/<repo>/contents/<path>` |
 | Change history | `gh api repos/<owner>/<repo>/commits` |
 | Git tags (when the release list is stale or empty) | `gh api repos/<owner>/<repo>/tags --jq '.[].name'` |
 | Issue freshness verification | `gh issue view <n> --repo <owner>/<repo> --json state,title,closedAt` |
@@ -65,8 +85,9 @@ path: `gh api repos/<owner>/<repo>/contents` returns an array.
 
 ## Recovering a Version/Changelog from Tags
 
-When the release list lags the true latest version, recover from tags —
-but five GitHub API/CHANGELOG behaviors will silently mislead a naive read:
+When the release list lags the registry / true latest version, recover from
+tags — but five GitHub API/CHANGELOG behaviors will silently mislead a naive
+read:
 
 - **`/tags` is ordered by creation/reachability, not semver.** Do not
   treat `.[0]` (or the first line) as "newest." Collect the tags, parse
@@ -125,13 +146,28 @@ but five GitHub API/CHANGELOG behaviors will silently mislead a naive read:
 - **`docker:`** — find the GitHub source repo via the Docker Hub
   `source` field or repository link in the image description, then
   use the contents/commits/contributors endpoints against that repo.
+- **`plugin:`** — resolve `plugin.json` live (the `--stale plugin`
+  mechanism: read the marketplace-hosted identifier's `plugin.json`
+  path via `marketplace.json`, then `.version`). No registry exists, so
+  this is the primary version source, and tags/commits supply the
+  changelog.
+
+## Cross-Contributor Discovery
+
+Running `gh api repos/<owner>/<repo>/contributors --jq '.[].login'` on
+a small repo can reveal hidden integration depth — Sprint 19 found
+`ldez` (a golangci-lint maintainer) among `bodyclose`'s top
+contributors, revealing that `bodyclose` is *de facto* part of
+golangci-lint's quality net, actively shepherded rather than passive.
 
 ## Verification Rule
 
 When DeepWiki returns claims about specific issues or PRs by number,
 **always** run `gh issue view <n> --repo <r> --json state` to confirm
 the issue is OPEN and its current state matches the claim. Closed-years-
-ago issues read as live concerns when web-search snippets cite them.
+ago issues read as live concerns when web-search snippets cite them —
+RETRO-19 documents `golangci-lint#608` (closed 2019-09-23) being
+quoted as a live panic concern in 2026.
 
 ## Cross-Link
 

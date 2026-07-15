@@ -85,5 +85,5 @@ that reaches it (e.g. `/knowledge-prime` or `/knowledge-ask`):
 2. **`directTools:true` + `/mcp reconnect`** — confirm `basic_memory_read_note`
    appears as a direct tool.
 
-A failure signature is `unknown tool`. Run `/nudge-sync` to confirm the nudge-pair
-guidance works too (they call `mcp__basic-memory__read_note`).
+A failure signature is `unknown tool`. Run `/nudge` to confirm its BM
+guidance works too (both modes call `mcp__basic-memory__read_note`).

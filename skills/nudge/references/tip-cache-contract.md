@@ -1,12 +1,9 @@
 # Tip Cache Contract
 
-Shared reference for `nudge-sync` and `nudge-adoption`. Both skills point here
-via `${CLAUDE_PLUGIN_ROOT}/skills/nudge-sync/references/tip-cache-contract.md`
-— `nudge-adoption` lives in a separate skill directory, so it must use this
-full plugin-relative path rather than a bare `references/...` path, which
-would resolve relative to its own directory instead.
+Shared by both `/nudge` modes (sync and check). Loaded as a bare
+`references/tip-cache-contract.md`.
 
-This file defines the **one** rule and the **one** line grammar both skills
+This file defines the **one** rule and the **one** line grammar both modes
 use when regenerating the tip cache, so the two independent write paths never
 drift out of sync with each other.
 
@@ -39,8 +36,8 @@ does.
 Every `Feature: <slug>` token in the note, once normalized (lowercase, no
 leading `/`, non-alphanumeric runs collapsed to a single `-`), must be
 unique across the note. If two raw tokens ever normalize to the same slug,
-that is a **collision**, not a mergeable duplicate — both `nudge-sync` and
-`nudge-adoption` must detect this before writing anything (compare
+that is a **collision**, not a mergeable duplicate — both `/nudge` modes
+must detect this before writing anything (compare
 normalized forms, not raw tokens) and **report the colliding lines and stop**
 rather than silently sharing one `adoption-<slug>` frontmatter key between
 two different features. Never auto-merge or auto-rename a colliding slug —

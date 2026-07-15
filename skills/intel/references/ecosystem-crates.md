@@ -6,13 +6,16 @@ ecosystem is `crate`.
 > **Canonical version for staleness (`--stale`):** record
 > `.crate.max_stable_version` (prerelease-safe) as this note's version.
 > `scripts/fetch-crate-upstream.sh` compares against the same field, so
-> `/knowledge-gaps --stale` and a subsequent `/package-intel` refresh converge
+> `/knowledge-gaps --stale` and a subsequent `/intel` refresh converge
 > on the same value.
 
 ## Resolve Crate Metadata
 
 crates.io provides a free JSON API. **A `User-Agent` header is required** — the
-API will reject requests without it. The rate limit is 1 request/second.
+API will reject requests without it, and the crates.io crawler policy (RFC 3463)
+asks that it identify the application **and carry contact info** (a repo URL or
+email in parentheses) rather than just an HTTP-client string like `reqwest/0.9.1`,
+which risks being blocked. The rate limit is 1 request/second.
 
 This is a raw JSON registry endpoint, not HTML — fetch it directly via `Bash`
 with `curl`+`jq` rather than `tavily_extract`: cheaper (no MCP round-trip) and
@@ -21,7 +24,7 @@ must be set explicitly on the `curl` call (tavily would have handled headers
 automatically, but curl does not):
 
 ```bash
-curl -fsSL --max-time 30 -H "User-Agent: package-intel/vp-knowledge" \
+curl -fsSL --max-time 30 -H "User-Agent: vp-knowledge (https://github.com/voxpelli/vp-claude)" \
   "https://crates.io/api/v1/crates/<name>" | jq .
 ```
 

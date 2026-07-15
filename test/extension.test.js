@@ -23,7 +23,7 @@ describe('vp-knowledge-pi extension', () => {
   })
 
   it('hasVpKnowledgeSkill returns true for vp-knowledge skills', () => {
-    assert.strictEqual(hasVpKnowledgeSkill([{ name: 'package-intel' }]), true)
+    assert.strictEqual(hasVpKnowledgeSkill([{ name: 'intel' }]), true)
     assert.strictEqual(hasVpKnowledgeSkill([{ name: 'knowledge-prime' }]), true)
   })
 

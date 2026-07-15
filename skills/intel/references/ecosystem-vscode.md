@@ -7,7 +7,7 @@ ecosystem is `vscode`.
 > `.version` as this note's version (the drift verdict is computed against Open
 > VSX, not the VS Marketplace). `scripts/fetch-vscode-upstream.sh` compares
 > against the same field, so `/knowledge-gaps --stale` and a subsequent
-> `/tool-intel` refresh converge. The Marketplace version is recorded as an
+> `/intel` refresh converge. The Marketplace version is recorded as an
 > annotation only.
 
 ## Contents
@@ -107,7 +107,7 @@ the source repository. Extract `owner/repo` for DeepWiki and changelog steps.
 
 > **Forge note:** parse the host first. If it is not `github.com` (e.g.
 > `codeberg.org` — as for `mkhl.shfmt` — or `*.sr.ht`), set `repo_forge` and
-> follow `../../package-intel/references/forge-fallback.md` per the Step 2
+> follow `forge-fallback.md` per the Step 2
 > forge-detection block — `gh`/DeepWiki are GitHub-only.
 
 Note: Many popular extensions are on GitHub (e.g., `prettier/prettier-vscode`,

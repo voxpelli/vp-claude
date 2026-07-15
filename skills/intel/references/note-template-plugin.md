@@ -1,6 +1,6 @@
 # Note template: `claude_plugin` (plugin: and skill:)
 
-Shared output template for `/tool-intel plugin:…` and `/tool-intel skill:…`.
+Shared output template for `/intel plugin:…` and `/intel skill:…`.
 Both write a `claude_plugin` note in the `plugins/` directory. Title:
 `plugin-<owner>-<repo>` or `skill-<owner>-<repo>` (`:` and `/` and `#` → `-`).
 

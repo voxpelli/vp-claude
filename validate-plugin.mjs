@@ -154,9 +154,10 @@ const KNOWN_BUILTIN_TOOLS = new Set([
 // "`Glob` caps its returned file list..." (historical non-use, undeclared) are
 // both third-person descriptions of the tool. Key: "<path from repo root>:<Tool>".
 const BUILTIN_MENTION_EXCEPTIONS = new Set([
-  // Discusses a former Glob-based working-set design this skill deliberately
-  // does NOT use (see the skill's own "Gather evidence" step for why).
-  'skills/nudge-adoption/SKILL.md:Glob',
+  // Discusses a former Glob-based working-set design the skill deliberately
+  // does NOT use (see the skill's Step 2 + references/evidence-detection.md).
+  // Inherited from the pre-0.33.0 nudge-adoption skill when it merged into nudge.
+  'skills/nudge/SKILL.md:Glob',
 ])
 
 // Tracks which BUILTIN_MENTION_EXCEPTIONS keys were actually matched

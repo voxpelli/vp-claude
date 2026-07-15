@@ -267,7 +267,7 @@ attestation + per-platform SHA-256 + `cargo audit` in CI, 8 named workflows).
 
 List the tap's other formulae to gauge whether this is a one-off script or
 part of a maintained suite — the same "graveyard vs. flywheel" org-level
-trust signal package-intel and tool-intel both use elsewhere:
+trust signal the intel skill uses elsewhere:
 
 ```bash
 gh api repos/<owner>/homebrew-<tap>/contents/Formula --jq '.[].name'
@@ -323,7 +323,7 @@ Extract `owner/repo` for use in the changelog step.
 
 > **Forge note:** parse the host first. If it is not `github.com` (e.g.
 > `codeberg.org`, `*.sr.ht`), set `repo_forge` and follow
-> `../../package-intel/references/forge-fallback.md` per the Step 2
+> `forge-fallback.md` per the Step 2
 > forge-detection block — `gh`/DeepWiki are GitHub-only.
 
 If neither field resolves to GitHub, fall back to:

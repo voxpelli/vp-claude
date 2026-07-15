@@ -1,12 +1,7 @@
 # Forge Fallback — Non-GitHub Repository Hosts
 
-Shared reference for `package-intel` and `tool-intel`. The file lives under
-`package-intel/references/`; both skills point here via the full
-`${CLAUDE_PLUGIN_ROOT}/skills/package-intel/references/forge-fallback.md` path
-— `tool-intel` is a separate skill directory, so it must use this full
-plugin-relative path rather than a bare `references/...` path, which would
-resolve relative to its own directory instead. This cross-skill reference is an
-accepted, documented portability trade-off (see `docs/design/triple-harness-notes.md`).
+Shared by both `/intel` families (package and tool). Loaded as a bare
+`forge-fallback.md` from the skill body.
 
 ## Contents
 
@@ -19,7 +14,7 @@ accepted, documented portability trade-off (see `docs/design/triple-harness-note
 
 ## When to use this file
 
-Step 2 of either skill resolves a `repository.url` (npm `repository.url`,
+Step 2 (forge detection) resolves a `repository.url` (npm `repository.url`,
 crates `crate.repository`, a brew formula `homepage`, an Open VSX `repository`,
 etc.). **Parse the host** from that URL and dispatch:
 

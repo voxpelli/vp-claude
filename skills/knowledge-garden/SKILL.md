@@ -169,7 +169,7 @@ Then, if any note has actionable fixes, suggest the handoff:
 ## Edge Cases
 
 - **Note not found** — report which target failed to resolve; suggest
-  `/package-intel` or `/tool-intel` if it looks like an undocumented package/tool.
+  `/intel` if it looks like an undocumented package/tool.
 - **Scope creep** — a topic phrase resolving to 9+ notes → recommend delegating
   to the `knowledge-gardener` agent rather than auditing inline.
 - **BM unavailable** — read-tool failures surface as raw error strings; report

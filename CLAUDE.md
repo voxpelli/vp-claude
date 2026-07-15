@@ -15,10 +15,8 @@ A Claude Code plugin (`vp-knowledge`) containing user-owned skills, agents, and 
 .claude-plugin/
   plugin.json                        # Plugin manifest
 skills/
-  package-intel/SKILL.md             # Seven-source multi-ecosystem package research
-    references/                      # 15 files: 6 ecosystem + 6 note templates + gh-api-fallback + forge-fallback + upgrade-haul (shared, also loaded by tool-intel)
-  tool-intel/SKILL.md                # Six-source dev-tool research (brew/cask/action/docker/vscode/gh)
-    references/                      # 16 files: 8 ecosystem + 7 note templates + gh-api-fallback
+  intel/SKILL.md                     # Merged package+tool research (shared-core, two families); /intel <prefix>:<name>
+    references/                      # 37 files: 14 ecosystem + 13 note templates + gh-api-fallback + forge-fallback + upgrade-haul + upgrade-haul-adapter-tool + 2 enrichment (package/tool) + 4 shared lifecycle
   knowledge-gaps/SKILL.md            # Cross-reference deps + tool manifests vs BM coverage; --stale for version drift (brew/npm/cask/crate/vscode/plugin); --global for installed plugin/skill coverage
     references/                      # 4 files: standard-detection, concept-detection, staleness-detection, report-templates
   knowledge-prime/SKILL.md           # On-demand project context priming from BM
@@ -34,9 +32,8 @@ skills/
     references/                      # 2 files: tag-selection, promote-workflow
   people-intel/SKILL.md              # Five-source person research
     references/                      # 2 files: note-template, source-guide
-  nudge-sync/SKILL.md                # Syncs the BM noteworthy-features note to a local tip cache for the SessionStart hook
-    references/                      # 1 file: tip-cache-contract (shared with nudge-adoption)
-  nudge-adoption/SKILL.md            # Transcript-scan feature-adoption tracking → BM frontmatter status
+  nudge/SKILL.md                     # Mode-routed adoption nudges: bare /nudge = sync tip cache, /nudge check = adoption scan
+    references/                      # 3 files: evidence-detection, adoption-limitations, tip-cache-contract
 agents/
   knowledge-gardener.md              # Read-only graph health auditor (incl. tag alignment)
   knowledge-maintainer.md            # All-in-one graph enhancer (writes, incl. tag fixes)
@@ -64,10 +61,9 @@ One-line index. Full per-component detail lives in the path-scoped dev rules
 (`.claude/rules/{skill,agent,hook}-development.md`) and loads when you edit that
 component type — see [Detailed conventions](#detailed-conventions).
 
-### Skills (16)
+### Skills (14)
 
-- **package-intel** — seven-source package research (npm/crate/go/composer/pypi/gem) → BM note. `/package-intel <pkg>`
-- **tool-intel** — six-source dev-tool research (brew/cask/action/docker/vscode/gh/plugin/skill) → BM note. `/tool-intel <prefix>:<name>`
+- **intel** — merged package + dev-tool research (shared-core, two families): npm/crate/go/composer/pypi/gem OR brew/cask/action/docker/vscode/gh/plugin/skill → BM note. `/intel <prefix>:<name>`
 - **knowledge-gaps** — dep + tool-manifest coverage audit; `--stale [brew|npm|cask|crate|vscode|plugin]` for version drift; `--global` for installed plugin/skill coverage. `/knowledge-gaps`
 - **knowledge-prime** — on-demand project context brief from BM. `/knowledge-prime`
 - **schema-evolve** — schema-drift detection + dual-sync. `/schema-evolve <type>`
@@ -80,8 +76,7 @@ component type — see [Detailed conventions](#detailed-conventions).
 - **session-bookmarks** — 1-3 high-signal session URLs → Raindrop AI-bookmarked. `/session-bookmarks`
 - **raindrop-triage** — unsorted-bookmark triage + `--promote` classification across the AI-* collections. `/raindrop-triage`
 - **people-intel** — five-source person research → BM person note. `/people-intel <name>`
-- **nudge-sync** — syncs the `claude-code-noteworthy-features` BM note (via MCP) to a local tip cache the SessionStart hook reads, filtering out already-adopted features. `/nudge-sync`
-- **nudge-adoption** — scans session transcripts across all projects for real evidence of feature use, previews adoption-status changes against the noteworthy-features note, writes after approval. `/nudge-adoption`
+- **nudge** — mode-routed adoption nudges: bare `/nudge` syncs the `claude-code-noteworthy-features` BM note to a local tip cache (filtering adopted features); `/nudge check` scans session transcripts for real feature-use evidence and writes adoption status after approval. `/nudge [check]`
 
 ### Agents (4)
 
@@ -141,13 +136,13 @@ Skills and agents reference tools from multiple MCP servers. When editing, use e
 | Server | Prefix | Used by |
 |--------|--------|---------|
 | Basic Memory | `mcp__basic-memory__*` | All components |
-| DeepWiki | `mcp__deepwiki__*` | package-intel, tool-intel, people-intel |
-| Context7 | `mcp__plugin_context7_context7__*` | package-intel only |
-| Tavily | `mcp__tavily__*` | package-intel, tool-intel, people-intel |
-| Raindrop | `mcp__raindrop__*` | package-intel, tool-intel, people-intel, tag-sync, session-bookmarks, raindrop-triage, raindrop-gardener |
-| Readwise | `mcp__readwise__*` | package-intel, tool-intel, people-intel, knowledge-gaps |
-| Socket | `mcp__socket-mcp__*` | package-intel only |
-| Homebrew MCP | `mcp__homebrew__*` | tool-intel (optional; brew/cask analytics) |
+| DeepWiki | `mcp__deepwiki__*` | intel, people-intel |
+| Context7 | `mcp__plugin_context7_context7__*` | intel (package family only) |
+| Tavily | `mcp__tavily__*` | intel, people-intel |
+| Raindrop | `mcp__raindrop__*` | intel, people-intel, tag-sync, session-bookmarks, raindrop-triage, raindrop-gardener |
+| Readwise | `mcp__readwise__*` | intel, people-intel, knowledge-gaps |
+| Socket | `mcp__socket-mcp__*` | intel (package family only) |
+| Homebrew MCP | `mcp__homebrew__*` | intel (tool family only, optional; brew/cask analytics) |
 
 ## Validation
 
@@ -188,7 +183,7 @@ full drift-guard picture live in `.claude/rules/scripts-and-validation.md`.
 | `check-portability.mjs` | Warn-only live scan + hard classifier self-test (imports `lib/portability-scan.mjs`): classifies every `${CLAUDE_PLUGIN_ROOT}` ref in skill prose as same-skill (fixable portability debt — breaks under a standalone skills.sh install), cross-skill (accepted — a sibling-skill dependency), or tooling. Orthogonal to `check:plugin-load-paths` (resolves-on-disk vs. standalone-install survivability) | `npm run check:portability` |
 | `check-list-installed-plugins.mjs` | Fixture tests for `lib/installed-plugins.mjs` resolver — every owner/repo source shape (`./`, `./sub`, github, git-subdir, unresolved) + skill grouping-by-source | `npm run check:installed-plugins` |
 | `check-bm-version-extract.mjs` | Fixture tests for the S2 version extractor (imports `lib/bm-version-extract.mjs`) — covers all 6 priority-ordered patterns + the strict table-row label guard, the semver-range-in-prose non-match, and the channel-mismatch regression; this is the canonical logic mirrored as prose in `staleness-detection.md` S2 and `knowledge-gardener.md` Step 5b-ii | `npm run check:bm-version-extract` |
-| `check-analytics-guidance.mjs` | Live + fixture check: the two `tool-intel` brew/cask ecosystem references, both note templates, and the `brew_formula`/`brew_cask` schemas (imports `lib/analytics-guidance.mjs`) never reintroduce the inverted "JSON API does not expose analytics" claim fixed in v0.31.5, and each still mentions the JSON `analytics` fallback | `npm run check:analytics-guidance` |
+| `check-analytics-guidance.mjs` | Live + fixture check: the two `intel` brew/cask ecosystem references, both note templates, and the `brew_formula`/`brew_cask` schemas (imports `lib/analytics-guidance.mjs`) never reintroduce the inverted "JSON API does not expose analytics" claim fixed in v0.31.5, and each still mentions the JSON `analytics` fallback | `npm run check:analytics-guidance` |
 | `check-observation-metadata.mjs` | Fixture tests for the observation `Verified:`/`Since:`/`Ownership:` trailer parser (imports `lib/observation-metadata.mjs`) — valid trailers, near-miss non-matches that must not parse (lowercase field names, missing colon, ordinary em-dash prose), and malformed field values (non-ISO date, invalid calendar date, non-version `Since`, unenumerated `Ownership`) | `npm run check:obs-metadata` |
 | `check-schema-vocab.mjs` | Fixture tests for the relation-vocabulary malformed-variant drift guard (imports `lib/schema-vocab.mjs`) — picoschema Note-field extraction, `## Relation Vocabulary` bullet-candidate extraction, the space/colon malformed-variant detector (the v0.29.1 bug class), and confirms a well-formed-but-undeclared verb is deliberately left unflagged (that class belongs to `/schema-evolve`'s interactive reconciliation, not this guard) | `npm run check:schema-vocab` |
 | `check-upstream-headings.mjs` | Live + fixture check: every `## ` heading in a non-allowlisted `UPSTREAM-*.md` file (imports `lib/upstream-heading-vocab.mjs`) is a member of the canonical vocabulary (Feature Requests, Bugs, Upstream Opportunities, Cross-Vendor Inconsistencies, Trend Reviews, Resolved) — a membership check only, not order or completeness; `UPSTREAM-basic-memory.md` is allowlisted (genuinely different heading scheme by design) | `npm run check:upstream-headings` |
@@ -212,8 +207,8 @@ When the user asks about knowledge or packages, choose the right skill:
 |--------|-------|
 | "prime", "project context", "coverage", "which deps are documented" | `/knowledge-prime` |
 | "what do we know about \[X\]", "recall", "find notes on", topic question | `/knowledge-ask [topic]` |
-| "research \[pkg\]", "document \[pkg\]", needs external sources | `/package-intel [pkg]` |
-| "upgrade haul", "refresh these after upgrading", pasted `brew upgrade`/`npm outdated` line, batch of names | `/package-intel` or `/tool-intel` batch mode (per ecosystem) |
+| "research \[pkg\]", "document \[pkg\]", needs external sources | `/intel [pkg]` |
+| "upgrade haul", "refresh these after upgrading", pasted `brew upgrade`/`npm outdated` line, batch of names | `/intel` batch mode (per ecosystem) |
 | "gaps", "undocumented", "audit coverage" | `/knowledge-gaps` |
 | "stale", "drifted", "outdated notes", "which tools/packages need updating" | `/knowledge-gaps --stale [<ecosystem>]` |
 | "installed plugins", "which plugins/skills are documented", "plugin/skill coverage" | `/knowledge-gaps --global` |
@@ -222,8 +217,8 @@ When the user asks about knowledge or packages, choose the right skill:
 | "audit my knowledge graph", "full audit", "graph health" (graph-wide) | `knowledge-gardener` agent |
 | "fix these notes", "apply audit fixes", "tidy \[note\]" (named notes) | `/knowledge-maintain [note ...]` |
 | "fix the whole audit", "remediate the graph", "research missing packages" | `knowledge-maintainer` agent |
-| "sync nudge tips", "refresh the tip cache", "rebuild the tip cache" | `/nudge-sync` |
-| "nudge me on unused features", "which features haven't I adopted", "nudge adoption" | `/nudge-adoption` |
+| "sync nudge tips", "refresh the tip cache", "rebuild the tip cache" | `/nudge` |
+| "nudge me on unused features", "which features haven't I adopted", "nudge adoption" | `/nudge check` |
 
 ## Detailed conventions
 
@@ -288,7 +283,7 @@ Tag the release (after committing and pushing the bump):
   will 404 until the tag exists on the remote
 
 Source count propagation (when adding/removing a research source):
-- `skills/package-intel/SKILL.md` or `skills/tool-intel/SKILL.md` — step prose
+- `skills/intel/SKILL.md` (and its `references/enrichment-package.md` / `references/enrichment-tool.md` family branches) — step prose
 - `CLAUDE.md` Components index (e.g. "seven-source") + `.claude/rules/skill-development.md` — skill detail
 - `README.md` — skill description
 - `CHANGELOG.md` — note the source change
@@ -298,7 +293,7 @@ Source count propagation (when adding/removing a research source):
 `vp-knowledge` and `vp-beads` are complementary plugins — both installable
 via the `vp-plugins` marketplace at `voxpelli/vp-claude`.
 
-- **Research feeds tracking** — `/package-intel` and `/tool-intel` output
+- **Research feeds tracking** — `/intel` output
   feeds vp-beads' `/upstream-tracker`. Friction or bugs discovered during
   research can be logged as upstream issues with matching prefix notation
   (`brew:<name>`, `action:<owner>/<repo>`, etc.).
@@ -309,7 +304,7 @@ via the `vp-plugins` marketplace at `voxpelli/vp-claude`.
 
 ### Parallel agent orchestration
 
-`/package-intel` + `/tool-intel` agents are **write-safe** in parallel — notes are file-disjoint across ecosystems, so concurrent agents never corrupt each other's output. But file-disjointness does **not** imply *launch*-safety: bursting ~10 subagent launches at once trips an Anthropic API-side admission throttle (`Server is temporarily limiting requests (not your usage limit)`) that fails them near-instantly with zero writes — distinct from a 429/529 and from any upstream data-source limit. Cap concurrent *launches* to a handful (≈4–6 observed clean; the safe number is load-dependent, not fixed) or lower `CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY`. See BM note `engineering/agents/concurrent-subagent-launch-api-burst-throttle-not-file-safety`. The gardener→maintainer two-pass workflow (audit first, fix second) is the recommended approach for graph maintenance.
+`/intel` agents are **write-safe** in parallel — notes are file-disjoint across ecosystems, so concurrent agents never corrupt each other's output. But file-disjointness does **not** imply *launch*-safety: bursting ~10 subagent launches at once trips an Anthropic API-side admission throttle (`Server is temporarily limiting requests (not your usage limit)`) that fails them near-instantly with zero writes — distinct from a 429/529 and from any upstream data-source limit. Cap concurrent *launches* to a handful (≈4–6 observed clean; the safe number is load-dependent, not fixed) or lower `CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY`. See BM note `engineering/agents/concurrent-subagent-launch-api-burst-throttle-not-file-safety`. The gardener→maintainer two-pass workflow (audit first, fix second) is the recommended approach for graph maintenance.
 
 - File-disjoint writes are corruption-safe but **not cross-reference-safe**: when parallel agents (or a batch write wave) create cross-linked notes, a note written *before* a sibling it links to keeps a **dangling forward edge** — BM's `write_note`/`edit_note` resolves only a note's *outgoing* relations, so creating the target later does not heal the earlier note's link. Order writes so referenced targets precede referencers when controllable; otherwise run a no-op re-touch pass (`edit_note` find_replace) across the batch afterward, or let a sync pass run — then verify resolution with `build_context` (null `to_entity`), not the relation-index row. See BM note `engineering/agents/parallel-agent-orchestration-lessons`.
 - Static checks (`npm run check`, `validate-plugin.mjs`) validate *structure*, not
@@ -341,4 +336,4 @@ via the `vp-plugins` marketplace at `voxpelli/vp-claude`.
 
 ### Relationship to upstream memory-* skills
 
-The `basicmachines-co/basic-memory-skills` package provides 9 core `memory-*` skills (notes, schema, tasks, lifecycle, etc.) installed via `npx skills add basicmachines-co/basic-memory-skills` ([skills.sh](https://skills.sh)). This plugin depends on those conventions but does not bundle or duplicate them. `package-intel` specializes the generic `memory-research` pattern for npm packages.
+The `basicmachines-co/basic-memory-skills` package provides 9 core `memory-*` skills (notes, schema, tasks, lifecycle, etc.) installed via `npx skills add basicmachines-co/basic-memory-skills` ([skills.sh](https://skills.sh)). This plugin depends on those conventions but does not bundle or duplicate them. `intel` specializes the generic `memory-research` pattern for npm packages.

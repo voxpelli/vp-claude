@@ -6,7 +6,7 @@ ecosystem is `npm`.
 > **Canonical version for staleness (`--stale`):** record npm's
 > `dist-tags.latest` as this note's version. `scripts/fetch-npm-upstream.sh`
 > compares against the same field, so `/knowledge-gaps --stale` and a
-> subsequent `/package-intel` refresh converge on the same value.
+> subsequent `/intel` refresh converge on the same value.
 
 ## Resolve GitHub Repository
 

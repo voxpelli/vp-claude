@@ -1,6 +1,6 @@
 # Ecosystem reference: Claude Code plugins (`plugin:`)
 
-Fetch + research recipe for `/tool-intel plugin:<owner>/<repo>` (optionally
+Fetch + research recipe for `/intel plugin:<owner>/<repo>` (optionally
 `#<plugin-name>` to select one plugin from a marketplace that holds several).
 A plugin is a git-repo + manifest artifact; its closest analog is `action:`
 (git-repo + git tags, no central registry API). Writes a `claude_plugin` note

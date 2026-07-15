@@ -84,7 +84,7 @@ Always `docker_image` (snake_case). Not `docker-image` or `container_image`.
 
 This template file uses `````markdown` (4 backticks) as the outer fence
 because the note content contains inner ` ``` ` fences (Dockerfile examples).
-The same pattern is used in the crates/go/pypi templates in package-intel.
+The same pattern is used in the crates/go/pypi templates.
 
 ### Docker Hub URL patterns
 
