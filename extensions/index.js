@@ -6,7 +6,7 @@ import { getValueOfKeyWithType } from '@voxpelli/typed-utils'
 
 import { AGENTS_DIR, findAgentsSourceDir, syncAgentProfiles } from './agent-sync.js'
 import { loadConfig } from './config.js'
-import { MCP_MAPPINGS, VP_KNOWLEDGE_SKILL_NAMES } from './mcp-mapping.js'
+import { flattenMcpToolName, VP_KNOWLEDGE_SKILL_NAMES } from './mcp-mapping.js'
 import { registerSettingsCommand } from './settings-command.js'
 import { registerUpdateAgentsCommand } from './update-agents-command.js'
 
@@ -80,25 +80,30 @@ export function hasVpKnowledgeSkill (skills = []) {
  * @returns {string}
  */
 export function buildMappingGuidance () {
-  const lines = [
-    '## MCP Tool Name Mapping (Pi Compatibility)',
-    '',
-    'The skills you are using reference MCP tools with Claude-style names (`mcp__<server>__<tool>`).',
-    'On this Pi host, the same tools are available under their direct-tool names.',
-    'When a skill instructs you to call an `mcp__*` tool, use the matching direct tool name below:',
-    '',
-    '| Skill reference | Pi direct tool |',
-    '|---|---|',
+  // Examples are computed through flattenMcpToolName so the documented output
+  // can never drift from the rule the model is told to apply.
+  const examples = [
+    'mcp__basic-memory__write_note',
+    'mcp__socket-mcp__depscore',
+    'mcp__plugin_context7_context7__resolve-library-id',
   ]
 
-  for (const m of MCP_MAPPINGS) {
-    const desc = m.description ? ` (${m.description})` : ''
-    lines.push(`| \`${m.claudeName}\` | \`${m.piName}\`${desc} |`)
-  }
-
-  lines.push('', 'Pass the same flat parameter object to the direct tool that the skill shows for the `mcp__*` form.', '', 'If a direct tool is unavailable, its MCP server may not have `directTools: true` configured.', '')
-
-  return lines.join('\n')
+  return [
+    '## MCP Tool Names (Pi Compatibility)',
+    '',
+    'The skills you are using reference MCP tools with Claude-style names (`mcp__<server>__<tool>`).',
+    'On a Pi host these are exposed as flattened direct-tool names by the MCP shim (e.g. pi-mcp-adapter).',
+    'Translate any `mcp__*` reference by dropping the `mcp__` prefix, replacing the server\'s hyphens',
+    'with underscores, and appending the tool name unchanged (hyphens inside the tool name stay):',
+    '',
+    ...examples.map((claudeName) => `- \`${claudeName}\` → \`${flattenMcpToolName(claudeName)}\``),
+    '',
+    'Pass the same flat parameter object to the direct tool that the skill shows for the `mcp__*` form.',
+    '',
+    'If a tool by the computed name is not in your available tool list — the Pi host may have registered',
+    'the MCP server under a different name — call it through the `mcp` proxy tool with the server and',
+    'tool names instead, rather than skipping the step.',
+  ].join('\n')
 }
 
 /**

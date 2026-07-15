@@ -25,7 +25,10 @@ describe('event hooks', () => {
       const result = await handler(event, {})
 
       assert.ok(result)
-      assert.ok(result.systemPrompt.includes('MCP Tool Name Mapping'))
+      assert.ok(result.systemPrompt.includes('MCP Tool Names'))
+      // the rule-based guidance shows a flattened example + the proxy fallback
+      assert.ok(result.systemPrompt.includes('basic_memory_write_note'))
+      assert.ok(result.systemPrompt.includes('`mcp` proxy'))
     })
 
     it('no-op when skills are absent', async () => {

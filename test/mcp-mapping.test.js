@@ -1,33 +1,34 @@
 import assert from 'node:assert'
 import { describe, it } from 'node:test'
 
-import { MCP_MAPPINGS, VP_KNOWLEDGE_SKILL_NAMES } from '../extensions/mcp-mapping.js'
+import { flattenMcpToolName, VP_KNOWLEDGE_SKILL_NAMES } from '../extensions/mcp-mapping.js'
 
 describe('MCP mappings', () => {
-  it('contains basic-memory tools', () => {
-    assert.ok(MCP_MAPPINGS.some(m => m.piName === 'basic_memory_write_note'))
-    assert.ok(MCP_MAPPINGS.some(m => m.piName === 'basic_memory_search_notes'))
-    assert.ok(MCP_MAPPINGS.some(m => m.piName === 'basic_memory_build_context'))
+  it('flattens the server hyphens and keeps the tool name verbatim', () => {
+    assert.strictEqual(flattenMcpToolName('mcp__basic-memory__write_note'), 'basic_memory_write_note')
+    assert.strictEqual(flattenMcpToolName('mcp__basic-memory__build_context'), 'basic_memory_build_context')
+    assert.strictEqual(flattenMcpToolName('mcp__socket-mcp__depscore'), 'socket_mcp_depscore')
+    assert.strictEqual(flattenMcpToolName('mcp__tavily__tavily_search'), 'tavily_tavily_search')
   })
 
-  it('contains raindrop tools', () => {
-    assert.ok(MCP_MAPPINGS.some(m => m.piName === 'raindrop_create_bookmarks'))
-    assert.ok(MCP_MAPPINGS.some(m => m.piName === 'raindrop_find_bookmarks'))
+  it('preserves hyphens inside the tool name', () => {
+    assert.strictEqual(
+      flattenMcpToolName('mcp__plugin_context7_context7__resolve-library-id'),
+      'plugin_context7_context7_resolve-library-id'
+    )
   })
 
-  it('contains readwise tools', () => {
-    assert.ok(MCP_MAPPINGS.some(m => m.piName === 'readwise_reader_search_documents'))
+  it('covers tools the old hand-table forgot (context7, extra raindrop)', () => {
+    // These were the silently-unmapped tools; the rule handles them for free.
+    assert.strictEqual(flattenMcpToolName('mcp__raindrop__update_tags'), 'raindrop_update_tags')
+    assert.strictEqual(flattenMcpToolName('mcp__raindrop__create_highlight'), 'raindrop_create_highlight')
+    assert.strictEqual(flattenMcpToolName('mcp__plugin_context7_context7__query-docs'), 'plugin_context7_context7_query-docs')
   })
 
-  it('contains tavily tools', () => {
-    assert.ok(MCP_MAPPINGS.some(m => m.piName === 'tavily_tavily_search'))
-  })
-
-  it('every mapping has claudeName and piName', () => {
-    for (const m of MCP_MAPPINGS) {
-      assert.ok(m.claudeName, `missing claudeName in ${JSON.stringify(m)}`)
-      assert.ok(m.piName, `missing piName in ${JSON.stringify(m)}`)
-    }
+  it('returns null for non-MCP names', () => {
+    assert.strictEqual(flattenMcpToolName('Read'), null)
+    assert.strictEqual(flattenMcpToolName('basic_memory_write_note'), null)
+    assert.strictEqual(flattenMcpToolName('mcp__incomplete'), null)
   })
 
   it('VP_KNOWLEDGE_SKILL_NAMES contains expected skills', () => {
