@@ -31,8 +31,11 @@ Research a package **or** a developer/CI tool and synthesize a structured Basic
 Memory note, then cross-link existing notes. **One research lifecycle** — detect
 → check → resolve → enrich → synthesize → write → cross-link — routed
 per-ecosystem via the table below. The two families (package and tool) share
-**every step except enrichment (Step 3)**; the unifying axis is the shared
-BM-note lifecycle, not the sourcing mechanics.
+one BM-note lifecycle end to end; **Step 3 (enrichment) is the only point where
+the source roster diverges**. Smaller family-specific bits also exist in
+Arguments normalization, Batch mode, Step 1 freshness, Step 4 observation rules,
+and Step 6 — but the unifying axis is the shared lifecycle, not the sourcing
+mechanics.
 
 Supported ecosystems, by family:
 
@@ -156,9 +159,10 @@ forge detection for them.
 If the ecosystem reference documents a download/popularity source, fetch the
 count now and hold it as `popularity_count` for Step 4.
 
-### Step 3: Family enrichment — THE SINGLE BRANCH
+### Step 3: Family enrichment — the source-roster branch
 
-This is the **only** point where the two families diverge. Route by `FAMILY`:
+This is the point where the two families' **source roster** diverges (other
+steps carry smaller family-specific bits). Route by `FAMILY`:
 
 - `FAMILY=package` → load and follow `references/enrichment-package.md`
   (seven sources: DeepWiki, Context7, Tavily, Raindrop, changelog, Readwise,

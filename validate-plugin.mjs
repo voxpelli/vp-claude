@@ -149,8 +149,8 @@ const KNOWN_BUILTIN_TOOLS = new Set([
 
 // A tool named in prose to explain why a skill deliberately does NOT use it
 // (a design-decision mention), not to invoke it. This is grammatically
-// indistinguishable from a genuine use by any local rule — e.g. nudge-sync's
-// "`Write` creates missing..." (real use, declared) and nudge-adoption's
+// indistinguishable from a genuine use by any local rule — e.g. nudge's
+// "`Write` creates missing..." (real use, declared) and nudge's
 // "`Glob` caps its returned file list..." (historical non-use, undeclared) are
 // both third-person descriptions of the tool. Key: "<path from repo root>:<Tool>".
 const BUILTIN_MENTION_EXCEPTIONS = new Set([
@@ -412,7 +412,7 @@ function auditToolReferences (file, content, declaredTools, fieldName) {
   // warn() (not error()), unlike the mcp__ check above: a bare tool name in a
   // backtick span is an ordinary English word, and this codebase's own prose
   // can genuinely mention a tool to explain why it is NOT used (e.g. "an
-  // earlier version used `Glob` to build a working set" — nudge-adoption,
+  // earlier version used `Glob` to build a working set" — nudge,
   // exempted below) — grammatically indistinguishable from real use by any
   // local rule. A hard error() here would make legitimate "why we don't use X"
   // documentation break CI. See scripts-and-validation.md for the house
@@ -792,7 +792,7 @@ for (const file of skillFiles) {
   // code.claude.com/docs/en/skills and anthropics/skills#881). Warn at 1500,
   // below the cap rather than at it, so there's early-warning margin before a
   // future edit actually gets truncated. Current longest description
-  // (tool-intel, ~1.1k) is comfortably under either number.
+  // (intel, ~956 chars) is comfortably under either number.
   if (typeof fm.description === 'string' && fm.description.length > 1500) {
     warn(file, `description is ${fm.description.length} chars — Claude Code may truncate it for routing; move capability detail into the body`)
   }

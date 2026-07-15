@@ -37,7 +37,7 @@ if [ "$source" = "compact" ]; then
 	# Backticks below are literal markdown code spans in the message, not command
 	# substitution — the string is emitted verbatim, never evaluated.
 	# shellcheck disable=SC2016
-	recovery='Post-compaction recovery: the Basic Memory knowledge graph is still available. If the ongoing task touches packages, tools, or the graph, recall context with `mcp__basic-memory__recent_activity(timeframe="7d")` or `/knowledge-prime`, and answer topic questions with `/knowledge-ask`. Research skills remain available — /package-intel (npm/crate/go/composer/pypi/gem), /tool-intel (brew/cask/action/docker/vscode/gh/plugin/skill), /knowledge-gaps (coverage; --stale drift; --global installed plugin/skill coverage). Schema edits dual-sync to schemas/*.md; never edit ~/basic-memory files directly — always use the mcp__basic-memory__* tools.'
+	recovery='Post-compaction recovery: the Basic Memory knowledge graph is still available. If the ongoing task touches packages, tools, or the graph, recall context with `mcp__basic-memory__recent_activity(timeframe="7d")` or `/knowledge-prime`, and answer topic questions with `/knowledge-ask`. Research skills remain available — /intel <prefix>:<name> (packages: npm/crate/go/composer/pypi/gem, no prefix defaults to npm; tools: brew/cask/action/docker/vscode/gh/plugin/skill), /knowledge-gaps (coverage; --stale drift; --global installed plugin/skill coverage). Schema edits dual-sync to schemas/*.md; never edit ~/basic-memory files directly — always use the mcp__basic-memory__* tools.'
 fi
 
 # Learning-nudge tip fragment — a separate script run as a subprocess (not

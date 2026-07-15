@@ -1,6 +1,6 @@
 ---
 name: nudge
-description: "This skill (explicit /nudge only) manages Claude Code feature-adoption nudges sourced from the Basic Memory note main/reference/claude-code-noteworthy-features. Bare /nudge = Mode A (sync): re-read the note, filter out features already marked adopted or declined, and regenerate the tip cache ~/.claude/references/claude-code-nudge-tips.txt that the SessionStart hook reads. /nudge check = Mode B (adoption check): scan Claude Code session transcripts across all projects for real evidence of feature use, preview proposed adoption-status transitions, write approved changes to the note's frontmatter, then regenerate the same cache. Use when asked to 'sync nudge tips', 'refresh the tip cache', 'rebuild the tip cache', 'nudge me on unused features', 'which features haven't I adopted', 'check feature adoption', or 'nudge adoption'."
+description: "This skill (explicit /nudge only) manages Claude Code feature-adoption nudges sourced from the Basic Memory note main/reference/claude-code-noteworthy-features. Bare /nudge = Mode A (sync): re-read the note, filter out features already marked adopted or declined, and regenerate the tip cache ~/.claude/references/claude-code-nudge-tips.txt that the SessionStart hook reads. /nudge check = Mode B (adoption check): scan Claude Code session transcripts across all projects for real evidence of feature use, preview proposed adoption-status transitions, write approved changes to the note's frontmatter, then regenerate the same cache. No delegate agent exists (unlike knowledge-garden/knowledge-maintain, whose graph-wide phrasing routes through their agent) — natural-language phrasing like 'sync nudge tips' or 'nudge me on unused features' does NOT auto-invoke this skill; recognize the intent and suggest the user run `/nudge` or `/nudge check` explicitly."
 user-invocable: true
 disable-model-invocation: true
 argument-hint: "[check]"
@@ -109,6 +109,7 @@ Mirrors `session-reflect`'s scan → preview → approve → write shape, but sc
   `nudged` if currently `unseen`.
 - **A single slug's grep errors, or every matched file fails to `Read`** — report
   it as scan-failed in the preview and exclude it from any transition this run.
+- **Some (not all) matched files for a slug fail to `Read`** — exclude only the unreadable files from evidence and keep evaluating the readable ones; never let one unreadable file suppress an `adopted` transition when another matched file already passed. Flag the count in the Step 4 preview ("N files could not be read and were excluded") even when the slug still proceeds to `adopted`. When no readable file passes either, route the slug to the scan-failed bucket rather than confidently proposing `nudged`.
 - **A slug's tip has no backtick span (empty search term)** — skip and report it.
 - **`edit_note` `find_replace` fails** — re-read, retry once against the current
   frontmatter value, then report and stop. Do not loop.
@@ -162,6 +163,7 @@ constraints that need no fix are listed in
 
 ### Scan failed — excluded this run
 - **btw** — Grep call errored partway through; evidence may exist but couldn't be confirmed
+- **fork** — 2 of 5 matched files could not be read and were excluded; the 3 readable files showed no evidence
 
 Approve all, approve one (e.g. "approve goal"), or decline.
 ````

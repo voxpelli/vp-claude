@@ -6,9 +6,13 @@ A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https:/
 
 ## What it does
 
-### `/intel <pkg>` — Research any package
+### `/intel` — Research any package or dev tool
 
-Queries seven sources in parallel, synthesizes a structured note, and cross-links existing notes. Supports six ecosystems:
+One research lifecycle (detect → check → resolve → enrich → synthesize → write → cross-link) for two families — packages and dev tools — routed by prefix. It queries the family's source roster in parallel, synthesizes a structured note, and cross-links existing notes. A single call may mix families (`/intel npm:fastify brew:ripgrep`).
+
+#### Packages — seven sources, six ecosystems
+
+Queries seven sources in parallel. Supports six ecosystems:
 
 | Form | Ecosystem | Example |
 |------|-----------|---------|
@@ -38,11 +42,9 @@ Queries seven sources in parallel, synthesizes a structured note, and cross-link
 
 Plus changelog analysis via GitHub releases — with a git-tag fallback when the release list lags the registry version (a tag pushed without a published Release). After writing, searches for existing notes that reference the package and adds bidirectional cross-links, and rewrites any bare-name `[[Name]]` wiki-link stub elsewhere in the graph to the note's full title (bare-name links don't auto-resolve against a descriptor-titled note). The result is an ecosystem-prefixed note (`npm-*`, `crate-*`, `pypi-*`, etc.) with observations, relations, and release highlights — connected into the graph from day one.
 
-**Batch mode ("upgrade haul").** Hand `/intel` a list of names or a pasted upgrade/outdated command line (`npm outdated`, `npm i a@latest b@latest`, and the crate/go/composer/pypi/gem equivalents) and it refreshes every already-documented note against its recorded→current version delta in one pass — synthesizing a curated changelog reel for just that interval and stamping the new version into the `## Release Highlights` prose — plus the machine-stable `[version]` observation where the schema carries that slot (npm today; the other ecosystems as the slot lands). The single prefixed-identifier path is unchanged; batch mode is purely additive. This is the executor half of `/knowledge-gaps --stale` — its batched-refresh offer routes straight into this mode.
+#### Dev tools — six sources, eight categories
 
-### `/intel <prefix>:<name>` — Research any dev tool
-
-Queries six sources in parallel, synthesizes a structured note, and cross-links existing notes. Supports eight tool categories:
+Queries six sources in parallel. Supports eight tool categories:
 
 | Form | Category | Example |
 |------|----------|---------|
@@ -78,7 +80,9 @@ Queries six sources in parallel, synthesizes a structured note, and cross-links 
 
 Plus version/changelog data (GitHub releases for actions, Docker Hub tags for images, API versions for brew/vscode) — with a git-tag fallback for `action:`/`gh:`/`brew:` when the release list lags the newest git tag. For `vscode:`, it also records an **Open VSX trust signal** — a `[security]` observation placing the extension on a 4-state ladder (verified-restricted / public-namespace / **marketplace-only = squattable** / not-published-anywhere); a Marketplace-only extension has an unclaimed Open VSX namespace that fork-IDEs (Cursor, Windsurf, VSCodium) resolve installs against, a known supply-chain exposure. Third-party Homebrew taps (`brew:<owner>/<tap>/<name>`) get a dedicated fetch path — Ruby-DSL formula parsing, an upstream-repo DeepWiki pivot, a license cross-check against the upstream repo's own LICENSE, and a `.github/workflows` SLSA/SHA-256 hygiene audit — instead of misrouting to the core registry. **Library formulae** (mostly-transitive-dependency libs like `tree-sitter`/`icu4c`) are detected from the fetched metadata and get real-dependent verification via `brew uses --installed`/`brew deps`/`brew linkage` plus an `## Upgrade Impact on Dependents` section — so a note never over-claims dependents from technology alone (a dependency relation is `depends_on` only when the package manager confirms it; a statically-vendored technology link is `built_with`/`used_by`). After writing, searches for existing notes that reference the tool and adds bidirectional cross-links. The result is a prefixed note (`brew-*`, `action-*`, etc.) with type-specific sections — `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for Docker, `## Common Usage` for formulae — plus observations and relations.
 
-**Batch mode ("upgrade haul").** Hand `/intel` a pasted `brew upgrade` / `brew outdated` line or a list of bare names and it refreshes every already-documented note in one pass. Bare names route to formula or cask automatically via the artifacts-vs-`Dependencies` shape signal (and re-dispatch from `fetch-brew-upstream.sh` to `fetch-cask-upstream.sh` on a `not-in-api` result), and each note's delta is recorded as inline `[feature]` / `[version]` observations. The single prefixed-identifier path is unchanged; batch mode is purely additive — and is the executor half of `/knowledge-gaps --stale`.
+#### Batch mode ("upgrade haul")
+
+Hand `/intel` a list of names or a pasted upgrade/outdated command line and it refreshes every already-documented note against its recorded→current version delta in one pass. The single prefixed-identifier path is unchanged; batch mode is purely additive, and is the executor half of `/knowledge-gaps --stale` — its batched-refresh offer routes straight into this mode. For **packages** (`npm outdated`, `npm i a@latest b@latest`, and the crate/go/composer/pypi/gem equivalents) it synthesizes a curated changelog reel for just that interval, stamps the new version into the `## Release Highlights` prose, and records the machine-stable `[version]` observation where the schema carries that slot (npm today; the other ecosystems as the slot lands). For **tools** (`brew upgrade` / `brew outdated` or a list of bare names) it routes bare names to formula or cask automatically via the artifacts-vs-`Dependencies` shape signal (re-dispatching from `fetch-brew-upstream.sh` to `fetch-cask-upstream.sh` on a `not-in-api` result) and records each note's delta as inline `[feature]` / `[version]` observations.
 
 ### `/knowledge-gaps` — Find undocumented dependencies
 
@@ -226,8 +230,7 @@ Acts on audit findings with tiered autonomy:
 | Link orphan notes to related notes | Auto-fix |
 | Fix frontmatter type to match schema | Auto-fix |
 | Fix fourth-wall violations (self-referential graph language) | Auto-fix |
-| Run `/intel` for Tier 1 undocumented packages | Auto-fix |
-| Run `/intel` for undocumented tools from manifests | Auto-fix |
+| Run `/intel` for Tier 1 undocumented packages and undocumented tools from manifests | Auto-fix |
 | Enqueue drifted notes (>30d, or any security-flagged target) into a Refresh Queue | Queues for review |
 | Archive deprecated/disabled packages (brew/cask/npm) | Asks first |
 | Merge duplicate notes | Asks first |
@@ -616,8 +619,7 @@ VOICE.md                               Plugin identity, agent colors, descriptio
  "fix the graph"   -> knowledge-maintainer-> structural + tag fixes + confirmations
                       ├── audits graph inline (lightweight)
                       ├── auto-fixes structure and tags
-                      ├── auto-runs /intel for Tier 1 package gaps
-                      ├── auto-runs /intel for undocumented tool manifests
+                      ├── auto-runs /intel for Tier 1 package gaps and undocumented tool manifests
                       ├── enqueues drifted notes (>30d) into a Refresh Queue for a human to action
                       └── asks before content changes
  "prime context"   -> knowledge-primer    -> context brief (autonomous agent)

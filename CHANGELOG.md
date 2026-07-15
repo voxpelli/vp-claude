@@ -38,9 +38,10 @@ or nudge capability is lost, but the old command names are gone.
 - **`/nudge`** — mode-routed (`disable-model-invocation`), with the transcript
   evidence-detection procedure and accepted-limitations extracted to references.
 - **`check:spec`** — a new `npm run check` gate running `skill-check` (the
-  agentskills.io SKILL.md linter, added as a devDependency) with a 500-line body
-  limit as errors; the ~42 Claude-Code-vs-spec divergence findings stay non-gating
-  warnings.
+  agentskills.io SKILL.md linter, added as a devDependency) with a 1000-line body
+  limit as errors (double skill-check's 500-line default, calibrated to the one
+  skill — knowledge-gaps at 665 body lines — that exceeds 500); the ~42
+  Claude-Code-vs-spec divergence findings stay non-gating warnings.
 
 ### Changed
 
@@ -48,9 +49,12 @@ or nudge capability is lost, but the old command names are gone.
   (restoring a citation the tool copy had dropped) and extends its applicability
   ladder to all 14 prefixes.
 - All intra-skill reference cross-loads are now **bare-relative** rather than
-  `${CLAUDE_PLUGIN_ROOT}`-prefixed, discharging the deferred same-skill portability
-  debt (`check:portability` now reports it clear) and fixing two silent-broken
-  relative paths. The crates.io worker's `User-Agent` gains an RFC-3463 contact URL.
+  `${CLAUDE_PLUGIN_ROOT}`-prefixed, clearing the same-skill portability debt this
+  plugin created and fixing two silent-broken relative paths. One accepted
+  cross-skill exception remains: `intel`'s `upgrade-haul.md` and
+  `ecosystem-plugin.md` still reference `knowledge-gaps`'s
+  `staleness-detection.md` (a genuine sibling-skill dependency, not portability
+  debt). The crates.io worker's `User-Agent` gains an RFC-3463 contact URL.
 
 ### Removed
 
@@ -58,6 +62,15 @@ or nudge capability is lost, but the old command names are gone.
   `skills/nudge-adoption/` and their reference trees (content relocated, not lost).
 - `docs/design/tool-intel-next-gen.md` retired in place (its premise — the two
   skills staying separate — no longer holds; kept with a revival trigger).
+
+### Known limitations
+
+- The new **bare-relative** intra-skill reference cross-loads are
+  manually-verified-only, not machine-guarded. `nudge`'s references are markdown
+  links already covered by `remark-validate-links`, but `intel`'s bare
+  inline-code refs have no resolution check yet — a moved/renamed reference file
+  would rot silently. Tracked as a follow-up (see
+  `docs/design/wave3-skill-consolidation.md` Mandatory-fixes item 4).
 
 ## [0.32.7][] - 2026-07-15
 

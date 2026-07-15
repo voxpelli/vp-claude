@@ -220,6 +220,8 @@ When the user asks about knowledge or packages, choose the right skill:
 | "sync nudge tips", "refresh the tip cache", "rebuild the tip cache" | `/nudge` |
 | "nudge me on unused features", "which features haven't I adopted", "nudge adoption" | `/nudge check` |
 
+`/nudge`/`/nudge check` are explicit-only (`disable-model-invocation: true`) with no delegate agent — unlike the knowledge-garden/knowledge-maintain rows, these phrases don't auto-route; listed so the model recognizes intent and suggests the command.
+
 ## Detailed conventions
 
 Deep, file-type-specific conventions live in **path-scoped rules** under

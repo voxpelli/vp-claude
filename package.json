@@ -3,12 +3,8 @@
   "type": "module",
   "description": "vp-knowledge Claude Code plugin: Basic Memory knowledge-graph skills, agents, and hooks for package/tool/person research and graph maintenance, plus the .mjs validation tooling that powers npm run check.",
   "pi": {
-    "extensions": [
-      "./extensions"
-    ],
-    "skills": [
-      "./skills"
-    ]
+    "extensions": ["./extensions"],
+    "skills": ["./skills"]
   },
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"

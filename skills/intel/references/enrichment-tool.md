@@ -173,3 +173,5 @@ or
 `- [gotcha] default regex engine is finite-automata-based; backreferences and look-around require building with PCRE2 and passing -P/--pcre2 (man page)`.
 Skip anything already captured from another source rather than duplicating it.
 
+**Pre-write graph check — avoid duplicating linked-note observations.** Before recording new observations in Step 4, pull existing graph context: `build_context(url="<prefix>-<name>", depth=1, max_related=10)`; if it returns nothing, fall back to `search_notes(query="<name>", search_type="text", page_size=10)`. Skip capturing a new observation whose fact a linked (or to-be-linked) note already records — cite that note instead. Mirrors the package family's Knowledge-graph relevance check in enrichment-package.md, applied across all observation types.
+

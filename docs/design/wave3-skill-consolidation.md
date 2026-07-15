@@ -254,6 +254,10 @@ NOT catch. The corrective pass below is folded into the execution plan.
    3 adds. (The critique alternatively suggested converting all cross-load refs to the
    `${CLAUDE_PLUGIN_ROOT}` form that the existing check already covers; we take the bare-relative +
    new-check route because it also discharges the D5 standalone-skills.sh portability goal.)
+   Status (0.33.0): NOT implemented — bare-relative refs are in place but the resolution check was
+   not built; refs are manually-verified-only, not machine-guarded (nudge's are markdown links
+   already covered by remark-validate-links; the gap is intel's bare inline-code refs). Tracked
+   follow-up.
 5. **Diff every "mirrored"/"byte-identical" block before collapsing** — the HTML comments are
    self-declared and the gh-api-fallback drift proves they lie. Budget for Step-4's
    record-contradictions/confidence-scaling sub-blocks needing reconciliation, not a clean pick.

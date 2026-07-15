@@ -52,10 +52,9 @@ export function flattenMcpToolName (claudeName) {
 /**
  * The set of skill names whose activation triggers MCP-guidance injection.
  * These are the vp-knowledge skills that reference `mcp__*` tools and therefore
- * need the Claude→Pi mapping guidance. The nudge pair is included: both
- * `nudge-sync` and `nudge-adoption` call `mcp__basic-memory__read_note` (and
- * `nudge-adoption` also `…__edit_note`), so on a Pi host they need the mapping
- * too — a prior comment wrongly claimed they reference no `mcp__*` tools.
+ * need the Claude→Pi mapping guidance. The merged `nudge` skill is included: it
+ * calls `mcp__basic-memory__read_note` in sync mode and additionally
+ * `…__edit_note` in check mode, so on a Pi host it needs the mapping too.
  *
  * @type {Set<string>}
  */
