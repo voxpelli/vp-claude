@@ -2,6 +2,8 @@
 
 A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https://github.com/basicmachines-co/basic-memory) into an actively maintained knowledge graph. Research packages from six ecosystems and tools from eight dev-environment categories using parallel enrichment, find documentation gaps in your projects, detect when documented packages and tools have drifted from upstream registries (brew, npm, cask, crate, vscode), surface project-relevant knowledge before coding, and let autonomous agents audit and improve your notes — all without leaving your terminal.
 
+> **Also runs on Pi (0.32.6+):** the shared `skills/` tree and the `extensions/` factory load on the Pi coding agent from a single-root hybrid — Claude's loader ignores `package.json`, so the two coexist with no build step, and MCP tools work on Pi's default shim config. See [`docs/pi-setup.md`](docs/pi-setup.md).
+
 ## What it does
 
 ### `/package-intel <pkg>` — Research any package

@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.6][] - 2026-07-15
+
+The plugin now runs on the Pi coding agent from a single-root hybrid, and — the
+headline — MCP tool calls actually work on Pi's default shim config.
+
+### Added
+
+- **Pi single-root hybrid** — a root `package.json` `pi` key loads `./extensions`
+  (the Pi extension factory) and the shared `./skills` tree; Claude's loader
+  ignores `package.json`, so the two coexist with no build step. Adds the
+  `extensions/` and `test/` directories, with `check:pi-load` (offline skill-tree
+  plus factory smoke) and `check:test` wired into `npm run check`.
+- **`docs/pi-setup.md`** — how to `pi install` the plugin + `pi-mcp-adapter`,
+  configure `~/.pi/agent/mcp.json`, and the `directTools`/`toolPrefix` caveats.
+
+### Fixed
+
+- **MCP calls work on the default Pi config.** `pi-mcp-adapter` defaults to
+  `directTools:false`, exposing every MCP tool ONLY through a single `mcp` proxy.
+  The injected guidance is now proxy-primary
+  (`mcp({ server, tool, args: "<JSON string>" })`) with the flattened direct-name
+  form as the `directTools:true` opt-in, and the `tool_result` quality checks
+  (fourth-wall / schema\_validate / error classification) now fire on the proxy
+  path — where they were previously dead — across all three call shapes and the
+  read-family tools.
+- **The nudge pair get MCP guidance** — `nudge-sync`/`nudge-adoption` were wrongly
+  excluded from the guidance set (both call `mcp__basic-memory__read_note`).
+- **`npm test` no longer overwrites `~/.pi/agent/agents/`** — the agent-sync target
+  resolves at call time (a `VP_KNOWLEDGE_AGENTS_DIR` override) so tests isolate to a
+  tmpdir. agent-sync also content-diffs before overwrite (`updated` now means a real
+  change) and surfaces sync errors to stderr unconditionally, not only under a UI.
+- **A transient config read no longer pins DEFAULTS** — the new per-path config
+  cache does not memoize a failed read (found by the release review gate).
+- **`check:pi-load` fails on skill-name collisions** — a collision silently drops a
+  skill from the loaded set.
+
+### Changed
+
+- Template alignment: `check:type-coverage` gains `--detail --strict --ignore-files
+  'test/*'`; `tsconfig` restricts ambient types to `["node"]`.
+
 ## [0.32.5][] - 2026-07-10
 
 ### Fixed
@@ -2157,6 +2198,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.32.6]: https://github.com/voxpelli/vp-claude/compare/v0.32.5...v0.32.6
 [0.32.5]: https://github.com/voxpelli/vp-claude/compare/v0.32.4...v0.32.5
 [0.32.4]: https://github.com/voxpelli/vp-claude/compare/v0.32.3...v0.32.4
 [0.32.3]: https://github.com/voxpelli/vp-claude/compare/v0.32.2...v0.32.3
