@@ -12,5 +12,12 @@
     "remote": "https://github.com/voxpelli/claude-git",
     "bm-entity": "engineering/agents/vp-plugins-vp-git-and-vp-knowledge",
     "relationship": "sibling-plugin"
+  },
+  {
+    "name": "md-wiki-vec",
+    "file": "SYNERGY-md-wiki-vec.md",
+    "remote": "https://github.com/voxpelli/md-wiki-vec",
+    "bm-entity": "engineering/agents/vp-plugins-md-wiki-vec-and-vp-knowledge",
+    "relationship": "shared-tooling"
   }
 ]
