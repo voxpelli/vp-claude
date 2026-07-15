@@ -135,8 +135,26 @@ export function syncAgentProfiles (sourceDir, targetDir) {
 
 /* ── Source/target resolution ──────────────────────────────────────────── */
 
-/** Target directory for agent profiles. */
-export const AGENTS_DIR = join(getAgentDir(), 'agents')
+/**
+ * Resolve the agent-profiles target dir (`~/.pi/agent/agents/`) at call time.
+ *
+ * Deliberately a function, not a module-load `const`: an ESM `const` binds its
+ * value once at import, before a test can redirect it, so the startup sync
+ * would write into the contributor's real `~/.pi/agent/agents/` during
+ * `npm test`. Reading `VP_KNOWLEDGE_AGENTS_DIR` at call time lets tests point it
+ * at an isolated tmpdir (see `test/isolate-agents-dir.js`); the override is also
+ * a legitimate way to redirect an install. Mirrors the `VP_KNOWLEDGE_*`
+ * env-isolation pattern already used by `scripts/check-hooks.mjs`.
+ *
+ * An empty `VP_KNOWLEDGE_AGENTS_DIR` (e.g. `VAR= npm test`) is treated as unset:
+ * `||` (not `??`) falls back to the real dir, and `test/isolate-agents-dir.js`
+ * uses the same falsy check so the two never disagree on the empty string.
+ *
+ * @returns {string}
+ */
+export function getAgentsDir () {
+  return process.env.VP_KNOWLEDGE_AGENTS_DIR || join(getAgentDir(), 'agents')
+}
 
 /**
  * Resolve the extension's install directory at runtime.

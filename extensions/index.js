@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { getValueOfKeyWithType } from '@voxpelli/typed-utils'
 
-import { AGENTS_DIR, findAgentsSourceDir, syncAgentProfiles } from './agent-sync.js'
+import { findAgentsSourceDir, getAgentsDir, syncAgentProfiles } from './agent-sync.js'
 import { loadConfig } from './config.js'
 import { flattenMcpToolName, VP_KNOWLEDGE_SKILL_NAMES } from './mcp-mapping.js'
 import { registerUpdateAgentsCommand } from './update-agents-command.js'
@@ -212,7 +212,7 @@ export default function vpKnowledgePiExtension (pi) {
         const sourceDir = findAgentsSourceDir()
         if (sourceDir) {
           try {
-            const result = syncAgentProfiles(sourceDir, AGENTS_DIR)
+            const result = syncAgentProfiles(sourceDir, getAgentsDir())
             if (ctx.hasUI) {
               if (result.added.length > 0) {
                 ctx.ui.notify(`Copied ${result.added.length} agent profile(s) to ~/.pi/agent/agents/`, 'info')

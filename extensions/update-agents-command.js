@@ -6,7 +6,7 @@
  * ctx.ui.notify().
  */
 
-import { AGENTS_DIR, findAgentsSourceDir, syncAgentProfiles } from './agent-sync.js'
+import { findAgentsSourceDir, getAgentsDir, syncAgentProfiles } from './agent-sync.js'
 
 /**
  * @param {import('./agent-sync.js').SyncResult} result
@@ -41,7 +41,7 @@ export function registerUpdateAgentsCommand (pi) {
         ctx.ui.notify('Agent sync: could not find agent source directory', 'warning')
         return
       }
-      const result = syncAgentProfiles(sourceDir, AGENTS_DIR)
+      const result = syncAgentProfiles(sourceDir, getAgentsDir())
       const severity = result.errors.length > 0 ? 'error' : 'info'
       ctx.ui.notify(formatResult(result), severity)
     },

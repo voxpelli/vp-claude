@@ -6,7 +6,7 @@ import {
   mkdirSync, readFileSync, rmSync, writeFileSync,
 } from 'node:fs'
 
-import { syncAgentProfiles } from '../extensions/agent-sync.js'
+import { getAgentsDir, syncAgentProfiles } from '../extensions/agent-sync.js'
 
 describe('agent-sync', () => {
   const testBase = join(tmpdir(), 'vp-knowledge-sync-test')
@@ -142,3 +142,57 @@ describe('agent-sync', () => {
     assert.strictEqual(result.errors[0]?.op, 'mkdir')
   })
 })
+
+/* eslint-disable n/no-process-env -- getAgentsDir reads the env by design; these tests must set and clear it */
+
+/**
+ * Save/restore the VP_KNOWLEDGE_AGENTS_DIR override around a test.
+ *
+ * @param {string | undefined} saved
+ */
+function restoreAgentsDirEnv (saved) {
+  if (saved === undefined) delete process.env.VP_KNOWLEDGE_AGENTS_DIR
+  else process.env.VP_KNOWLEDGE_AGENTS_DIR = saved
+}
+
+// This file deliberately does NOT import ./isolate-agents-dir.js, so each test
+// owns the VP_KNOWLEDGE_AGENTS_DIR value via save/restore — otherwise the
+// `--import` preload (npm test) would pin it and the fallback branch could
+// never be exercised.
+describe('getAgentsDir', () => {
+  it('returns the override when VP_KNOWLEDGE_AGENTS_DIR is set', () => {
+    const saved = process.env.VP_KNOWLEDGE_AGENTS_DIR
+    const override = join(tmpdir(), 'vpk-explicit-override')
+    try {
+      process.env.VP_KNOWLEDGE_AGENTS_DIR = override
+      // Fails the instant getAgentsDir() reverts to a module-load const that
+      // ignores the env — the exact C1 regression class.
+      assert.strictEqual(getAgentsDir(), override)
+    } finally {
+      restoreAgentsDirEnv(saved)
+    }
+  })
+
+  it('falls back to a ~/.pi/agent/agents path when the override is unset', () => {
+    const saved = process.env.VP_KNOWLEDGE_AGENTS_DIR
+    try {
+      delete process.env.VP_KNOWLEDGE_AGENTS_DIR
+      const resolved = getAgentsDir()
+      assert.ok(resolved.endsWith(join('agent', 'agents')), `expected a .pi/agent/agents path, got ${resolved}`)
+    } finally {
+      restoreAgentsDirEnv(saved)
+    }
+  })
+
+  it('treats an empty override as unset (falsy), matching the isolate module', () => {
+    const saved = process.env.VP_KNOWLEDGE_AGENTS_DIR
+    try {
+      process.env.VP_KNOWLEDGE_AGENTS_DIR = ''
+      const resolved = getAgentsDir()
+      assert.ok(resolved.endsWith(join('agent', 'agents')), `empty env must fall back to real dir, got ${resolved}`)
+    } finally {
+      restoreAgentsDirEnv(saved)
+    }
+  })
+})
+/* eslint-enable n/no-process-env */

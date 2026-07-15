@@ -31,14 +31,14 @@
     "check:release-counts": "node scripts/check-release-counts.mjs",
     "check:schema-vocab": "node scripts/check-schema-vocab.mjs",
     "check:sh": "shellcheck hooks/*.sh scripts/*.sh && shfmt -d hooks/*.sh scripts/*.sh",
-    "check:test": "node --test",
+    "check:test": "node --test --import ./test/isolate-agents-dir.js",
     "check:tsc": "tsc",
     "check:type-coverage": "type-coverage --at-least 99",
     "check:upstream-headings": "node scripts/check-upstream-headings.mjs",
     "fix": "run-s fix:*",
     "fix:ast-grep": "ast-grep scan --update-all --globs '!scripts/check-*.mjs' lib/ scripts/ extensions/",
-    "test": "node --test",
-    "test-ci": "c8 --reporter=cobertura --reporter=lcov --reporter=text node --test"
+    "test": "node --test --import ./test/isolate-agents-dir.js",
+    "test-ci": "c8 --reporter=cobertura --reporter=lcov --reporter=text node --test --import ./test/isolate-agents-dir.js"
   },
   "dependencies": {
     "@voxpelli/typed-utils": "^5.0.0"

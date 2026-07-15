@@ -1,5 +1,9 @@
 // @ts-nocheck — Test file; runtime correctness verified by node:test
 
+// Must precede the extension import: isolates the agent-sync target dir so the
+// factory's startup handler never writes to the real ~/.pi/agent/agents/.
+import './isolate-agents-dir.js'
+
 import assert from 'node:assert'
 import { describe, it } from 'node:test'
 
