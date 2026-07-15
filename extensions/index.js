@@ -1,13 +1,12 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { getValueOfKeyWithType } from '@voxpelli/typed-utils'
 
 import { AGENTS_DIR, findAgentsSourceDir, syncAgentProfiles } from './agent-sync.js'
 import { loadConfig } from './config.js'
 import { flattenMcpToolName, VP_KNOWLEDGE_SKILL_NAMES } from './mcp-mapping.js'
-import { registerSettingsCommand } from './settings-command.js'
 import { registerUpdateAgentsCommand } from './update-agents-command.js'
 
 /** @typedef {import('@earendil-works/pi-coding-agent').ExtensionAPI} ExtensionAPI */
@@ -24,7 +23,7 @@ const FOURTH_WALL_MODULE = 'fourth-wall-rules.mjs'
  * `session_start` for every session including programmatic spawns, but
  * agent sync targets the global `~/.pi/agent/agents/` dir whose source
  * can't change mid-process — re-running just recomputes identical hashes.
- * `/vp-knowledge-update-agents` and `/reload` are the explicit re-sync paths.
+ * `/vpk-sync` and `/reload` are the explicit re-sync paths.
  */
 let startupMaintenanceDone = false
 
@@ -44,7 +43,11 @@ function resolveExtensionDir () {
 
 /**
  * Find the fourth-wall rules module.
- * Tries sibling `lib/` (npm) then grandparent `lib/` (git clone).
+ *
+ * Single-root hybrid: the extension lives at the repo-root `extensions/`, so
+ * the shared `lib/` is always the sibling `../lib` — both in local dev and in
+ * a `pi install git:` whole-tree clone. (Previously probed a second grandparent
+ * path for the old pi-package build layout, now dissolved.)
  *
  * @returns {string | undefined}
  */
@@ -56,14 +59,9 @@ function findFourthWallModule () {
   } catch {
     return
   }
-  const candidates = [
-    join(extDir, '..', 'lib', FOURTH_WALL_MODULE),
-    join(extDir, '..', '..', 'lib', FOURTH_WALL_MODULE),
-  ]
-  for (const p of candidates) {
-    // eslint-disable-next-line n/no-sync
-    if (existsSync(p)) return p
-  }
+  const modulePath = join(extDir, '..', 'lib', FOURTH_WALL_MODULE)
+  // eslint-disable-next-line n/no-sync
+  return existsSync(modulePath) ? modulePath : undefined
 }
 
 /* ── Exported helpers (testable) ───────────────────────────────────────── */
@@ -128,13 +126,17 @@ export function buildAuditReminder (cwd) {
   try {
     // eslint-disable-next-line n/no-sync
     const count = readdirSync(cwd).filter((f) => /^RETRO-.*\.md$/.test(f)).length
-    if (count > 0) {
-      const mod = count % 4
-      if (mod === 3) {
-        return `Graph-audit reminder: Sprint ${count + 1} will be a graph-audit sprint. When running /retrospective next time, run the knowledge-gardener agent (read-only audit) then knowledge-maintainer (auto-fix) for full graph health: schema validation, stale-note detection, drift check, and orphan audit.`
-      } else if (mod === 0) {
-        return `Graph-audit sprint: Sprint ${count + 1} — run knowledge-gardener (audit) then knowledge-maintainer (fix) alongside /retrospective for full graph health: schema validation, stale-note detection, drift detection, and orphan check.`
-      }
+    // Audit every 4th sprint: sprint N is an audit sprint iff N % 4 === 0.
+    // `count` = completed sprints (RETRO files), so the sprint about to start is
+    // `upcoming`. Fire the do-it-now message when the upcoming sprint IS an audit
+    // sprint, and a heads-up when the one after it is. (The prior code fired the
+    // do-it-now on the sprint AFTER an audit — an off-by-one.)
+    const upcoming = count + 1
+    if (upcoming % 4 === 0) {
+      return `Graph-audit sprint: Sprint ${upcoming} is a graph-audit sprint — run knowledge-gardener (audit) then knowledge-maintainer (fix) alongside /retrospective for full graph health: schema validation, stale-note detection, drift detection, and orphan check.`
+    }
+    if ((upcoming + 1) % 4 === 0) {
+      return `Graph-audit reminder: Sprint ${upcoming + 1} will be a graph-audit sprint. When running /retrospective next time, run the knowledge-gardener agent (read-only audit) then knowledge-maintainer (auto-fix) for full graph health: schema validation, stale-note detection, drift check, and orphan audit.`
     }
   } catch {
     // ignore — no audit reminder if counting fails
@@ -210,7 +212,7 @@ export default function vpKnowledgePiExtension (pi) {
         const sourceDir = findAgentsSourceDir()
         if (sourceDir) {
           try {
-            const result = syncAgentProfiles(sourceDir, AGENTS_DIR, false)
+            const result = syncAgentProfiles(sourceDir, AGENTS_DIR)
             if (ctx.hasUI) {
               if (result.added.length > 0) {
                 ctx.ui.notify(`Copied ${result.added.length} agent profile(s) to ~/.pi/agent/agents/`, 'info')
@@ -218,15 +220,13 @@ export default function vpKnowledgePiExtension (pi) {
               if (result.updated.length > 0) {
                 ctx.ui.notify(`Updated ${result.updated.length} agent profile(s)`, 'info')
               }
-              if (result.pendingUpdate.length > 0) {
-                ctx.ui.notify(`${result.pendingUpdate.length} agent profile(s) have local edits — run /vp-knowledge-update-agents to force sync`, 'warning')
-              }
               if (result.errors.length > 0) {
                 ctx.ui.notify(`Agent sync: ${result.errors.length} error(s)`, 'warning')
               }
             }
-          } catch {
-            // silent — agent sync is best-effort
+          } catch (err) {
+            // best-effort, but not silent: surface the failure without crashing the session
+            process.stderr.write(`[vp-knowledge] agent sync skipped: ${err instanceof Error ? err.message : String(err)}\n`)
           }
         }
       }
@@ -328,7 +328,7 @@ export default function vpKnowledgePiExtension (pi) {
           try {
             const modPath = findFourthWallModule()
             if (modPath) {
-              const mod = /** @type {{ detectFourthWallViolations: (content: string) => Array<{ id: string, name: string, match: string }> }} */ (await import(modPath))
+              const mod = /** @type {{ detectFourthWallViolations: (content: string) => Array<{ id: string, name: string, match: string }> }} */ (await import(pathToFileURL(modPath).href))
               /** @type {FourthWallViolation[]} */
               const violations = mod.detectFourthWallViolations(noteContent)
               if (violations.length > 0) {
@@ -336,8 +336,9 @@ export default function vpKnowledgePiExtension (pi) {
                 patches.content = [{ type: 'text', text }]
               }
             }
-          } catch {
-            // silent fail — fourth-wall check is advisory
+          } catch (err) {
+            // advisory, but not silent: surface the failure without blocking the write
+            process.stderr.write(`[vp-knowledge] fourth-wall check skipped: ${err instanceof Error ? err.message : String(err)}\n`)
           }
         }
 
@@ -398,5 +399,4 @@ export default function vpKnowledgePiExtension (pi) {
   /* ── Commands ──────────────────────────────────────────────────────────── */
 
   registerUpdateAgentsCommand(pi)
-  registerSettingsCommand(pi)
 }

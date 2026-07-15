@@ -1,28 +1,28 @@
 /**
  * Config loader for vp-knowledge-pi.
  *
- * Reads/writes `~/.pi/agent/extensions/vp-knowledge.json`.
- * Deep-merges with defaults so partial configs work (user sets one
- * toggle, the rest stay at their defaults).
+ * Reads `~/.pi/agent/extensions/vp-knowledge.json` (read-only). Users
+ * hand-edit that file; the extension never writes it. Every load returns
+ * the full DEFAULTS shape with only the four known boolean leaves
+ * overridden, so missing/null sections can never cause a downstream
+ * null-deref and arbitrary keys are never copied (prototype-pollution safe).
  */
 
+import { existsSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import {
-  existsSync, mkdirSync, readFileSync, renameSync, writeFileSync,
-} from 'node:fs'
 
 import { CONFIG_DIR_NAME } from '@earendil-works/pi-coding-agent'
 
 /**
- * @typedef {object} AgentsConfig
+ * @typedef AgentsConfig
  * @property {boolean} autoSync
- * @typedef {object} QualityChecksConfig
+ * @typedef QualityChecksConfig
  * @property {boolean} fourthWall
  * @property {boolean} schemaValidate
- * @typedef {object} GuidanceConfig
+ * @typedef GuidanceConfig
  * @property {boolean} auditReminders
- * @typedef {object} VpKnowledgeConfig
+ * @typedef VpKnowledgeConfig
  * @property {AgentsConfig} agents
  * @property {QualityChecksConfig} qualityChecks
  * @property {GuidanceConfig} guidance
@@ -53,39 +53,26 @@ export function getConfigPath () {
 }
 
 /**
- * Simple deep merge: recursively copy `source` properties into `target`.
- * Only merges plain objects; arrays and other types are overwritten.
+ * Extract a plain-object section from a parsed config, or `undefined`
+ * when the section is missing, null, an array, or a non-object. Never
+ * indexes into a non-object, so a null section (`{"agents":null}`) is
+ * treated as "no overrides" rather than crashing downstream reads.
  *
- * @param {Record<string, unknown>} target
- * @param {Record<string, unknown>} source
- * @returns {Record<string, unknown>}
+ * @param {Record<string, unknown>} parsed
+ * @param {string} key
+ * @returns {Record<string, unknown> | undefined}
  */
-function deepMerge (target, source) {
-  for (const key of Object.keys(source)) {
-    const sourceVal = source[key]
-    const targetVal = target[key]
-    // eslint-disable-next-line unicorn/prefer-ternary
-    if (
-      typeof sourceVal === 'object' &&
-      sourceVal !== null &&
-      !Array.isArray(sourceVal) &&
-      typeof targetVal === 'object' &&
-      targetVal !== null &&
-      !Array.isArray(targetVal)
-    ) {
-      target[key] = deepMerge(
-        /** @type {Record<string, unknown>} */ (targetVal),
-        /** @type {Record<string, unknown>} */ (sourceVal)
-      )
-    } else {
-      target[key] = sourceVal
-    }
+function readSection (parsed, key) {
+  const section = parsed[key]
+  if (typeof section === 'object' && section !== null && !Array.isArray(section)) {
+    return /** @type {Record<string, unknown>} */ (section)
   }
-  return target
 }
 
 /**
- * Load config from disk, merged with defaults.
+ * Load config from disk, overlaying the four known boolean leaves onto a
+ * fresh copy of DEFAULTS. Read-only and fail-soft: any missing file,
+ * parse error, or non-object shape returns defaults unchanged.
  *
  * @param {string} [configFile]
  * @returns {VpKnowledgeConfig}
@@ -98,35 +85,34 @@ export function loadConfig (configFile = CONFIG_FILE) {
     const raw = readFileSync(configFile, 'utf8')
     /** @type {unknown} */
     const parsed = JSON.parse(raw)
-    if (typeof parsed === 'object' && parsed !== null) {
-      deepMerge(
-        /** @type {Record<string, unknown>} */ (config),
-        /** @type {Record<string, unknown>} */ (parsed)
-      )
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return config
+    }
+    const root = /** @type {Record<string, unknown>} */ (parsed)
+
+    const agents = readSection(root, 'agents')
+    if (agents && typeof agents.autoSync === 'boolean') {
+      config.agents.autoSync = agents.autoSync
+    }
+
+    const qualityChecks = readSection(root, 'qualityChecks')
+    if (qualityChecks && typeof qualityChecks.fourthWall === 'boolean') {
+      config.qualityChecks.fourthWall = qualityChecks.fourthWall
+    }
+    if (qualityChecks && typeof qualityChecks.schemaValidate === 'boolean') {
+      config.qualityChecks.schemaValidate = qualityChecks.schemaValidate
+    }
+
+    const guidance = readSection(root, 'guidance')
+    if (guidance && typeof guidance.auditReminders === 'boolean') {
+      config.guidance.auditReminders = guidance.auditReminders
     }
   } catch {
-    // fail-soft: return defaults on parse error
+    // fail-soft: return defaults on parse/read error
   }
   return config
 }
 
-/**
- * Save config to disk. Writes atomically (tmp + rename) to avoid
- * truncating the existing file on crash.
- *
- * @param {VpKnowledgeConfig} config
- * @param {string} [configFile]
- * @returns {void}
- */
-export function saveConfig (config, configFile = CONFIG_FILE) {
-  try {
-    mkdirSync(CONFIG_DIR, { recursive: true })
-    const content = `${JSON.stringify(config, null, 2)}\n`
-    const tmpFile = `${configFile}.${process.pid}.tmp`
-    writeFileSync(tmpFile, content, 'utf8')
-    // Atomic rename (POSIX same-filesystem guarantee within ~/.pi)
-    renameSync(tmpFile, configFile)
-  } catch {
-    // fail-soft: don't crash the extension on permission errors
-  }
-}
+// TODO(revive): config is read-only — users hand-edit ~/.pi/agent/extensions/vp-knowledge.json.
+// If a real user wants persistent toggles from within Pi, re-add an atomic writer here plus a
+// /vpk-setup command (see git history for the deleted TUI).

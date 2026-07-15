@@ -1,7 +1,11 @@
 import assert from 'node:assert'
+import { mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, it } from 'node:test'
 
 import extension, {
+  buildAuditReminder,
   buildGraphGuidance,
   buildMappingGuidance,
   classifyBmError,
@@ -72,5 +76,40 @@ describe('vp-knowledge-pi extension', () => {
 
   it('classifyBmError returns unknown for unrecognized errors', () => {
     assert.strictEqual(classifyBmError('something weird happened'), 'unknown')
+  })
+})
+
+/**
+ * @param {number} n
+ * @returns {string}
+ */
+function dirWithRetros (n) {
+  const dir = mkdtempSync(join(tmpdir(), 'vpk-audit-'))
+  for (let i = 1; i <= n; i++) writeFileSync(join(dir, `RETRO-${i}.md`), '')
+  return dir
+}
+
+describe('buildAuditReminder (audit-sprint cadence)', () => {
+  it('fires the do-it-now message when the upcoming sprint is the 4th', () => {
+    // 3 completed → sprint 4 is about to start = an audit sprint
+    assert.ok(buildAuditReminder(dirWithRetros(3)).includes('Sprint 4 is a graph-audit sprint'))
+  })
+
+  it('stays silent on the sprint right after an audit (the fixed off-by-one)', () => {
+    // 4 completed → sprint 5 next, NOT an audit sprint
+    assert.strictEqual(buildAuditReminder(dirWithRetros(4)), '')
+  })
+
+  it('fires a heads-up when the sprint after next is an audit', () => {
+    // 2 completed → upcoming sprint 3, sprint 4 (after next) is the audit
+    assert.ok(buildAuditReminder(dirWithRetros(2)).includes('Sprint 4 will be a graph-audit sprint'))
+  })
+
+  it('is silent on a fresh project with no RETRO files', () => {
+    assert.strictEqual(buildAuditReminder(dirWithRetros(0)), '')
+  })
+
+  it('returns empty string when the directory cannot be read', () => {
+    assert.strictEqual(buildAuditReminder(join(tmpdir(), 'vpk-nonexistent-xyz-123')), '')
   })
 })

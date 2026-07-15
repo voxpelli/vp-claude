@@ -1,8 +1,9 @@
 /**
- * /vp-knowledge-update-agents — forced sync of bundled agent profiles.
+ * /vpk-sync — forced sync of bundled agent profiles.
  *
- * Calls syncAgentProfiles with apply=true (bypasses the smart gate) and
- * reports results via ctx.ui.notify().
+ * Calls syncAgentProfiles to copy source agent profiles into
+ * ~/.pi/agent/agents/, overwriting unconditionally, and reports results via
+ * ctx.ui.notify().
  */
 
 import { AGENTS_DIR, findAgentsSourceDir, syncAgentProfiles } from './agent-sync.js'
@@ -20,8 +21,6 @@ function formatResult (result) {
   const parts = []
   if (result.added.length > 0) parts.push(`${result.added.length} added`)
   if (result.updated.length > 0) parts.push(`${result.updated.length} updated`)
-  if (result.unchanged.length > 0) parts.push(`${result.unchanged.length} unchanged`)
-  if (result.pendingUpdate.length > 0) parts.push(`${result.pendingUpdate.length} pending update (user-edited)`)
 
   if (parts.length === 0) return 'Agent sync: no changes needed'
   return `Agent sync: ${parts.join(', ')}`
@@ -42,7 +41,7 @@ export function registerUpdateAgentsCommand (pi) {
         ctx.ui.notify('Agent sync: could not find agent source directory', 'warning')
         return
       }
-      const result = syncAgentProfiles(sourceDir, AGENTS_DIR, true)
+      const result = syncAgentProfiles(sourceDir, AGENTS_DIR)
       const severity = result.errors.length > 0 ? 'error' : 'info'
       ctx.ui.notify(formatResult(result), severity)
     },

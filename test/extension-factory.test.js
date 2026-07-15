@@ -19,13 +19,14 @@ describe('extension factory', () => {
     assert.ok(events.has('tool_result'))
   })
 
-  it('registers both commands', () => {
+  it('registers the vpk-sync command', () => {
     const { calls, pi } = createMockPi()
     vpKnowledgePiExtension(pi)
 
     const commands = new Set(calls.registerCommand.map((c) => c.name))
     assert.ok(commands.has('vpk-sync'))
-    assert.ok(commands.has('vpk-setup'))
+    // vpk-setup (the settings TUI) was removed — config is now read-only.
+    assert.ok(!commands.has('vpk-setup'))
   })
 
   it('startupMaintenanceDone latch prevents duplicate sync', async () => {

@@ -27,27 +27,4 @@ describe('commands', () => {
 
     assert.strictEqual(uiCalls.length, 0, 'should not call any UI methods')
   })
-
-  it('/vpk-setup handler exists and is callable', () => {
-    const { commands, pi } = createMockPi()
-    vpKnowledgePiExtension(pi)
-
-    const cmd = commands.get('vpk-setup')
-    assert.ok(cmd, 'command should be registered')
-    assert.strictEqual(typeof cmd.handler, 'function')
-  })
-
-  it('/vpk-setup returns early in non-tui mode', async () => {
-    const { commands, pi } = createMockPi()
-    vpKnowledgePiExtension(pi)
-
-    const cmd = commands.get('vpk-setup')
-    const { ctx, uiCalls } = createMockContext({ mode: 'json' })
-
-    await cmd.handler('', ctx)
-
-    // Should not invoke custom() TUI component in non-tui mode
-    const customCalls = uiCalls.filter((u) => u.method === 'custom')
-    assert.strictEqual(customCalls.length, 0)
-  })
 })
