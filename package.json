@@ -28,6 +28,7 @@
     "check:pi-load": "node scripts/check-pi-load.mjs",
     "check:plugin": "node validate-plugin.mjs",
     "check:plugin-load-paths": "node scripts/check-plugin-load-paths.mjs",
+    "check:portability": "node scripts/check-portability.mjs",
     "check:release-counts": "node scripts/check-release-counts.mjs",
     "check:schema-vocab": "node scripts/check-schema-vocab.mjs",
     "check:sh": "shellcheck hooks/*.sh scripts/*.sh && shfmt -d hooks/*.sh scripts/*.sh",
