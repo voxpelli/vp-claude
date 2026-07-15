@@ -100,52 +100,67 @@ export function __resetConfigCache () {
 export function loadConfig (configFile = process.env.VP_KNOWLEDGE_CONFIG_FILE || CONFIG_FILE) {
   const cached = configCache.get(configFile)
   if (cached) return cached
-  const config = readConfigFile(configFile)
-  configCache.set(configFile, config)
+  const { cacheable, config } = readConfigFile(configFile)
+  // Only memoize a DURABLE result. A missing or malformed file is durable
+  // (re-reading won't differ). A TRANSIENT read failure (EMFILE/EIO/lock on an
+  // existing file) must NOT pin DEFAULTS for the whole process — that would
+  // silently mask the user's real config until a /reload — so leave it uncached
+  // and let the next call retry.
+  if (cacheable) configCache.set(configFile, config)
   return config
 }
 
 /**
- * Read and parse a config file into a full VpKnowledgeConfig. Uncached; the
- * fail-soft parsing body that `loadConfig` memoizes.
+ * Read and parse a config file into a full VpKnowledgeConfig plus whether the
+ * result is safe to cache. Fail-soft: a missing or malformed file yields
+ * DEFAULTS (`cacheable: true`); a transient read failure yields DEFAULTS with
+ * `cacheable: false` so the failure is not memoized.
  *
  * @param {string} configFile
- * @returns {VpKnowledgeConfig}
+ * @returns {{ config: VpKnowledgeConfig, cacheable: boolean }}
  */
 function readConfigFile (configFile) {
   /** @type {VpKnowledgeConfig} */
   const config = structuredClone(DEFAULTS)
-  if (!existsSync(configFile)) return config
+  if (!existsSync(configFile)) return { config, cacheable: true }
+
+  /** @type {string} */
+  let raw
   try {
-    const raw = readFileSync(configFile, 'utf8')
+    raw = readFileSync(configFile, 'utf8')
+  } catch {
+    // Transient read failure on an existing file — return defaults, do not cache.
+    return { config, cacheable: false }
+  }
+
+  try {
     /** @type {unknown} */
     const parsed = JSON.parse(raw)
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      return config
-    }
-    const root = /** @type {Record<string, unknown>} */ (parsed)
+    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+      const root = /** @type {Record<string, unknown>} */ (parsed)
 
-    const agents = readSection(root, 'agents')
-    if (agents && typeof agents.autoSync === 'boolean') {
-      config.agents.autoSync = agents.autoSync
-    }
+      const agents = readSection(root, 'agents')
+      if (agents && typeof agents.autoSync === 'boolean') {
+        config.agents.autoSync = agents.autoSync
+      }
 
-    const qualityChecks = readSection(root, 'qualityChecks')
-    if (qualityChecks && typeof qualityChecks.fourthWall === 'boolean') {
-      config.qualityChecks.fourthWall = qualityChecks.fourthWall
-    }
-    if (qualityChecks && typeof qualityChecks.schemaValidate === 'boolean') {
-      config.qualityChecks.schemaValidate = qualityChecks.schemaValidate
-    }
+      const qualityChecks = readSection(root, 'qualityChecks')
+      if (qualityChecks && typeof qualityChecks.fourthWall === 'boolean') {
+        config.qualityChecks.fourthWall = qualityChecks.fourthWall
+      }
+      if (qualityChecks && typeof qualityChecks.schemaValidate === 'boolean') {
+        config.qualityChecks.schemaValidate = qualityChecks.schemaValidate
+      }
 
-    const guidance = readSection(root, 'guidance')
-    if (guidance && typeof guidance.auditReminders === 'boolean') {
-      config.guidance.auditReminders = guidance.auditReminders
+      const guidance = readSection(root, 'guidance')
+      if (guidance && typeof guidance.auditReminders === 'boolean') {
+        config.guidance.auditReminders = guidance.auditReminders
+      }
     }
   } catch {
-    // fail-soft: return defaults on parse/read error
+    // Malformed JSON is durable — return DEFAULTS, still cacheable.
   }
-  return config
+  return { config, cacheable: true }
 }
 
 // TODO(revive): config is read-only — users hand-edit ~/.pi/agent/extensions/vp-knowledge.json.

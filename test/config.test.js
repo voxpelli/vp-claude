@@ -1,10 +1,14 @@
 import assert from 'node:assert'
-import { unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
+import {
+  mkdirSync, rmSync, unlinkSync, writeFileSync,
+} from 'node:fs'
 
-import { DEFAULTS, getConfigPath, loadConfig } from '../extensions/config.js'
+import {
+  __resetConfigCache, DEFAULTS, getConfigPath, loadConfig,
+} from '../extensions/config.js'
 
 let counter = 0
 
@@ -90,6 +94,25 @@ describe('config', () => {
       assert.deepStrictEqual(config, DEFAULTS)
     } finally {
       cleanup()
+    }
+  })
+
+  it('does not cache a transient read failure (a later successful read wins)', () => {
+    // Regression for the gate finding: a directory at `path` exists (existsSync
+    // true) but readFileSync throws EISDIR — a transient-style read failure.
+    // The failed read must NOT be memoized, or it would pin DEFAULTS and mask
+    // the user's real config for the whole process.
+    __resetConfigCache()
+    const path = join(tmpdir(), `vp-knowledge-config-transient-${process.pid}-${counter++}`)
+    mkdirSync(path)
+    try {
+      assert.deepStrictEqual(loadConfig(path), DEFAULTS) // EISDIR → defaults, uncached
+      rmSync(path, { recursive: true, force: true })
+      writeFileSync(path, JSON.stringify({ qualityChecks: { fourthWall: false } }), 'utf8')
+      // If the failed read had been cached, this would still be the default true.
+      assert.strictEqual(loadConfig(path).qualityChecks.fourthWall, false)
+    } finally {
+      rmSync(path, { recursive: true, force: true })
     }
   })
 
