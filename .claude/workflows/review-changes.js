@@ -1,8 +1,9 @@
 export const meta = {
   name: 'review-changes',
   description: 'Local multi-agent code review: fan out the pr-review-toolkit spectrum over a diff, adversarially verify each dimension’s findings',
-  whenToUse: 'A high-stakes pre-tag / pre-merge review of a branch or diff when a single-context skim is not enough: the full pr-review-toolkit roster (correctness, type design, silent failures, comments, tests, simplification), each finding refuted by an independent skeptic before it survives. Pass args.context describing the change and its primary risk; args.base / args.head to scope the diff.',
+  whenToUse: 'A high-stakes pre-tag / pre-merge review of a branch or diff when a single-context skim is not enough: the full pr-review-toolkit roster (correctness, type design, silent failures, comments, tests, simplification), each finding refuted by an independent skeptic before it survives. Optionally pass args.context to frame the review (or omit it — a Sonnet recon step auto-drafts the framing); args.base / args.head scope the diff.',
   phases: [
+    { title: 'Scope', detail: 'auto-infer review context when none is supplied' },
     { title: 'Review', detail: 'pr-review-toolkit dimensions over the diff' },
     { title: 'Verify', detail: 'adversarial skeptic refutes each dimension’s findings' },
   ],
@@ -18,7 +19,8 @@ export const meta = {
 //   Workflow({ name: 'review-changes', args: {
 //     base:    'main',        // diff base (branch/commit/tag); default 'main'
 //     head:    'HEAD',        // diff head; default 'HEAD'
-//     context: '...prose...', // what changed + its PRIMARY RISK + a scope map
+//     context: '...prose...', // OPTIONAL: what changed + its PRIMARY RISK + scope map.
+//                             //   Omit it and a Sonnet recon step auto-drafts the framing.
 //     only:    ['code-reviewer', 'pr-test-analyzer'], // optional roster subset
 //     focus:   { 'code-reviewer': '...override...' },  // optional per-dimension focus
 //     verify:  true,          // run the adversarial verify pass; default true
@@ -43,9 +45,51 @@ const HEAD = typeof A.head === 'string' && A.head ? A.head : 'HEAD'
 const VERIFY = A.verify !== false
 const ONLY = Array.isArray(A.only) && A.only.length ? A.only : null
 const FOCUS = (A.focus && typeof A.focus === 'object') ? A.focus : {}
-const CONTEXT = typeof A.context === 'string' && A.context
-  ? A.context
-  : 'No project context was supplied — infer the change’s shape and its primary risk from the diff itself and from the repository’s CLAUDE.md / AGENTS.md house conventions.'
+// Context frames the whole review — the `primary_risk` line is what points the six
+// reviewers. If the caller supplied one, use it verbatim (guided path, unchanged).
+// Otherwise a single Sonnet reconnaissance agent drafts it from the diff + repo
+// conventions — reconnaissance is Sonnet's lane, and reviewers cross-check its
+// framing against the real diff, so it is never authoritative alone. Falls back to
+// a generic instruction if that agent dies.
+const GENERIC_CONTEXT = 'No project context was supplied — infer the change’s shape and its primary risk from the diff itself and from the repository’s CLAUDE.md / AGENTS.md house conventions.'
+
+const CONTEXT_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    summary: { type: 'string', description: 'what changed and why (intent, 2-4 sentences) — not a file list' },
+    scope_map: { type: 'string', description: 'surface breakdown: code vs prose/config, highest-risk files, mechanical (rename/move/format) vs substantive' },
+    primary_risk: { type: 'string', description: 'the single most important thing reviewers should focus on — the change most likely to hide a real defect' },
+  },
+  required: ['summary', 'primary_risk'],
+}
+
+let CONTEXT
+if (typeof A.context === 'string' && A.context) {
+  CONTEXT = A.context
+} else {
+  log('No args.context supplied — running a Sonnet reconnaissance step to frame the review.')
+  const recon = await agent(
+    `You are the reconnaissance step of a local multi-agent code review. No human-supplied context was provided, so your job is to FRAME the change for six downstream reviewers — NOT to review it.
+
+Inspect the change:
+- \`git diff --stat ${BASE} ${HEAD}\` (if empty, use \`git diff --stat HEAD\` — uncommitted work)
+- \`git log --oneline ${BASE}..${HEAD}\` for intent
+- read the repository's CLAUDE.md / AGENTS.md for what this project is and its house conventions
+- open a few of the most-changed files if their purpose is not clear from the names
+
+Return via the schema:
+- summary: 2-4 sentences on WHAT changed and WHY (the intent), not a file list.
+- scope_map: the surface breakdown — code vs prose/docs/config, the handful of highest-risk files, and which changes are mechanical (renames/moves/formatting) vs substantive.
+- primary_risk: the SINGLE most important thing the reviewers should focus on — the change most likely to hide a real defect. Be specific and opinionated; this one line points six reviewers.
+
+Do NOT list defects or review the code — only frame it. Do NOT call advisor().`,
+    { label: 'auto-context', phase: 'Scope', agentType: 'general-purpose', model: 'sonnet', schema: CONTEXT_SCHEMA },
+  )
+  CONTEXT = recon
+    ? `${recon.summary}\n\nSCOPE MAP:\n${recon.scope_map || '(not provided)'}\n\nPRIMARY RISK (auto-inferred by the reconnaissance step — a hypothesis to focus on, not gospel): ${recon.primary_risk}`
+    : GENERIC_CONTEXT
+}
 
 const ALL_DIMENSIONS = [
   {
