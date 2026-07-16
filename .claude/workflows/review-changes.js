@@ -39,7 +39,14 @@ export const meta = {
 // move stays a straight file relocation.
 // ────────────────────────────────────────────────────────────────────────────
 
-const A = args || {}
+// `args` can arrive as a real object OR — a known Workflow footgun — as a JSON
+// STRING. Treating a string as {} would silently drop every arg and default to
+// reviewing all of `main`..HEAD, so normalize both shapes and say so if it happens.
+let A = args
+if (typeof A === 'string') {
+  try { A = JSON.parse(A); log('Note: args arrived as a JSON string — parsed defensively.') } catch { A = {}; log('Warning: args was an unparseable string — ignoring, using defaults.') }
+}
+if (!A || typeof A !== 'object') A = {}
 const BASE = typeof A.base === 'string' && A.base ? A.base : 'main'
 const HEAD = typeof A.head === 'string' && A.head ? A.head : 'HEAD'
 const VERIFY = A.verify !== false
