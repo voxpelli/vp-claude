@@ -18,6 +18,14 @@ import { voxpelli } from '@voxpelli/eslint-config'
 //                it gets the same CLI treatment rather than being forced to
 //                return data for every caller to print/exit itself.
 export default [
+  {
+    // .claude/workflows/*.js are Workflow-tool orchestration scripts: they run in
+    // the Workflow sandbox with injected globals (agent, pipeline, parallel, phase,
+    // args, budget) and ESM top-level await, so they are agent-runtime scripts, not
+    // part of the linted source tree. They also sit outside tsconfig's `include`, so
+    // tsc/type-coverage skip them by the same reasoning — keep both consistent.
+    ignores: ['.claude/workflows/**'],
+  },
   ...voxpelli({
     noMocha: true,
     semi: false,

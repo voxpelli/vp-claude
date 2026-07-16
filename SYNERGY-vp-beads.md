@@ -326,6 +326,23 @@ of maintaining both halves catches drift cases a single-source record misses.
   Source: vp-beads `package.json` `remarkConfig` · Readiness: needs-cleanup
   Effort: moderate · Reciprocates vp-beads's entry of the same name.
 
+- **`review-changes` multi-agent review workflow** (2026-07-16) — vp-knowledge
+  built a local, standalone Workflow-tool script
+  (`.claude/workflows/review-changes.js`) that fans out the full
+  `pr-review-toolkit` spectrum (correctness, type design, silent failures,
+  comments, tests, simplification) over a diff and adversarially verifies each
+  dimension's findings with an independent skeptic. Its natural home is vp-beads,
+  co-located with the `swarm-wave` skill: swarm-wave already owns the
+  multi-agent-review-gate domain (its post-wave-gate runs a narrower 2-reviewer +
+  `npm run check` gate), and this is the richer, sprint-decoupled generalization of
+  that same pattern. Destination is the sibling *skill*, NOT a `@voxpelli/*`
+  package — the only couplings that travel are the `pr-review-toolkit:*` agent
+  types and the `.claude/workflows/` location (both exist identically in vp-beads),
+  so the move stays a straight file relocation. Keep it vp-knowledge-agnostic until
+  then.
+  Source: `.claude/workflows/review-changes.js` · Readiness: proof-of-concept
+  Effort: moderate
+
 ## They Have / We Don't
 
 *No entries yet.*
