@@ -24,7 +24,8 @@ const FOURTH_WALL_MODULE = 'fourth-wall-rules.mjs'
  * Module-local latch for startup maintenance (agent sync). Pi fires
  * `session_start` for every session including programmatic spawns, but
  * agent sync targets the global `~/.pi/agent/agents/` dir whose source
- * can't change mid-process — re-running just recomputes identical hashes.
+ * can't change mid-process — re-running just byte-compares identical files
+ * and copies nothing.
  * `/vpk-sync` and `/reload` are the explicit re-sync paths.
  */
 let startupMaintenanceDone = false
@@ -184,7 +185,7 @@ export function classifyBmError (errorText) {
 const RECOVERY_MESSAGES = {
   'schema-violation': 'Fix the note structure to match the schema, then retry. Use schema_validate to preview errors.',
   'missing-target': 'The note or directory may have been moved/deleted. Search for it or create it fresh.',
-  'tool-missing': 'The tool name may be incorrect. Verify the direct tool name in the MCP mapping table and retry.',
+  'tool-missing': 'The tool name may be incorrect. Re-derive it from the MCP naming rule — the mcp proxy is mcp({ server, tool, args }); a direct name drops the mcp__ prefix and turns server hyphens into underscores — then retry.',
   conflict: 'A note with this identifier already exists. Read the existing note first, then decide whether to update or use a different name.',
   permission: 'Check file permissions in ~/basic-memory or the MCP server config. You may need to restart the basic-memory MCP server.',
   'transient': 'The MCP server may be restarting or overloaded. Wait a moment and retry the same call.',
@@ -445,7 +446,12 @@ export default function vpKnowledgePiExtension (pi) {
       }
 
       if (patches.content) {
-        return patches
+        // The runner REPLACES the tool_result content with what we return, so
+        // seed from the original event content (the write confirmation +
+        // permalink) and append the advisories — matching Branch 2. Starting
+        // from [] would discard the successful write_note result on the default
+        // Pi proxy path.
+        return { content: [...(event.content ?? []), ...patches.content] }
       }
     }
 

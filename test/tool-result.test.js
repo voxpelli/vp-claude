@@ -84,6 +84,32 @@ describe('tool_result handler on the mcp proxy path (the default Pi config)', ()
     )
   })
 
+  it('preserves the original write result when appending a fourth-wall advisory', async () => {
+    const handler = toolResultHandler()
+    const { ctx } = createMockContext()
+    const original = { type: 'text', text: 'Note created (permalink: npm/example)' }
+    const result = await handler({
+      toolName: 'mcp',
+      input: {
+        server: 'basic-memory',
+        tool: 'write_note',
+        args: JSON.stringify({ title: 'X', content: 'This note has zero presence in Raindrop.' }),
+      },
+      content: [original],
+      details: {},
+      isError: false,
+    }, ctx)
+    assert.ok(result?.content)
+    assert.ok(
+      result.content.some((c) => c.text.includes('Fourth-wall check flagged')),
+      'the advisory must be appended'
+    )
+    assert.ok(
+      result.content.some((c) => c.text === original.text),
+      'the original write_note result must survive, not be replaced by the advisory'
+    )
+  })
+
   it('adds the schema_validate reminder for a clean write with a permalink', async () => {
     const handler = toolResultHandler()
     const { ctx } = createMockContext()
