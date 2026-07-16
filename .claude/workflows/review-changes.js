@@ -15,8 +15,11 @@ export const meta = {
 // independent adversarial skeptic (default-to-REFUTED) so plausible-but-wrong
 // findings do not survive. Returns per-dimension { findings, verdicts }.
 //
-// INVOKE:
-//   Workflow({ name: 'review-changes', args: {
+// INVOKE (in-repo): `scriptPath` works immediately and is the reliable path.
+//   Workflow({ scriptPath: '<repo>/.claude/workflows/review-changes.js', args: {
+// The `name: 'review-changes'` (and Skill) shortcut also works, but only AFTER a
+// workspace rescan registers the file — that can lag creation within a session,
+// so a freshly-written file may not resolve by name right away.
 //     base:    'main',        // diff base (branch/commit/tag); default 'main'
 //     head:    'HEAD',        // diff head; default 'HEAD'
 //     context: '...prose...', // OPTIONAL: what changed + its PRIMARY RISK + scope map.
@@ -132,6 +135,13 @@ const ALL_DIMENSIONS = [
 ]
 
 const DIMENSIONS = ONLY ? ALL_DIMENSIONS.filter((d) => ONLY.includes(d.label)) : ALL_DIMENSIONS
+
+if (ONLY && DIMENSIONS.length === 0) {
+  log(`Warning: args.only ${JSON.stringify(ONLY)} matched no known dimensions — nothing to review. Valid labels: ${ALL_DIMENSIONS.map((d) => d.label).join(', ')}.`)
+}
+// Announce the resolved scope BEFORE the dimension fan-out — a dropped or misread
+// arg otherwise silently balloons into a full main..HEAD review with no warning.
+log(`review-changes: ${BASE}..${HEAD} · ${DIMENSIONS.length} dimension(s) [${DIMENSIONS.map((d) => d.label).join(', ')}] · verify ${VERIFY ? 'on' : 'off'}`)
 
 const PREAMBLE = `You are one dimension of a local multi-agent code review.
 
