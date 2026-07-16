@@ -5,7 +5,7 @@
 import './isolate-agents-dir.js'
 
 import assert from 'node:assert'
-import { mkdtempSync, readdirSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
@@ -36,27 +36,39 @@ describe('extension factory', () => {
     assert.ok(!commands.has('vpk-setup'))
   })
 
-  it('startupMaintenanceDone latch prevents duplicate sync', async () => {
+  /* eslint-disable n/no-process-env -- redirecting the isolation seam is the point of this test */
+  it('startupMaintenanceDone latch skips the second startup sync', async () => {
+    // A real latch test: the first startup populates the override dir; delete a
+    // synced file and fire startup again. If the latch holds, the second sync is
+    // skipped and the file is NOT restored. (The old test only asserted a
+    // monotonic sendMessage count, which is true whether or not the latch works —
+    // guidance is sent on every session_start regardless of the latch.)
     __resetStartupMaintenance()
-    const { calls, handlers, pi } = createMockPi()
-    vpKnowledgePiExtension(pi)
+    const saved = process.env.VP_KNOWLEDGE_AGENTS_DIR
+    const fresh = mkdtempSync(join(tmpdir(), 'vpk-latch-'))
+    try {
+      process.env.VP_KNOWLEDGE_AGENTS_DIR = fresh
+      const { handlers, pi } = createMockPi()
+      vpKnowledgePiExtension(pi)
+      const { ctx } = createMockContext()
+      const startup = handlers.get('session_start')[0]
 
-    const sessionStartHandlers = handlers.get('session_start') ?? []
-    assert.strictEqual(sessionStartHandlers.length, 1)
+      await startup({ reason: 'startup' }, ctx)
+      const populated = readdirSync(fresh)
+      assert.ok(populated.length > 0, 'first startup should populate the override dir')
 
-    const { ctx } = createMockContext()
-
-    // First startup call — should trigger sync-related work
-    await sessionStartHandlers[0]({ reason: 'startup' }, ctx)
-    const firstSendCount = calls.sendMessage.length
-
-    // Second startup call — should skip sync, but still send guidance
-    await sessionStartHandlers[0]({ reason: 'startup' }, ctx)
-    const secondSendCount = calls.sendMessage.length
-
-    // Guidance is sent on every session_start, so count should increase
-    assert.ok(secondSendCount >= firstSendCount)
+      rmSync(join(fresh, populated[0]))
+      await startup({ reason: 'startup' }, ctx)
+      assert.ok(
+        !existsSync(join(fresh, populated[0])),
+        'the latch must skip the second sync — a deleted file must not be restored'
+      )
+    } finally {
+      process.env.VP_KNOWLEDGE_AGENTS_DIR = saved
+      rmSync(fresh, { recursive: true, force: true })
+    }
   })
+  /* eslint-enable n/no-process-env */
 
   /* eslint-disable n/no-process-env -- redirecting the isolation seam is the point of this test */
   it('startup sync writes into the override dir (getAgentsDir honors the env)', async () => {
