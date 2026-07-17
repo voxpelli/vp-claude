@@ -420,7 +420,7 @@ claude mcp add --transport http socket-mcp https://mcp.socket.dev/
 
 ### Optional for intel's tool family
 
-**[Homebrew MCP](https://github.com/Homebrew/brew/blob/master/Library/Homebrew/mcp_server.rb)** — bundled with Homebrew 4.5+ (`brew mcp-server`). Surfaces install analytics (30/90/365-day install counts and build-error counts) that the public `formulae.brew.sh` JSON API does not expose. `/intel` picks them up as `[popularity]` observations on `brew:` and `cask:` notes; when the MCP is not installed, the step skips silently without affecting the rest of the research.
+**[Homebrew MCP](https://github.com/Homebrew/brew/blob/master/Library/Homebrew/mcp_server.rb)** — bundled with Homebrew 4.5+ (`brew mcp-server`). Surfaces install analytics (30/90/365-day install counts and build-error counts) in human-readable form. The same counts are also in the `formulae.brew.sh` JSON API's `analytics` block that `/intel` already fetches in Step 2, so the MCP is a convenience source, not the only one. `/intel` picks the counts up as `[popularity]` observations on `brew:` and `cask:` notes; when the MCP is not installed, `/intel` falls back to that JSON `analytics` data without affecting the rest of the research.
 
 ```bash
 claude mcp add homebrew -- brew mcp-server

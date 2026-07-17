@@ -133,7 +133,7 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
   omit `[popularity]` whenever the Homebrew MCP was down — but that JSON
   response already carries an `analytics` block, so the doc contradicted the
   skill's own (correct) behavior for many releases undetected. `lib/analytics-
-  guidance.mjs` exports the canonical six-file list plus two checks:
+  guidance.mjs` exports the canonical seven-file list (README included as of 2026-07-17) plus two checks:
   `detectInvertedAnalyticsClaims` (fails on a reintroduced "does not expose
   analytics" / "MCP-sourced only" / "no structured fallback" phrasing) and
   `hasAnalyticsJsonFallbackMention` (a loose "analytics" ↔ "JSON" proximity
