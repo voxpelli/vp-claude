@@ -121,7 +121,7 @@ export function buildMappingGuidance () {
  */
 export function buildGraphGuidance () {
   const lines = [
-    'Knowledge graph context: Use `basic_memory_list_directory(dir_name="/", depth=1)` and `basic_memory_recent_activity(timeframe="7d")` early in the session if the task involves the knowledge graph or packages.',
+    'Knowledge graph context: Use `mcp__basic-memory__list_directory(dir_name="/", depth=1)` and `mcp__basic-memory__recent_activity(timeframe="7d")` early in the session if the task involves the knowledge graph or packages.',
     'The /intel and /knowledge-gaps skills are available for research. /intel researches a package (npm, Rust crates, Go modules, PHP Composer, Python PyPI, Ruby gems) OR a developer/CI tool and creates/updates a Basic Memory note. Prefixed invocations: /intel crate:serde, /intel pypi:requests, /intel go:github.com/gin-gonic/gin, /intel npm:fastify (no prefix defaults to npm), /intel brew:ripgrep (Homebrew formulae), /intel cask:warp (casks), /intel action:actions/checkout (GitHub Actions), /intel docker:grafana/grafana (Docker images), /intel vscode:<publisher>.<ext> (VSCode extensions), /intel gh:<owner>/<repo> (gh CLI extensions), /intel plugin:<owner>/<repo> (Claude Code plugins), /intel skill:<owner>/<repo> (skills.sh bundles).',
     'Use /knowledge-gaps to audit both package and tool manifest coverage. Use /schema-evolve <type> to detect schema drift, propose frequency-driven field changes, and dual-sync BM notes with local schema files.',
     'At session start, if the task involves understanding project dependencies, tools, or the knowledge graph, suggest running /knowledge-prime to load a context brief with documented packages, coverage gaps, and key gotchas. For topic-specific questions about a package, tool, or concept already in the graph, suggest /knowledge-ask. For comprehensive gap analysis, suggest /knowledge-gaps. For scoped note health, /knowledge-garden audits one or more named notes and /knowledge-maintain applies fixes inline — both are explicit /commands.',
@@ -336,7 +336,7 @@ export default function vpKnowledgePiExtension (pi) {
     // On reload, append recovery note
     if (event.reason === 'reload') {
       parts.push(
-        'Session reloaded: the Basic Memory knowledge graph is still available. If the ongoing task touches packages, tools, or the graph, recall context with `basic_memory_recent_activity(timeframe="7d")` or `/knowledge-prime`, and answer topic questions with `/knowledge-ask`. Research skills remain available — /intel <prefix>:<name> (packages: npm/crate/go/composer/pypi/gem, no prefix defaults to npm; tools: brew/cask/action/docker/vscode/gh/plugin/skill), /knowledge-gaps (coverage; --stale drift; --global installed plugin/skill coverage). Schema edits dual-sync to schemas/*.md; never edit ~/basic-memory files directly — always use the basic_memory_* tools.'
+        'Session reloaded: the Basic Memory knowledge graph is still available. If the ongoing task touches packages, tools, or the graph, recall context with `mcp__basic-memory__recent_activity(timeframe="7d")` or `/knowledge-prime`, and answer topic questions with `/knowledge-ask`. Research skills remain available — /intel <prefix>:<name> (packages: npm/crate/go/composer/pypi/gem, no prefix defaults to npm; tools: brew/cask/action/docker/vscode/gh/plugin/skill), /knowledge-gaps (coverage; --stale drift; --global installed plugin/skill coverage). Schema edits dual-sync to schemas/*.md; never edit ~/basic-memory files directly — always use the basic-memory (mcp__basic-memory__*) tools.'
       )
     }
 
@@ -360,7 +360,7 @@ export default function vpKnowledgePiExtension (pi) {
       pi.sendMessage(
         {
           customType: 'vp-knowledge-context',
-          content: 'Post-compaction recovery: the Basic Memory knowledge graph is still available. If the ongoing task touches packages, tools, or the graph, recall context with `basic_memory_recent_activity(timeframe="7d")` or `/knowledge-prime`, and answer topic questions with `/knowledge-ask`. Research skills remain available — /intel <prefix>:<name> (packages: npm/crate/go/composer/pypi/gem, no prefix defaults to npm; tools: brew/cask/action/docker/vscode/gh/plugin/skill), /knowledge-gaps (coverage; --stale drift; --global installed plugin/skill coverage). Schema edits dual-sync to schemas/*.md; never edit ~/basic-memory files directly — always use the basic_memory_* tools.',
+          content: 'Post-compaction recovery: the Basic Memory knowledge graph is still available. If the ongoing task touches packages, tools, or the graph, recall context with `mcp__basic-memory__recent_activity(timeframe="7d")` or `/knowledge-prime`, and answer topic questions with `/knowledge-ask`. Research skills remain available — /intel <prefix>:<name> (packages: npm/crate/go/composer/pypi/gem, no prefix defaults to npm; tools: brew/cask/action/docker/vscode/gh/plugin/skill), /knowledge-gaps (coverage; --stale drift; --global installed plugin/skill coverage). Schema edits dual-sync to schemas/*.md; never edit ~/basic-memory files directly — always use the basic-memory (mcp__basic-memory__*) tools.',
           display: false,
         },
         { triggerTurn: false, deliverAs: 'nextTurn' }
@@ -437,7 +437,7 @@ export default function vpKnowledgePiExtension (pi) {
       // check above still runs from the input content.
       const permalink = getValueOfKeyWithType(event.details, 'permalink', 'string') ?? ''
       if (permalink && config.qualityChecks.schemaValidate && !permalink.includes('/schema/')) {
-        const text = `A note was just written/edited (permalink: ${permalink}). Call basic_memory_schema_validate with that identifier. If validation reports errors, surface them. If the note type has no schema or validation passes, do nothing.`
+        const text = `A note was just written/edited (permalink: ${permalink}). Call mcp__basic-memory__schema_validate with that identifier. If validation reports errors, surface them. If the note type has no schema or validation passes, do nothing.`
         if (patches.content) {
           patches.content.push({ type: 'text', text })
         } else {
