@@ -130,6 +130,18 @@ export function buildGraphGuidance () {
 }
 
 /**
+ * Post-recovery session guidance. The body is identical for the reload and
+ * post-compaction triggers — only the leading label differs — so it lives in
+ * one place and the two emission sites can't drift apart.
+ *
+ * @param {string} label
+ * @returns {string}
+ */
+export function buildRecoveryGuidance (label) {
+  return label + ': the Basic Memory knowledge graph is still available. If the ongoing task touches packages, tools, or the graph, recall context with `mcp__basic-memory__recent_activity(timeframe="7d")` or `/knowledge-prime`, and answer topic questions with `/knowledge-ask`. Research skills remain available — /intel <prefix>:<name> (packages: npm/crate/go/composer/pypi/gem, no prefix defaults to npm; tools: brew/cask/action/docker/vscode/gh/plugin/skill), /knowledge-gaps (coverage; --stale drift; --global installed plugin/skill coverage). Schema edits dual-sync to schemas/*.md; never edit ~/basic-memory files directly — always use the basic-memory (mcp__basic-memory__*) tools.'
+}
+
+/**
  * @param {string} cwd
  * @returns {string}
  */
@@ -335,9 +347,7 @@ export default function vpKnowledgePiExtension (pi) {
 
     // On reload, append recovery note
     if (event.reason === 'reload') {
-      parts.push(
-        'Session reloaded: the Basic Memory knowledge graph is still available. If the ongoing task touches packages, tools, or the graph, recall context with `mcp__basic-memory__recent_activity(timeframe="7d")` or `/knowledge-prime`, and answer topic questions with `/knowledge-ask`. Research skills remain available — /intel <prefix>:<name> (packages: npm/crate/go/composer/pypi/gem, no prefix defaults to npm; tools: brew/cask/action/docker/vscode/gh/plugin/skill), /knowledge-gaps (coverage; --stale drift; --global installed plugin/skill coverage). Schema edits dual-sync to schemas/*.md; never edit ~/basic-memory files directly — always use the basic-memory (mcp__basic-memory__*) tools.'
-      )
+      parts.push(buildRecoveryGuidance('Session reloaded'))
     }
 
     const message = parts.join('\n\n')
@@ -360,7 +370,7 @@ export default function vpKnowledgePiExtension (pi) {
       pi.sendMessage(
         {
           customType: 'vp-knowledge-context',
-          content: 'Post-compaction recovery: the Basic Memory knowledge graph is still available. If the ongoing task touches packages, tools, or the graph, recall context with `mcp__basic-memory__recent_activity(timeframe="7d")` or `/knowledge-prime`, and answer topic questions with `/knowledge-ask`. Research skills remain available — /intel <prefix>:<name> (packages: npm/crate/go/composer/pypi/gem, no prefix defaults to npm; tools: brew/cask/action/docker/vscode/gh/plugin/skill), /knowledge-gaps (coverage; --stale drift; --global installed plugin/skill coverage). Schema edits dual-sync to schemas/*.md; never edit ~/basic-memory files directly — always use the basic-memory (mcp__basic-memory__*) tools.',
+          content: buildRecoveryGuidance('Post-compaction recovery'),
           display: false,
         },
         { triggerTurn: false, deliverAs: 'nextTurn' }

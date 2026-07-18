@@ -5,8 +5,14 @@
 import './isolate-agents-dir.js'
 
 import assert from 'node:assert'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, it } from 'node:test'
+import {
+  mkdtempSync, readdirSync, rmSync, unlinkSync, writeFileSync,
+} from 'node:fs'
 
+import { __resetConfigCache } from '../extensions/config.js'
 import vpKnowledgePiExtension, { __resetStartupMaintenance } from '../extensions/index.js'
 import { createMockContext, createMockPi } from './mock-pi-api.js'
 
@@ -88,6 +94,84 @@ describe('event hooks', () => {
         msgCalls[0].message.content.includes('Session reloaded'),
         'should include reload recovery note'
       )
+    })
+
+    it('does not sync agent profiles when agents.autoSync is disabled', async () => {
+      // The startup agent-sync is gated on config.agents.autoSync; every other
+      // test runs under DEFAULTS (autoSync:true). Point the config read at a
+      // file that disables it, and the agents dir at a fresh empty tmpdir, then
+      // assert the startup handler leaves that dir untouched. loadConfig caches
+      // per resolved path, so __resetConfigCache() must run before firing or the
+      // cached DEFAULTS (true) would win and silently keep this on the sync path.
+      /* eslint-disable n/no-process-env -- config + agents-dir overrides are the test seam */
+      const origConfig = process.env.VP_KNOWLEDGE_CONFIG_FILE
+      const origAgents = process.env.VP_KNOWLEDGE_AGENTS_DIR
+      const cfgPath = join(tmpdir(), `vpk-autosync-off-${process.pid}.json`)
+      const agentsDir = mkdtempSync(join(tmpdir(), 'vpk-autosync-off-agents-'))
+      writeFileSync(cfgPath, JSON.stringify({ agents: { autoSync: false } }), 'utf8')
+      process.env.VP_KNOWLEDGE_CONFIG_FILE = cfgPath
+      process.env.VP_KNOWLEDGE_AGENTS_DIR = agentsDir
+      __resetConfigCache()
+      __resetStartupMaintenance()
+      try {
+        const { handlers, pi } = createMockPi()
+        vpKnowledgePiExtension(pi)
+        const handler = handlers.get('session_start')[0]
+        const { ctx } = createMockContext()
+
+        await handler({ reason: 'startup' }, ctx)
+
+        assert.strictEqual(
+          readdirSync(agentsDir).length, 0,
+          'autoSync:false must leave the agents dir empty'
+        )
+      } finally {
+        if (origConfig === undefined) delete process.env.VP_KNOWLEDGE_CONFIG_FILE
+        else process.env.VP_KNOWLEDGE_CONFIG_FILE = origConfig
+        if (origAgents === undefined) delete process.env.VP_KNOWLEDGE_AGENTS_DIR
+        else process.env.VP_KNOWLEDGE_AGENTS_DIR = origAgents
+        __resetConfigCache()
+        __resetStartupMaintenance()
+        rmSync(agentsDir, { recursive: true, force: true })
+        try { unlinkSync(cfgPath) } catch { /* ignore */ }
+      }
+      /* eslint-enable n/no-process-env */
+    })
+
+    it('DOES sync agent profiles under the default autoSync:true', async () => {
+      // Anchors the autoSync:false negative above: proves the SAME startup with
+      // the gate on genuinely populates the dir, so the negative's empty-dir
+      // assertion is meaningful — it can't silently rot into a no-op if source
+      // resolution (findAgentsSourceDir) ever starts returning undefined, since
+      // that would make this positive fail loudly instead.
+      /* eslint-disable n/no-process-env -- agents-dir override is the test seam */
+      const origAgents = process.env.VP_KNOWLEDGE_AGENTS_DIR
+      const agentsDir = mkdtempSync(join(tmpdir(), 'vpk-autosync-on-agents-'))
+      process.env.VP_KNOWLEDGE_AGENTS_DIR = agentsDir
+      // The isolate seam pins the config read to a nonexistent path → DEFAULTS
+      // (autoSync:true); reset the cache so no earlier test's pinned config wins.
+      __resetConfigCache()
+      __resetStartupMaintenance()
+      try {
+        const { handlers, pi } = createMockPi()
+        vpKnowledgePiExtension(pi)
+        const handler = handlers.get('session_start')[0]
+        const { ctx } = createMockContext()
+
+        await handler({ reason: 'startup' }, ctx)
+
+        assert.ok(
+          readdirSync(agentsDir).length > 0,
+          'default autoSync:true must copy agent profiles into the dir'
+        )
+      } finally {
+        if (origAgents === undefined) delete process.env.VP_KNOWLEDGE_AGENTS_DIR
+        else process.env.VP_KNOWLEDGE_AGENTS_DIR = origAgents
+        __resetConfigCache()
+        __resetStartupMaintenance()
+        rmSync(agentsDir, { recursive: true, force: true })
+      }
+      /* eslint-enable n/no-process-env */
     })
   })
 

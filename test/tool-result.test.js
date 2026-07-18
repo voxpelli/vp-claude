@@ -4,8 +4,12 @@
 import './isolate-agents-dir.js'
 
 import assert from 'node:assert'
+import { unlinkSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, it } from 'node:test'
 
+import { __resetConfigCache } from '../extensions/config.js'
 import vpKnowledgePiExtension, { normalizeBmToolCall } from '../extensions/index.js'
 import { createMockContext, createMockPi } from './mock-pi-api.js'
 
@@ -18,6 +22,36 @@ function toolResultHandler () {
   const handler = handlers.get('tool_result')?.[0]
   assert.ok(handler, 'tool_result handler should be registered')
   return /** @type {(event: unknown, ctx: unknown) => Promise<ToolResultPatch>} */ (handler)
+}
+
+let cfgCounter = 0
+
+/**
+ * Run `fn` with `loadConfig()` pinned to a temp config file holding `configObj`,
+ * restoring the env + config cache afterwards. loadConfig caches per resolved
+ * path, so resetting before AND after keeps a pinned read from leaking into (or
+ * out of) other tests.
+ *
+ * @param {Record<string, unknown>} configObj
+ * @param {() => Promise<void>} fn
+ * @returns {Promise<void>}
+ */
+async function withConfig (configObj, fn) {
+  /* eslint-disable n/no-process-env -- the config-path override is the test seam */
+  const orig = process.env.VP_KNOWLEDGE_CONFIG_FILE
+  const path = join(tmpdir(), `vpk-tr-config-${process.pid}-${cfgCounter++}.json`)
+  writeFileSync(path, JSON.stringify(configObj), 'utf8')
+  process.env.VP_KNOWLEDGE_CONFIG_FILE = path
+  __resetConfigCache()
+  try {
+    await fn()
+  } finally {
+    if (orig === undefined) delete process.env.VP_KNOWLEDGE_CONFIG_FILE
+    else process.env.VP_KNOWLEDGE_CONFIG_FILE = orig
+    __resetConfigCache()
+    try { unlinkSync(path) } catch { /* ignore */ }
+  }
+  /* eslint-enable n/no-process-env */
 }
 
 describe('normalizeBmToolCall', () => {
@@ -151,5 +185,53 @@ describe('tool_result handler on the mcp proxy path (the default Pi config)', ()
       isError: false,
     }, ctx)
     assert.strictEqual(result, undefined)
+  })
+})
+
+describe('tool_result quality-check opt-outs (config gates)', () => {
+  it('qualityChecks.fourthWall:false suppresses the fourth-wall advisory', async () => {
+    await withConfig({ qualityChecks: { fourthWall: false } }, async () => {
+      const handler = toolResultHandler()
+      const { ctx } = createMockContext()
+      const result = await handler({
+        toolName: 'mcp',
+        input: {
+          server: 'basic-memory',
+          tool: 'write_note',
+          // Same planted trigger the enabled test uses; no permalink, so the
+          // schema reminder can't fire and mask the fourth-wall gate.
+          args: JSON.stringify({ content: 'This note has zero presence in Raindrop.' }),
+        },
+        details: {},
+        isError: false,
+      }, ctx)
+      assert.ok(
+        !(result?.content ?? []).some((c) => c.text.includes('Fourth-wall check flagged')),
+        'no fourth-wall advisory when the gate is off'
+      )
+    })
+  })
+
+  it('qualityChecks.schemaValidate:false suppresses the schema_validate reminder', async () => {
+    await withConfig({ qualityChecks: { schemaValidate: false } }, async () => {
+      const handler = toolResultHandler()
+      const { ctx } = createMockContext()
+      const result = await handler({
+        toolName: 'mcp',
+        input: {
+          server: 'basic-memory',
+          tool: 'write_note',
+          // Clean content (no fourth-wall trigger) + a permalink: only the
+          // schema gate could fire, so its absence is what the assert isolates.
+          args: JSON.stringify({ content: 'A clean subject sentence about the thing itself.' }),
+        },
+        details: { permalink: 'npm/example' },
+        isError: false,
+      }, ctx)
+      assert.ok(
+        !(result?.content ?? []).some((c) => c.text.includes('schema_validate')),
+        'no schema reminder when the gate is off'
+      )
+    })
   })
 })
