@@ -2,7 +2,6 @@ name: Test
 
 permissions:
   contents: read
-  code-quality: write
 
 on:
   push:
@@ -16,11 +15,7 @@ jobs:
     permissions:
       checks: write
       contents: read
-      code-quality: write
     with:
       node-versions: '22,24'
       npm-test-script: 'test-ci'
-      coverage-file: 'coverage/cobertura-coverage.xml'
-      coverage-language: 'JavaScript'
-      coverage-label: 'vp-knowledge-pi'
       lockfile: false
