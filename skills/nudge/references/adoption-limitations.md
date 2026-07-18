@@ -37,6 +37,25 @@ surprise later.
   can, since a genuine model-picker selection may never appear in a
   transcript at all — any positive hit is at least as likely to be a
   mention as real use.
+- **A tip whose first backtick span is not the feature's own invocable
+  term** — the search-term derivation (see Step 2 / evidence-detection.md)
+  assumes the tip leads with the feature's command, flag, or env-var in
+  backticks. Two catalog tips break that: `scratchpad`'s first span
+  is `` `/tmp` `` (the feature name sits in double quotes) and
+  `subagents-background-default`'s is `` `background` `` (a frontmatter field
+  named in passing). The derivation sanity guard skips searching the garbage
+  term (`/tmp` matches nothing; `background` matches essentially every
+  transcript) and treats the slug as having no trustworthy evidence — the same
+  *outcome* as the environment-variable/settings features above (an `unseen`
+  slug keeps being proposed for `nudged`). The difference is only in *why*: for
+  an env-var the derived search term is correct, so its 0-result is genuine
+  no-evidence; for these two the term itself is wrong, so its results — 0 hits,
+  or a flood of generic-word matches — are meaningless and must never be read as
+  confirmation either way. Accepted rather than reworded away, because neither
+  feature actually HAS a term a human types — a per-session directory and a
+  default-on behavior leave no invocation trace at all. The guard's only job is
+  to stop a mis-derived term from driving a false transition (a spurious
+  `adopted` from generic-word noise).
 - **The "starts with `/`" branch condition (see Step 2) is a syntactic
   proxy, not a semantic catalog field** — it correctly classifies all 15
   current seed features, but a future `[nudge]` addition that dispatches

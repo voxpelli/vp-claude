@@ -84,6 +84,28 @@ into a session:
    — but a future tip containing one (`.`, `(`, `$`, etc.) would need
    literal-string escaping before use as a `Grep` pattern.
 
+**Derivation sanity guard.** Steps 1–3 assume the tip *leads* with the
+feature's own invocable term in backticks. Most tips satisfy this, but it is
+not guaranteed — two catalog tips break it: `scratchpad`'s first backtick span
+is `` `/tmp` `` (the feature name is in double quotes, not backticks) and
+`subagents-background-default`'s is
+`` `background` `` (a frontmatter field named in passing, a generic English
+word). Before using `<search-term>`, confirm it plausibly *names the feature*:
+its normalized form should share a token with the slug, or be a recognizable
+command / flag / env-var / setting for it. If instead the derived term is an
+unrelated token — a bare path like `/tmp`, or a generic word like `background`
+that would match essentially every transcript — the tip does not lead with a
+searchable term. Do NOT search the mis-derived term at all — its results are
+meaningless: a 0-result (like `/tmp`) is not evidence of non-use, and a
+generic-word flood (like `background`) must never be read as genuine
+typed/dispatch evidence and drive a false `adopted`. The slug then follows the
+ordinary no-evidence path in the Step 3 transition table — an `unseen` slug is
+proposed for `nudged`, an already-`adopted`/`declined` slug is left as-is —
+exactly like the structurally-undetectable env-var/settings features in
+[`adoption-limitations.md`](adoption-limitations.md). Annotate its line in the
+Step 4 preview to say the term could not be derived, so the reader knows use was
+never actually checked (rather than checked and found absent).
+
 **Branch on whether `<search-term>` starts with `/` (a slash command) — the
 two cases need genuinely different evidence criteria, not just different
 patterns.**
