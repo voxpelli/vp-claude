@@ -172,6 +172,6 @@ own Basic Memory note (established precedent: `npm-list-dependents-cli`'s
 `## Extraction candidate — @voxpelli/ndjson` section) — not duplicated here.
 See `plugin-voxpelli-vp-claude-vp-knowledge`'s `## Extraction candidate —
 @voxpelli/ast-grep-rules` section for the current state of that possibility
-(not yet extracted as of 2026-07-04 — the `@voxpelli/eslint-config` precedent
+(not yet extracted — the `@voxpelli/eslint-config` precedent
 suggests waiting for a second consuming project first; the bash rules would
 be a partial extraction, not all-or-nothing, given the split above).
