@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# spec: skills/tool-intel/references/ecosystem-plugin.md
+# spec: skills/intel/references/ecosystem-plugin.md
 #
 # Fetch upstream facts for a list of Claude Code plugin identifiers directly
 # from GitHub — plugins have no central registry, so `plugin.json`'s `version`

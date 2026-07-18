@@ -1,0 +1,21 @@
+id: no-unguarded-sync-fs
+language: javascript
+message: >-
+  This synchronous filesystem call can throw on permission errors, read-only
+  filesystems, or other I/O failures. Wrap it in a try/catch to prevent an
+  uncaught exception from killing the extension runtime. existsSync is
+  exempt (it returns false instead of throwing for ENOENT).
+  (CLAUDE.md/scripts-and-validation.md: guard sync fs calls against uncaught throws.)
+severity: warning
+rule:
+  kind: call_expression
+  all:
+    - has:
+        field: function
+        kind: identifier
+        regex: ^(mkdirSync|copyFileSync|rmSync|writeFileSync|appendFileSync|renameSync|chmodSync|chownSync|readFileSync|readdirSync|statSync|lstatSync|mkdtempSync|unlinkSync)$
+  not:
+    inside:
+      kind: try_statement
+      field: body
+      stopBy: end

@@ -2,11 +2,17 @@
 
 A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https://github.com/basicmachines-co/basic-memory) into an actively maintained knowledge graph. Research packages from six ecosystems and tools from eight dev-environment categories using parallel enrichment, find documentation gaps in your projects, detect when documented packages and tools have drifted from upstream registries (brew, npm, cask, crate, vscode), surface project-relevant knowledge before coding, and let autonomous agents audit and improve your notes — all without leaving your terminal.
 
+> **Also runs on Pi (0.32.6+):** the shared `skills/` tree and the `extensions/` factory load on the Pi coding agent from a single-root hybrid — Claude's loader ignores `package.json`, so the two coexist with no build step, and MCP tools work on Pi's default shim config. See [`docs/pi-setup.md`](docs/pi-setup.md).
+
 ## What it does
 
-### `/package-intel <pkg>` — Research any package
+### `/intel` — Research any package or dev tool
 
-Queries seven sources in parallel, synthesizes a structured note, and cross-links existing notes. Supports six ecosystems:
+One research lifecycle (detect → check → resolve → enrich → synthesize → write → cross-link) for two families — packages and dev tools — routed by prefix. It queries the family's source roster in parallel, synthesizes a structured note, and cross-links existing notes. A single call may mix families (`/intel npm:fastify brew:ripgrep`).
+
+#### Packages — seven sources, six ecosystems
+
+Queries seven sources in parallel. Supports six ecosystems:
 
 | Form | Ecosystem | Example |
 |------|-----------|---------|
@@ -19,9 +25,9 @@ Queries seven sources in parallel, synthesizes a structured note, and cross-link
 | `gem:<name>` | Ruby / RubyGems | `gem:rails` |
 
 ```
-/package-intel @fastify/postgres
-/package-intel crate:serde
-/package-intel pypi:requests
+/intel @fastify/postgres
+/intel crate:serde
+/intel pypi:requests
 ```
 
 | Source | What it finds |
@@ -36,11 +42,9 @@ Queries seven sources in parallel, synthesizes a structured note, and cross-link
 
 Plus changelog analysis via GitHub releases — with a git-tag fallback when the release list lags the registry version (a tag pushed without a published Release). After writing, searches for existing notes that reference the package and adds bidirectional cross-links, and rewrites any bare-name `[[Name]]` wiki-link stub elsewhere in the graph to the note's full title (bare-name links don't auto-resolve against a descriptor-titled note). The result is an ecosystem-prefixed note (`npm-*`, `crate-*`, `pypi-*`, etc.) with observations, relations, and release highlights — connected into the graph from day one.
 
-**Batch mode ("upgrade haul").** Hand `/package-intel` a list of names or a pasted upgrade/outdated command line (`npm outdated`, `npm i a@latest b@latest`, and the crate/go/composer/pypi/gem equivalents) and it refreshes every already-documented note against its recorded→current version delta in one pass — synthesizing a curated changelog reel for just that interval and stamping the new version into the `## Release Highlights` prose — plus the machine-stable `[version]` observation where the schema carries that slot (npm today; the other ecosystems as the slot lands). The single prefixed-identifier path is unchanged; batch mode is purely additive. This is the executor half of `/knowledge-gaps --stale` — its batched-refresh offer routes straight into this mode.
+#### Dev tools — six sources, eight categories
 
-### `/tool-intel <prefix>:<name>` — Research any dev tool
-
-Queries six sources in parallel, synthesizes a structured note, and cross-links existing notes. Supports eight tool categories:
+Queries six sources in parallel. Supports eight tool categories:
 
 | Form | Category | Example |
 |------|----------|---------|
@@ -55,13 +59,13 @@ Queries six sources in parallel, synthesizes a structured note, and cross-links 
 | `skill:<owner>/<repo>` | Agent skill bundle (skills.sh) | `skill:obra/superpowers` |
 
 ```
-/tool-intel brew:ripgrep
-/tool-intel action:actions/checkout
-/tool-intel docker:node
-/tool-intel vscode:esbenp.prettier-vscode
-/tool-intel gh:meiji163/gh-notify
-/tool-intel plugin:voxpelli/vp-claude#vp-knowledge
-/tool-intel skill:obra/superpowers
+/intel brew:ripgrep
+/intel action:actions/checkout
+/intel docker:node
+/intel vscode:esbenp.prettier-vscode
+/intel gh:meiji163/gh-notify
+/intel plugin:voxpelli/vp-claude#vp-knowledge
+/intel skill:obra/superpowers
 ```
 
 | Source | What it finds |
@@ -76,7 +80,9 @@ Queries six sources in parallel, synthesizes a structured note, and cross-links 
 
 Plus version/changelog data (GitHub releases for actions, Docker Hub tags for images, API versions for brew/vscode) — with a git-tag fallback for `action:`/`gh:`/`brew:` when the release list lags the newest git tag. For `vscode:`, it also records an **Open VSX trust signal** — a `[security]` observation placing the extension on a 4-state ladder (verified-restricted / public-namespace / **marketplace-only = squattable** / not-published-anywhere); a Marketplace-only extension has an unclaimed Open VSX namespace that fork-IDEs (Cursor, Windsurf, VSCodium) resolve installs against, a known supply-chain exposure. Third-party Homebrew taps (`brew:<owner>/<tap>/<name>`) get a dedicated fetch path — Ruby-DSL formula parsing, an upstream-repo DeepWiki pivot, a license cross-check against the upstream repo's own LICENSE, and a `.github/workflows` SLSA/SHA-256 hygiene audit — instead of misrouting to the core registry. **Library formulae** (mostly-transitive-dependency libs like `tree-sitter`/`icu4c`) are detected from the fetched metadata and get real-dependent verification via `brew uses --installed`/`brew deps`/`brew linkage` plus an `## Upgrade Impact on Dependents` section — so a note never over-claims dependents from technology alone (a dependency relation is `depends_on` only when the package manager confirms it; a statically-vendored technology link is `built_with`/`used_by`). After writing, searches for existing notes that reference the tool and adds bidirectional cross-links. The result is a prefixed note (`brew-*`, `action-*`, etc.) with type-specific sections — `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for Docker, `## Common Usage` for formulae — plus observations and relations.
 
-**Batch mode ("upgrade haul").** Hand `/tool-intel` a pasted `brew upgrade` / `brew outdated` line or a list of bare names and it refreshes every already-documented note in one pass. Bare names route to formula or cask automatically via the artifacts-vs-`Dependencies` shape signal (and re-dispatch from `fetch-brew-upstream.sh` to `fetch-cask-upstream.sh` on a `not-in-api` result), and each note's delta is recorded as inline `[feature]` / `[version]` observations. The single prefixed-identifier path is unchanged; batch mode is purely additive — and is the executor half of `/knowledge-gaps --stale`.
+#### Batch mode ("upgrade haul")
+
+Hand `/intel` a list of names or a pasted upgrade/outdated command line and it refreshes every already-documented note against its recorded→current version delta in one pass. The single prefixed-identifier path is unchanged; batch mode is purely additive, and is the executor half of `/knowledge-gaps --stale` — its batched-refresh offer routes straight into this mode. For **packages** (`npm outdated`, `npm i a@latest b@latest`, and the crate/go/composer/pypi/gem equivalents) it synthesizes a curated changelog reel for just that interval, stamps the new version into the `## Release Highlights` prose, and records the machine-stable `[version]` observation where the schema carries that slot (npm today; the other ecosystems as the slot lands). For **tools** (`brew upgrade` / `brew outdated` or a list of bare names) it routes bare names to formula or cask automatically via the artifacts-vs-`Dependencies` shape signal (re-dispatching from `fetch-brew-upstream.sh` to `fetch-cask-upstream.sh` on a `not-in-api` result) and records each note's delta as inline `[feature]` / `[version]` observations.
 
 ### `/knowledge-gaps` — Find undocumented dependencies
 
@@ -118,11 +124,11 @@ Scans your project's manifest files for both code dependencies and dev tooling, 
 
 **Tool manifests scanned:** `Brewfile` (formulae, casks, vscode entries), `.github/workflows/*.yml` (actions), `Dockerfile`/`*.dockerfile` (docker images), `.vscode/extensions.json` (vscode extensions) — all manifest entries count equally, no tiering.
 
-Also detects **concept-level hub gaps** — topics referenced by 3+ notes but with no dedicated note — and **reading-signal gaps** from Readwise highlights. Offers to run `/package-intel` (with the right ecosystem prefix) for top undocumented packages and `/tool-intel` for undocumented tools.
+Also detects **concept-level hub gaps** — topics referenced by 3+ notes but with no dedicated note — and **reading-signal gaps** from Readwise highlights. Offers to run `/intel` for top undocumented packages (with the right ecosystem prefix) and for undocumented tools.
 
 ### `/knowledge-gaps --stale` — Check version drift across ecosystems
 
-A focused alternative mode of `/knowledge-gaps` that detects when documented notes have drifted from their upstream stable releases. Takes an optional ecosystem token — `--stale [brew|npm|cask|crate|vscode|plugin]` (bare = all six). Uses an MCP-first workflow (BM-side data via `list_directory` + `read_note`) plus per-ecosystem API-only worker scripts (`scripts/fetch-<eco>-upstream.sh`) for upstream facts. vscode checks both Open VSX (authoritative) and the VS Marketplace (annotation); plugin has no registry at all, so its worker resolves `plugin.json` directly from GitHub via `gh api`. For npm, the recorded version is read from a machine-stable `[version]` observation (emitted by `/package-intel`) before falling back to header/prose extraction, so version-centric packages can't be misparsed.
+A focused alternative mode of `/knowledge-gaps` that detects when documented notes have drifted from their upstream stable releases. Takes an optional ecosystem token — `--stale [brew|npm|cask|crate|vscode|plugin]` (bare = all six). Uses an MCP-first workflow (BM-side data via `list_directory` + `read_note`) plus per-ecosystem API-only worker scripts (`scripts/fetch-<eco>-upstream.sh`) for upstream facts. vscode checks both Open VSX (authoritative) and the VS Marketplace (annotation); plugin has no registry at all, so its worker resolves `plugin.json` directly from GitHub via `gh api`. For npm, the recorded version is read from a machine-stable `[version]` observation (emitted by `/intel`) before falling back to header/prose extraction, so version-centric packages can't be misparsed.
 
 ```
 ## Version Drift — brew — 40 documented notes checked
@@ -131,9 +137,9 @@ A focused alternative mode of `/knowledge-gaps` that detects when documented not
 
 | Note      | Documented | Upstream | Released | Refresh command           |
 |-----------|------------|----------|----------|---------------------------|
-| brew-bat  | 0.24.0     | 0.26.1   | 47d ago  | `/tool-intel brew:bat`    |
-| brew-deno | 1.45.5     | 2.4.1    | 31d ago  | `/tool-intel brew:deno`   |
-| brew-eza  | 0.18.0     | 0.20.5   | unknown  | `/tool-intel brew:eza`    |
+| brew-bat  | 0.24.0     | 0.26.1   | 47d ago  | `/intel brew:bat`    |
+| brew-deno | 1.45.5     | 2.4.1    | 31d ago  | `/intel brew:deno`   |
+| brew-eza  | 0.18.0     | 0.20.5   | unknown  | `/intel brew:eza`    |
 
 #### Archive candidates (1 note)
 | Note      | Documented | Upstream status | Suggested action            |
@@ -224,8 +230,7 @@ Acts on audit findings with tiered autonomy:
 | Link orphan notes to related notes | Auto-fix |
 | Fix frontmatter type to match schema | Auto-fix |
 | Fix fourth-wall violations (self-referential graph language) | Auto-fix |
-| Run `/package-intel` for Tier 1 undocumented packages | Auto-fix |
-| Run `/tool-intel` for undocumented tools from manifests | Auto-fix |
+| Run `/intel` for Tier 1 undocumented packages and undocumented tools from manifests | Auto-fix |
 | Enqueue drifted notes (>30d, or any security-flagged target) into a Refresh Queue | Queues for review |
 | Archive deprecated/disabled packages (brew/cask/npm) | Asks first |
 | Merge duplicate notes | Asks first |
@@ -246,7 +251,7 @@ A read-only skill that answers freeform questions by searching Basic Memory, loa
 
 > "What do I know about fastify error handling?" / "What does BM say about IndieWeb?"
 
-Each answer includes a confidence tier (Direct, Partial, or No Coverage) so you know how much the graph actually covers. When coverage is incomplete, suggests `/package-intel`, `/tool-intel`, or `/knowledge-gaps` to fill the gap. Unlike `/knowledge-prime` (which shows project-wide dependency coverage), `/knowledge-ask` answers specific questions about individual topics.
+Each answer includes a confidence tier (Direct, Partial, or No Coverage) so you know how much the graph actually covers. When coverage is incomplete, suggests `/intel` or `/knowledge-gaps` to fill the gap. Unlike `/knowledge-prime` (which shows project-wide dependency coverage), `/knowledge-ask` answers specific questions about individual topics.
 
 ### `/knowledge-garden [note ...]` — Audit named notes
 
@@ -262,7 +267,7 @@ A write skill that applies targeted fixes to a bounded set of named notes — mi
 
 > "Fix the orphan links in npm-foo" / "Apply the audit fixes to these two notes"
 
-The scoped, interactive sibling of the `knowledge-maintainer` agent. Heavy or autonomous remediation ("fix the whole audit", anything that spawns `/package-intel` or `/tool-intel`, brew-refresh batches) delegates to the agent via `Agent`. Explicit `/command` only (`disable-model-invocation`). Shares the agent's write discipline: `find_replace` only (never `append`+`section`), read-before-edit, a before/after observation-count check on any insert-then-strip move to catch accidental content loss, `schema_validate` after each change, and `write_note`/`delete_note` excluded (new notes via the intel skills, archival via `move_note`).
+The scoped, interactive sibling of the `knowledge-maintainer` agent. Heavy or autonomous remediation ("fix the whole audit", anything that spawns `/intel`, brew-refresh batches) delegates to the agent via `Agent`. Explicit `/command` only (`disable-model-invocation`). Shares the agent's write discipline: `find_replace` only (never `append`+`section`), read-before-edit, a before/after observation-count check on any insert-then-strip move to catch accidental content loss, `schema_validate` after each change, and `write_note`/`delete_note` excluded (new notes via the intel skill, archival via `move_note`).
 
 ### `/session-reflect` — On-demand conversation capture
 
@@ -304,7 +309,7 @@ A read-only autonomous agent that audits the Raindrop bookmark library:
 
 Produces a structured report covering: library dashboard, tag inventory, naming violations, near-duplicate tags, mistagged bookmarks (via `find_mistagged_bookmarks`), orphan tags, legacy tag identification, co-occurrence analysis, non-primary-language tag detection, and taxonomy gaps. Output includes exact `update_tags` and `delete_tags` tool calls as copy-paste recommendations. Never modifies tags or bookmarks itself.
 
-### `/nudge-sync` — Sync the Claude Code nudge-adoption tip cache
+### `/nudge` — Sync the Claude Code nudge tip cache
 
 Reads the `Claude Code Noteworthy Features` Basic Memory note via MCP, filters out any feature already marked adopted in frontmatter, and writes the eligible tips to `~/.claude/references/claude-code-nudge-tips.txt` for the SessionStart hook to read:
 
@@ -312,13 +317,13 @@ Reads the `Claude Code Noteworthy Features` Basic Memory note via MCP, filters o
 
 Follows the same fetch-and-regenerate approach as `/tag-sync`: it fully rewrites the tip cache file each run. Reads BM via fast MCP, never the slow `bm` CLI; the SessionStart hook it feeds reads only the local cache file, never Basic Memory.
 
-### `/nudge-adoption` — Track adoption of noteworthy Claude Code features
+### `/nudge check` — Track adoption of noteworthy Claude Code features
 
 Scans recent session transcripts across all projects for real evidence of feature use, cross-references against the `[nudge]`-tagged catalog, previews which features have adoption evidence versus none, and updates each feature's status in Basic Memory after approval:
 
 > "Nudge me on unused features" / "Which Claude Code features haven't I adopted" / "Nudge adoption"
 
-Mirrors `/session-reflect`'s scan → preview → approve → write shape. Marking a feature adopted stops it from being surfaced by the SessionStart tip — regenerating the same cache `/nudge-sync` writes closes the loop.
+Mirrors `/session-reflect`'s scan → preview → approve → write shape. Marking a feature adopted stops it from being surfaced by the SessionStart tip — regenerating the same cache `/nudge` writes closes the loop.
 
 ### Hooks — Automated quality guardrails
 
@@ -327,7 +332,7 @@ Five hooks run automatically in the background:
 - **PostToolUse** (BM writes) — After any `write_note` or `edit_note`, validates the note structure against its schema and scans the note content for deterministic fourth-wall violations. Catches malformed notes and self-referential graph language immediately.
 - **PostToolUse** (file edits) — After editing shell scripts, detects formatting drift with `shfmt -d`, surfaces the diff, and auto-fixes with `shfmt -w`. After editing schema files, reminds to sync Basic Memory.
 - **PostToolUseFailure** — Classifies Basic Memory write and schema tool failures into five categories with actionable recovery guidance.
-- **SessionStart** — Injects a knowledge graph status summary and suggests `/knowledge-prime` for project context or `/knowledge-ask` for topic-specific questions. After a compaction (`source=compact`), it also re-injects a condensed graph-recovery context so the continuing session still knows the Basic Memory tools and research skills exist. On non-compact sessions it also surfaces one learning-nudge tip per day (throttled, no repeats) from the `/nudge-sync`-synced cache, behind a `VP_KNOWLEDGE_DISABLE_NUDGE=1` kill-switch.
+- **SessionStart** — Injects a knowledge graph status summary and suggests `/knowledge-prime` for project context or `/knowledge-ask` for topic-specific questions. After a compaction (`source=compact`), it also re-injects a condensed graph-recovery context so the continuing session still knows the Basic Memory tools and research skills exist. On non-compact sessions it also surfaces one learning-nudge tip per day (throttled, no repeats) from the `/nudge`-synced cache, behind a `VP_KNOWLEDGE_DISABLE_NUDGE=1` kill-switch.
 - **PreToolUse** (gardener Bash) — Blocks Python and Node.js script execution when running as the knowledge-gardener agent (via `permissionDecision: "deny"`), enforcing read-only discipline.
 
 ## Installation
@@ -374,7 +379,7 @@ npx skills add basicmachines-co/basic-memory-skills
 
 ### Required for enrichment pipelines
 
-The `/package-intel` seven-source pipeline and `/tool-intel` six-source pipeline need these additional MCP servers and plugins. Context7 and Socket are used by `/package-intel` only; DeepWiki and Tavily are used by both; Readwise is used by both plus `/knowledge-gaps`.
+`/intel`'s package-family (seven-source) and tool-family (six-source) pipelines need these additional MCP servers and plugins. Context7 and Socket are used by the package family only; DeepWiki and Tavily are used by both; Readwise is used by both plus `/knowledge-gaps`.
 
 **[DeepWiki](https://docs.devin.ai/work-with-devin/deepwiki-mcp)** — repository documentation and architecture questions:
 
@@ -407,15 +412,15 @@ claude mcp add --transport http raindrop https://api.raindrop.io/rest/v2/ai/mcp
 claude mcp add --transport http readwise https://mcp2.readwise.io/mcp
 ```
 
-**[Socket](https://socket.dev/blog/introducing-socket-mcp)** — supply-chain risk scores (license, maintenance, quality, supply-chain, vulnerability) for npm, PyPI, Rust/cargo, and RubyGems packages. Used by `/package-intel` only:
+**[Socket](https://socket.dev/blog/introducing-socket-mcp)** — supply-chain risk scores (license, maintenance, quality, supply-chain, vulnerability) for npm, PyPI, Rust/cargo, and RubyGems packages. Used by `/intel`'s package family only:
 
 ```bash
 claude mcp add --transport http socket-mcp https://mcp.socket.dev/
 ```
 
-### Optional for tool-intel
+### Optional for intel's tool family
 
-**[Homebrew MCP](https://github.com/Homebrew/brew/blob/master/Library/Homebrew/mcp_server.rb)** — bundled with Homebrew 4.5+ (`brew mcp-server`). Surfaces install analytics (30/90/365-day install counts and build-error counts) that the public `formulae.brew.sh` JSON API does not expose. `/tool-intel` picks them up as `[popularity]` observations on `brew:` and `cask:` notes; when the MCP is not installed, the step skips silently without affecting the rest of the research.
+**[Homebrew MCP](https://github.com/Homebrew/brew/blob/master/Library/Homebrew/mcp_server.rb)** — bundled with Homebrew 4.5+ (`brew mcp-server`). Surfaces install analytics (30/90/365-day install counts and build-error counts) in human-readable form. The same counts are also in the `formulae.brew.sh` JSON API's `analytics` block that `/intel` already fetches in Step 2, so the MCP is a convenience source, not the only one. `/intel` picks the counts up as `[popularity]` observations on `brew:` and `cask:` notes; when the MCP is not installed, `/intel` falls back to that JSON `analytics` data without affecting the rest of the research.
 
 ```bash
 claude mcp add homebrew -- brew mcp-server
@@ -423,44 +428,55 @@ claude mcp add homebrew -- brew mcp-server
 
 ### Optional
 
-- **[`gh` CLI](https://cli.github.com)** — enables changelog analysis via GitHub releases (with a git-tag fallback when the release list lags) in `/package-intel` and `/tool-intel`
+- **[`gh` CLI](https://cli.github.com)** — enables changelog analysis via GitHub releases (with a git-tag fallback when the release list lags) in `/intel`
 
 ## Plugin structure
 
-Every note this plugin writes follows a schema — a structured contract for required sections and observation categories. The schema files under `schemas/` below are the version-controlled source of truth: each note type's schema self-seeds into Basic Memory the first time a note of that type is written via `/package-intel` or `/tool-intel` (e.g. researching an npm package seeds only `npm_package`, not the other 22), and stays dual-synced with its Basic Memory copy afterward. `/schema-evolve` (above) detects when real note usage has drifted from a schema and proposes updates to both.
+Every note this plugin writes follows a schema — a structured contract for required sections and observation categories. The schema files under `schemas/` below are the version-controlled source of truth: each note type's schema self-seeds into Basic Memory the first time a note of that type is written via `/intel` (e.g. researching an npm package seeds only `npm_package`, not the other 22), and stays dual-synced with its Basic Memory copy afterward. `/schema-evolve` (above) detects when real note usage has drifted from a schema and proposes updates to both.
 
 ```
 .claude-plugin/plugin.json             Plugin manifest
 .claude-plugin/marketplace.json        Marketplace listing for vp-plugins
 skills/
-  package-intel/
-    SKILL.md                           Seven-source research workflow
+  intel/
+    SKILL.md                           Shared-core, two-family research workflow (package: 7 sources; tool: 6 sources)
+    references/enrichment-package.md   Package-family enrichment step (Step 3 branch)
+    references/enrichment-tool.md      Tool-family enrichment step (Step 3 branch)
     references/ecosystem-npm.md        npm registry API + note template
     references/ecosystem-crates.md     crates.io API + note template
     references/ecosystem-go.md         Go module proxy + note template
     references/ecosystem-composer.md   Packagist API + note template
     references/ecosystem-pypi.md       PyPI API + note template
     references/ecosystem-gems.md       RubyGems API + note template
-    references/gh-api-fallback.md      GitHub API fallback for unindexed/wrong-repo cases
-    references/upgrade-haul.md         Shared batch-refresh core (both intel skills)
-  tool-intel/
-    SKILL.md                           Six-source research workflow
     references/ecosystem-brew.md       formulae.brew.sh API
     references/ecosystem-cask.md       formulae.brew.sh/cask API
     references/ecosystem-action.md     action.yml extraction + permissions
     references/ecosystem-docker.md     Docker Hub API + tag strategy
     references/ecosystem-vscode.md     Open VSX API + VS Marketplace fallback
+    references/ecosystem-gh.md         gh CLI extension API + classification ladder
+    references/ecosystem-plugin.md     Claude plugin manifest (marketplace.json + plugin.json) + trust ladder
+    references/ecosystem-skill.md      skills.sh bundle (SKILL.md + tree + install counts)
+    references/note-template-npm.md    npm_package note template
+    references/note-template-crates.md crate_package note template
+    references/note-template-go.md     go_module note template
+    references/note-template-composer.md composer_package note template
+    references/note-template-pypi.md   pypi_package note template
+    references/note-template-gems.md   ruby_gem note template
     references/note-template-brew.md   brew_formula note template
     references/note-template-cask.md   brew_cask note template
     references/note-template-action.md github_action note template
     references/note-template-docker.md docker_image note template
     references/note-template-vscode.md vscode_extension note template
-    references/ecosystem-gh.md         gh CLI extension API + classification ladder
     references/note-template-gh.md     gh_extension note template
-    references/ecosystem-plugin.md     Claude plugin manifest (marketplace.json + plugin.json) + trust ladder
-    references/ecosystem-skill.md      skills.sh bundle (SKILL.md + tree + install counts)
     references/note-template-plugin.md claude_plugin note template (plugin + skill)
-    references/gh-api-fallback.md      GitHub API fallback for unindexed/wrong-repo cases
+    references/gh-api-fallback.md      GitHub API fallback for unindexed/wrong-repo cases (shared, both families)
+    references/forge-fallback.md       Forge-agnostic fallback helper (shared, both families)
+    references/upgrade-haul.md         Shared batch-refresh core (both families)
+    references/upgrade-haul-adapter-tool.md  Tool-family batch adapter
+    references/note-lookup-and-freshness.md  Shared existing-note lookup + freshness check
+    references/verify-before-capture.md      Shared claim-verification step
+    references/cross-link-existing-notes.md  Shared post-write cross-linking step
+    references/note-write-mechanics.md       Shared write/edit mechanics
   knowledge-gaps/
     SKILL.md                           Package + tool + concept coverage analysis; --stale flag switches to the version-drift check
     references/concept-detection.md    Concept-level hub gap detection
@@ -492,11 +508,11 @@ skills/
     SKILL.md                           Five-source person research
     references/note-template-person.md Person note template
     references/source-guide.md         Source-specific research guidance
-  nudge-sync/
-    SKILL.md                           BM note -> local tip cache sync (fetch-and-regenerate)
-    references/tip-cache-contract.md   Shared exclusion rule + line grammar (also used by nudge-adoption)
-  nudge-adoption/
-    SKILL.md                           Transcript-scan feature-adoption tracking -> BM frontmatter
+  nudge/
+    SKILL.md                           Mode-routed: bare = BM note -> local tip cache sync; check = transcript-scan feature-adoption tracking -> BM frontmatter
+    references/tip-cache-contract.md   Shared exclusion rule + line grammar (used by both modes)
+    references/evidence-detection.md   Adoption-mode transcript evidence detection
+    references/adoption-limitations.md Adoption-mode known limitations
 agents/
   knowledge-gardener.md                Read-only graph auditor (tags + fourth-wall)
   knowledge-maintainer.md              Read-write graph enhancer (effort: high)
@@ -546,6 +562,7 @@ scripts/
   check-mdast.mjs                      mdast prose/fenced split tests (npm run check:mdast)
   check-list-installed-plugins.mjs     Installed-plugin/skill resolver tests (npm run check:installed-plugins)
   check-plugin-load-paths.mjs          ${CLAUDE_PLUGIN_ROOT} cross-load path resolution tests (npm run check:plugin-load-paths)
+  check-portability.mjs                Same/cross-skill ref classifier for skills.sh install survivability (npm run check:portability)
   check-bm-version-extract.mjs         S2 version-extractor tests (npm run check:bm-version-extract)
   check-analytics-guidance.mjs         Brew/cask analytics-source doc-rot guard (npm run check:analytics-guidance)
   check-observation-metadata.mjs       Verified:/Since:/Ownership: trailer parser tests (npm run check:obs-metadata)
@@ -564,6 +581,7 @@ lib/
   mdast.mjs                            Shared mdast prose/heading collectors + unclosed-fence detector (check:mdast; used by validate-plugin)
   installed-plugins.mjs                Pure installed-plugin/skill resolver (used by list-installed-plugins.mjs)
   plugin-load-paths.mjs                Pure ${CLAUDE_PLUGIN_ROOT} path extractor (check:plugin-load-paths)
+  portability-scan.mjs                 Pure same/cross-skill/tooling ref classifier (check:portability)
   bm-version-extract.mjs               Pure S2 version extractor, 6 priority patterns (check:bm-version-extract)
   analytics-guidance.mjs               Brew/cask analytics-source doc-rot detector (check:analytics-guidance)
   observation-metadata.mjs             Verified:/Since:/Ownership: observation-trailer parser (check:obs-metadata)
@@ -578,12 +596,12 @@ VOICE.md                               Plugin identity, agent colors, descriptio
 ```
  User says            Triggers              Output
  ─────────────────    ───────────────────    ──────────────────────────
- /package-intel X  -> package-intel skill -> <ecosystem>-X note + cross-links
- /tool-intel X     -> tool-intel skill    -> <type>-X note + cross-links
+ /intel X  -> intel skill (package family) -> <ecosystem>-X note + cross-links
+ /intel prefix:X -> intel skill (tool family)    -> <type>-X note + cross-links
  /knowledge-gaps   -> knowledge-gaps skill-> gap report (packages, tools, concepts)
-                                             + offers /package-intel, /tool-intel
+                                             + offers /intel
  /knowledge-gaps --stale -> knowledge-gaps (--stale mode) -> version drift report (per ecosystem)
-                                                     + offers /tool-intel refreshes
+                                                     + offers /intel refreshes
  /knowledge-prime  -> knowledge-prime     -> context brief with gotchas + gaps
  /knowledge-ask Q  -> knowledge-ask skill -> cited answer + confidence tier
  /schema-evolve X  -> schema-evolve skill -> field proposals + dual-sync
@@ -601,8 +619,7 @@ VOICE.md                               Plugin identity, agent colors, descriptio
  "fix the graph"   -> knowledge-maintainer-> structural + tag fixes + confirmations
                       ├── audits graph inline (lightweight)
                       ├── auto-fixes structure and tags
-                      ├── auto-runs /package-intel for Tier 1 package gaps
-                      ├── auto-runs /tool-intel for undocumented tool manifests
+                      ├── auto-runs /intel for Tier 1 package gaps and undocumented tool manifests
                       ├── enqueues drifted notes (>30d) into a Refresh Queue for a human to action
                       └── asks before content changes
  "prime context"   -> knowledge-primer    -> context brief (autonomous agent)
@@ -625,13 +642,13 @@ These are scoped out of current releases but worth tracking:
 
 - **Tier-drift log for `knowledge-gaps`** — track when packages move between tiers over time so you can see which undocumented packages are becoming more critical (medium effort, medium value)
 - **Per-audit reflection notes from `knowledge-gardener`** — the gardener is intentionally read-only; surfacing audit findings to Basic Memory would need a new output mechanism (e.g. a paired write agent step or a PostToolUse hook on the audit output)
-- **Adaptive research depth in `package-intel`** — extend the 60-day freshness check into a multi-tier strategy: skip specific sources based on what changed since last update, weight sources by past yield for a given package (Phase 2+ from ACE/MemInsight research patterns)
+- **Adaptive research depth in `intel`'s package family** — extend the 60-day freshness check into a multi-tier strategy: skip specific sources based on what changed since last update, weight sources by past yield for a given package (Phase 2+ from ACE/MemInsight research patterns)
 
 ## Migration notes
 
 ### v0.22.0 — Hyphen-delimited note titles and wiki-links
 
-Note titles and wiki-links use **hyphen delimiters** (`npm-fastify`, `[[npm-fastify]]`) instead of colons (`npm:fastify`, `[[npm:fastify]]`). User command syntax is unchanged (`/package-intel npm:fastify`). Vaults populated before v0.22.0 needed a one-time title rename when this shipped.
+Note titles and wiki-links use **hyphen delimiters** (`npm-fastify`, `[[npm-fastify]]`) instead of colons (`npm:fastify`, `[[npm:fastify]]`). User command syntax is unchanged (`/intel npm:fastify`). Vaults populated before v0.22.0 needed a one-time title rename when this shipped.
 
 ## License
 

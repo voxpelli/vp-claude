@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# spec: skills/package-intel/references/ecosystem-npm.md
+# spec: skills/intel/references/ecosystem-npm.md
 #
 # Fetch upstream facts for a list of npm package names from the registry's
 # abbreviated packument (Accept: application/vnd.npm.install-v1+json — ~10x

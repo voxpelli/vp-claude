@@ -2,6 +2,13 @@
   "private": true,
   "type": "module",
   "description": "vp-knowledge Claude Code plugin: Basic Memory knowledge-graph skills, agents, and hooks for package/tool/person research and graph maintenance, plus the .mjs validation tooling that powers npm run check.",
+  "pi": {
+    "extensions": ["./extensions"],
+    "skills": ["./skills"]
+  },
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
   "scripts": {
     "check": "run-p check:*",
     "check:analytics-guidance": "node scripts/check-analytics-guidance.mjs",
@@ -18,25 +25,40 @@
     "check:md": "remark . --quiet --frail",
     "check:mdast": "node scripts/check-mdast.mjs",
     "check:obs-metadata": "node scripts/check-observation-metadata.mjs",
+    "check:pi-load": "node scripts/check-pi-load.mjs",
     "check:plugin": "node validate-plugin.mjs",
     "check:plugin-load-paths": "node scripts/check-plugin-load-paths.mjs",
+    "check:portability": "node scripts/check-portability.mjs",
     "check:release-counts": "node scripts/check-release-counts.mjs",
     "check:schema-vocab": "node scripts/check-schema-vocab.mjs",
     "check:sh": "shellcheck hooks/*.sh scripts/*.sh && shfmt -d hooks/*.sh scripts/*.sh",
+    "check:spec": "skill-check check --no-security-scan --max-body-lines 1000",
+    "check:test": "node --test --import ./test/isolate-agents-dir.js",
     "check:tsc": "tsc",
-    "check:type-coverage": "type-coverage --at-least 99",
+    "check:type-coverage": "type-coverage --detail --strict --at-least 99 --ignore-files 'test/*'",
     "check:upstream-headings": "node scripts/check-upstream-headings.mjs",
     "fix": "run-s fix:*",
-    "fix:ast-grep": "ast-grep scan --update-all lib/ scripts/"
+    "fix:ast-grep": "ast-grep scan --update-all --globs '!scripts/check-*.mjs' lib/ scripts/ extensions/",
+    "test": "node --test --import ./test/isolate-agents-dir.js",
+    "test-ci": "c8 --reporter=cobertura --reporter=lcov --reporter=text node --test --import ./test/isolate-agents-dir.js"
+  },
+  "dependencies": {
+    "@voxpelli/typed-utils": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
   },
   "devDependencies": {
     "@ast-grep/cli": "^0.44.1",
+    "@earendil-works/pi-coding-agent": "^0.80.6",
+    "@earendil-works/pi-tui": "^0.80.6",
     "@types/js-yaml": "^4.0.9",
     "@types/mdast": "^4.0.0",
     "@types/node": "^22.19.19",
     "@voxpelli/eslint-config": "^25.1.0",
     "@voxpelli/tsconfig": "^16.2.1",
-    "@voxpelli/typed-utils": "^5.0.0",
+    "c8": "^11.0.0",
     "eslint": "^9.39.4",
     "js-yaml": "^4.1.0",
     "npm-run-all2": "^9.0.0",
@@ -50,6 +72,7 @@
     "remark-preset-lint-consistent": "^6.0.0",
     "remark-preset-lint-recommended": "^7.0.0",
     "remark-validate-links": "^13.1.0",
+    "skill-check": "^1.2.0",
     "type-coverage": "^2.29.7",
     "typescript": "~5.9.3",
     "unified": "^11.0.5",

@@ -134,7 +134,7 @@ When auditing existing notes, search for these phrases:
   you are about to write and apply the diagnostic question.
 - If you find a violation in a note you are editing, queue a rewrite as a
   confirmation item (content-level change — requires user approval).
-- When delegating to `/package-intel` or `/tool-intel`, the skill output
+- When delegating to `/intel`, the skill output
   should already conform — but verify the result before moving on.
 
 **For the knowledge-gardener (read-only auditor):**

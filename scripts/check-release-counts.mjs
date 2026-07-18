@@ -35,10 +35,11 @@ function countAgents () {
     .length
 }
 function countHooks () {
+  /** @type {{ hooks: Record<string, Array<{ hooks?: Array<unknown> }>> }} */
   const cfg = JSON.parse(readFileSync(join(ROOT, 'hooks/hooks.json'), 'utf8'))
   let n = 0
   for (const matchers of Object.values(cfg.hooks)) {
-    for (const matcher of /** @type {any[]} */ (matchers)) {
+    for (const matcher of matchers) {
       n += matcher.hooks?.length ?? 0
     }
   }

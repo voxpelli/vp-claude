@@ -1,6 +1,19 @@
 # tool-intel Next Generation — Design
 
-**Date:** 2026-07-10 · **Status:** Synthesized from 2 proposals × 3 judging lenses · **Architecture:** Hybrid (user-decided): lean foreground single-tool path + Workflow-orchestrated batch haul + from-scratch `--verify`
+> **⚠️ RETIRED 2026-07-15 — superseded by [`wave3-skill-consolidation.md`](./wave3-skill-consolidation.md).**
+> This design's entire premise is that `package-intel` and `tool-intel` stay **separate** skills.
+> Wave 3 (0.33.0) instead **merges** them into a single `/intel` skill (shared-core, two families),
+> which removes the standalone `tool-intel` this document redesigns.
+>
+> **Kept, not deleted**, because its recon (38 findings) and several architecture-neutral grafts are
+> still useful under the merged skill: G1 (`lib/haul-contract.mjs` outcome-vocabulary + triage
+> bucketing), G2 (mechanical observation-line lint), G6 (ground-truth anchoring for spot-checks), and
+> the deferred-bead recipes in §8 can each be revived independently **without** reverting the merge.
+>
+> **Revival trigger:** if the `/intel` merge is ever reverted, or the two intel families are split
+> back into separate skills, this design becomes directly relevant again as-is.
+
+**Date:** 2026-07-10 · **Status:** RETIRED (was: Synthesized from 2 proposals × 3 judging lenses) · **Architecture:** Hybrid (user-decided): lean foreground single-tool path + Workflow-orchestrated batch haul + from-scratch `--verify`
 
 ---
 

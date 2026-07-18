@@ -90,7 +90,7 @@ S8 reports the count.
 If a cohort's filtered list is empty, skip that cohort silently (or, for an
 explicit single-ecosystem `--stale <eco>`, report "No `<prefix>` notes
 documented in Basic Memory yet — nothing to check" and suggest seeding one via
-`/tool-intel` or `/package-intel`).
+`/intel`).
 
 **Scope modifiers apply here, before S2's per-note read storm** — this is what
 makes `--since`/`--limit`/`--sample` shrink N before the expensive part of the
@@ -157,16 +157,16 @@ semver-range/channel-mismatch regressions.
 | 6 | Registry/prose fallback | `- **Version**: 0.11.13 (…)` / `Current: v3.2.4 (…)` |
 
 Pattern 3 reads the version directly from the note's `observations` array — the
-canonical `[version]` slot. The `/package-intel` npm template **emits it since
+canonical `[version]` slot. The `/intel` npm template **emits it since
 0.31.4** (and 71 npm notes were backfilled); the other five package cohorts
 (crate/go/composer/pypi/gem) **emit it since bead `f3zx`** extended the slot to
-their schemas + templates. The `/tool-intel` brew/cask/vscode templates **emit
+their schemas + templates. The `/intel` brew/cask/vscode templates **emit
 it since bead `80r4`**.
 Per the Sprint 32 promote-verified-only decision, existing notes are **not**
 bulk-backfilled by that bead — only a note a maintainer has *already
 header-verified as version-accurate* gets the `[version]` line stamped as a
 side effect of that verification pass; every other existing note acquires the
-slot organically the next time it's refreshed (`/tool-intel` write path, or a
+slot organically the next time it's refreshed (`/intel` write path, or a
 `--stale` S7 batched refresh). `action`, `gh`, `go`, and `docker` stay outside `--stale`'s supported
 cohort set entirely (per the "Cohort configuration" table above), so they have
 no `[version]` slot and none is planned. **"Emitted" still is not "read first"
@@ -184,7 +184,7 @@ separately as bead `vp-claude-xux8`.
 
 **Multiple `[version]` observations on one note (brew/cask/vscode).** These
 three cohorts also accumulate `[feature]` / `[version]` narrative-reel lines
-from `tool-intel`'s upgrade-haul Axis B (a deliberate, intentional second use
+from `intel`'s tool-family upgrade-haul Axis B (a deliberate, intentional second use
 of the same category — resolved 2026-07-03, `vp-claude-jcql`), so a note can
 carry more than one `[version]` line. This is not ambiguous in practice:
 `extractBmVersion()`'s regex takes the **first** match in document order, and
@@ -336,7 +336,7 @@ skill, in S4, by comparing `upstream_version` against `bm_version`.
   **non-empty `marketplace_version`** is the **marketplace-only** case: the
   Open VSX namespace is unclaimed/squattable and fork-IDEs (Cursor/Windsurf/Codium)
   resolve installs against it — flag it as a security exposure in S6, not a
-  benign gap (see `tool-intel`'s `references/ecosystem-vscode.md`
+  benign gap (see `intel`'s `references/ecosystem-vscode.md`
   "Open VSX Trust Signal").
 - **plugin** is **per-identifier via `gh api`**, not a registry call —
   `marketplace.json` is fetched and cached once per distinct marketplace repo
@@ -419,7 +419,7 @@ hold:
   from "malformed" without clean structure, so they stay in the normal drift
   path.
 - **(b) Registry-lag timing** — the note's own frontmatter `updated_at` (the
-  same freshness field `package-intel`/`tool-intel`/`people-intel` already
+  same freshness field `intel`/`people-intel` already
   use) is more recent than the upstream registry's last-observed movement
   (the upstream release date, derivable from today's date minus the fetch
   script's `days_stale`). This is what distinguishes a genuine
@@ -491,14 +491,14 @@ character-exact; the maintainer Section 3b text-searches for them):
 
 | Note | Documented | Upstream | Released | Distance | Refresh command |
 |------|-----------|----------|----------|----------|-----------------|
-| npm-fastify | 4.28.1 | 5.8.5 | 410d ago | `[semver-major]` | `/package-intel npm:fastify` |
+| npm-fastify | 4.28.1 | 5.8.5 | 410d ago | `[semver-major]` | `/intel npm:fastify` |
 
 #### Drifted <30d (P notes — recent upstream release)
 
 | Note | Documented | Upstream | Released | Distance | Refresh command |
 |------|-----------|----------|----------|----------|-----------------|
-| npm-pino | 9.5.0 | 9.5.1 | 4d ago | `[patch]` | `/package-intel npm:pino` |
-| cask-stale-tracker | 3.4.0 | 3.2.1 | 2d ago | `[patch] [ahead-of-registry?]` | `/tool-intel cask:stale-tracker` *(guard (a) holds — 3.4.0 is cleanly ahead — but `updated_at` predates this release, so it stays Drifted flagged for human judgment)* |
+| npm-pino | 9.5.0 | 9.5.1 | 4d ago | `[patch]` | `/intel npm:pino` |
+| cask-stale-tracker | 3.4.0 | 3.2.1 | 2d ago | `[patch] [ahead-of-registry?]` | `/intel cask:stale-tracker` *(guard (a) holds — 3.4.0 is cleanly ahead — but `updated_at` predates this release, so it stays Drifted flagged for human judgment)* |
 
 #### Drifted, age unknown (Q notes)
 
@@ -513,7 +513,7 @@ still happens routinely for older casks.
 
 | Note | Documented | Upstream | Distance | Refresh command |
 |------|-----------|----------|----------|-----------------|
-| cask-eza | 0.18.0 | 0.20.5 | `[distance-unknown]` | `/tool-intel cask:eza` |
+| cask-eza | 0.18.0 | 0.20.5 | `[distance-unknown]` | `/intel cask:eza` |
 
 #### Archive candidates (R notes)
 
@@ -548,7 +548,7 @@ note is `not-in-api` AND `marketplace_version` is non-empty, it is
 fork-IDEs (Cursor/Windsurf/Codium/Theia) resolve installs against Open VSX —
 an attacker who registers the namespace ships malware to those users. Annotate
 these as a **⚠ security exposure** (not a passive gap) and suggest a
-`/tool-intel vscode:<id>` refresh so the note records the Open VSX trust signal.
+`/intel vscode:<id>` refresh so the note records the Open VSX trust signal.
 A `not-in-api` with an *empty* `marketplace_version` is the benign
 "not-published-anywhere" case (likely renamed/removed/private).
 
@@ -576,9 +576,9 @@ expected by both this report and the maintainer.
 
 If 2 or more notes are in a cohort's `Drifted >30d` bucket, offer to refresh the
 top 5 in parallel via the cohort's routed command (prefix → skill):
-`brew-`/`cask-`/`vscode-` → `/tool-intel <prefix>:<name>`; `npm-` →
-`/package-intel npm:<name>`; `crate-` → `/package-intel crate:<name>`;
-`plugin-` → `/tool-intel plugin:<owner>/<repo>[#<name>]` (reconstruct the
+`brew-`/`cask-`/`vscode-` → `/intel <prefix>:<name>`; `npm-` →
+`/intel npm:<name>`; `crate-` → `/intel crate:<name>`;
+`plugin-` → `/intel plugin:<owner>/<repo>[#<name>]` (reconstruct the
 colon-prefixed form from the recovered `owner/repo#name` join-back key — S3's
 composite key IS this form already, just add the `plugin:` prefix).
 
@@ -604,12 +604,13 @@ Example accepted batch (single turn, names recovered per S3). Hand each skill it
 **whole sublist in one call** — a multi-identifier `args` string is what triggers
 the executor's upgrade-haul batch path; a single identifier per call would fall
 through to the normal single-note path and skip the haul (delta reel, central
-cross-link pass, batch-outcome contract). One call per skill, since package-intel
-and tool-intel are separate skills:
+cross-link pass, batch-outcome contract). One call per family — the batch
+executor routes package identifiers and tool identifiers through separate
+per-family adapters, so keep each call single-family:
 
 ```
-Skill(skill: "package-intel", args: "npm:fastify npm:pino")
-Skill(skill: "tool-intel", args: "cask:warp brew:ripgrep")
+Skill(skill: "intel", args: "npm:fastify npm:pino")
+Skill(skill: "intel", args: "cask:warp brew:ripgrep")
 ```
 
 For more than 5 `Drifted >30d` items, prioritize `[semver-major]` first, then
@@ -619,9 +620,9 @@ which succeeded vs failed rather than claiming the whole batch succeeded.
 
 **This batched handoff IS an upgrade haul — it is the *detector* half of a
 bidirectional pair.** When the user accepts, the batch routes into the
-*executor* side: both `package-intel`'s and `tool-intel`'s **Batch mode:
-upgrade haul** section, each of which loads the
-shared core `skills/package-intel/references/upgrade-haul.md` (input parsing,
+*executor* side: `intel`'s **Batch mode: upgrade haul** section for whichever
+family the identifiers belong to, which loads the
+shared core `skills/intel/references/upgrade-haul.md` (input parsing,
 highlights-reel synthesis, the two recording axes, batch orchestration). The
 executor refreshes the same Axis-A `[version]` observation this skill reads via
 S2 **Pattern 3**, so the next `--stale` run sees the closed drift. The reel each
@@ -709,7 +710,7 @@ full cohort across waves.
 the sequence above, in parallel. These are read-only MCP
 queries and external API reads — S7's refresh only runs on explicit
 acceptance — so concurrent waves are write-safe by construction. Cap
-concurrent *launches* the same way the `/package-intel`/`/tool-intel` batch
+concurrent *launches* the same way the `/intel` batch
 fan-out does (a handful at once, not a burst of ten — see this project's
 `CLAUDE.md` "Parallel agent orchestration" note) to avoid the API-side
 admission throttle, which is distinct from any upstream data-source rate

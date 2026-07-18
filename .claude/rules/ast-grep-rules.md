@@ -35,6 +35,8 @@ guard. That's why they get their own rule file rather than folding into that one
 | `bash-require-set-euo-pipefail` (bash) | a `program` root lacking `set -euo pipefail` anywhere | error | no — the right placement (after the shebang) is a one-line human fix, not worth automating | universal convention across every `scripts/*.sh` worker (verified: all 7 existing scripts already comply) |
 | `no-jq-raw-interpolation` (bash) | a `jq`-named command whose double-quoted program string contains both `{` and a `$var` expansion — i.e. JSON built by string interpolation instead of `--arg`/`--argjson` | warning | no — the safe rewrite needs a human to name the `--arg` binding | every `fetch-<eco>-upstream.sh` `emit()` helper's own established `jq -cn --arg ... '{...}'` convention (see `scripts-and-validation.md`'s Script conventions) |
 | `fetch-upstream-no-basic-memory-path` (bash, scoped via `files: scripts/fetch-*-upstream.sh`) | a literal `basic-memory` path reference (quoted or bare) | error | no | the documented "NEVER touches `~/basic-memory/`" contract on every `fetch-<eco>-upstream.sh` header comment |
+| `no-execsync-template-literal` | `execSync()` with a dynamically-constructed command string (template literal with interpolation or string concatenation) as the first argument | warning | no — the safe rewrite to `execFileSync(bin, [args…], opts)` is context-specific | CLAUDE.md/scripts-and-validation.md: prefer execFileSync over shell-spawning execSync |
+| `no-unguarded-sync-fs` | synchronous filesystem calls (`mkdirSync`, `copyFileSync`, `rmSync`, `writeFileSync`, `readFileSync`, etc.) outside a try/catch body | warning | no — the correct error-handling strategy is context-specific | CLAUDE.md/scripts-and-validation.md: guard sync fs calls against uncaught throws |
 
 The three bash rules' `kind:`/`regex:` shapes were derived from `ast-grep run
 --pattern '<snippet>' --lang bash --debug-query=ast` on real safe/unsafe
@@ -170,6 +172,6 @@ own Basic Memory note (established precedent: `npm-list-dependents-cli`'s
 `## Extraction candidate — @voxpelli/ndjson` section) — not duplicated here.
 See `plugin-voxpelli-vp-claude-vp-knowledge`'s `## Extraction candidate —
 @voxpelli/ast-grep-rules` section for the current state of that possibility
-(not yet extracted as of 2026-07-04 — the `@voxpelli/eslint-config` precedent
+(not yet extracted — the `@voxpelli/eslint-config` precedent
 suggests waiting for a second consuming project first; the bash rules would
 be a partial extraction, not all-or-nothing, given the split above).

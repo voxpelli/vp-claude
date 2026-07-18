@@ -1,6 +1,7 @@
 // Live check + regression test for the brew/cask analytics-source guidance
 // contract (lib/analytics-guidance.mjs). Mirrors check-plugin-load-paths.mjs:
-// (1) live-reads the six canonical doc surfaces and asserts none reintroduces
+// (1) live-reads the canonical doc surfaces (the six /intel tool-family files
+//     plus the user-facing README) and asserts none reintroduces
 // the inverted analytics-source claim fixed in v0.31.5, and each still
 // mentions the JSON `analytics` fallback; (2) fixture-tests the pure
 // detectors so the guard is proven to catch a planted regression and to stay

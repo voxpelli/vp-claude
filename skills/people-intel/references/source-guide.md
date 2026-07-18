@@ -120,7 +120,7 @@ title should use the most widely recognized English form of the name.
 of open source projects, AND you have identified their GitHub username.
 
 **Goal:** Understand the person's technical philosophy and approach through
-their code, NOT to document the package API (that's `/package-intel`'s job).
+their code, NOT to document the package API (that's `/intel`'s job).
 
 ```
 ask_question(

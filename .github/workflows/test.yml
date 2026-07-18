@@ -1,0 +1,21 @@
+name: Test
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    uses: voxpelli/ghatemplates/.github/workflows/test.yml@main
+    permissions:
+      checks: write
+      contents: read
+    with:
+      node-versions: '22,24'
+      npm-test-script: 'test-ci'
+      lockfile: false

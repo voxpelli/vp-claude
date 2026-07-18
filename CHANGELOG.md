@@ -5,6 +5,131 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.0][] - 2026-07-18
+
+This release does three things at once: it makes the plugin run on the **Pi
+coding agent** (a single-root hybrid, with MCP tool calls working on Pi's default
+shim), adds **triple-harness portability gates**, and **consolidates four skills
+into two** (skill count **16 → 14** — one research lifecycle now serves both
+packages and dev tools, and the two nudge skills become one mode-routed skill).
+The skill merge is the breaking change; nothing else below removes a capability.
+
+### ⚠️ Breaking
+
+- **`/package-intel` and `/tool-intel` are removed — use `/intel`.** The two are
+  merged into one **`/intel <prefix>:<name>`** skill (shared-core, two families).
+  The prefixes are unchanged (`npm:`/`crate:`/`go:`/`composer:`/`pypi:`/`gem:` for
+  the package family; `brew:`/`cask:`/`action:`/`docker:`/`vscode:`/`gh:`/`plugin:`/
+  `skill:` for the tool family; no prefix still defaults to npm). A single call may
+  now **mix families** (`/intel npm:fastify brew:ripgrep`) — a capability gain.
+- **`/nudge-sync` and `/nudge-adoption` are removed — use `/nudge`.** Merged into a
+  mode-routed **`/nudge`** skill: bare `/nudge` syncs the tip cache (was
+  `/nudge-sync`); `/nudge check` runs the adoption scan (was `/nudge-adoption`).
+- Any `settings.local.json` allowlist entries or muscle memory referencing the four
+  old command names must be updated.
+
+### Added
+
+- **Pi single-root hybrid** — a root `package.json` `pi` key loads `./extensions`
+  (the Pi extension factory) and the shared `./skills` tree; Claude's loader
+  ignores `package.json`, so the two coexist with no build step. Adds the
+  `extensions/` and `test/` directories, with `check:pi-load` (offline skill-tree
+  plus factory smoke) and `check:test` wired into `npm run check`.
+- **`docs/pi-setup.md`** — how to `pi install` the plugin + `pi-mcp-adapter`,
+  configure `~/.pi/agent/mcp.json`, and the `directTools`/`toolPrefix` caveats.
+- **`check:portability`** — a new `npm run check` gate (the pure classifier
+  `lib/portability-scan.mjs` with `scripts/check-portability.mjs`) that classifies
+  every `${CLAUDE_PLUGIN_ROOT}` reference in skill prose as same-skill (fixable
+  portability debt — breaks under a standalone skills.sh install where the variable
+  is undefined), cross-skill (an accepted sibling-skill dependency), or tooling.
+  Warn-only live scan plus a hard classifier self-test. Orthogonal to
+  `check:plugin-load-paths`: that gate asks "does this path resolve on disk"; this
+  one asks "would this reference survive a standalone single-skill install".
+- **`/intel`** — one research lifecycle (detect → check → resolve → enrich →
+  synthesize → write → cross-link) routed by a provably-disjoint 14-prefix table,
+  branching only at enrichment. Shared mechanics (note lookup/freshness, write
+  mechanics, verify-before-capture, cross-linking, the upgrade-haul batch core, the
+  forge/gh-api fallbacks) live in `skills/intel/references/`; the two families keep
+  their distinct source rosters (package: seven sources incl. Context7 + Socket;
+  tool: six sources incl. man-page, Homebrew analytics, Open VSX).
+- **`/nudge`** — mode-routed (`disable-model-invocation`), with the transcript
+  evidence-detection procedure and accepted-limitations extracted to references.
+- **`check:spec`** — a new `npm run check` gate running `skill-check` (the
+  agentskills.io SKILL.md linter, added as a devDependency) with a 1000-line body
+  limit as errors (double skill-check's 500-line default, calibrated to the one
+  skill — knowledge-gaps at 665 body lines — that exceeds 500); the ~42
+  Claude-Code-vs-spec divergence findings stay non-gating warnings.
+
+### Changed
+
+- **MCP guidance is proxy-primary.** `pi-mcp-adapter` defaults to
+  `directTools:false`, exposing every MCP tool ONLY through a single `mcp` proxy;
+  the injected guidance now leads with
+  `mcp({ server, tool, args: "<JSON string>" })` and keeps the flattened
+  direct-name form as the `directTools:true` opt-in.
+- **`/intel`'s description trimmed to fit the 1024-char Agent Skills
+  (agentskills.io / skills.sh) spec limit** (the former `/tool-intel` at
+  1127 → 929 characters) — all eight tool-prefix mappings and one strong trigger
+  per tool type preserved; only redundant `'what does [X] do'` variants collapsed.
+- The reconciled `gh-api-fallback.md` unions the two previously-drifted copies
+  (restoring a citation the tool copy had dropped) and extends its applicability
+  ladder to all 14 prefixes.
+- All intra-skill reference cross-loads are now **bare-relative** rather than
+  `${CLAUDE_PLUGIN_ROOT}`-prefixed, clearing the same-skill portability debt this
+  plugin created and fixing two silent-broken relative paths. One accepted
+  cross-skill exception remains: `intel`'s `upgrade-haul.md` and
+  `ecosystem-plugin.md` still reference `knowledge-gaps`'s
+  `staleness-detection.md` (a genuine sibling-skill dependency, not portability
+  debt). The crates.io worker's `User-Agent` gains an RFC-3463 contact URL.
+- Template alignment: `check:type-coverage` gains `--detail --strict --ignore-files
+  'test/*'`; `tsconfig` restricts ambient types to `["node"]`.
+
+### Fixed
+
+- **MCP calls work on the default Pi config.** The `tool_result` quality checks
+  (fourth-wall / schema\_validate / error classification) now fire on the `mcp`
+  proxy path — where they were previously dead — across all three call shapes and
+  the read-family tools.
+- **The nudge skills get MCP guidance** — the nudge pair was wrongly excluded from
+  the guidance set despite calling `mcp__basic-memory__read_note`.
+- **`npm test` no longer overwrites `~/.pi/agent/agents/`** — the agent-sync target
+  resolves at call time (a `VP_KNOWLEDGE_AGENTS_DIR` override) so tests isolate to a
+  tmpdir. agent-sync also content-diffs before overwrite (`updated` now means a real
+  change) and surfaces sync errors to stderr unconditionally, not only under a UI.
+- **A transient config read no longer pins DEFAULTS** — the per-path config cache
+  does not memoize a failed read.
+- **`check:pi-load` fails on skill-name collisions** — a collision silently dropped
+  a skill from the loaded set.
+- **`/nudge check` guards against mis-derived search terms** — a tip whose first
+  backtick span is not the feature's own term (e.g. `scratchpad` → `/tmp`,
+  `subagents-background-default` → `background`) no longer drives a false adoption
+  transition; the slug follows the ordinary no-evidence path instead.
+
+### Removed
+
+- `skills/package-intel/`, `skills/tool-intel/`, `skills/nudge-sync/`,
+  `skills/nudge-adoption/` and their reference trees (content relocated, not lost).
+- `docs/design/tool-intel-next-gen.md` retired in place (its premise — the two
+  skills staying separate — no longer holds; kept with a revival trigger).
+
+### Documentation
+
+- **Accepted portability trade-offs ledger** in
+  `docs/design/triple-harness-notes.md`: the verified relative-path resolution rule
+  (a bare `references/...` path resolves against the active skill's own directory in
+  both Claude Code and skills.sh) and the three reference buckets (same-skill
+  fixable, cross-skill accepted, tooling degraded). Shared-reference headers explain
+  why a cross-skill reference must keep the full plugin-relative path.
+
+### Known limitations
+
+- The new **bare-relative** intra-skill reference cross-loads are
+  manually-verified-only, not machine-guarded. `nudge`'s references are markdown
+  links already covered by `remark-validate-links`, but `intel`'s bare
+  inline-code refs have no resolution check yet — a moved/renamed reference file
+  would rot silently. Tracked as a follow-up (see
+  `docs/design/wave3-skill-consolidation.md` Mandatory-fixes item 4).
+
 ## [0.32.5][] - 2026-07-10
 
 ### Fixed
@@ -2157,6 +2282,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.33.0]: https://github.com/voxpelli/vp-claude/compare/v0.32.5...v0.33.0
 [0.32.5]: https://github.com/voxpelli/vp-claude/compare/v0.32.4...v0.32.5
 [0.32.4]: https://github.com/voxpelli/vp-claude/compare/v0.32.3...v0.32.4
 [0.32.3]: https://github.com/voxpelli/vp-claude/compare/v0.32.2...v0.32.3

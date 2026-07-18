@@ -12,7 +12,7 @@ shapes that the intel skills emit all live here.
 
 ## Schema lifecycle
 
-**First-install seeding:** On a fresh Basic Memory instance, call `write_note` for each schema file (or simply run `/package-intel` / `/tool-intel` on any package — they auto-write their schema on first use, which will conform the note).
+**First-install seeding:** On a fresh Basic Memory instance, call `write_note` for each schema file (or simply run `/intel` on any package or tool — it auto-writes the schema on first use, which will conform the note).
 
 **Automatic validation:** The PostToolUse command hook emits `additionalContext` after every `write_note`/`edit_note` call, instructing the main session to call `schema_validate`. Schema errors are surfaced inline without blocking the write.
 
@@ -68,9 +68,10 @@ fragile:
   `- [title](https://canonical-url) — publication, date`. Preferred for
   hand-authored knowledge notes that cite per-claim or multi-source
   (engineering, concept, standard, milestone).
-- **`url:` / `source:` frontmatter** — a single canonical origin URL. The
-  package/tool/person `*-intel` templates already do this (`url:` frontmatter +
-  a markdown link in the content header) — they are the reference implementation.
+- **`url:` / `source:` frontmatter** — a single canonical origin URL. `intel`'s
+  package and tool family templates and the `people-intel` template already do
+  this (`url:` frontmatter + a markdown link in the content header) — they are
+  the reference implementation.
 - **Never put a source URL inside a `[category]` observation line.** A markdown
   link plus a trailing parenthetical collides with BM's observation `(context)`
   parser and the observation silently drops while `schema_validate` still passes
@@ -90,7 +91,7 @@ fragile:
   frontmatter field will pass a first read but fail `schema_validate` — add the
   body observation up front to avoid a second write/validate round-trip.
 
-## Note structure conventions (for package-intel output)
+## Note structure conventions (for `intel`'s package family output)
 
 - Schema note identifiers use the permalink form (e.g. `main/schema/npm_package`), not the title — check with `read_note` before editing
 - Title: `npm-<package-name>` (resolves `[[npm-pkg]]` wiki-links)
@@ -105,7 +106,7 @@ fragile:
   - `Since: vX.Y.Z` — version where the observation was first relevant
   - These fields are backward-compatible — existing observations without them remain valid
 
-## Note structure conventions (for tool-intel output)
+## Note structure conventions (for `intel`'s tool family output)
 
 | Prefix | Directory | Type | Title example |
 |--------|-----------|------|---------------|
@@ -115,6 +116,6 @@ fragile:
 | `docker:` | `docker/` | `docker_image` | `docker-node`, `docker-grafana-grafana` |
 | `vscode:` | `vscode/` | `vscode_extension` | `vscode-esbenp.prettier-vscode` |
 
-- Same three core enrichment layers as package-intel (frontmatter, `## Observations`, `## Relations`) plus a type-specific content section per tool type
+- Same three core enrichment layers as the package family (frontmatter, `## Observations`, `## Relations`) plus a type-specific content section per tool type
 - Type-specific content section replaces `## Key APIs`: `## Common Usage` for brew/cask, `## Inputs & Outputs` + `## Permissions` for actions, `## Tags` + `## Base Layers` for docker, `## Features` + `## Configuration` for vscode
 - Context7 is skipped for all tool types (npm-biased, not useful for tooling)

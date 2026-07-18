@@ -20,6 +20,8 @@ schema:
   popularity?(array): string, Homebrew install analytics (30/90/365-day counts plus build-error count) with source + date stamp; source from Homebrew MCP or the formulae.brew.sh JSON analytics block, omit only when neither is available
   compatibility?(array): string, version pinning, OS/arch coverage, peer-tool compatibility caveats
   security?(array): string, supply-chain or runtime security considerations
+  alternative?(array): string, alternative formulae or casks covering the same need
+  integration?(array): string, runtime or data-flow integration details with another tool (distinct from the integrates_with relation)
   relates_to?(array): Note, related formula, cask, or engineering notes
   see_also?(array): Note, related tool in the same space
   pairs_with?(array): Note, commonly used together
@@ -37,6 +39,7 @@ schema:
   context_from?(array): Note, this formula's relevance is contextualized by a pattern/concept/history note
   integrates_with?(array): Note, runtime integration with another tool via data flow (distinct from `pairs_with` — integrates implies data exchange, pairs implies CLI composition)
   maintained_by?(array): Note, person or org responsible for upstream maintenance
+  part_of?(array): Note, this formula is a member of a larger documented stack or suite (inverse of a stack note's uses)
 settings:
   validation: warn
 ---

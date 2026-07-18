@@ -1,0 +1,92 @@
+id: no-execsync-template-literal
+snapshots:
+  'execSync("shfmt -d " + path, { encoding: ''utf8'' })':
+    labels:
+    - source: 'execSync("shfmt -d " + path, { encoding: ''utf8'' })'
+      style: primary
+      start: 0
+      end: 50
+    - source: execSync
+      style: secondary
+      start: 0
+      end: 8
+    - source: '"shfmt -d "'
+      style: secondary
+      start: 9
+      end: 20
+    - source: '"shfmt -d " + path'
+      style: secondary
+      start: 9
+      end: 27
+    - source: '("shfmt -d " + path, { encoding: ''utf8'' })'
+      style: secondary
+      start: 8
+      end: 50
+  execSync(`echo ${userInput}`):
+    labels:
+    - source: execSync(`echo ${userInput}`)
+      style: primary
+      start: 0
+      end: 29
+    - source: execSync
+      style: secondary
+      start: 0
+      end: 8
+    - source: ${userInput}
+      style: secondary
+      start: 15
+      end: 27
+    - source: '`echo ${userInput}`'
+      style: secondary
+      start: 9
+      end: 28
+    - source: (`echo ${userInput}`)
+      style: secondary
+      start: 8
+      end: 29
+  ? |
+    execSync(`echo ${userInput}`)
+  : labels:
+    - source: execSync(`echo ${userInput}`)
+      style: primary
+      start: 0
+      end: 29
+    - source: execSync
+      style: secondary
+      start: 0
+      end: 8
+    - source: ${userInput}
+      style: secondary
+      start: 15
+      end: 27
+    - source: '`echo ${userInput}`'
+      style: secondary
+      start: 9
+      end: 28
+    - source: (`echo ${userInput}`)
+      style: secondary
+      start: 8
+      end: 29
+  ? |
+    execSync(`shfmt -d "${path}"`, { cwd: ctx.cwd, timeout: 5000 })
+  : labels:
+    - source: 'execSync(`shfmt -d "${path}"`, { cwd: ctx.cwd, timeout: 5000 })'
+      style: primary
+      start: 0
+      end: 63
+    - source: execSync
+      style: secondary
+      start: 0
+      end: 8
+    - source: ${path}
+      style: secondary
+      start: 20
+      end: 27
+    - source: '`shfmt -d "${path}"`'
+      style: secondary
+      start: 9
+      end: 29
+    - source: '(`shfmt -d "${path}"`, { cwd: ctx.cwd, timeout: 5000 })'
+      style: secondary
+      start: 8
+      end: 63

@@ -70,7 +70,7 @@ const [danglingPath] = danglingExtracted
 check('extracts a dangling path', danglingExtracted.length === 1 && danglingPath?.relativePath === 'skills/does-not-exist/references/ghost.md')
 check('a dangling path does NOT resolve on disk (guard actually catches drift)', danglingPath != null && !existsSync(join(ROOT, danglingPath.relativePath)))
 
-const templateFixture = `See \`${PLUGIN_ROOT_TOKEN}/skills/tool-intel/references/ecosystem-<ecosystem>.md\` for the full template.`
+const templateFixture = `See \`${PLUGIN_ROOT_TOKEN}/skills/intel/references/ecosystem-<ecosystem>.md\` for the full template.`
 const templateExtracted = extractPluginLoadPaths(templateFixture)
 const [templatePath] = templateExtracted
 check('extracts a template path and flags it isTemplate', templateExtracted.length === 1 && templatePath?.isTemplate === true)
@@ -106,7 +106,9 @@ check('extracts multiple distinct paths from one document', extractPluginLoadPat
 // referencing ${CLAUDE_PLUGIN_ROOT} — otherwise the live section above would
 // pass vacuously with checkedCount === 0, already asserted, but double-check
 // the fixture reasoning holds against the actual corpus).
-const liveContent = readFileSync(join(ROOT, 'skills/package-intel/SKILL.md'), 'utf8')
+// NB: use a skill that genuinely carries ${CLAUDE_PLUGIN_ROOT} paths (knowledge-gaps);
+// skills/intel deliberately uses bare-relative refs, so it would extract zero paths here.
+const liveContent = readFileSync(join(ROOT, 'skills/knowledge-gaps/SKILL.md'), 'utf8')
 check('a known real skill file extracts at least one path (corpus sanity)', extractPluginLoadPaths(liveContent).length > 0)
 
 done()

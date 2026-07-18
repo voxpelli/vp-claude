@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# spec: skills/tool-intel/references/ecosystem-cask.md
+# spec: skills/intel/references/ecosystem-cask.md
 #
 # Fetch upstream facts for a list of Homebrew *cask* tokens from the central
 # formulae.brew.sh cask API. Reads bare cask tokens from stdin (one per line),

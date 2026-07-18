@@ -1,0 +1,17 @@
+id: no-execsync-template-literal
+valid:
+- |
+  execFileSync('shfmt', ['-d', path], { cwd: ctx.cwd, timeout: 5000 })
+- |
+  execSync('node scripts/check.mjs', { encoding: 'utf8' })
+- |
+  execSync('find . -maxdepth 1 -name "RETRO-*.md" 2>/dev/null | wc -l', { cwd, encoding: 'utf8' })
+- |
+  execSync('node scripts/x.mjs', `opts ${debug}`)
+invalid:
+- |
+  execSync(`shfmt -d "${path}"`, { cwd: ctx.cwd, timeout: 5000 })
+- |
+  execSync(`echo ${userInput}`)
+- |
+  execSync("shfmt -d " + path, { encoding: 'utf8' })

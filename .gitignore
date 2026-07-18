@@ -3,9 +3,11 @@
 .serena/
 .liggare/
 node_modules/
+coverage/
 RETRO-*.md
 SWARM-*.md
 PLAN-*.md
+BRANCH-REVIEW-*
 SYNERGY-*.local.md
 PRIVATE-SYNERGY-*.md
 
@@ -17,3 +19,4 @@ PRIVATE-SYNERGY-*.md
 
 # Beads / Dolt files (added by bd init)
 .beads/proxieddb/
+.research/

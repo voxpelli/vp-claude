@@ -306,14 +306,14 @@ subsections, packages ranked by import count), then an `### Overall Summary`.
 #### 5. Offer enrichment
 
 For the top 3-5 undocumented Tier 1 packages across all ecosystems, offer to
-run `/package-intel` with the appropriate prefixed invocation:
+run `/intel` with the appropriate prefixed invocation:
 
-- npm: `/package-intel fastify`
-- crate: `/package-intel crate:serde`
-- go: `/package-intel go:github.com/gin-gonic/gin`
-- composer: `/package-intel composer:laravel/framework`
-- pypi: `/package-intel pypi:requests`
-- gem: `/package-intel gem:rails`
+- npm: `/intel fastify`
+- crate: `/intel crate:serde`
+- go: `/intel go:github.com/gin-gonic/gin`
+- composer: `/intel composer:laravel/framework`
+- pypi: `/intel pypi:requests`
+- gem: `/intel gem:rails`
 
 Present packages ranked by import count.
 
@@ -475,7 +475,7 @@ It reads no stdin and emits one NDJSON record per installed plugin / skill-bundl
 {"identifier":"skill:basicmachines-co/basic-memory-skills","title":"skill-basicmachines-co-basic-memory-skills","installedAt":"…","members":["memory-notes","memory-research"],"sourceResolved":true}
 ```
 
-- `identifier` is the `/tool-intel plugin:`/`skill:` address; `title` is the
+- `identifier` is the `/intel plugin:`/`skill:` address; `title` is the
   pre-normalized BM-note title Step 8 matches on; `members` is the grouped
   skill-dir roster (the report's "Skills installed" column); `installedAt` drives
   the Step 9 recency cap.
@@ -533,27 +533,27 @@ Homebrew Formulae only when Step 7b ran (`brew leaves` available; otherwise the
 No import-count tiering for tools — all manifest entries are equally "used".
 Group by type, show documented vs undocumented count per type.
 
-For the top undocumented tools, offer `/tool-intel` invocations:
+For the top undocumented tools, offer `/intel` invocations:
 
-- brew: `/tool-intel brew:ripgrep`
-- cask: `/tool-intel cask:warp`
-- action: `/tool-intel action:actions/checkout`
-- docker: `/tool-intel docker:node`
-- vscode: `/tool-intel vscode:esbenp.prettier-vscode`
+- brew: `/intel brew:ripgrep`
+- cask: `/intel cask:warp`
+- action: `/intel action:actions/checkout`
+- docker: `/intel docker:node`
+- vscode: `/intel vscode:esbenp.prettier-vscode`
 
 When Step 7c ran, append a **Plugin/Skill Coverage** section (template in
 `report-templates.md`, labelled user-global). The coverage TABLE lists ALL
 installed plugins/skills (the `X/Y documented` count needs the full denominator;
 first **dedup the records by `title`** — the same plugin installed from two
 marketplaces resolves to one title and would otherwise inflate `Y`),
-but the actionable `/tool-intel` OFFER below it is capped to the **top 5
+but the actionable `/intel` OFFER below it is capped to the **top 5
 undocumented by `installedAt`** (most recent first), with "…and N more — re-run to
 see all" when truncated. When **0** `claude_plugin` notes match, lead the section
 with "No plugin/skill notes yet — here are the 5 most-recently-installed to start"
 rather than an all-red wall. Offer (use each record's `identifier` verbatim):
 
-- plugin: `/tool-intel plugin:<owner>/<repo>` (with `#<name>` when the record has it)
-- skill: `/tool-intel skill:<owner>/<repo>`
+- plugin: `/intel plugin:<owner>/<repo>` (with `#<name>` when the record has it)
+- skill: `/intel skill:<owner>/<repo>`
 
 ---
 

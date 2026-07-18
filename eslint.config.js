@@ -18,10 +18,21 @@ import { voxpelli } from '@voxpelli/eslint-config'
 //                it gets the same CLI treatment rather than being forced to
 //                return data for every caller to print/exit itself.
 export default [
+  {
+    // .claude/workflows/*.js are Workflow-tool orchestration scripts: they run in
+    // the Workflow sandbox with injected globals (agent, pipeline, parallel, phase,
+    // args, budget) and ESM top-level await, so they are agent-runtime scripts, not
+    // part of the linted source tree. They also sit outside tsconfig's `include`, so
+    // tsc/type-coverage skip them by the same reasoning — keep both consistent.
+    ignores: ['.claude/workflows/**'],
+  },
   ...voxpelli({
     noMocha: true,
     semi: false,
-    cliFiles: ['scripts/**/*.mjs', 'validate-plugin.mjs', 'lib/check-harness.mjs'],
+    // extensions/ is the Pi extension (JS with JSDoc types); agent-sync + config
+    // do intentional sync file I/O (atomic copy, manifest/config read-write), so
+    // they get the same CLI relaxation as scripts/.
+    cliFiles: ['scripts/**/*.mjs', 'validate-plugin.mjs', 'lib/check-harness.mjs', 'extensions/agent-sync.js', 'extensions/config.js'],
   }),
   {
     name: 'vp-knowledge/repo-style',
@@ -41,6 +52,17 @@ export default [
       'security/detect-non-literal-regexp': 'off',
       // Keep no-warning-comments (fixme) on — a `// fixme` is the only warning we
       // intentionally surface; everything else is resolved or off.
+      //
+      // agent-sync sorts manifest keys in place — intentional and harmless.
+      'unicorn/no-array-sort': 'off',
+    },
+  },
+  {
+    name: 'vp-knowledge/tests',
+    files: ['test/**/*.js'],
+    rules: {
+      // Tests use sync fs for setup/teardown — sequential and deterministic.
+      'n/no-sync': 'off',
     },
   },
 ]

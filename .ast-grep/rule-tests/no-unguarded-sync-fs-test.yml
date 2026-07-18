@@ -1,0 +1,43 @@
+id: no-unguarded-sync-fs
+valid:
+- |
+  try { mkdirSync(dir, { recursive: true }) } catch { /* ignore */ }
+- |
+  try { copyFileSync(src, dest) } catch { /* ignore */ }
+- |
+  existsSync(AGENTS_DIR)
+- |
+  if (!existsSync(src)) return
+invalid:
+- |
+  mkdirSync(AGENTS_DIR, { recursive: true })
+- |
+  copyFileSync(src, dest)
+- |
+  writeFileSync(path, data)
+- |
+  rmSync(dir)
+- |
+  appendFileSync(path, data)
+- |
+  renameSync(oldPath, newPath)
+- |
+  chmodSync(path, 0o755)
+- |
+  chownSync(path, uid, gid)
+- |
+  readFileSync(path, 'utf8')
+- |
+  readdirSync(dir)
+- |
+  statSync(path)
+- |
+  lstatSync(path)
+- |
+  mkdtempSync(prefix)
+- |
+  unlinkSync(path)
+- |
+  try { foo() } catch (e) { mkdirSync(dir) }
+- |
+  try { foo() } finally { writeFileSync(path, data) }

@@ -40,7 +40,8 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
     ordinary sentences like "Read the file first" would false-fire. Severity is
     **`warn()`, not `error()`**: even backtick-wrapped, a tool name can
     legitimately appear in "why this skill does NOT use tool X" prose (proven
-    case: nudge-adoption's `` `Glob` `` mentions, explaining a discarded design —
+    case: `nudge`'s `` `Glob` `` mentions (inherited from the pre-0.33.0
+    nudge-adoption skill when it merged into `nudge`), explaining a discarded design —
     grammatically identical to a genuine-use sentence, so no local rule can tell
     them apart), and a known instance is allowlisted in
     `BUILTIN_MENTION_EXCEPTIONS` (keyed `"<path>:<Tool>"`) rather than silenced
@@ -126,13 +127,13 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
   mirror as prose tables.
 - **`check:analytics-guidance` (`check-analytics-guidance.mjs`)** — live +
   fixture guard against one specific regression class (fixed in v0.31.5,
-  commit 972c70d): the `tool-intel` brew/cask ecosystem references, both note
+  commit 972c70d): the `intel` brew/cask ecosystem references, both note
   templates, and the `brew_formula`/`brew_cask` schemas once claimed "the
   formulae.brew.sh JSON API does not expose analytics" and told the skill to
   omit `[popularity]` whenever the Homebrew MCP was down — but that JSON
   response already carries an `analytics` block, so the doc contradicted the
   skill's own (correct) behavior for many releases undetected. `lib/analytics-
-  guidance.mjs` exports the canonical six-file list plus two checks:
+  guidance.mjs` exports the canonical seven-file list (README included) plus two checks:
   `detectInvertedAnalyticsClaims` (fails on a reintroduced "does not expose
   analytics" / "MCP-sourced only" / "no structured fallback" phrasing) and
   `hasAnalyticsJsonFallbackMention` (a loose "analytics" ↔ "JSON" proximity
