@@ -97,7 +97,7 @@ operand **by `name`**, then branch — mirroring the detector's tap handling
    **never** read a failed fetch as "no drift." An empty-name row is the
    run-failure signal.
 
-**3. Axis-B narrative target.** Tool-intel records the curated changelog reel as
+**3. Axis-B narrative target.** The tool family records the curated changelog reel as
 **inline `[feature]` / `[version]` observations** (the tool family narrative
 style) — **not** a `## Release Highlights` section (that is package family's
 target). Each surfaced delta change becomes its own observation line in
