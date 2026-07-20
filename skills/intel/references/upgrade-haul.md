@@ -180,7 +180,9 @@ Defaults for running the haul over the resolved list:
   single-identifier (non-batch) calls keep the per-name glob. (Dogfood
   2026-07-10: two listings resolved a 7-operand haul at once.)
 - **Per-note edits are file-disjoint.** Each note lives in its own file, so
-  concurrent refreshes never corrupt each other's output.
+  concurrent refreshes never corrupt each other's output. (Different notes are
+  safe in parallel; multiple edits on the **same** note in one message are not
+  — see `note-write-mechanics.md` single-writer rule.)
 - **One central cross-link pass at the end.** Defer Step 7 cross-linking
   (which touches *shared* neighbor notes) to a single pass after all per-note
   refreshes land, so the disjoint writes never contend on a shared note.
@@ -211,6 +213,16 @@ operand and surface a summary table at batch close:
   comparison was possible: `api-unavailable` (the fetch returned
   `upstream_state:"api-unavailable"`). **Never record a version as current when
   the upstream read failed, and never report `unverified` as "no drift."**
+
+**Cross-linking status.** Surface `cross-linking: completed` or
+`cross-linking: deferred → pending follow-up pass` as an explicit batch-outcome
+line. Large batches defer Step 7 to a single end-pass; the deferral must be
+reported, not silent.
+
+**Both slots verified (package cohorts).** For every package cohort, the
+verification step below confirms *both* the authoritative slot (the one `--stale`
+reads first) and the secondary slot moved. Surface `both-slots-verified` or
+`single-slot-only` in the per-item outcome.
 
 **Axis-A edit verification (required).** After the `edit_note(find_replace)` that
 bumps the version, **re-read the note** and confirm the slot changed to the new

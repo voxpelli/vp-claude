@@ -83,10 +83,33 @@ already exists — it appends to end of file, not end of section. The substring
 match in `find_replace` is byte-exact: use the observation text verbatim, no
 whitespace normalization or escaping.
 
+**Single-writer-per-message rule.** Never issue multiple `edit_note` calls on the
+same identifier in one message. Concurrent `find_replace` operations on a single
+note have been observed to truncate the note body to frontmatter only (Pi batch
+eval, 2026-07-19). Chain edits sequentially across turns, or use a single
+`replace_section` anchored on a stable header.
+
+**Re-read before re-anchoring.** If any edit has already landed on a note this
+session, re-read it before constructing the next `find_replace` anchor. The
+sanctioned reuse of an earlier `read_note` (permitted by the existing-note mechanics above) is safe
+only for the *first* edit on a note in a session; after any edit has landed, a
+fresh read is required because the file content may have shifted.
+
+**Overwrite recovery must come from a fresh read.** If a `find_replace` fails
+and you fall back to `write_note(overwrite=true)`, source the full body from a
+fresh `read_note`, never a stale in-context copy. `overwrite=true` is a
+correct recovery mechanism, but only when the replacement content is verified
+current.
+
 If `find_replace` fails (no match found), the note may have been edited since
 you last read it. Re-run `read_note`, re-derive the anchor, and retry once.
 If the second attempt also fails, stop and report the error to the user — do
 not loop.
+
+**Cross-reference:** for upgrade-haul refreshes, the required dual-slot
+verification (both header pipe and `[version]` observation) is documented in
+`upgrade-haul.md` — Axis-A edit verification. That check is mandatory and
+independent of these mechanics.
 
 **Trust `schema_validate` and the file, not the inline count.** When verifying an
 edit, the `edit_note` inline observation-count echo can transiently double or

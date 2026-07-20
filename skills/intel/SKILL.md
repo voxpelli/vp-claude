@@ -221,8 +221,11 @@ Report a compact summary:
 - Key findings and any `[gotcha]`/`[limitation]` observations recorded.
 - Security/analytics concerns — Socket scores (package) or Open VSX/analytics
   (tool), whichever applies.
-- Cross-links added.
-- Any DeepWiki/forge skips or unresolved contradictions from Step 3–4.
+- Cross-links added (or deferred to follow-up pass for large batches).
+- Any enrichment-source skips (DeepWiki, Context7, Socket, etc.) or unresolved
+  contradictions from Step 3–4. Sources must be *attempted*, not skipped by
+  assumption — surface real failures (auth error, server not found) distinctly
+  from intentional skips (non-GitHub forge, ecosystem not covered).
 
 ### Step 7: Cross-link existing notes
 
