@@ -10,6 +10,7 @@ PLAN-*.md
 BRANCH-REVIEW-*
 SYNERGY-*.local.md
 PRIVATE-SYNERGY-*.md
+evaluations/
 
 # Beads / Dolt files — entire .beads/ directory is local-only
 .beads/

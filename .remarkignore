@@ -12,3 +12,7 @@ SWARM-*.md
 
 # Plan / design working drafts — gitignored, local-only; same bracket-prose hazard.
 PLAN-*.md
+
+# Skill/tool evaluation records — gitignored, local-only; use BM-style [category]
+# and outcome tags like [version]/fixed[version] that trip no-undefined-references.
+evaluations/
