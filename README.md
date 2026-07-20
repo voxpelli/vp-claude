@@ -2,7 +2,56 @@
 
 A [Claude Code](https://claude.ai/code) plugin that turns [Basic Memory](https://github.com/basicmachines-co/basic-memory) into an actively maintained knowledge graph. Research packages from six ecosystems and tools from eight dev-environment categories using parallel enrichment, find documentation gaps in your projects, detect when documented packages and tools have drifted from upstream registries (brew, npm, cask, crate, vscode), surface project-relevant knowledge before coding, and let autonomous agents audit and improve your notes — all without leaving your terminal.
 
-> **Also runs on Pi (0.32.6+):** the shared `skills/` tree and the `extensions/` factory load on the Pi coding agent from a single-root hybrid — Claude's loader ignores `package.json`, so the two coexist with no build step, and MCP tools work on Pi's default shim config. See [`docs/pi-setup.md`](docs/pi-setup.md).
+## Installation
+
+vp-knowledge is a **single-root hybrid**: the same `skills/` tree and `extensions/` factory serve both [Claude Code](https://claude.ai/code) and the Pi coding agent (0.32.6+). Claude's loader reads `.claude-plugin/` and ignores `package.json`, so the two installs coexist with no build step.
+
+See [Prerequisites](#prerequisites) below for the MCP servers the enrichment pipelines need — at minimum, Basic Memory.
+
+### On Claude Code
+
+Via slash commands:
+
+```bash
+/plugin marketplace add voxpelli/vp-claude
+/plugin install vp-knowledge@vp-plugins
+```
+
+Or add to `~/.claude/settings.json` manually:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "vp-plugins": {
+      "source": { "source": "github", "repo": "voxpelli/vp-claude" }
+    }
+  },
+  "enabledPlugins": {
+    "vp-knowledge@vp-plugins": true
+  }
+}
+```
+
+### On Pi
+
+Pi reads the root `package.json` `pi` key. Install the plugin (extension + shared skills tree), then the MCP shim — Pi ships no native MCP by design, so a shim provides it:
+
+```sh
+pi install <path-or-git-url-of-this-repo>
+pi install npm:pi-mcp-adapter
+```
+
+Then wire the MCP servers the skills use (at minimum `basic-memory`) in `~/.pi/agent/mcp.json`:
+
+```jsonc
+{
+  "mcpServers": {
+    "basic-memory": { "command": "basic-memory", "args": ["mcp"] }
+  }
+}
+```
+
+See [`docs/pi-setup.md`](docs/pi-setup.md) for the full Pi story — the recommended `directTools: true` setting, the MCP mapping the extension injects, and the offline verification checks.
 
 ## What it does
 
@@ -334,32 +383,6 @@ Five hooks run automatically in the background:
 - **PostToolUseFailure** — Classifies Basic Memory write and schema tool failures into five categories with actionable recovery guidance.
 - **SessionStart** — Injects a knowledge graph status summary and suggests `/knowledge-prime` for project context or `/knowledge-ask` for topic-specific questions. After a compaction (`source=compact`), it also re-injects a condensed graph-recovery context so the continuing session still knows the Basic Memory tools and research skills exist. On non-compact sessions it also surfaces one learning-nudge tip per day (throttled, no repeats) from the `/nudge`-synced cache, behind a `VP_KNOWLEDGE_DISABLE_NUDGE=1` kill-switch.
 - **PreToolUse** (gardener Bash) — Blocks Python and Node.js script execution when running as the knowledge-gardener agent (via `permissionDecision: "deny"`), enforcing read-only discipline.
-
-## Installation
-
-### Via slash commands
-
-```bash
-/plugin marketplace add voxpelli/vp-claude
-/plugin install vp-knowledge@vp-plugins
-```
-
-### Manual settings.json
-
-Add to `~/.claude/settings.json`:
-
-```json
-{
-  "extraKnownMarketplaces": {
-    "vp-plugins": {
-      "source": { "source": "github", "repo": "voxpelli/vp-claude" }
-    }
-  },
-  "enabledPlugins": {
-    "vp-knowledge@vp-plugins": true
-  }
-}
-```
 
 ## Prerequisites
 
