@@ -222,9 +222,10 @@ reported, not silent.
 **Both slots verified (package cohorts).** For every package cohort, the
 verification step below confirms *both* the authoritative slot (the one `--stale`
 reads first) and the secondary slot moved. Surface `both-slots-verified` or
-`single-slot-only` in the per-item outcome — `single-slot-only` is a failure
-state (the round-trip is broken whichever slot lagged): issue the follow-up edit
-to move the other slot, and do not count the item refreshed until both moved.
+`single-slot-only` in the per-item outcome; `single-slot-only` means the
+round-trip is broken (whichever slot lagged), so report the item
+`FAILED[edit-missed]`, issue the follow-up edit to move the other slot, and do
+not count it refreshed until both moved.
 
 **Axis-A edit verification (required).** After the `edit_note(find_replace)` that
 bumps the version, **re-read the note** and confirm the slot changed to the new
