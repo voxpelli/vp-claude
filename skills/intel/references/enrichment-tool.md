@@ -3,8 +3,9 @@
 **Read this file IN FULL** before running tool-family enrichment. Loaded by
 `/intel` Step 3 when `FAMILY=tool`. Run the six sources below. Each prefix's
 skip/run gates are explicit (DeepWiki for action/docker and conditional gh;
-man-page for brew/cask only; Open VSX for vscode only; Homebrew analytics for
-brew/cask) and MUST stay explicit — never collapse them into a generic loop.
+man-page for brew/cask only; Open VSX for vscode only; Homebrew analytics and
+the agent-leverage surface check for brew/cask) and MUST stay explicit — never
+collapse them into a generic loop.
 
 
 **Context7 is skipped for all tool types** — it is npm-biased and has no
@@ -172,6 +173,69 @@ record it as `[gotcha]`, `[convention]`, or `[reference]` observations with
 or
 `- [gotcha] default regex engine is finite-automata-based; backreferences and look-around require building with PCRE2 and passing -P/--pcre2 (man page)`.
 Skip anything already captured from another source rather than duplicating it.
+
+**g) Agent-leverage surface check (`brew:`, `cask:` only — optional; an addendum
+beyond the six sources above, like Homebrew analytics, not counted in the
+headline six):**
+
+*How would a coding agent best use this tool?* The answer bifurcates by the
+tool's interface, not the agent: an **MCP-native** path exists only for the few
+tools that ship an MCP server; a **machine-readable CLI** path
+(`--json` / `--format` / `--output-format` / `--reporter=json` / `-o json` / a
+REST API) exists for most, works through bash for any agent (Claude Code's Bash
+tool, pi.dev, CI), and costs no standing context because it is discovered on
+demand.
+
+- **Cask pre-filter (skip silently otherwise).** Run this check on a `cask:`
+  only when it is dev-tool-adjacent — its tags / `desc` / `caveats` mention
+  CLI/API/developer/terminal, or it ships a companion binary (not just a
+  `.app`). A pure consumer GUI cask has no agent-leverage surface; record
+  nothing and move on (this is not a gap). `brew:` formulae are CLI-first —
+  always run.
+- **MCP-native probe.** Grep the already-fetched man-page excerpt (source f)
+  and any README/DeepWiki material for `mcp` / `--mcp` / `serve`; confirm live
+  with `<binary> --help 2>&1 | grep -i mcp` (or `<binary> serve --help`). Record
+  ONLY if a flag/subcommand is confirmed, never if merely mentioned.
+- **CLI machine-readable probe.** Run `<binary> --help 2>&1 | head -100` and
+  look for `--json` / `--format` / `--output-format` / `-o` / `--reporter` and
+  exit-code documentation; cross-check the man-page excerpt.
+- **Verify, never infer** (per [`verify-before-capture.md`](verify-before-capture.md)):
+  every recorded surface must trace to a command actually run this session —
+  never "it's written in Go so it probably has `--json`." If the man page
+  advertises a flag a live `--help` doesn't show (or vice versa — version
+  drift), record both with provenance and prefer the more recent, rather than
+  silently picking one.
+
+**Honesty gate + output.** Record with the `[agent-leverage]` category — a new,
+**warn-only** category (deliberately not yet in the `brew_formula`/`brew_cask`
+schema; a future `/schema-evolve` pass formalizes it once frequency justifies,
+per the `[installation]`/`[trust]` precedent in `ecosystem-brew.md`):
+
+- **Genuine positive** → one `[agent-leverage]` observation stating the
+  best-leverage path(s) (MCP tools/flags for MCP-native; the `--json`/CLI recipe
+  for bash agents), plus at most one `[pattern]` if a second recipe earns a
+  line. A notably useful invocation can also land as a `## Common Usage` bullet.
+- **Surprising negative** (looks agent-scriptable but isn't, e.g. an
+  interactive-only TUI whose features need a TTY) → exactly one
+  `[agent-leverage]` line stating the limitation, so the note still records
+  "assessed, limited."
+- **Obviously irrelevant** (a pure GUI cask, a system library) → record nothing.
+- Any genuine caveat (JSON not uniform across a tool's subcommands;
+  undocumented/inconsistent exit codes; an experimental reporter schema) → a
+  `[gotcha]` alongside.
+- **Bloat cap:** never more than 1 `[agent-leverage]` + 1 `[pattern]` for a
+  positive, or exactly 1 `[agent-leverage]` for a negative; never both a
+  positive and a negative for the same subject; never a filler line for the
+  cask pre-filter's silent-skip branch.
+
+**Cross-link (Step 7).** When this check records a finding, add
+`relates_to [[Agent-Tool Leverage — MCP Server or Machine-Readable CLI, Assessed Per Tool]]`
+in `## Relations` — the hub note collecting the per-tool assessments.
+
+**Step 6 reporting.** Report `g)`'s status using the three-state contract: a
+genuine attempt that finds nothing still reports as "used, no finding" (distinct
+from the cask pre-filter's "intentionally-skipped"), so coverage of this angle
+stays auditable over time.
 
 **Pre-write graph check — avoid duplicating linked-note observations.** Before recording new observations in Step 4, pull existing graph context: `build_context(url="<prefix>-<name>", depth=1, max_related=10)`; if it returns nothing, fall back to `search_notes(query="<name>", search_type="text", page_size=10)`. Skip capturing a new observation whose fact a linked (or to-be-linked) note already records — cite that note instead. Mirrors the package family's Knowledge-graph relevance check in enrichment-package.md, applied across all observation types.
 

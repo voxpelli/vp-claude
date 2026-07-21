@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.1][] - 2026-07-21
+
+### Added
+
+- **Agent-leverage surface check for `brew:`/`cask:` `/intel`.** A new optional
+  enrichment sub-step (source g)) documents *how a coding agent best invokes a
+  tool* — an MCP-native path (only when the tool ships an MCP server) or a
+  `--json`/machine-readable-CLI path usable by any bash agent (pi.dev, Claude
+  Code's Bash tool) — verified via `--help`/man, with an honesty gate (records a
+  genuine positive or a surprising negative, stays silent on pure GUI casks) and
+  a dev-tool-adjacent pre-filter for casks. Findings use a new **warn-only
+  `[agent-leverage]` observation category** (deliberately not yet in the
+  `brew_formula`/`brew_cask` schema — deferred to a future `/schema-evolve` pass
+  per the `[installation]`/`[trust]` precedent) and cross-link to a new
+  `Agent-Tool Leverage` Basic Memory hub note. Touches `enrichment-tool.md`
+  (source g)), both note templates (a `### Agent-leverage observations`
+  guideline + a category-table row), the skill-development rule, and the README
+  source table. Kept as a "where-applicable" addendum, so the "six sources"
+  headline is unchanged (no schema change, no source-count propagation).
+
 ## [0.33.0][] - 2026-07-18
 
 This release does three things at once: it makes the plugin run on the **Pi
@@ -2282,6 +2302,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.33.1]: https://github.com/voxpelli/vp-claude/compare/v0.33.0...v0.33.1
 [0.33.0]: https://github.com/voxpelli/vp-claude/compare/v0.32.5...v0.33.0
 [0.32.5]: https://github.com/voxpelli/vp-claude/compare/v0.32.4...v0.32.5
 [0.32.4]: https://github.com/voxpelli/vp-claude/compare/v0.32.3...v0.32.4

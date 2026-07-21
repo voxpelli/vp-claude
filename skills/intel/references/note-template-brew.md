@@ -71,6 +71,7 @@ Always `brew_formula` (snake_case). Not `brew-formula` or `homebrew_formula`.
 | `security` | Security considerations for the tool itself |
 | `alternative` | Alternative formulae or casks covering the same need |
 | `popularity` | Install counts from Homebrew analytics (MCP or formulae.brew.sh JSON) |
+| `agent-leverage` | How a coding agent invokes the tool — MCP server tools/flags, or `--json`/machine-readable CLI; honest-limited when no real surface. Warn-only category, not yet in the schema (see enrichment source g)) |
 
 ### Version observation
 
@@ -112,6 +113,33 @@ When updating an existing note that already has a `[popularity]` line,
 use `edit_note` with `find_replace` to replace the old line rather than
 `append` — install counts change continuously and duplicate lines
 accumulate stale data.
+
+### Agent-leverage observations
+
+For a CLI-first formula, assess *how a coding agent would best use it* and record
+it with the `[agent-leverage]` category — a new, warn-only category (not yet in
+the schema; a later `/schema-evolve brew_formula` pass formalizes it). Two paths,
+each **verified via `--help`/man/`API.md`, never inferred** (see enrichment
+source g) for the probe procedure and the honesty gate): an **MCP-native** path
+(only when the tool ships an MCP server, e.g. a `serve --mcp` subcommand) and a
+**machine-readable CLI** path (`--json` / `--format` / `--reporter` / `-o json`
+/ a REST API) usable by any bash-driven agent (pi.dev, Claude Code's Bash tool).
+
+- Genuine positive → one `[agent-leverage]` line (the best-leverage recipe),
+  plus at most one `[pattern]`; a caveat (JSON not uniform across a tool's
+  subcommands, inconsistent/undocumented exit codes, an experimental reporter
+  schema) → a `[gotcha]`.
+- Surprising negative (agent-scriptable-looking but not) → one `[agent-leverage]`
+  line stating the limitation.
+- No genuine surface → record nothing (never a filler line).
+
+Example: a tool with both paths records one `[agent-leverage]` line naming its
+MCP server subcommand and the CLI `--json` equivalent (noting they return the
+same data); an interactive-only tool records that only its non-interactive
+filter mode is agent-reachable while the keybindings/preview need a TTY. When a
+finding is recorded, add a `relates_to` link to the `Agent-Tool Leverage — MCP
+Server or Machine-Readable CLI, Assessed Per Tool` hub note in `## Relations`
+(never a wiki-link in an observation).
 
 ### Keg-only formulae
 
