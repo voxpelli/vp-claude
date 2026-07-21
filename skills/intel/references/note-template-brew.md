@@ -71,7 +71,7 @@ Always `brew_formula` (snake_case). Not `brew-formula` or `homebrew_formula`.
 | `security` | Security considerations for the tool itself |
 | `alternative` | Alternative formulae or casks covering the same need |
 | `popularity` | Install counts from Homebrew analytics (MCP or formulae.brew.sh JSON) |
-| `agent-leverage` | How a coding agent invokes the tool — MCP server tools/flags, or `--json`/machine-readable CLI; honest-limited when no real surface. Warn-only category, not yet in the schema (see enrichment source g)) |
+| `agent-leverage` | How a coding agent invokes the tool — MCP server tools/flags, or `--json`/machine-readable CLI. Recorded only for a genuine positive or a narrowly-scoped surprising negative; an ordinary no-surface CLI gets no line at all. Warn-only category, not yet in the schema (see enrichment-tool.md's Agent-leverage surface check) |
 
 ### Version observation
 
@@ -116,22 +116,38 @@ accumulate stale data.
 
 ### Agent-leverage observations
 
-For a CLI-first formula, assess *how a coding agent would best use it* and record
-it with the `[agent-leverage]` category — a new, warn-only category (not yet in
-the schema; a later `/schema-evolve brew_formula` pass formalizes it). Two paths,
-each **verified via `--help`/man/`API.md`, never inferred** (see enrichment
-source g) for the probe procedure and the honesty gate): an **MCP-native** path
-(only when the tool ships an MCP server, e.g. a `serve --mcp` subcommand) and a
-**machine-readable CLI** path (`--json` / `--format` / `--reporter` / `-o json`
-/ a REST API) usable by any bash-driven agent (pi.dev, Claude Code's Bash tool).
+For a CLI-first formula, enrichment-tool.md's **Agent-leverage surface
+check** assesses *how a coding agent would best use it* and records findings
+— if any — with the `[agent-leverage]` category, a new, warn-only category
+(not yet in the schema; a later `/schema-evolve brew_formula` pass formalizes
+it). Two possible paths, each **verified via `--help`/man/README/DeepWiki
+material, never inferred**: an **MCP-native** path (only when the tool ships
+an MCP server, e.g. a `serve --mcp` subcommand or a `<name>-mcp` companion
+binary) and a **machine-readable CLI** path (`--json` / `--format` /
+`--reporter` / `-o json` / a REST API) usable by any bash-driven agent
+(Claude Code's own Bash tool, pi.dev, CI).
 
-- Genuine positive → one `[agent-leverage]` line (the best-leverage recipe),
-  plus at most one `[pattern]`; a caveat (JSON not uniform across a tool's
-  subcommands, inconsistent/undocumented exit codes, an experimental reporter
-  schema) → a `[gotcha]`.
-- Surprising negative (agent-scriptable-looking but not) → one `[agent-leverage]`
-  line stating the limitation.
-- No genuine surface → record nothing (never a filler line).
+**Recording is the exception, not the rule** — an ordinary text-only CLI with
+neither surface is the expected majority case and gets no `[agent-leverage]`
+line at all. See enrichment-tool.md's Agent-leverage surface check for the
+full probe procedure, the binary-resolution step (a failed/missing binary is
+a probe failure, never a negative finding), and the honesty-gate trichotomy.
+In short:
+
+- Genuine positive → one `[agent-leverage]` line (the leverage recipe found
+  this session — do not claim it's "the best" path unless MCP was fully
+  ruled out), plus at most one `[pattern]`; a caveat (JSON not uniform across
+  a tool's subcommands, inconsistent/undocumented exit codes, an
+  experimental reporter schema) → a `[gotcha]`.
+- Surprising negative (a tool a reader would genuinely expect to be
+  agent-scriptable, but isn't) → one `[agent-leverage]` line stating the
+  limitation.
+- Ordinary CLI with no real surface, or a probe that couldn't run (binary not
+  found locally) → record nothing.
+
+On refresh, use `edit_note` with `find_replace` to replace an existing
+`[agent-leverage]` line in place — never `append` a second one (same
+discipline as `[version]`/`[popularity]` above).
 
 Example: a tool with both paths records one `[agent-leverage]` line naming its
 MCP server subcommand and the CLI `--json` equivalent (noting they return the

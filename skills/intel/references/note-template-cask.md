@@ -71,7 +71,7 @@ Always `brew_cask` (snake_case). Not `brew-cask` or `homebrew_cask`.
 | `performance` | Startup time, memory usage, battery impact |
 | `conflict` | Conflicts with other casks or system tools |
 | `popularity` | Install counts from Homebrew analytics (MCP or formulae.brew.sh JSON) |
-| `agent-leverage` | How a coding agent invokes the tool (dev-tool-adjacent casks only) — MCP server or `--json`/machine-readable CLI; honest-limited when no real surface. Warn-only category, not yet in the schema (see enrichment source g)) |
+| `agent-leverage` | How a coding agent invokes the tool (dev-tool-adjacent casks only, keyed on a companion-binary artifact) — MCP server or `--json`/machine-readable CLI. Recorded only for a genuine positive or a narrowly-scoped surprising negative. Warn-only category, not yet in the schema (see enrichment-tool.md's Agent-leverage surface check) |
 
 ### Version observation
 
@@ -104,18 +104,34 @@ accumulate stale data.
 
 ### Agent-leverage observations
 
-Run this only for a **dev-tool-adjacent cask** — one whose tags / `desc` /
-`caveats` mention CLI/API/developer/terminal, or that ships a companion binary.
-A pure consumer GUI cask has no agent-leverage surface; record nothing (this is
-not a gap). When it applies, assess *how a coding agent would use the tool* and
-record with the `[agent-leverage]` category — a new, warn-only category (not yet
-in the schema; a later `/schema-evolve brew_cask` pass formalizes it), verified
-via `--help`/man/`API.md`, never inferred. See enrichment source g) for the
-probe and honesty gate: one `[agent-leverage]` line for a genuine positive (plus
-at most one `[pattern]`, and a `[gotcha]` for any caveat), or one
-`[agent-leverage]` line stating the limitation for a surprising negative. When a
-finding is recorded, add a `relates_to` link to the `Agent-Tool Leverage — MCP
-Server or Machine-Readable CLI, Assessed Per Tool` hub note in `## Relations`.
+Run this only for a **dev-tool-adjacent cask** — the Step 2 cask JSON's
+`artifacts.binary` entry is non-empty (the reliable primary signal: a cask
+that ships a companion CLI binary alongside its `.app`), or its `desc`/tags
+mention CLI / SDK / command-line / API. Do **not** key on `caveats` (routine
+GUI post-install instructions false-trigger this) or a bare "terminal" match
+(GUI terminal-emulator casks legitimately describe themselves that way). A
+pure consumer GUI cask has no agent-leverage surface; record nothing (this is
+not a gap; Step 6: intentionally-skipped). A cask that passes the filter via
+`desc`/tags but ships no binary artifact is also skipped silently — there is
+nothing to run `--help` against.
+
+When it applies, resolve the actual binary (from `artifacts.binary`, not
+assumed from the cask token) and confirm it's reachable before probing — an
+unresolved binary is a probe failure (Step 6: attempted-but-failed), never a
+negative finding. Then assess *how a coding agent would use the tool* and
+record with the `[agent-leverage]` category — a new, warn-only category (not
+yet in the schema; a later `/schema-evolve brew_cask` pass formalizes it),
+verified via `--help`/man/README/DeepWiki material, never inferred. See
+enrichment-tool.md's Agent-leverage surface check for the full probe
+procedure and honesty gate: one `[agent-leverage]` line for a genuine
+positive (plus at most one `[pattern]`, and a `[gotcha]` for any caveat), or
+one `[agent-leverage]` line stating the limitation for a narrowly-scoped
+surprising negative — the ordinary CLI-with-no-surface case records nothing
+at all. On refresh, use `edit_note` with `find_replace` to replace an
+existing `[agent-leverage]` line in place — never `append` a second one. When
+a finding is recorded, add a `relates_to` link to the `Agent-Tool Leverage —
+MCP Server or Machine-Readable CLI, Assessed Per Tool` hub note in
+`## Relations`.
 
 ### Auto-updating casks
 

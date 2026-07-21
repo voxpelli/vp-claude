@@ -10,20 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Agent-leverage surface check for `brew:`/`cask:` `/intel`.** A new optional
-  enrichment sub-step (source g)) documents *how a coding agent best invokes a
-  tool* — an MCP-native path (only when the tool ships an MCP server) or a
-  `--json`/machine-readable-CLI path usable by any bash agent (pi.dev, Claude
-  Code's Bash tool) — verified via `--help`/man, with an honesty gate (records a
-  genuine positive or a surprising negative, stays silent on pure GUI casks) and
-  a dev-tool-adjacent pre-filter for casks. Findings use a new **warn-only
-  `[agent-leverage]` observation category** (deliberately not yet in the
-  `brew_formula`/`brew_cask` schema — deferred to a future `/schema-evolve` pass
-  per the `[installation]`/`[trust]` precedent) and cross-link to a new
-  `Agent-Tool Leverage` Basic Memory hub note. Touches `enrichment-tool.md`
-  (source g)), both note templates (a `### Agent-leverage observations`
-  guideline + a category-table row), the skill-development rule, and the README
-  source table. Kept as a "where-applicable" addendum, so the "six sources"
-  headline is unchanged (no schema change, no source-count propagation).
+  enrichment addendum documents *how a coding agent best invokes a tool* — an
+  MCP-native path (only when the tool ships an MCP server, e.g. `serve --mcp` or
+  a `<name>-mcp` companion binary) or a `--json`/machine-readable-CLI path usable
+  by any bash-driven agent (Claude Code's own Bash tool, pi.dev, CI). It resolves
+  the tool's actual binary first (a binary not found locally is a probe failure,
+  never a false negative), keeps MCP negatives bounded (never an unqualified
+  "best path"), and records **only** a genuine positive or a narrowly-scoped
+  surprising negative — an ordinary text-only CLI gets no line at all. Casks are
+  gated by a companion-binary (`artifacts.binary`) pre-filter so pure-GUI casks
+  are skipped. Findings use a new **warn-only `[agent-leverage]` observation
+  category** (deliberately not yet in the `brew_formula`/`brew_cask` schema —
+  deferred to a future `/schema-evolve` pass per the `[installation]`/`[trust]`
+  precedent) and cross-link to a new `Agent-Tool Leverage` Basic Memory hub note.
+  Touches `enrichment-tool.md`, both note templates (a `### Agent-leverage
+  observations` guideline + a category-table row), the skill-development rule,
+  and the README source table. Kept as a "where-applicable" addendum, so the
+  "six sources" headline is unchanged (no schema change, no source-count
+  propagation).
 
 ## [0.33.0][] - 2026-07-18
 
