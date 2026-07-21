@@ -96,3 +96,19 @@ affects compilation requirements.
 If the crate has optional features, list the commonly used ones in the
 `## Cargo.toml` snippet. This is often the most practically useful information
 for a developer integrating the crate.
+
+### Agent-leverage observations
+
+For a crate that ships a binary (`command-line-utilities`/`development-tools`
+category or a `cli` keyword), enrichment-package.md's **Agent-leverage surface
+check** assesses *how a coding agent would invoke it* and records — if any — an
+`[agent-leverage]` line (declared category, `validation: warn`). See that file for
+the full three-way procedure (live-probe when the binary resolves / primary-source
+doc-fallback with provenance / skip). In short: record only a genuine positive or a
+narrowly-scoped surprising negative; a library-only crate gets no line; when the
+binary isn't installed locally a `--json`/MCP surface is taken **only** from primary
+doc text (crates.io/README/homepage), stamped `(documented in <source>, not
+live-verified as of YYYY-MM-DD)` — never a DeepWiki/Context7 summary, never
+inferred. Cross-link a finding to the `Agent-Tool Leverage — MCP Server or
+Machine-Readable CLI, Assessed Per Tool` hub note in `## Relations`; on refresh,
+`find_replace` the existing line in place.

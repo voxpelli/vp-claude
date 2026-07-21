@@ -39,6 +39,8 @@ From `https://crates.io/api/v1/crates/<name>`:
 | `crate.license` | SPDX license string |
 | `crate.downloads` | All-time download count |
 | `crate.description` | Short crate description |
+| `crate.categories` | Category slugs (e.g. `command-line-utilities`, `development-tools`) — the CLI-distribution signal the agent-leverage check gates on |
+| `crate.keywords` | Keyword strings (e.g. `cli`, `command-line`) — secondary CLI signal (OR-combined) |
 
 Extract `owner/repo` from `crate.repository` for DeepWiki calls.
 

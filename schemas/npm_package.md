@@ -14,6 +14,7 @@ schema:
   api?(array): string, key API surface — method signatures, options, return shapes
   architecture?(array): string, internal design, module structure, and build approach
   popularity?(array): string, download counts and adoption signals (e.g., npm weekly downloads)
+  agent-leverage?(array): string, how a coding agent best invokes this package's CLI (only packages that distribute one — a library-only package gets no entry) — an MCP-native path or a machine-readable --json/--format flag, verified via a live probe when the binary resolves locally or explicit primary-source doc text (registry/README/homepage) otherwise, stamped with source + date, never inferred; recorded only for a genuine positive or a narrowly-scoped surprising negative
   version?(array): string, current documented package version (e.g. 5.8.5) — the version this note's content reflects; the machine-stable slot /knowledge-gaps --stale compares against upstream (Pattern 3, checked before fragile prose extraction)
   relates_to?(array): Note, related knowledge notes
   depends_on?(array): Note, upstream package dependencies

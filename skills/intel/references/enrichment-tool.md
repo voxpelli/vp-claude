@@ -265,11 +265,9 @@ honesty gate below.
   drift), record both with provenance and prefer the more recent, rather than
   silently picking one.
 
-**Honesty gate + output.** Record with the `[agent-leverage]` category — a
-new, **warn-only** category (deliberately not yet in the
-`brew_formula`/`brew_cask` schema; a future `/schema-evolve` pass formalizes
-it once frequency justifies, per the `[installation]`/`[trust]` precedent in
-`ecosystem-brew.md`). The check always **runs** (subject to the pre-filter and
+**Honesty gate + output.** Record with the `[agent-leverage]` category —
+**declared** (`validation: warn`) in the `brew_formula`/`brew_cask` and
+`npm_package`/`crate_package`/`pypi_package` schemas. The check always **runs** (subject to the pre-filter and
 binary resolution above), but **recording is the exception, not the rule** —
 most CLIs are ordinary text-only tools and warrant no `[agent-leverage]` line
 at all:

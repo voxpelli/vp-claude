@@ -26,6 +26,7 @@ From `https://pypi.org/pypi/<name>/json`:
 | `info.license` | License string (SPDX or free-form) |
 | `info.summary` | One-line description |
 | `info.requires_python` | Python version requirement (e.g., `>=3.8`) |
+| `info.classifiers` | Trove classifiers — `Environment :: Console` is the CLI-distribution signal the agent-leverage check gates on (noisy; OR-combine with a `summary` CLI mention) |
 | `vulnerabilities` | Array of known security advisories (built-in!) |
 
 **Important:** `info.downloads` is always `-1` — PyPI deprecated download stats.

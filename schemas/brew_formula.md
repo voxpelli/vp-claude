@@ -22,6 +22,7 @@ schema:
   security?(array): string, supply-chain or runtime security considerations
   alternative?(array): string, alternative formulae or casks covering the same need
   integration?(array): string, runtime or data-flow integration details with another tool (distinct from the integrates_with relation)
+  agent-leverage?(array): string, how a coding agent best invokes this formula — an MCP-native path (a serve --mcp subcommand or a <name>-mcp companion binary) or a machine-readable CLI path (--json/--format/--reporter/-o json), verified via --help/man-page/README material actually consulted this session, never inferred from implementation language; recorded only for a genuine positive or a narrowly-scoped surprising negative — an ordinary text-only CLI gets no entry
   relates_to?(array): Note, related formula, cask, or engineering notes
   see_also?(array): Note, related tool in the same space
   pairs_with?(array): Note, commonly used together

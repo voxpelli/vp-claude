@@ -20,6 +20,7 @@ schema:
   security?(array): string, supply-chain or runtime security considerations
   licensing?(array): string, paid/subscription/free model details and renewal/seat caveats
   integration?(array): string, integration surface with other tools or workflows
+  agent-leverage?(array): string, how a coding agent best invokes this cask's CLI (dev-tool-adjacent casks only, gated by the artifacts.binary/desc pre-filter) — an MCP-native path (serve --mcp / <name>-mcp companion binary) or a machine-readable CLI path (--json/--format/-o json), verified via --help/README material consulted this session, never inferred; recorded only for a genuine positive or a narrowly-scoped surprising negative
   tension?(array): string, principle-vs-pragma trade-offs the tool's design accepts
   architecture?(array): string, architectural choices — process model, sandboxing, plugin system, dependency boundaries
   source?(array): string, canonical website / repo / vendor URL with date

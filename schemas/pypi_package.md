@@ -13,6 +13,7 @@ schema:
   benefit?(array): string, advantages and strengths over alternatives
   limitation?(array): string, constraints and known weaknesses
   popularity?(array): string, PyPI download counts (pepy.tech / pypistats) with date stamp
+  agent-leverage?(array): string, how a coding agent best invokes this package's CLI (only packages that ship a console script — a library-only package gets no entry) — an MCP-native path or a machine-readable --json/--format flag, verified via a live probe when the binary resolves locally or explicit primary-source doc text (PyPI/README/homepage) otherwise, stamped with source + date, never inferred; recorded only for a genuine positive or a narrowly-scoped surprising negative
   version?(array): string, current documented package version (e.g. 2.32.3) —
     the version this note's content reflects; the machine-stable slot
     /knowledge-gaps --stale compares against upstream (Pattern 3, checked before

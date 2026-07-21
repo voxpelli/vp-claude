@@ -78,6 +78,7 @@ Use whatever category fits. Common ones for npm packages:
 | `compatibility` | Version/platform compatibility notes |
 | `performance` | Performance characteristics |
 | `security` | Security considerations |
+| `agent-leverage` | How a coding agent invokes the package's CLI (packages that ship a `bin` only) — MCP server or `--json`/machine-readable flag; recorded only for a genuine positive or a narrowly-scoped surprising negative, doc-sourced positives stamped with provenance. Declared category (`validation: warn`) — see enrichment-package.md's Agent-leverage surface check |
 
 ### Release Highlights
 
@@ -87,3 +88,19 @@ Curate — don't mirror the full changelog. Focus on:
 - Fixes for bugs that affected the user's code
 
 Always link to the release page or PR.
+
+### Agent-leverage observations
+
+For a package that distributes a CLI (npm `bin` present), enrichment-package.md's
+**Agent-leverage surface check** assesses *how a coding agent would invoke it* and
+records — if any — an `[agent-leverage]` line (declared category, `validation:
+warn`). See that file for the full three-way procedure (live-probe when the binary
+resolves / primary-source doc-fallback with provenance / skip). In short: record
+only a genuine positive or a narrowly-scoped surprising negative; an ordinary
+library or no-CLI-surface package gets no line; when the binary isn't installed
+locally a `--json`/MCP surface is taken **only** from primary doc text
+(registry/README/homepage), stamped `(documented in <source>, not live-verified as
+of YYYY-MM-DD)` — never a DeepWiki/Context7 summary, never inferred. Cross-link a
+finding to the `Agent-Tool Leverage — MCP Server or Machine-Readable CLI, Assessed
+Per Tool` hub note in `## Relations`; on refresh, `find_replace` the existing line
+in place.

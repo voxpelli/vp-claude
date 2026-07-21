@@ -37,7 +37,9 @@ npm view <package-name> --json 2>/dev/null
 ```
 
 Useful fields: `version`, `description`, `license`, `repository.url`,
-`homepage`, `bugs.url`.
+`homepage`, `bugs.url`, `bin` (the CLI-distribution signal the agent-leverage
+check gates on — an object `name→path` or a bare string; absent ⇒ library-only,
+skip the check).
 
 ## Download Stats
 

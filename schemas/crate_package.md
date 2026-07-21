@@ -13,6 +13,7 @@ schema:
   limitation?(array): string, known constraints, no_std caveats, feature-flag requirements
   security?(array): string, CVE/RUSTSEC status, supply-chain considerations, and advisories
   popularity?(array): string, crates.io download counts (total and recent) with date stamp
+  agent-leverage?(array): string, how a coding agent best invokes this crate's CLI (only crates that ship a binary — a library-only crate gets no entry) — an MCP-native path or a machine-readable --json/--format flag, verified via a live probe when the binary resolves locally or explicit primary-source doc text (crates.io/README/homepage) otherwise, stamped with source + date, never inferred; recorded only for a genuine positive or a narrowly-scoped surprising negative
   version?(array): string, current documented crate version (e.g. 1.0.219) — the
     version this note's content reflects; the machine-stable slot
     /knowledge-gaps --stale compares against upstream (Pattern 3, checked before

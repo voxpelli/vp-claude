@@ -71,7 +71,7 @@ Always `brew_formula` (snake_case). Not `brew-formula` or `homebrew_formula`.
 | `security` | Security considerations for the tool itself |
 | `alternative` | Alternative formulae or casks covering the same need |
 | `popularity` | Install counts from Homebrew analytics (MCP or formulae.brew.sh JSON) |
-| `agent-leverage` | How a coding agent invokes the tool — MCP server tools/flags, or `--json`/machine-readable CLI. Recorded only for a genuine positive or a narrowly-scoped surprising negative; an ordinary no-surface CLI gets no line at all. Warn-only category, not yet in the schema (see enrichment-tool.md's Agent-leverage surface check) |
+| `agent-leverage` | How a coding agent invokes the tool — MCP server tools/flags, or `--json`/machine-readable CLI. Recorded only for a genuine positive or a narrowly-scoped surprising negative; an ordinary no-surface CLI gets no line at all. Declared category (`validation: warn`) in the `brew_formula` schema (see enrichment-tool.md's Agent-leverage surface check) |
 
 ### Version observation
 
@@ -118,9 +118,8 @@ accumulate stale data.
 
 For a CLI-first formula, enrichment-tool.md's **Agent-leverage surface
 check** assesses *how a coding agent would best use it* and records findings
-— if any — with the `[agent-leverage]` category, a new, warn-only category
-(not yet in the schema; a later `/schema-evolve brew_formula` pass formalizes
-it). Two possible paths, each **verified via `--help`/man/README/DeepWiki
+— if any — with the `[agent-leverage]` category, declared in the `brew_formula` schema
+(`validation: warn`). Two possible paths, each **verified via `--help`/man/README/DeepWiki
 material, never inferred**: an **MCP-native** path (only when the tool ships
 an MCP server, e.g. a `serve --mcp` subcommand or a `<name>-mcp` companion
 binary) and a **machine-readable CLI** path (`--json` / `--format` /

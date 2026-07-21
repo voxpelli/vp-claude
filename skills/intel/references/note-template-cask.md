@@ -71,7 +71,7 @@ Always `brew_cask` (snake_case). Not `brew-cask` or `homebrew_cask`.
 | `performance` | Startup time, memory usage, battery impact |
 | `conflict` | Conflicts with other casks or system tools |
 | `popularity` | Install counts from Homebrew analytics (MCP or formulae.brew.sh JSON) |
-| `agent-leverage` | How a coding agent invokes the tool (dev-tool-adjacent casks only, keyed on a companion-binary artifact) — MCP server or `--json`/machine-readable CLI. Recorded only for a genuine positive or a narrowly-scoped surprising negative. Warn-only category, not yet in the schema (see enrichment-tool.md's Agent-leverage surface check) |
+| `agent-leverage` | How a coding agent invokes the tool (dev-tool-adjacent casks only, keyed on a companion-binary artifact) — MCP server or `--json`/machine-readable CLI. Recorded only for a genuine positive or a narrowly-scoped surprising negative. Declared category (`validation: warn`) in the `brew_cask` schema (see enrichment-tool.md's Agent-leverage surface check) |
 
 ### Version observation
 
@@ -119,8 +119,8 @@ When it applies, resolve the actual binary (from `artifacts.binary`, not
 assumed from the cask token) and confirm it's reachable before probing — an
 unresolved binary is a probe failure (Step 6: attempted-but-failed), never a
 negative finding. Then assess *how a coding agent would use the tool* and
-record with the `[agent-leverage]` category — a new, warn-only category (not
-yet in the schema; a later `/schema-evolve brew_cask` pass formalizes it),
+record with the `[agent-leverage]` category — declared in the `brew_cask`
+schema (`validation: warn`),
 verified via `--help`/man/README/DeepWiki material, never inferred. See
 enrichment-tool.md's Agent-leverage surface check for the full probe
 procedure and honesty gate: one `[agent-leverage]` line for a genuine

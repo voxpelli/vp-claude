@@ -88,6 +88,7 @@ Queries seven sources in parallel. Supports six ecosystems:
 | Raindrop | Your bookmarked articles (with full content extraction) |
 | Readwise | Your highlights and saved articles about the package |
 | Socket | Supply-chain risk scores (license, maintenance, quality, supply-chain, vulnerability) for npm, pypi, cargo, gem |
+| Agent-leverage check (optional) | How a coding agent invokes the package's CLI, split by interface — MCP server or `--json`/machine-readable flag — for `npm:`/`crate:`/`pypi:` packages that distribute a CLI (npm `bin` / crate `command-line-utilities` / pypi `Environment :: Console` gate); library-only packages skipped; a not-installed CLI's surface is taken from primary doc text only, so most packages get no line |
 
 Plus changelog analysis via GitHub releases — with a git-tag fallback when the release list lags the registry version (a tag pushed without a published Release). After writing, searches for existing notes that reference the package and adds bidirectional cross-links, and rewrites any bare-name `[[Name]]` wiki-link stub elsewhere in the graph to the note's full title (bare-name links don't auto-resolve against a descriptor-titled note). The result is an ecosystem-prefixed note (`npm-*`, `crate-*`, `pypi-*`, etc.) with observations, relations, and release highlights — connected into the graph from day one.
 

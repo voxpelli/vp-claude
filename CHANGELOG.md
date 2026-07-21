@@ -9,25 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Agent-leverage surface check for `brew:`/`cask:` `/intel`.** A new optional
-  enrichment addendum documents *how a coding agent best invokes a tool* — an
-  MCP-native path (only when the tool ships an MCP server, e.g. `serve --mcp` or
-  a `<name>-mcp` companion binary) or a `--json`/machine-readable-CLI path usable
-  by any bash-driven agent (Claude Code's own Bash tool, pi.dev, CI). It resolves
-  the tool's actual binary first (a binary not found locally is a probe failure,
-  never a false negative), keeps MCP negatives bounded (never an unqualified
-  "best path"), and records **only** a genuine positive or a narrowly-scoped
-  surprising negative — an ordinary text-only CLI gets no line at all. Casks are
-  gated by a companion-binary (`artifacts.binary`) pre-filter so pure-GUI casks
-  are skipped. Findings use a new **warn-only `[agent-leverage]` observation
-  category** (deliberately not yet in the `brew_formula`/`brew_cask` schema —
-  deferred to a future `/schema-evolve` pass per the `[installation]`/`[trust]`
-  precedent) and cross-link to a new `Agent-Tool Leverage` Basic Memory hub note.
-  Touches `enrichment-tool.md`, both note templates (a `### Agent-leverage
-  observations` guideline + a category-table row), the skill-development rule,
-  and the README source table. Kept as a "where-applicable" addendum, so the
-  "six sources" headline is unchanged (no schema change, no source-count
-  propagation).
+- **Agent-leverage surface check for `/intel` (tool + package families).** A new
+  optional enrichment addendum documents *how a coding agent best invokes a tool
+  or package-distributed CLI* — an MCP-native path (only when it ships an MCP
+  server, e.g. `serve --mcp` or a `<name>-mcp` companion binary) or a
+  `--json`/machine-readable-CLI path usable by any bash-driven agent (Claude
+  Code's own Bash tool, pi.dev, CI). It resolves the actual binary first, keeps
+  MCP negatives bounded (never an unqualified "best path"), and records **only** a
+  genuine positive or a narrowly-scoped surprising negative — an ordinary
+  text-only CLI gets no line at all.
+  - **Tool family** (`brew:`/`cask:`): a binary not found locally is a probe
+    failure (never a false negative); casks are gated by a companion-binary
+    (`artifacts.binary`) pre-filter so pure-GUI casks are skipped.
+  - **Package family** (`npm:`/`crate:`/`pypi:`): gated to packages that
+    distribute a CLI (npm `bin`, crate `command-line-utilities` category, pypi
+    `Environment :: Console` classifier — permissive OR). Because package CLIs are
+    usually not installed locally, an unresolved binary routes to a
+    **primary-source doc fallback** (registry/README/homepage only, stamped with
+    source + date — never install-to-probe), not a false negative.
+
+  Findings use the `[agent-leverage]` observation category, now **declared**
+  (`validation: warn`) in the `brew_formula`, `brew_cask`, `npm_package`,
+  `crate_package`, and `pypi_package` schemas (dual-synced to their Basic Memory
+  schema notes), and cross-link to a new `Agent-Tool Leverage` Basic Memory hub
+  note. Kept as a "where-applicable" addendum in each family, so the
+  "six sources"/"seven sources" headlines are unchanged.
 
 ## [0.33.0][] - 2026-07-18
 

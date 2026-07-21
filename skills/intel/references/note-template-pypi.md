@@ -101,3 +101,19 @@ download statistics.
 Show both installation forms in `## Installation`. The `pyproject.toml` form
 reflects modern Python packaging standards (PEP 517/518/660). Many projects
 still use `requirements.txt` — note if relevant.
+
+### Agent-leverage observations
+
+For a package that ships a console script (`Environment :: Console` classifier or
+a CLI mention in the summary), enrichment-package.md's **Agent-leverage surface
+check** assesses *how a coding agent would invoke it* and records — if any — an
+`[agent-leverage]` line (declared category, `validation: warn`). See that file for
+the full three-way procedure (live-probe when the binary resolves / primary-source
+doc-fallback with provenance / skip). In short: record only a genuine positive or a
+narrowly-scoped surprising negative; a library-only package gets no line; when the
+binary isn't installed locally a `--json`/MCP surface is taken **only** from primary
+doc text (PyPI/README/homepage), stamped `(documented in <source>, not live-verified
+as of YYYY-MM-DD)` — never a DeepWiki/Context7 summary, never inferred. Cross-link a
+finding to the `Agent-Tool Leverage — MCP Server or Machine-Readable CLI, Assessed
+Per Tool` hub note in `## Relations`; on refresh, `find_replace` the existing line
+in place.

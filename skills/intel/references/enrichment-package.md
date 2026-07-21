@@ -154,3 +154,74 @@ The goal is a short, high-signal list — not a changelog mirror.
 
 **Always include links** to the release page or PR for each notable change.
 
+## Agent-leverage surface check (`npm:`, `crate:`, `pypi:` only — optional addendum beyond the seven sources above; not counted in the headline seven)
+
+*How would a coding agent best use this package's CLI?* Mirrors the tool family's
+Agent-leverage surface check (`references/enrichment-tool.md`) — same bifurcation
+(an **MCP-native** path only if the package ships an MCP server; a
+**machine-readable CLI** path `--json`/`--format`/`--reporter`/`-o json` usable by
+any bash agent, e.g. Claude Code's Bash tool, pi.dev, CI), same `[agent-leverage]`
+category, same honesty gate, same `Agent-Tool Leverage — MCP Server or
+Machine-Readable CLI, Assessed Per Tool` hub-note cross-link. **Runs only for
+`npm:`/`crate:`/`pypi:`** — `go:`, `composer:`, and `gem:` skip this addendum
+entirely (no cheap CLI signal in their already-fetched Step-2 metadata; revive if
+that changes).
+
+**CLI-distribution pre-filter (per prefix; a library-only package is skipped
+silently — Step 6: intentionally-skipped).** The pre-filter is deliberately
+*permissive* (a false-positive just runs a doc-search that records nothing; a
+false-negative silently loses coverage), read from the already-fetched Step-2
+registry metadata — no new fetch:
+
+- **`npm:`** — the packument `bin` field is present (object `name→path`, or a bare
+  string). Structural signal; the `bin` name(s) are the literal binary name(s),
+  which can differ from the package name (`typescript` ships `tsc`/`tsserver`).
+- **`crate:`** — the crates.io `categories` array contains `command-line-utilities`
+  OR `development-tools`, OR a `keywords`/`description` mention of `cli`/`command-line`
+  (`[[bin]]` is not in the fetched JSON, so this is heuristic — hence the OR).
+- **`pypi:`** — `info.classifiers` contains `Environment :: Console`, OR the
+  `summary`/`description` mentions a CLI/command-line (classifiers are noisy — OR, not AND).
+
+**Binary resolution — a package CLI is usually NOT installed locally** (notes are
+built from registries + DeepWiki, not an install). Resolve WITHOUT ever installing
+anything, then route on the outcome — this is the package family's **three-way
+split**, which REINTERPRETS `attempted-but-failed` versus the tool family (read
+carefully):
+
+1. Resolve the actual binary name (npm `bin` key; crate/pypi from README/registry
+   text, defaulting to the package/crate name).
+2. Try to locate it along a ladder: `command -v <bin>` → `./node_modules/.bin/<bin>`
+   (npm) → `~/.cargo/bin/<bin>` (crate) → `$VIRTUAL_ENV/bin/<bin>` (pypi, if a venv is active).
+3. Route:
+   - **(1) Live-verifiable** — the binary resolves. Run the identical live probe:
+     MCP (`<bin> --help 2>&1 | grep -i mcp`, `<bin> serve --help`, plus a companion
+     `<bin>-mcp`/`mcp-server-<bin>` check) + CLI (`<bin> --help 2>&1 | head -100` for
+     `--json`/`--format`/exit codes). Step 6: **used** — or **attempted-but-failed**
+     ONLY if the resolved binary's own `--help` errors (genuinely rare).
+   - **(2) Doc-sourced fallback (expected majority)** — the binary does NOT resolve
+     locally. This is the **normal** package case and is **never** attempted-but-failed
+     (nothing ran to fail). Search only already-fetched Step-3 **primary** text —
+     registry description / README body / homepage — for an **explicit, quoted**
+     `--json`/`--format`/MCP flag. Do **NOT** treat a DeepWiki/Context7 AI-summary
+     assertion as a confirmed surface (they are summaries, not primary text — the
+     durable-write primary-source rule applies). A positive here records with
+     provenance `(documented in <source>, not live-verified as of YYYY-MM-DD)` —
+     bare text, no markdown link (a link + trailing parenthetical silently drops the
+     observation). No explicit primary-source flag found → **ordinary default,
+     record nothing**; Step 6: **used** (searched, found nothing). NEVER infer a flag
+     from the implementation language; NEVER install the package to enable a probe.
+   - **(3) Pre-filter negative** — no CLI signal at all → Step 6: intentionally-skipped.
+
+**Honesty gate + bloat cap — identical to the tool family:** record only a genuine
+positive (≤1 `[agent-leverage]` + ≤1 `[pattern]`; a caveat → `[gotcha]`) or a
+narrowly-scoped surprising negative (exactly 1 `[agent-leverage]`); an ordinary CLI
+with no surface records nothing; a bounded MCP negative uses bounded language ("no
+MCP surface in `--help`/`serve --help`/an obvious companion-binary name; a
+non-`serve` subcommand or config/env registration not exhaustively checked"), never
+an unqualified "best path". There is **no man-page source** in the package family —
+do not grep a man-page excerpt; the doc corpus is registry description/README/homepage.
+When a finding is recorded, cross-link
+`relates_to [[Agent-Tool Leverage — MCP Server or Machine-Readable CLI, Assessed Per Tool]]`
+in `## Relations`. On refresh, `find_replace` the existing `[agent-leverage]` line
+in place, never append.
+
