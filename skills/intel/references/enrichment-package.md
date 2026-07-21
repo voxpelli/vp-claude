@@ -154,7 +154,7 @@ The goal is a short, high-signal list — not a changelog mirror.
 
 **Always include links** to the release page or PR for each notable change.
 
-## Agent-leverage surface check (`npm:`, `crate:`, `pypi:` only — optional addendum beyond the seven sources above; not counted in the headline seven)
+**Agent-leverage surface check (`npm:`, `crate:`, `pypi:` only — optional addendum beyond the seven sources above; not counted in the headline seven):**
 
 *How would a coding agent best use this package's CLI?* Mirrors the tool family's
 Agent-leverage surface check (`references/enrichment-tool.md`) — same bifurcation
