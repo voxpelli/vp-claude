@@ -222,10 +222,12 @@ Report a compact summary:
 - Security/analytics concerns — Socket scores (package) or Open VSX/analytics
   (tool), whichever applies.
 - Cross-links added (or deferred to follow-up pass for large batches).
-- Any enrichment-source skips (DeepWiki, Context7, Socket, etc.) or unresolved
-  contradictions from Step 3–4. Sources must be *attempted*, not skipped by
-  assumption — surface real failures (auth error, server not found) distinctly
-  from intentional skips (non-GitHub forge, ecosystem not covered).
+- Enrichment-source status — for each Step-3 source, report which of *used /
+  attempted-but-failed / intentionally-skipped* applies. Sources must be
+  *attempted*, not skipped by assumption; an attempt that fails (auth error,
+  server not found) must be surfaced as a failure, never silently omitted or
+  relabelled an intentional skip (non-GitHub forge, ecosystem not covered).
+- Unresolved contradictions from Step 3–4.
 
 ### Step 7: Cross-link existing notes
 

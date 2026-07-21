@@ -30,6 +30,9 @@ user sees each edit) and delegates heavy, autonomous remediation to the agent.
   via `/intel`; archive via `move_note` to `archive/`.
 - Read the live note before every edit (verify-before-fix). A flagged issue may
   be a parse artifact, or the note may already be correct.
+- One `edit_note` per note per message — issue same-note edits sequentially and
+  re-read before re-anchoring after any lands (concurrent same-note edits are a
+  precautionary hazard; see `intel`'s `note-write-mechanics.md` single-writer rule).
 - `schema_validate` after every edit. If its output appears to repeat the same
   value, trust the note body (`read_note` JSON) as the source of truth rather
   than inferring a duplication from the validator response alone.

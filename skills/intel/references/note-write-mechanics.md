@@ -85,9 +85,14 @@ whitespace normalization or escaping.
 
 **Single-writer-per-message rule.** Never issue multiple `edit_note` calls on the
 same identifier in one message. Concurrent `find_replace` operations on a single
-note have been observed to truncate the note body to frontmatter only (Pi batch
-eval, 2026-07-19). Chain edits sequentially across turns, or use a single
-`replace_section` anchored on a stable header.
+note truncated the body to frontmatter only under Pi's MCP adapter (Pi batch
+eval, 2026-07-19); not reproduced under Claude Code (2026-07-21 test — both
+parallel edits landed cleanly), so sequential edits are the safe default on any host. Chain
+edits sequentially across turns, or use a single `replace_section` anchored on a
+stable header — noting `replace_section` replaces the *entire* content under that
+header, so you must supply the full section body (a stale body reintroduces the
+data loss this rule guards against). If a batch is ever unavoidable, re-read
+afterward and confirm the body survived — a truncation shows as frontmatter-only.
 
 **Re-read before re-anchoring.** If any edit has already landed on a note this
 session, re-read it before constructing the next `find_replace` anchor. The

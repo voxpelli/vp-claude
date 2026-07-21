@@ -795,7 +795,12 @@ Same principles as the knowledge-gardener:
 - Use `read_note(include_frontmatter=true, output_format="json")` for
   structured access
 - Use `build_context(max_related=10)` to limit traversal
-- Batch related edits on the same note into minimal `edit_note` calls
+- Batch related edits on the same note into minimal `edit_note` calls, issued
+  **sequentially** — at most one `edit_note` per note per message, re-reading
+  before re-anchoring after any edit lands. (Concurrent same-note `find_replace`
+  truncated a note under Pi's MCP adapter; not reproduced under Claude Code, but
+  sequential is the safe default. See `intel`'s `references/note-write-mechanics.md`
+  single-writer rule.)
 - Use `search_notes(query="…", entity_types=["observation"])` to search observations
   directly across notes without pulling full note bodies — more precise than full-text
   search when you know the category (e.g. `search_notes("[gotcha] fastify", entity_types=["observation"])`)
