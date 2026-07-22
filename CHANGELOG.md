@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.5][] - 2026-07-22
+
+### Changed
+
+- **The `--stale` preflight's random-sample option is now recency-floored.**
+  Option 4 (offered for a single-ecosystem cohort > 150 notes) previously
+  resolved to a bare `--sample 30` — a uniform draw over the *whole* cohort,
+  which could re-draw notes an upgrade-haul had just refreshed (stamped with
+  today's date), wasting the check on guaranteed-current notes. It now resolves
+  to `--since <today−7d> --sample 30`: a random 30-note draw from the notes NOT
+  touched in the last week. The 7-day floor is a narrow guard against re-drawing
+  just-refreshed notes, **not** a staleness-narrowing strategy like the 90/180-day
+  options (which deliberately bias toward the most-neglected notes) — so the draw
+  stays representative of the wider cohort. Prose-only: the `--since`/`--sample`
+  composition was already valid in the workflow mechanics (`--since` narrows the
+  pool, `--sample` draws from the remainder), so no logic changed. A different
+  cutoff or sample size remains available as a typed `--since <date> --sample N`
+  combo (only `--limit`+`--sample` are mutually exclusive, not `--since`+`--sample`).
+  Surfaced by the 0.33.4 post-release dogfood, whose `/intel` upgrade-haul
+  refreshed 9 notes and would have made them re-draw candidates on the next
+  uniform sample.
+
 ## [0.33.4][] - 2026-07-22
 
 ### Added
@@ -2390,6 +2412,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.33.5]: https://github.com/voxpelli/vp-claude/compare/v0.33.4...v0.33.5
 [0.33.4]: https://github.com/voxpelli/vp-claude/compare/v0.33.3...v0.33.4
 [0.33.3]: https://github.com/voxpelli/vp-claude/compare/v0.33.2...v0.33.3
 [0.33.2]: https://github.com/voxpelli/vp-claude/compare/v0.33.1...v0.33.2

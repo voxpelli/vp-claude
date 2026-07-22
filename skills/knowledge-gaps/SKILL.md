@@ -208,25 +208,34 @@ four when the single-ecosystem sample option below applies.
    than option 2, not a larger one. When framing the options to the user (labels
    and question body), state this direction explicitly so a longer window is
    never mistaken for a bigger cohort.
-4. **Random sample of 30 (unbiased bounded slice)** — *offered only for a
-   single-ecosystem `--stale <eco>` run whose one cohort is very large*
-   (**> 150 notes**); never for a bare `--stale` (see below for why). Resolves to
-   a fixed `--sample 30` — a random 30-note draw that is *checked in full*, the
-   same per-note enumeration as any other scope, just bounded to a random subset.
-   It computes **no** drift rate and extrapolates nothing; it is simply the only
-   narrowing that stays representative when a cohort is both huge *and* actively
-   touched, so neither `--since` window is tractable: the 90-day narrowing still
-   leaves more than one turn can process (dogfood: ~70 on a ~500-note npm cohort)
-   while the 180-day option resolves to ≈0 (nothing sits untouched that long on a
-   maintained graph), and `--limit`'s alphabetical slice (brew starts at
-   `aarch64…`) would be a *biased* subset. Its non-partition-safety (overlapping
-   draws across runs) does not matter here — the preflight is a single-shot pick,
-   not a tiled sweep. Below the 150 bar this option is **not** shown (a 90-day
-   narrowing suffices — brew's 122-note cohort collapsed to 2), keeping the menu
-   at three options for the common case. A different sample size stays available
-   as a typed `--sample N` flag (which already bypasses this preflight).
+4. **Random sample of 30, excluding the last 7 days (recency-floored, unbiased
+   slice)** — *offered only for a single-ecosystem `--stale <eco>` run whose one
+   cohort is very large* (**> 150 notes**); never for a bare `--stale` (see below
+   for why). Resolves to `--since <today−7d> --sample 30` — compute the 7-day
+   cutoff at runtime, the same way options 2/3 compute theirs — a random 30-note
+   draw from the notes NOT touched in the last week, *checked in full*, the same
+   per-note enumeration as any other scope. It computes **no** drift rate and
+   extrapolates nothing; it is simply the only narrowing that stays representative
+   when a cohort is both huge *and* actively touched, so neither `--since` *window*
+   is tractable on its own: the 90-day narrowing still leaves more than one turn
+   can process (dogfood: ~70 on a ~500-note npm cohort) while the 180-day option
+   resolves to ≈0 (nothing sits untouched that long on a maintained graph), and
+   `--limit`'s alphabetical slice (brew starts at `aarch64…`) would be a *biased*
+   subset. The 7-day floor is a **narrow guard, not a staleness-narrowing
+   strategy**: it excludes only notes an upgrade-haul (or any refresh) may have
+   stamped with today's date moments earlier, so the draw stays representative of
+   the wider cohort — unlike options 2/3, whose 90/180-day floors deliberately
+   bias toward the *most*-neglected notes as their whole strategy. Its
+   non-partition-safety (overlapping draws across runs) does not matter here — the
+   preflight is a single-shot pick, not a tiled sweep. Below the 150 bar this
+   option is **not** shown (a 90-day narrowing suffices — brew's 122-note cohort
+   collapsed to 2), keeping the menu at three options for the common case. A
+   different cutoff or sample size stays available as a typed
+   `--since <date> --sample N` combo (already valid — only `--limit`+`--sample`
+   are mutually exclusive, not `--since`+`--sample`; a typed combo bypasses this
+   preflight).
 
-Compute both dates at runtime — never hardcode them. **`--limit` is never a
+Compute all cutoff dates at runtime — never hardcode them. **`--limit` is never a
 preflight option** (it stays a typed flag): its alphabetical slice is the very
 bias the sample option above is chosen to avoid, so it belongs layered on a typed
 `--since`, not offered here.
@@ -271,7 +280,7 @@ full — do NOT execute any of the Mode B steps below in the same session:
 Pass the parsed ecosystem scope (one cohort, or all six) AND the resolved scope
 value — any typed `--limit`/`--since`/`--sample`, or what the scope preflight
 resolved to: a `--since <date>` (90d/180d pick or timeout default) or a
-`--sample 30` (the large single-cohort unbiased-slice option) — to that workflow; it runs the
+`--since <today−7d> --sample 30` (the large single-cohort recency-floored sample option) — to that workflow; it runs the
 per-cohort drift check and renders one `### Version Drift — <eco>` section per
 checked cohort. Also pass how the scope was chosen (typed flag / interactive pick
 / timeout default) so S8 can stamp its provenance footnote.

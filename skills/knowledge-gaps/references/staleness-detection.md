@@ -141,7 +141,11 @@ workflow rather than merely trimming the rendered report:
   drift rate is computed or extrapolated from the unchecked remainder. It is the
   narrowing for a cohort too large for a full sweep yet too actively touched for
   `--since` to shrink (see the `SKILL.md` scope preflight), where `--limit`'s
-  alphabetical slice would be biased.
+  alphabetical slice would be biased. The preflight's recency-floored sample
+  option specializes this by pairing it with a fixed 7-day `--since` floor
+  (`--since <today−7d> --sample 30`) — already valid with no extra logic: `--since`
+  narrows the pool first, `--sample` draws from what's left, exactly as documented
+  for the `--since`/`--sample` sequence above.
 
 Only the notes surviving this filtering proceed to S2. Carry forward how many
 were excluded by the `@types/*` filter and by each scope modifier — S8
@@ -741,10 +745,13 @@ reader can tell a user's deliberate choice from an automatic one:
 - **Typed flag** — no clause (the flag itself is the record).
 - **Interactive pick** — "`<resolved flag>` chosen interactively at the pre-sweep
   scope prompt," where `<resolved flag>` is the `--since <date>` of a 90d/180d
-  pick or the `--sample 30` of the large single-cohort sample option. A
-  `--sample` run checks a random subset in full, so also state that it is a
-  partial slice — "N of the cohort's M notes checked (a random sample, not the
-  full cohort)" — never an extrapolated rate over the unchecked notes.
+  pick or the `--since <today−7d> --sample 30` of the large single-cohort
+  recency-floored sample option. A `--sample` run checks a random subset in full,
+  so also state that it is a partial slice — "N of the recency-floored pool of M
+  notes checked (a random sample, not the full cohort)" when a 7-day floor
+  applied, or "N of the cohort's M notes checked (a random sample, not the full
+  cohort)" for a bare typed `--sample` — never an extrapolated rate over the
+  unchecked notes.
 - **Timeout default** — "`--since <date>` applied as the automatic default — no
   response to the pre-sweep scope prompt within the session's timeout window."
   (The timeout always defaults to the 90-day `--since`, never `--sample`.)
