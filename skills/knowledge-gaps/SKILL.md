@@ -190,12 +190,20 @@ question object regardless of how many cohorts qualify — fold the per-cohort
 counts into the question body), three options, neutral framing:
 
 1. **Full sweep (all N)** — check every documented note in the selected cohort(s).
-2. **Untouched since 90 days ago (recommended)** — resolves to `--since <date>`
-   where `<date>` is today minus 90 days in ISO `YYYY-MM-DD`. Recommended because
-   `--since` is the only scope flag whose result set nests cleanly across repeat
-   runs (per this skill's own S1 mechanics), so it is the safe default narrowing.
-3. **Untouched since 180 days ago** — resolves to `--since <date>` where `<date>`
-   is today minus 180 days, ISO. Same mechanism, wider cutoff.
+2. **Untouched in the last 90 days (recommended)** — resolves to `--since <date>`
+   where `<date>` is today minus 90 days in ISO `YYYY-MM-DD`. This is the
+   **broader** narrowing: it keeps every note not refreshed in roughly the last
+   three months. Recommended because it gives the widest coverage short of a full
+   sweep, and because `--since`'s result set nests cleanly across repeat runs
+   (per this skill's own S1 mechanics).
+3. **Untouched in the last 180 days** — resolves to `--since <date>` where
+   `<date>` is today minus 180 days, ISO. This is a **tighter subset** of option
+   2, *not* a wider one: a note untouched for 180 days is necessarily also
+   untouched for 90, so option 3 ⊆ option 2 ⊆ full. Pick it to check only the
+   most-neglected notes (not refreshed in roughly six months) — a smaller cohort
+   than option 2, not a larger one. When framing the options to the user (labels
+   and question body), state this direction explicitly so a longer window is
+   never mistaken for a bigger cohort.
 
 Compute both dates at runtime — never hardcode them. `--limit` and `--sample`
 are deliberately **not** offered as preflight options (they remain available as

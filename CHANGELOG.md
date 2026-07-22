@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.3][] - 2026-07-22
+
+### Fixed
+
+- **Scope-preflight option wording (`/knowledge-gaps --stale`).** Clarified the
+  90-day vs 180-day preflight options so the nesting direction is unambiguous:
+  "untouched in the last 180 days" is a **tighter subset** of "untouched in the
+  last 90 days" (option 3 ⊆ option 2 ⊆ full), *not* a bigger cohort — a longer
+  window means fewer, more-neglected notes qualify, not more. Surfaced by the
+  0.33.2 post-release dogfood, where the old "wider cutoff" phrasing led to a
+  180-day option being described as "a bigger cohort" when it is in fact smaller
+  (on a freshly-maintained graph the 180-day set can be empty while the 90-day
+  set is non-empty). Doc-only; the gate, date resolution, and S8 provenance
+  footnote were already correct.
+
 ## [0.33.2][] - 2026-07-22
 
 ### Added
@@ -2337,6 +2352,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.33.3]: https://github.com/voxpelli/vp-claude/compare/v0.33.2...v0.33.3
 [0.33.2]: https://github.com/voxpelli/vp-claude/compare/v0.33.1...v0.33.2
 [0.33.1]: https://github.com/voxpelli/vp-claude/compare/v0.33.0...v0.33.1
 [0.33.0]: https://github.com/voxpelli/vp-claude/compare/v0.32.5...v0.33.0
