@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.4][] - 2026-07-22
+
+### Added
+
+- **`--sample` option in the `--stale` scope preflight for very large
+  single-ecosystem cohorts.** For a single-ecosystem `--stale <eco>` run whose
+  cohort is very large (> 150 notes) — where the 90-day narrowing still leaves
+  more than one turn can process and the 180-day option resolves to ≈0 — the
+  preflight now offers a fourth option: a random 30-note sample, checked in full
+  like any other scope but bounded to an unbiased subset (it estimates no drift
+  rate and extrapolates nothing). It is the narrowing for a cohort that is both
+  huge and actively touched, where neither `--since` window is tractable and
+  `--limit`'s alphabetical slice would be biased. Offered only for a
+  single-ecosystem run — a bare `--stale --sample 30` would draw 30 from *each*
+  selected cohort and silently truncate the smaller ones — and only above the
+  150-note bar; below it the menu stays at three options. The preflight stays a
+  single `AskUserQuestion` question (a fixed sample size of 30; a different N is
+  available as a typed `--sample N` flag). `--limit` remains typed-only (an
+  arbitrary alphabetical slice on a drift sweep, not drift-prioritized). Surfaced
+  by the 0.33.2 post-release dogfood on the ~500-note npm cohort, where 90d was
+  still ~70 and 180d ≈0 — neither `--since` option gave a tractable one-turn
+  sweep.
+
+### Fixed
+
+- **Zero-comparison false-clean in `--stale` sweeps** (pre-existing since 0.32.0,
+  when the `--since`/`--limit`/`--sample` scope modifiers shipped; reachable
+  without a typed flag since the 0.33.2 auto-applied preflight `--since`). A
+  cohort where **zero notes reached drift comparison** — because a scope modifier
+  filtered a *non-empty* cohort to zero survivors, **or** because every survivor
+  was excluded by the S2 range-pin filter (an all-range-pinned cohort) — fell
+  through to the "All N notes are current with upstream" branch, a clean bill of
+  health for a cohort where nothing was actually compared. The staleness workflow
+  (S1/S5/S8) now keys the "all current" branch on notes-*compared* (not notes
+  that merely survived S1's listing), distinguishes this from a genuinely empty
+  cohort, and renders `### Version Drift — <eco> — 0 of M notes checked (nothing
+  reached comparison)` with an explicit "widen the scope or run `--full`" line.
+
 ## [0.33.3][] - 2026-07-22
 
 ### Fixed
@@ -2352,6 +2390,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.33.4]: https://github.com/voxpelli/vp-claude/compare/v0.33.3...v0.33.4
 [0.33.3]: https://github.com/voxpelli/vp-claude/compare/v0.33.2...v0.33.3
 [0.33.2]: https://github.com/voxpelli/vp-claude/compare/v0.33.1...v0.33.2
 [0.33.1]: https://github.com/voxpelli/vp-claude/compare/v0.33.0...v0.33.1

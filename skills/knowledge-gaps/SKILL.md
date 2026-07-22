@@ -134,10 +134,11 @@ brew/npm/cask/crate/vscode/plugin, not 50 total.
   of an already date-disjoint `--since` slice; partitioning itself uses
   successive `--since` cutoffs, not `--limit` (see "Large-cohort strategy" in
   the reference file for the actual mechanism).
-- **`--sample N`** — takes a random N-note sample instead of the first N, for
-  spot-checking a huge cohort's overall drift rate without processing it in
-  full. Not partition-safe (overlapping/uncovered draws across separate runs)
-  — use it for a single spot-check, never to tile a full sweep.
+- **`--sample N`** — takes a random N-note sample instead of the first N — an
+  unbiased bounded slice for a cohort too large to sweep in full, its N notes
+  checked the same way as any other scope (it estimates no drift rate and
+  extrapolates nothing). Not partition-safe (overlapping/uncovered draws across
+  separate runs) — use it for a single bounded run, never to tile a full sweep.
 
 `N` must be a positive integer and `<date>` a valid ISO date; reject a
 malformed value by name rather than silently ignoring it. `--limit` and
@@ -185,9 +186,12 @@ The threshold 40 is an honest heuristic (≈5 concurrent reads/turn; a serialize
 built for) with no config surface by design — if it fires too eagerly or too
 late in practice, it is a one-literal edit here.
 
-When both conditions hold, ask **once** with a single `AskUserQuestion` (one
-question object regardless of how many cohorts qualify — fold the per-cohort
-counts into the question body), three options, neutral framing:
+When both conditions hold, ask **once** with a single `AskUserQuestion` — one
+question object regardless of how many cohorts qualify (fold the per-cohort
+counts into the question body), neutral framing. The menu is three options, or
+four when the single-ecosystem sample option below applies.
+
+**Scope question** (always asked):
 
 1. **Full sweep (all N)** — check every documented note in the selected cohort(s).
 2. **Untouched in the last 90 days (recommended)** — resolves to `--since <date>`
@@ -204,19 +208,53 @@ counts into the question body), three options, neutral framing:
    than option 2, not a larger one. When framing the options to the user (labels
    and question body), state this direction explicitly so a longer window is
    never mistaken for a bigger cohort.
+4. **Random sample of 30 (unbiased bounded slice)** — *offered only for a
+   single-ecosystem `--stale <eco>` run whose one cohort is very large*
+   (**> 150 notes**); never for a bare `--stale` (see below for why). Resolves to
+   a fixed `--sample 30` — a random 30-note draw that is *checked in full*, the
+   same per-note enumeration as any other scope, just bounded to a random subset.
+   It computes **no** drift rate and extrapolates nothing; it is simply the only
+   narrowing that stays representative when a cohort is both huge *and* actively
+   touched, so neither `--since` window is tractable: the 90-day narrowing still
+   leaves more than one turn can process (dogfood: ~70 on a ~500-note npm cohort)
+   while the 180-day option resolves to ≈0 (nothing sits untouched that long on a
+   maintained graph), and `--limit`'s alphabetical slice (brew starts at
+   `aarch64…`) would be a *biased* subset. Its non-partition-safety (overlapping
+   draws across runs) does not matter here — the preflight is a single-shot pick,
+   not a tiled sweep. Below the 150 bar this option is **not** shown (a 90-day
+   narrowing suffices — brew's 122-note cohort collapsed to 2), keeping the menu
+   at three options for the common case. A different sample size stays available
+   as a typed `--sample N` flag (which already bypasses this preflight).
 
-Compute both dates at runtime — never hardcode them. `--limit` and `--sample`
-are deliberately **not** offered as preflight options (they remain available as
-typed flags): on a drift sweep `--limit N` is an arbitrary *alphabetical* slice
-(brew starts at `aarch64…`), not drift- or recency-prioritized, and `--sample`
-answers a different question (a random spot-check). The two `--since` options
-plus full sweep cover the real intent.
+Compute both dates at runtime — never hardcode them. **`--limit` is never a
+preflight option** (it stays a typed flag): its alphabetical slice is the very
+bias the sample option above is chosen to avoid, so it belongs layered on a typed
+`--since`, not offered here.
+
+The sample option is **single-ecosystem-only**. A bare `--stale --sample 30`
+would draw 30 notes from *each* selected cohort and silently truncate the smaller
+ones (a 45-note cask cohort → a random 30), so the > 150 gate is scoped to a
+single `--stale <eco>` run by construction — never offered for a bare `--stale`.
+The 150-note bar (like the 40-note trigger above) is a fixed heuristic with no
+config surface — a one-literal edit if it fires too eagerly or too rarely.
 
 **On no response (timeout):** default to option 2 (`--since <today−90d>`) —
-**never** the full sweep. Defaulting to the costliest option on silence would
-reintroduce the exact blow-up this preflight exists to prevent. How long to wait
-before defaulting is the executing session's own timeout config, not a number
-hardcoded here.
+**never** the full sweep, and **never** the sample even when it was on the menu.
+The full sweep is the costliest option, so defaulting to it on silence would
+reintroduce the exact blow-up this preflight exists to prevent. The sample,
+though *cheaper* than the 90-day narrowing, is a random draw — a silent automatic
+default must be deterministic and reproducible, which a stochastic sample is not
+— so the deterministic 90-day `--since` is always the fallback, regardless of
+whether the sample was offered. How long to wait before defaulting is the
+executing session's own timeout config, not a number hardcoded here.
+
+One caveat where the sample option *was* on the menu (a single >150 cohort whose
+90-day narrowing is itself known to leave more than one turn can process): the
+90-day timeout fallback keeps determinism but does **not** by itself make that
+cohort one-turn-tractable. Flag the resulting default sweep as possibly partial
+and prefer the Large-cohort wave-tiling strategy (see `staleness-detection.md`)
+over silently attempting one oversized turn — a truncated single-turn sweep would
+under-report drift with no signal that it stopped early.
 
 Once the scope is resolved (a typed flag, an interactive pick, or the timeout
 default), carry it forward as if it had been typed and proceed to **What to do**
@@ -231,12 +269,12 @@ full — do NOT execute any of the Mode B steps below in the same session:
 `${CLAUDE_PLUGIN_ROOT}/skills/knowledge-gaps/references/staleness-detection.md`
 
 Pass the parsed ecosystem scope (one cohort, or all six) AND the resolved scope
-value — any typed `--limit`/`--since`/`--sample`, or the `--since <date>` the
-scope preflight resolved to (interactive pick or timeout default) — to that
-workflow; it runs the per-cohort drift check and renders one
-`### Version Drift — <eco>` section per checked cohort. Also pass how the scope
-was chosen (typed flag / interactive pick / timeout default) so S8 can stamp its
-provenance footnote.
+value — any typed `--limit`/`--since`/`--sample`, or what the scope preflight
+resolved to: a `--since <date>` (90d/180d pick or timeout default) or a
+`--sample 30` (the large single-cohort unbiased-slice option) — to that workflow; it runs the
+per-cohort drift check and renders one `### Version Drift — <eco>` section per
+checked cohort. Also pass how the scope was chosen (typed flag / interactive pick
+/ timeout default) so S8 can stamp its provenance footnote.
 
 ### Mode B — Standard mode (manifest-driven coverage)
 

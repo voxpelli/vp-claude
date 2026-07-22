@@ -134,12 +134,45 @@ workflow rather than merely trimming the rendered report:
   known about drift yet at this stage, so this is not a staleness-ranked
   slice).
 - **`--sample N`** — same insertion point as `--limit`, but draws N titles at
-  random from the remaining listing instead of taking the first N.
+  random from the remaining listing instead of taking the first N, clamped to
+  `min(N, pool)` (if the surviving pool is smaller than N, the whole pool is
+  checked — never an error). Those N notes are checked in full like any other
+  scope: `--sample` is an *unbiased bounded slice*, not a rate estimator — no
+  drift rate is computed or extrapolated from the unchecked remainder. It is the
+  narrowing for a cohort too large for a full sweep yet too actively touched for
+  `--since` to shrink (see the `SKILL.md` scope preflight), where `--limit`'s
+  alphabetical slice would be biased.
 
 Only the notes surviving this filtering proceed to S2. Carry forward how many
 were excluded by the `@types/*` filter and by each scope modifier — S8
 reports both, distinctly (the `@types/*` count is unconditional; the scope-
 modifier counts only appear when a modifier flag was actually passed).
+
+**Zero notes reach comparison (not the same as an empty cohort).** Let **M** be
+the cohort's prefix-filtered note count from the S1 listing — counted *before*
+the `@types/*` filter, the S2 range-pin exclusion, or any scope modifier removes
+anything. If a cohort with **≥ 1 survivor remaining after the `@types/*` filter**
+(i.e. it passed the empty-filtered-list skip above) nonetheless has **zero** notes
+reach S4 drift comparison via channel (a) or (b) below, do NOT fall through to
+S5's "All current" — nothing was compared, so nothing can be certified current.
+Render that cohort's S6 section as `### Version Drift — <eco> — 0 of M notes
+checked (nothing reached comparison)`, no bucket tables, plus one explicit line
+naming the cause: "`<cause>` left 0 of the cohort's M documented notes to
+compare — nothing was checked; widen the scope or run `--full`." The two channels:
+(a) a scope modifier (`--since`/`--limit`/`--sample`) narrows the survivors to
+zero here at S1 (`<cause>` = the scope flag); (b) every survivor is instead
+excluded from bucketing by the S2 range-pin filter — detected at S5, not here
+(`<cause>` = "every survivor is range-pinned and tracks its target by design, so
+none is comparable for drift").
+
+**Not this branch:** a cohort emptied by the unconditional `@types/*` filter
+before any survivor remains (its S1 filtered list is empty) is handled by the
+empty-filtered-list skip above — the milder "nothing to check" existence-misreport
+tracked as a deferred follow-up (`docs/design/staleness-zero-comparison-followups.md`),
+not this zero-comparison render. This branch (≥ 1 survivor, but 0 compared) is
+therefore distinct from that skip — which covers both a truly empty cohort (M = 0)
+and an all-`@types/*` one — and from S5's "all checked notes are current"
+(N ≥ 1 *compared*, all OK).
 
 ### S2. Extract documented version per note (MCP, multi-pattern)
 
@@ -493,7 +526,17 @@ end of the drifted section.
   same as the per-name case.
 - **All current** — if every note in a cohort resolves to current+OK, report
   "All N documented `<eco>` notes are current with upstream." and skip that
-  cohort's S6 section.
+  cohort's S6 section. **N here is the count of notes that actually reached S4
+  drift comparison — NOT the S1 survivor count.** A note removed by the S2
+  range-pin exclusion never reaches comparison even though it survived S1's
+  listing, so a cohort whose every survivor is range-pinned has N(compared) = 0
+  while N(survivors) ≥ 1. This branch fires only when **N ≥ 1 notes were
+  *compared* and all are current**. If a non-empty cohort (M ≥ 1 documented) had
+  **zero** notes reach comparison — every survivor excluded by the range-pin
+  filter, or the cohort narrowed to zero by a scope modifier — render the S1
+  "0 of M notes checked (nothing reached comparison)" case instead, never "all
+  current." (Guarding on notes-*compared* rather than notes-*survived* is what
+  keeps an all-range-pinned cohort from being falsely certified current.)
 
 ### S6. Render the report
 
@@ -684,17 +727,27 @@ sweep, and a reader of just the rendered report has no other way to tell:
 
 Omit the flags that weren't used from the sentence (a `--limit`-only run
 doesn't mention `--since`); always state both the checked count and the full
-unscoped cohort size so the delta is legible without re-running the audit.
+unscoped cohort size so the delta is legible without re-running the audit. When
+**zero notes reached comparison** — whether a scope modifier narrowed the cohort
+to zero survivors, or the S2 range-pin filter excluded every survivor — the
+footnote still states "0 of M checked" and the cohort's S6 section is the S1
+zero-comparison render, not an "all current" line — the two must never be
+conflated.
 
 **Provenance clause (how the scope was chosen).** When the scope came from the
 `SKILL.md` scope preflight rather than a typed flag, add a short clause so a
 reader can tell a user's deliberate choice from an automatic one:
 
 - **Typed flag** — no clause (the flag itself is the record).
-- **Interactive pick** — "`--since <date>` chosen interactively at the pre-sweep
-  scope prompt."
+- **Interactive pick** — "`<resolved flag>` chosen interactively at the pre-sweep
+  scope prompt," where `<resolved flag>` is the `--since <date>` of a 90d/180d
+  pick or the `--sample 30` of the large single-cohort sample option. A
+  `--sample` run checks a random subset in full, so also state that it is a
+  partial slice — "N of the cohort's M notes checked (a random sample, not the
+  full cohort)" — never an extrapolated rate over the unchecked notes.
 - **Timeout default** — "`--since <date>` applied as the automatic default — no
   response to the pre-sweep scope prompt within the session's timeout window."
+  (The timeout always defaults to the 90-day `--since`, never `--sample`.)
 
 A `--full` run (preflight opt-out) is an unscoped sweep, so it gets no scope
 footnote at all — only the standard exclusion-count line, if any.
