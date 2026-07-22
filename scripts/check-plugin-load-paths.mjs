@@ -13,6 +13,8 @@ import { fileURLToPath } from 'node:url'
 import { createCheckHarness } from '../lib/check-harness.mjs'
 import { extractPluginLoadPaths, PLUGIN_ROOT_TOKEN } from '../lib/plugin-load-paths.mjs'
 
+/** @import { PluginLoadPath } from '../lib/plugin-load-paths.mjs' */
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const { check, done } = createCheckHarness()
 
@@ -25,7 +27,7 @@ const skillMdFiles = skillEntries
   .filter((f) => f.endsWith('.md'))
   .map((f) => join(ROOT, 'skills', f))
 
-/** @type {{ file: string, path: import('../lib/plugin-load-paths.mjs').PluginLoadPath }[]} */
+/** @type {{ file: string, path: PluginLoadPath }[]} */
 const dangling = []
 let checkedCount = 0
 let templateCount = 0

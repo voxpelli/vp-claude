@@ -26,6 +26,8 @@ import { createCheckHarness } from '../lib/check-harness.mjs'
 import { PLUGIN_ROOT_TOKEN } from '../lib/plugin-load-paths.mjs'
 import { classifyPluginRootPath, owningSkill, scanPortability } from '../lib/portability-scan.mjs'
 
+/** @import { PortabilityRef } from '../lib/portability-scan.mjs' */
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const { check, done } = createCheckHarness()
 
@@ -39,9 +41,9 @@ const skillMdFiles = skillEntries
   .map((f) => join(ROOT, 'skills', f))
 
 let sameSkill = 0
-/** @type {{ file: string, ref: import('../lib/portability-scan.mjs').PortabilityRef }[]} */
+/** @type {{ file: string, ref: PortabilityRef }[]} */
 const crossSkill = []
-/** @type {{ file: string, ref: import('../lib/portability-scan.mjs').PortabilityRef }[]} */
+/** @type {{ file: string, ref: PortabilityRef }[]} */
 const tooling = []
 
 for (const file of skillMdFiles) {

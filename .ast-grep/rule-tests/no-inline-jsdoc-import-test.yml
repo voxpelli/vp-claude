@@ -1,0 +1,52 @@
+id: no-inline-jsdoc-import
+valid:
+# the correct form: top-level @import + bare type at the use site
+- |
+  /** @import { Foo } from 'mod' */
+  /**
+   * @param {Foo} x
+   */
+- |
+  /**
+   * @type {Foo}
+   */
+# runtime dynamic import is a call expression, not a JSDoc type ref
+- |
+  async function load() {
+    const mod = await import('mod').then(m => m.default)
+    return mod
+  }
+# a `//` line comment that merely mentions import() in prose — NOT a type ref
+- |
+  // see import('mod').Foo for the shape
+# a string literal, not a comment node
+- |
+  const s = "import('mod').Foo"
+# a plain `/* … */` block comment (not JSDoc `/**`) mentioning import() in prose
+- |
+  /* import('mod').Foo lives upstream */
+# `@typedef {import(...)}` is a type ALIAS / cross-module re-export, not a
+# use-site — hoisting would delete the export. Must NOT fire.
+- |
+  /** @typedef {import('mod').Foo} Foo */
+# a type-predicate return — the hoisted @import form doesn't resolve in
+# predicate position, so the inline import must stay. Must NOT fire.
+- |
+  /**
+   * @param {unknown} v
+   * @returns {v is import('mod').Foo}
+   */
+invalid:
+- |
+  /**
+   * @param {import('mod').Foo} x
+   */
+- |
+  const y = /** @type {import('mod').Bar} */ (raw)
+# a `@typedef {object}` block whose `@property` carries an inline import IS a
+# use-site (not the alias form) — must still fire.
+- |
+  /**
+   * @typedef {object} Shape
+   * @property {import('mod').Baz} field
+   */

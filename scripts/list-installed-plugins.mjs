@@ -13,6 +13,8 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { hasStringKey, resolveInstalledPlugins, resolveInstalledSkills } from '../lib/installed-plugins.mjs'
 
+/** @import { InstalledRecord } from '../lib/installed-plugins.mjs' */
+
 const root = process.argv[2] || process.env.VPK_HOME || homedir()
 
 /**
@@ -27,7 +29,7 @@ function readOrNull (p) {
   }
 }
 
-/** @type {import('../lib/installed-plugins.mjs').InstalledRecord[]} */
+/** @type {InstalledRecord[]} */
 const records = []
 
 const installedPlugins = readOrNull(join(root, '.claude/plugins/installed_plugins.json'))

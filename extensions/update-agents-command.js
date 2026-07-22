@@ -10,8 +10,11 @@ import {
   findAgentsSourceDir, formatSyncErrors, getAgentsDir, syncAgentProfiles,
 } from './agent-sync.js'
 
+/** @import { SyncResult } from './agent-sync.js' */
+/** @import { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent' */
+
 /**
- * @param {import('./agent-sync.js').SyncResult} result
+ * @param {SyncResult} result
  * @returns {string}
  */
 function formatResult (result) {
@@ -28,13 +31,13 @@ function formatResult (result) {
 }
 
 /**
- * @param {import('@earendil-works/pi-coding-agent').ExtensionAPI} pi
+ * @param {ExtensionAPI} pi
  * @returns {void}
  */
 export function registerUpdateAgentsCommand (pi) {
   const config = {
     description: 'Force-sync vp-knowledge agent profiles into ~/.pi/agent/agents/',
-    handler: async (/** @type {string} */ _args, /** @type {import('@earendil-works/pi-coding-agent').ExtensionContext} */ ctx) => {
+    handler: async (/** @type {string} */ _args, /** @type {ExtensionContext} */ ctx) => {
       if (!ctx.hasUI) return
 
       const sourceDir = findAgentsSourceDir()
