@@ -21,7 +21,11 @@ It also takes three optional scope modifiers — `--limit N`, `--since <date>`,
 workflow runs. The full flag grammar and validation rules live in the
 `knowledge-gaps` `SKILL.md` Mode A section (the parsing owner); this file
 documents where each modifier is applied within S1-S8 and the "Large-cohort
-strategy" pattern that composes them.
+strategy" pattern that composes them. The `--full` opt-out and the interactive
+scope preflight are also owned by `SKILL.md` and fully resolved before this
+workflow runs — by the time control reaches here, the scope is already a
+concrete value (a typed flag, the `--since <date>` the preflight resolved to, or
+an unscoped full sweep), plus a provenance tag S8 stamps into its footnote.
 
 **BM access is via MCP only.** The per-ecosystem `scripts/fetch-<eco>-upstream.sh`
 scripts do the *external* API work and never read `~/basic-memory/`. This skill
@@ -65,6 +69,19 @@ Run the workflow below **once per selected cohort**, emitting one
 ## Workflow
 
 ### S1. Enumerate documented notes (MCP)
+
+> **Never add an interactive scope prompt here.** This file is loaded verbatim
+> into wave subagents (see "Large-cohort strategy" below), and `AskUserQuestion`
+> auto-approves / returns empty answers inside a subagent — so any interactive
+> gate placed in this workflow silently no-ops. The single home for the
+> pre-sweep scope prompt is the `knowledge-gaps` `SKILL.md` Mode A body (a
+> top-level, human-present invocation). This is documented in four converging
+> sources: this section, `SKILL.md`'s "Scope preflight" subsection, the
+> categorical "never add `AskUserQuestion` to `allowed-tools`" rule in
+> `.claude/rules/skill-development.md` (bug-independent of
+> `anthropics/claude-code#29547`), and the BM notes on Claude Code skill
+> interaction patterns and subagent orchestration. By the time this workflow
+> runs, the scope is already resolved to a concrete flag value.
 
 For each selected cohort:
 
@@ -669,7 +686,27 @@ Omit the flags that weren't used from the sentence (a `--limit`-only run
 doesn't mention `--since`); always state both the checked count and the full
 unscoped cohort size so the delta is legible without re-running the audit.
 
+**Provenance clause (how the scope was chosen).** When the scope came from the
+`SKILL.md` scope preflight rather than a typed flag, add a short clause so a
+reader can tell a user's deliberate choice from an automatic one:
+
+- **Typed flag** — no clause (the flag itself is the record).
+- **Interactive pick** — "`--since <date>` chosen interactively at the pre-sweep
+  scope prompt."
+- **Timeout default** — "`--since <date>` applied as the automatic default — no
+  response to the pre-sweep scope prompt within the session's timeout window."
+
+A `--full` run (preflight opt-out) is an unscoped sweep, so it gets no scope
+footnote at all — only the standard exclusion-count line, if any.
+
 ## Large-cohort strategy (parallel subagents)
+
+This parallel-subagent partitioning remains a **manual stopgap** for a cohort
+too large for one turn (`vp-claude-4g53`, DEFER verdict — automated wave
+orchestration is not reopened). The `SKILL.md` scope preflight does not automate
+any of it: it only helps a human pick a single scope flag before one sweep, and
+never runs inside the subagents this section spawns (an interactive prompt there
+would auto-approve — see the S1 callout above).
 
 A cohort like a 388-note `npm` directory is too large to check in a single
 `--stale` turn even with scope modifiers narrowing one run at a time — S2's

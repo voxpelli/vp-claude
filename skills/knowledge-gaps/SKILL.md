@@ -2,7 +2,7 @@
 name: knowledge-gaps
 description: "This skill should be used when the user asks about 'knowledge gaps', 'tool coverage', 'undocumented dependencies', 'undocumented tools', 'concept gaps', 'installed plugins', 'plugin coverage', 'undocumented skills', 'globally installed plugins/skills', 'what is installed on this machine', 'stale/outdated/drifted notes', 'version drift', or 'which tools/packages need updating'. Audits project dependency and tool manifests — and installed Claude Code plugins + skills.sh bundles — against Basic Memory coverage, and detects concept-level hub gaps. Two flag modes: `--stale [brew|npm|cask|crate|vscode|plugin]` checks version drift instead of coverage; `--global` audits what is installed on this machine — Claude Code plugins + skills.sh bundles today — against coverage. Supported ecosystems and full flag mechanics are documented in the skill body."
 user-invocable: true
-argument-hint: "[--stale [brew|npm|cask|crate|vscode|plugin] [--limit N] [--since <date>] [--sample N]] [--global]"
+argument-hint: "[--stale [brew|npm|cask|crate|vscode|plugin] [--limit N] [--since <date>] [--sample N] [--full]] [--global]"
 allowed-tools:
   - Read
   - Grep
@@ -66,6 +66,16 @@ behind upstream — not a coverage audit.
   are user-global, so a CI host without `~/.claude` simply yields nothing.
 - **`--global` + `--stale` together** — reject; they are separate modes
   (coverage vs drift). Run one at a time.
+- **`--full` with a scope flag** — reject `--full` combined with any of
+  `--limit`/`--since`/`--sample` ("`--full` can't be combined with
+  `--limit`/`--since`/`--sample` — pick one"). `--full` is the opt-out from the
+  scope preflight, not a narrowing flag, so pairing it with one is contradictory.
+- **Scope preflight is top-level-only** — the `--stale` scope preflight
+  (`AskUserQuestion`) fires only in the Mode A skill body, never inside a wave
+  subagent. It must never migrate into `references/staleness-detection.md`
+  (loaded verbatim into subagents), where `AskUserQuestion` auto-approves and
+  returns empty. A sub-40 largest cohort, or any typed scope flag / `--full`,
+  skips the prompt.
 - **`recent_activity` unavailable or empty (Step 10 recency-scoped sweep)** —
   if the call errors, report "Recency sweep unavailable — could not confirm
   recent-note coverage" in the gap report rather than treating an empty or
@@ -134,15 +144,91 @@ malformed value by name rather than silently ignoring it. `--limit` and
 `--sample` both set a cohort size, so they're mutually exclusive — if both
 appear, reject with: "`--limit` and `--sample` can't both be set — pick one."
 
+- **`--full`** — skips the interactive scope preflight below and sweeps the
+  full cohort unscoped. It is the power-user opt-out from the preflight prompt,
+  not a scope *narrower* — so it is mutually exclusive with the three scope
+  flags. If `--full` appears alongside any of `--limit`/`--since`/`--sample`,
+  reject with: "`--full` can't be combined with `--limit`/`--since`/`--sample`
+  — pick one." (`--full` already implies the widest scope; a narrowing flag
+  contradicts it.)
+
+**Scope preflight (interactive, top-level only).** Before delegating to the
+staleness-detection workflow, and **only in this top-level skill body** (a human
+is present at every `/knowledge-gaps` invocation), run a one-question scope
+preflight for large unscoped sweeps. This mitigates a filed, still-open upstream
+limitation — Basic Memory has no bulk metadata/version projection, so the drift
+sweep must `read_note` every entity in a cohort (`UPSTREAM-basic-memory.md`,
+*No bulk metadata/version extraction*); the preflight lets a human shrink N
+*before* that O(N) read storm rather than after. It is a UX layer over the open
+gap, **not** a reopening of automated wave orchestration (spike `vp-claude-4g53`,
+DEFER verdict) — it automates nothing, it only helps a human pick an existing
+scope flag.
+
+**Never place this preflight in `staleness-detection.md`.** That file is loaded
+verbatim into wave subagents, and `AskUserQuestion` auto-approves / returns empty
+answers inside a subagent — so an interactive gate there silently no-ops. The
+gate is safe *by construction* only here, in Mode A's top-level body.
+
+Run the preflight when **both** conditions hold:
+
+1. **No scope modifier was typed** — none of `--limit`/`--since`/`--sample`, and
+   `--full` was not passed (either flag skips the preflight: a typed scope flag
+   already answers the question; `--full` is the explicit opt-out).
+2. **The largest selected cohort exceeds 40 notes.** Learn each selected
+   cohort's size from one cheap `list_directory(dir_name="<cohort-dir>",
+   depth=1)` per selected cohort (the same listing S1 needs anyway) — a count
+   only, no `read_note`. For bare `--stale` that is one listing per cohort; for
+   `--stale <eco>` it is a single listing. Compare the *largest* count to 40.
+
+The threshold 40 is an honest heuristic (≈5 concurrent reads/turn; a serialized
+1s/call crate cohort; well below the 122-note brew incident this preflight was
+built for) with no config surface by design — if it fires too eagerly or too
+late in practice, it is a one-literal edit here.
+
+When both conditions hold, ask **once** with a single `AskUserQuestion` (one
+question object regardless of how many cohorts qualify — fold the per-cohort
+counts into the question body), three options, neutral framing:
+
+1. **Full sweep (all N)** — check every documented note in the selected cohort(s).
+2. **Untouched since 90 days ago (recommended)** — resolves to `--since <date>`
+   where `<date>` is today minus 90 days in ISO `YYYY-MM-DD`. Recommended because
+   `--since` is the only scope flag whose result set nests cleanly across repeat
+   runs (per this skill's own S1 mechanics), so it is the safe default narrowing.
+3. **Untouched since 180 days ago** — resolves to `--since <date>` where `<date>`
+   is today minus 180 days, ISO. Same mechanism, wider cutoff.
+
+Compute both dates at runtime — never hardcode them. `--limit` and `--sample`
+are deliberately **not** offered as preflight options (they remain available as
+typed flags): on a drift sweep `--limit N` is an arbitrary *alphabetical* slice
+(brew starts at `aarch64…`), not drift- or recency-prioritized, and `--sample`
+answers a different question (a random spot-check). The two `--since` options
+plus full sweep cover the real intent.
+
+**On no response (timeout):** default to option 2 (`--since <today−90d>`) —
+**never** the full sweep. Defaulting to the costliest option on silence would
+reintroduce the exact blow-up this preflight exists to prevent. How long to wait
+before defaulting is the executing session's own timeout config, not a number
+hardcoded here.
+
+Once the scope is resolved (a typed flag, an interactive pick, or the timeout
+default), carry it forward as if it had been typed and proceed to **What to do**
+below. A natural-language trigger with no flags is treated exactly like a bare
+`--stale` — the same threshold check applies (the gate lives in these shared
+Mode A instructions, not in slash-command parsing, so it fires identically on
+both routes).
+
 **What to do:** load and follow the staleness-detection reference file in
 full — do NOT execute any of the Mode B steps below in the same session:
 
 `${CLAUDE_PLUGIN_ROOT}/skills/knowledge-gaps/references/staleness-detection.md`
 
-Pass the parsed ecosystem scope (one cohort, or all six) AND any parsed
-`--limit`/`--since`/`--sample` values to that workflow; it runs the per-cohort
-drift check and renders one `### Version Drift — <eco>` section per checked
-cohort.
+Pass the parsed ecosystem scope (one cohort, or all six) AND the resolved scope
+value — any typed `--limit`/`--since`/`--sample`, or the `--since <date>` the
+scope preflight resolved to (interactive pick or timeout default) — to that
+workflow; it runs the per-cohort drift check and renders one
+`### Version Drift — <eco>` section per checked cohort. Also pass how the scope
+was chosen (typed flag / interactive pick / timeout default) so S8 can stamp its
+provenance footnote.
 
 ### Mode B — Standard mode (manifest-driven coverage)
 

@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.2][] - 2026-07-22
+
+### Added
+
+- **Interactive scope preflight for `/knowledge-gaps --stale`.** For a large
+  unscoped drift sweep — no scope flag typed and the largest selected cohort over
+  ~40 notes — the skill now asks **once**, before the O(N) `read_note` storm, how
+  to scope the run: full sweep, or restricted to notes untouched in the last 90
+  days (recommended) or 180 days, each resolving to the existing `--since` flag.
+  Dates are computed at runtime. This shrinks the cohort *before* the expensive
+  pass rather than filtering the rendered report, mitigating the filed upstream
+  gap that Basic Memory has no bulk metadata/version projection (so `--stale` must
+  read every entity). It automates nothing — it only helps a human pick an
+  existing scope flag (not a reopening of automated wave orchestration).
+  - The prompt is **foreground-only** (`SKILL.md` Mode A) and never migrates into
+    `references/staleness-detection.md`, which loads verbatim into wave subagents
+    where `AskUserQuestion` auto-approves and returns empty. A defensive callout
+    at S1 and a matching Edge Case guard against that.
+  - On no response the run defaults to the 90-day narrowing, **never** the full
+    sweep (silence must not reintroduce the blow-up the preflight prevents).
+  - **New `--full` flag** — the power-user opt-out that skips the preflight and
+    sweeps everything; mutually exclusive with `--limit`/`--since`/`--sample`.
+  - S8's scope footnote gains a **provenance clause** distinguishing a typed flag
+    from an interactive pick or an automatic timeout default.
+
 ## [0.33.1][] - 2026-07-21
 
 ### Added
@@ -2312,6 +2337,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.33.2]: https://github.com/voxpelli/vp-claude/compare/v0.33.1...v0.33.2
 [0.33.1]: https://github.com/voxpelli/vp-claude/compare/v0.33.0...v0.33.1
 [0.33.0]: https://github.com/voxpelli/vp-claude/compare/v0.32.5...v0.33.0
 [0.32.5]: https://github.com/voxpelli/vp-claude/compare/v0.32.4...v0.32.5
