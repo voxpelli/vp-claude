@@ -207,6 +207,32 @@ check('first-parseable regression: and the converse — an unparseable [version-
 // fixtures below are that same shape with opposite desirable answers, which is
 // the proof that no read-ordering rule can satisfy both. Resolving it needs the
 // ambiguity SURFACED (a corpus-quality signal), not a cleverer choice.
+//
+// DECISION 2026-07-28: left pinned, not fixed — measured, not assumed. A scan of
+// ALL 502 notes in the live npm cohort found 18 carrying 2+ `[version]`
+// observations (one with 7, one with 5, one with 4), and all 18 return an
+// IDENTICAL result under the old and new implementations. Two shapes explain
+// that: either the first `[version]` line parses, so the loop never advances, or
+// every one of them is narrative, so Pattern 3 declines and the header pipe wins
+// as before (npm-zod, npm-npm, opentype.js and npm-voxpelli-pg-utils are all the
+// latter). The precondition exists in the corpus; the trigger does not.
+//
+// Same scan, adjacent corpus-quality findings — NOT caused by this change, and
+// worth a separate pass: 278 of 502 npm notes carry no `[version]` observation
+// at all (so the slot bead 9q7e made authoritative is absent from 55% of the
+// cohort and they resolve via the header pipe), 3 resolve to `null` under both
+// implementations (npm-aarongustafson-form-required-if,
+// npm-aarongustafson-form-required-checkboxes, npm-lightningcss-cli), and
+// npm-fastify-formbody records the non-semver token `8.0.x`.
+//
+// REVIVAL TRIGGER: the first real note where a stale later `[version]` shadows a
+// fresher header pipe (or flips `isRange` on an up-to-date note). At that point
+// build the ambiguity signal — an `ambiguous` field set when multiple parseable
+// candidates disagree, surfaced by `--stale` like the existing Unparseable
+// bucket. That is a multi-file contract change (it lands in
+// `lib/staleness-contract.mjs`, which `check:contract` guards, plus the gardener
+// emit side, the maintainer queue lane and both prose mirrors), which is why it
+// is deliberately not folded into a corrections change set.
 check('trade-off (pinned): npm note — a stale later [version] shadows a FRESHER header pipe the old code fell back to',
   extractBmVersion(
     '---\ntitle: npm-foo\ntype: npm_package\n---\n\nGitHub: [foo/foo](https://github.com/foo/foo) | v5.0.0 | MIT\n\n## Observations\n\n- [version] see changelog for details\n- [version] 2.0.0\n',
