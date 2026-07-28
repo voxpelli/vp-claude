@@ -104,7 +104,11 @@ adapter:
   (bare-name formula-vs-cask auto-routing, the `not-in-api` re-dispatch, the
   `@`-suffix dual-key fetch, inline `[feature]` / `[version]` Axis-B target).
 
-A mixed-family batch routes each operand independently by its own prefix.
+A mixed-family batch routes each operand independently by its own prefix. Batch
+detection selects the *orchestration*, not the conclusion that a refresh is due:
+if Step 1 finds no existing note for an operand, that operand is fresh research
+(there is no recorded version to diff against), regardless of how the input was
+shaped.
 
 ## Ecosystem Dispatch
 
@@ -155,6 +159,14 @@ and hold it as `repo_forge` (`github`, `codeberg`/any Forgejo, `sourcehut`
 `references/forge-fallback.md` for the DeepWiki-skip rule and the changelog
 procedure. `action:` and `gh:` encode a GitHub `owner/repo` by construction — skip
 forge detection for them.
+
+When the registry's `repository` and `homepage` fields point at **different**
+hosts, the `repository` field wins for `gh`/DeepWiki purposes — a non-GitHub
+`homepage` alone does not make it a non-GitHub forge. It usually means a
+canonical home with a GitHub mirror (observed: an npm package homed at
+`tangled.org` with `repository` on GitHub), which is itself worth a `[gotcha]`
+observation: issues and PRs may live on the canonical forge, so a GitHub issue
+search understates the project's activity.
 
 If the ecosystem reference documents a download/popularity source, fetch the
 count now and hold it as `popularity_count` for Step 4.

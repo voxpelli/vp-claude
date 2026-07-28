@@ -37,9 +37,10 @@ npm view <package-name> --json 2>/dev/null
 ```
 
 Useful fields: `version`, `description`, `license`, `repository.url`,
-`homepage`, `bugs.url`, `bin` (the CLI-distribution signal the agent-leverage
-check gates on — an object `name→path` or a bare string; absent ⇒ library-only,
-skip the check).
+`homepage`, `bugs.url`, `time.created` (first-publish timestamp — needed by the
+download-window check below), `bin` (the CLI-distribution signal the
+agent-leverage check gates on — an object `name→path` or a bare string;
+absent ⇒ library-only, skip the check).
 
 ## Download Stats
 
@@ -59,6 +60,17 @@ For scoped packages, URL-encode the scope:
 The response is JSON: `{"downloads": <integer>, "start": "...", "end": "...", "package": "..."}`.
 Extract `.downloads`. If the call fails or returns `null`, skip the popularity
 observation silently.
+
+**A zero can mean the window predates publication.** The endpoint answers for a
+fixed trailing week regardless of when the package first shipped, so a
+just-published package returns e.g.
+`{"downloads":0,"start":"2026-07-18","end":"2026-07-24"}` for a package
+published on 2026-07-26 — a window entirely before it existed. Recording "0
+downloads/week" from that reads as "nobody uses it" when it measures nothing.
+Compare `.end` against `.time.created` from the `npm view --json` call above
+(note this needs the whole downloads object, not the `jq '.downloads'`
+projection); if the window closes before publication, skip the observation or
+state the window explicitly rather than the bare count.
 
 Format for the `[popularity]` observation: `Xk downloads/week` or
 `X.XM downloads/week (npm, YYYY-MM)`. Thresholds: raw number below 10k,
