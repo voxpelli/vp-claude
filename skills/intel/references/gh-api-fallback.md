@@ -103,10 +103,21 @@ read:
   but it paginates.** `gh api --paginate repos/O/R/compare/<base>...<head>`
   retrieves the full set (measured: 333 of 333 commits on a range the
   single-page call cut to 250; 1,864 commits across 19 pages on a larger
-  one). Always use `--paginate` and cross-check `total_commits` against
-  the number of commit subjects actually received — if they disagree, the
-  changelog is partial, so say so. It also returns a
-  `status` field. If `.status` is `diverged`
+  one). **Take the scalars and the commit list in two separate calls**,
+  because `--paginate` re-runs the `--jq` filter *per page*: array fields
+  like `.commits[]` concatenate correctly, but scalars like `.status` and
+  `.total_commits` are re-emitted once per page, so a single combined
+  filter yields output whose line count is `subjects + 2 × pages` and the
+  completeness check becomes uncomputable from it (`--slurp` would fix the
+  aggregation but is rejected outright when combined with `--jq`):
+  ```bash
+  gh api "$R" --jq '"status=\(.status) total=\(.total_commits)"'   # unpaginated
+  gh api --paginate "$R" --jq '.commits[].commit.message | split("\n")[0]'
+  ```
+  Then compare `total` against the number of subject lines the second call
+  produced — if they disagree, the changelog is partial, so say so. The
+  first call needs no `--paginate`: every page carries the same scalars.
+  If `.status` is `diverged`
   or `behind`, `<base>` is not an ancestor of `<head>` (wrong/renamed
   tag) and the commit list is meaningless — fall back to
   `commits?sha=<newest-tag>`.

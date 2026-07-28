@@ -114,9 +114,13 @@ RE_BASE=$(printf '%s' '<recorded-version>' | sed 's/[.]/\\./g')
 RE_HEAD=$(printf '%s' '<current-version>' | sed 's/[.]/\\./g')
 printf '%s\n' "$TAGS" | grep -E "(^|[^0-9.])${RE_BASE}$"   # base candidates
 printf '%s\n' "$TAGS" | grep -E "(^|[^0-9.])${RE_HEAD}$"   # head candidates
-# 2. Compare, paginated (see gh-api-fallback.md).
-gh api --paginate repos/<owner>/<repo>/compare/<base-tag>...<head-tag> \
-  --jq '.status, .total_commits, (.commits[].commit.message | split("\n")[0])'
+# 2. Compare — TWO calls, not one. `--paginate` re-runs `--jq` per page, so
+#    `.commits[]` concatenates but `.status`/`.total_commits` repeat once
+#    per page, making a combined filter's output uncountable. See
+#    gh-api-fallback.md.
+R="repos/<owner>/<repo>/compare/<base-tag>...<head-tag>"
+gh api "$R" --jq '"status=\(.status) total=\(.total_commits)"'   # unpaginated
+gh api --paginate "$R" --jq '.commits[].commit.message | split("\n")[0]'
 ```
 
 Resolve step 1 explicitly — every branch below has a defined outcome, because
