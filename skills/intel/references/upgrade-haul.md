@@ -118,9 +118,9 @@ type supports them:
   **modernize on touch**: when the haul touches a Pattern-2/6-only note,
   also install the Pattern-1 header pipe and the Pattern-3 `[version]`
   observation in the same refresh so the note joins the current-era slot
-  layout (precedent: `brew-eza`, 2026-07-10). On notes past the ~40KB
-  `find_replace` limit this defers to the append-fallback — never
-  blind-anchor a pipe insert on a truncated read.)
+  layout (precedent: `brew-eza`, 2026-07-10). Never blind-anchor a pipe
+  insert on an inline preview of a large note — anchor on the full body,
+  from the persisted file if the host redirected the read there.)
 - **Axis B — the prose changelog narrative.** The human-readable reel from
   [Highlights-reel synthesis](#highlights-reel-synthesis). Its location is
   adapter-specific (see below).
@@ -230,7 +230,7 @@ not count it refreshed until both moved.
 **Axis-A edit verification (required).** After the `edit_note(find_replace)` that
 bumps the version, **re-read the note** and confirm the slot changed to the new
 value — the repo's `find_replace` silently matches nothing on a byte mismatch
-(whitespace, a `v` prefix, a stale source-stamp suffix) and on notes >~40KB.
+(whitespace, a `v` prefix, a stale source-stamp suffix).
 Verify the **cohort-authoritative slot specifically** (the slot `--stale`
 reads first for that cohort — the `[version]` observation for npm, the
 inline pipe for every other cohort); for every package cohort, verify the

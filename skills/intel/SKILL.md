@@ -210,7 +210,7 @@ before writing.
 
 Follow `references/note-write-mechanics.md` for the new-note / relocated-stub /
 existing-note decision, the two `edit_note` find_replace templates, the
-never-`append`-with-`section=Observations` rule, the ~40KB append fallback, and
+never-`append`-with-`section=Observations` rule, the large-note anchoring rule, and
 the "trust `schema_validate` + the file, not the inline count" rule.
 
 ### Step 6: Confirm and summarize

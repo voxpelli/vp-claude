@@ -291,7 +291,7 @@ alias step — it is inert inside BM tooling until then (see
 | `## Observations` exists but is empty | `find_replace` anchored on `## Observations\n` |
 | `## Observations` is absent entirely | `find_replace` anchored on the next section header (typically `## Relations\n`); prepend a new `## Observations` section before it |
 | Last observation wraps across multiple lines | Include all continuation lines in both `find_text` and the prefix of `content`, then append the new observation after |
-| Note exceeds ~40KB (`read_note` truncates to a persisted file with no byte-exact anchor to match) | `operation="append"` a clearly-headed new section (e.g. `## <Date> Update`) instead of a blind `find_replace` — appending after `## Relations` still registers as observations on re-parse |
+| A large note's `read_note` output was redirected to a file by the host instead of shown inline | Derive the anchor from **that persisted file**, then `find_replace` as normal. Never anchor on an inline preview or summary of the content — that is the actual failure mode |
 
 **Self-heal aliases (SHOULD):** if the existing note's frontmatter lacks an
 `aliases:` key, add one in the same update — a `find_replace` anchored on the
