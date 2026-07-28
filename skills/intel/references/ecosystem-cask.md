@@ -39,10 +39,16 @@ curl -fsSL --max-time 30 "https://formulae.brew.sh/api/cask/<name>.json" | jq .
 
 Install analytics are available from two sources. The formulae.brew.sh cask
 JSON fetched in Step 2 includes an `analytics` block
-(`analytics.install.{30d,90d,365d}`; casks have no `build_error`), so analytics
-are always obtainable even without the MCP. When the local Homebrew MCP server
-is available, `mcp__homebrew__info` exposes the same counts in human-readable
-form:
+(`analytics.install.{30d,90d,365d}`; casks have neither `build_error` nor
+`install_on_request`), so analytics are always obtainable even without the MCP.
+
+**Every leaf window is an object keyed by invocation variant, not a number.**
+`analytics.install."30d"` looks like `{"iterm2": 14285}` — for casks there is
+normally a single key, the cask token itself, but read it by key rather than
+assuming a scalar. Verified across 6 casks + 44 formulae (2026-07-28).
+
+When the local Homebrew MCP server is available, `mcp__homebrew__info` exposes
+the same counts in human-readable form:
 
 ```
 mcp__homebrew__info(formula_or_cask="<name>")
@@ -62,8 +68,8 @@ Casks have `==> Analytics` but no `build-error` line (casks don't build).
 
 If the MCP tool call errors, the server is disconnected, or the `==> Analytics`
 block is absent, do not retry — fall back to the `analytics` block in the
-Step 2 cask JSON (`analytics.install.30d/90d/365d`; casks have no
-`build_error`). Never fabricate counts; omit the `[popularity]` observation
+Step 2 cask JSON (`analytics.install.30d/90d/365d`, each variant-keyed; casks
+have no `build_error`). Never fabricate counts; omit the `[popularity]` observation
 only if neither source yields analytics. The MCP and JSON draw on the same
 Homebrew analytics dataset but can diverge (the JSON carries a `generated_date`;
 `brew info` may serve a lagging cache) — always stamp the source and date.

@@ -14,6 +14,13 @@ shape-exact (no HTML-extraction lossiness), and consistent with how
 curl -fsSL --max-time 30 "https://formulae.brew.sh/api/formula/<name>.json" | jq .
 ```
 
+Use the **per-formula** endpoint above, not the bulk
+`https://formulae.brew.sh/api/formula.json` index. The index omits both
+`analytics` and `generated_date` entirely (checked across all 8,519 entries,
+2026-07-28), so batching through it would silently lose the analytics the
+`[popularity]` observation depends on. `scripts/fetch-brew-upstream.sh` reads
+the index deliberately — it only needs version/deprecation facts.
+
 ### Key fields from the JSON response
 
 | Field | Description |
@@ -52,8 +59,10 @@ ones) is enough:
 - **Ships no user-facing binary** — installs headers + `lib*.dylib`/`.a` but no
   CLI (aliases like `libtree-sitter`).
 - **Low install-on-request ratio** — `analytics.install_on_request ÷
-  analytics.install` well below 1 (corroborating, not sole: it means the formula
-  is mostly pulled in as a dependency).
+  analytics.install` for the same window, reading the bare-name key out of each
+  (both are variant-keyed objects — see "Fetch Install Analytics" below), well
+  below 1 (corroborating, not sole: it means the formula is mostly pulled in as
+  a dependency).
 
 ### Verifying real dependents (never infer them from technology)
 
@@ -102,7 +111,18 @@ Install analytics are available from two sources. The formulae.brew.sh JSON
 API fetched in Step 2 includes an `analytics` block —
 `analytics.install.{30d,90d,365d}`, `analytics.install_on_request`, and
 `analytics.build_error.30d` — so analytics are always obtainable even without
-the MCP. When the local Homebrew MCP server is available, `mcp__homebrew__info`
+the MCP.
+
+**Every leaf window is an object keyed by invocation variant, not a number.**
+`analytics.install."30d"` looks like `{"ripgrep": 95355, "ripgrep --HEAD": 95}`
+— the same holds for `install_on_request` and `build_error`. Read the
+**bare-name key** (`.["<name>"]`) and record that figure; a `--HEAD` (or other
+flag) key is a separate, much smaller population. Never sum the variants: that
+double-counts a source build against the bottle install it replaces. The
+`--HEAD` key can appear even when `urls.head` is `null`, so its presence proves
+nothing about the formula. Verified across 44 formulae + 6 casks (2026-07-28).
+
+When the local Homebrew MCP server is available, `mcp__homebrew__info`
 exposes the same counts in human-readable form:
 
 ```
@@ -138,8 +158,9 @@ for the JSON block — using this format:
 
 `[popularity] 70,654 installs/30d · 173,836/90d · 438,626/365d · 52,500 on-request/30d · 42 build errors/30d (Homebrew MCP, YYYY-MM)`
 
-Include the install-on-request count (`analytics.install_on_request` in the JSON,
-or the MCP `install-on-request:` line) as shown. Its ratio to total installs is a
+Include the install-on-request count (`analytics.install_on_request."30d"`
+keyed by the bare name in the JSON, or the MCP `install-on-request:` line) as
+shown. Its ratio to total installs is a
 library-vs-tool signal — see the `## Library formulae` section above and the
 ratio guidance in `note-template-brew.md`.
 
