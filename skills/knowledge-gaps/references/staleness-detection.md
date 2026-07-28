@@ -240,12 +240,17 @@ separately as bead `vp-claude-xux8`.
 three cohorts also accumulate `[feature]` / `[version]` narrative-reel lines
 from `intel`'s tool-family upgrade-haul Axis B (a deliberate, intentional second use
 of the same category — resolved 2026-07-03, `vp-claude-jcql`), so a note can
-carry more than one `[version]` line. This is not ambiguous in practice:
-`extractBmVersion()`'s regex takes the **first** match in document order, and
-the note templates emit the canonical slot as the *first* line of
-`## Observations`, with reel entries appended after it — so Pattern 3
-reliably reads the canonical slot, never a reel entry, without any
-additional disambiguation logic.
+carry more than one `[version]` line. `extractBmVersion()` scans them in
+document order and takes the first that **yields a version token** — not
+merely the first line so labelled. The templates emit the canonical slot as
+the *first* line of `## Observations` with reel entries appended after it, so
+in the normal case Pattern 3 reads the canonical slot; the parseability rule
+is what makes a hand-edited or older note whose narrative line sorts above the
+canonical one still resolve, instead of the whole note going unread. (It was
+first-*line*-wins until 2026-07-28. `brew-beads` carried a narrative
+`[version]` line above its machine-readable one and fell out of `--stale`
+entirely; on an npm note, where bead `9q7e` makes Pattern 3 authoritative, the
+same shape silently returned the *header pipe's* version instead.)
 
 **Range-pin exclusion filter (not a bucket):** a `[version-range]` observation
 (or any other pattern whose captured raw value still carries a leading range

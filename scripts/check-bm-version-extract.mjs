@@ -145,6 +145,51 @@ check('semver-range regression: the same range via [version-range] yields 2.5.0,
   extractBmVersion('## Observations\n\n- [version-range] >=2.5.0 || 5.0.0 - 7.2.3\n', 'npm-foo'),
   { version: '2.5.0', pattern: 3, isRange: true })
 
+// --- Pattern 3 regression: first PARSEABLE line wins, not first labelled line.
+//     Found by dogfooding, not review: `brew-beads` carried a narrative
+//     `[version]` observation above its machine-readable one, so the extractor
+//     bailed on line one and the note was invisible to `--stale` entirely.
+//     Worst for npm notes, where 9q7e makes Pattern 3 the authoritative slot. ---
+check('first-parseable regression: a narrative [version] line above the machine-readable one does not block extraction',
+  extractBmVersion(
+    '## Observations\n\n- [version] Homebrew ships 1.1.2 as of 2026-07-26\n- [version] 1.1.2\n',
+    'brew-beads'
+  ),
+  { version: '1.1.2', pattern: 3, isRange: false })
+
+check('first-parseable regression: same shape in an npm_package note, where Pattern 3 is the authoritative slot (9q7e)',
+  extractBmVersion(
+    '---\ntitle: npm-foo\ntype: npm_package\n---\n\nGitHub: [foo/foo](https://github.com/foo/foo) | v1.0.0 | MIT\n\n## Observations\n\n- [version] see the release table below\n- [version] 2.0.0\n',
+    'npm-foo'
+  ),
+  { version: '2.0.0', pattern: 3, isRange: false })
+
+check('first-parseable regression: several unparseable [version] lines are all skipped',
+  extractBmVersion(
+    '## Observations\n\n- [version] unknown\n- [version] see upstream\n- [version] pending a release\n- [version] 4.5.6\n',
+    'brew-foo'
+  ),
+  { version: '4.5.6', pattern: 3, isRange: false })
+
+check('first-parseable regression: when EVERY [version] line is unparseable, Pattern 3 still declines and a later pattern wins',
+  extractBmVersion(
+    '---\ntitle: foo\nversion: 3.3.3\n---\n\n## Observations\n\n- [version] unknown\n- [version] not yet published\n',
+    'brew-foo'
+  ),
+  { version: '3.3.3', pattern: 4 })
+
+check('first-parseable regression: all-unparseable with no other pattern present still yields null (not a silent fallback)',
+  extractBmVersion('## Observations\n\n- [version] unknown\n- [version] not yet published\n', 'brew-foo'),
+  { version: null, pattern: null })
+
+check('first-parseable regression: isRange is carried by the WINNING candidate — an unparseable [version] above a [version-range]',
+  extractBmVersion('## Observations\n\n- [version] unknown\n- [version-range] ^9.0.0\n', 'npm-foo'),
+  { version: '9.0.0', pattern: 3, isRange: true })
+
+check('first-parseable regression: and the converse — an unparseable [version-range] above a concrete [version] is not flagged as a range',
+  extractBmVersion('## Observations\n\n- [version-range] see peerDependencies\n- [version] 7.1.0\n', 'npm-foo'),
+  { version: '7.1.0', pattern: 3, isRange: false })
+
 // --- Pattern 4: frontmatter `version:` field ---
 check('pattern 4: bare frontmatter version',
   extractBmVersion('---\ntitle: foo\nversion: 12.4.0\n---\n\nbody text\n', 'npm-foo'),

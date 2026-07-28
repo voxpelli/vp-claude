@@ -485,6 +485,13 @@ npm_package` in frontmatter and tries Pattern 3 before Pattern 1 for those
 notes only, so the misparse-shield actually fires for npm. Every other cohort
 (including the tool cohorts and the other five package cohorts) still reads
 the pipe first — extending the override is tracked as bead `vp-claude-xux8`.
+A note may carry **several** `[version]` lines (the tool-family upgrade-haul
+Axis B appends narrative ones); the extractor scans them in document order and
+takes the first that actually **yields a version token**, not merely the first
+line so labelled — so a narrative line sorting above the canonical slot no
+longer makes the note unreadable. Fixed 2026-07-28; see
+`skills/knowledge-gaps/references/staleness-detection.md` S2 for the failure
+it caused.
 
 **Range-pin exclusion filter (not a bucket) — mirrors
 `skills/knowledge-gaps/references/staleness-detection.md` S2, keep in sync:**
