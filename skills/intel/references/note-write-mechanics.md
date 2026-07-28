@@ -126,6 +126,19 @@ that echo. Do NOT delete "duplicate" observations on the strength of the inline
 count alone — first confirm the duplication exists in the file itself (re-read /
 grep); a re-sync clears the phantom while the file was always correct.
 
+**The relations echo counts inbound *and* outbound edges.** `edit_note`'s
+`Resolved:`/`Unresolved:` line is not a count of the note's own `## Relations`
+lines — BM sums incoming and outgoing relations before computing it, so a note
+with 14 relation lines legitimately echoes ~28 when 15 other notes link to it.
+That gap is correct by design; do not read it as duplication and do not "clean
+up" relations on the strength of it. (The `Unresolved:` line is emitted only
+when that count is non-zero, so its absence means zero unresolved, not a
+missing field.) The real artifact here is a transient **under**-count — an echo
+listing only the inbound rows, with the `Unresolved:` line vanishing, then
+recovering on the next edit (observed twice on 2026-07-28 while the file
+provably kept all its relation lines throughout). As with the observation
+count: verify against the file, not the echo.
+
 When updating an existing note that has a `[popularity]` observation, use
 `find_replace` to replace the old line with the current count rather than
 appending a second popularity line.
