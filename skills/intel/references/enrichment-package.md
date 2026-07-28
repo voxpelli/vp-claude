@@ -93,18 +93,33 @@ With no prior Release to compare from, list recent commits via `gh api "repos/ow
 So whenever Step 1 found an existing note and the version changed, read the Release bodies for the **narrative** (curated, with migration notes) and run one `compare` across the whole delta as a **completeness check** on top:
 
 ```bash
-# 1. Resolve the base tag. Take the CURRENT release's tag_name (never the
-#    displayed title) and strip everything from its first digit onward —
-#    that prefix is `v`, empty, or e.g. `jq-`. Rebuild: <prefix><recorded>.
-gh release view --repo owner/repo --json tagName --jq .tagName
-# 2. Prove the base tag exists. A 404 here is NOT "no changes".
-gh api repos/owner/repo/git/ref/tags/<base-tag> --jq .ref
-# 3. Compare, paginated (see gh-api-fallback.md).
+# 1. Resolve BOTH endpoints by matching against the real tag list. Never
+#    derive a prefix by pattern-stripping the newest release's tag: in a
+#    monorepo the newest release often belongs to a DIFFERENT package
+#    (vitejs/vite's newest release is `plugin-legacy@8.2.2` while vite core
+#    tags `v8.1.5`), so a derived prefix points at another package's history.
+#    This is the common case for the package family — most registries'
+#    popular packages are published from monorepos.
+gh api --paginate repos/owner/repo/tags --jq '.[].name' > tags.txt
+grep -E '(^|[^0-9.])<recorded-version>$' tags.txt   # base candidates
+grep -E '(^|[^0-9.])<current-version>$'  tags.txt   # head candidates
+# 2. Compare, paginated (see gh-api-fallback.md).
 gh api --paginate repos/owner/repo/compare/<base-tag>...<head-tag> \
   --jq '.status, .total_commits, (.commits[].commit.message | split("\n")[0])'
 ```
 
-Require `.status == "ahead"` before trusting the commit list — `diverged` is realistic on repos that cut from release branches, and there the list is not a clean changelog. If the compare surfaces substantive commits that no Release body in the span accounts for, record them in `## Release Highlights` alongside the curated notes rather than letting the Release bodies stand as the whole story. A refresh with no version change does none of this.
+Resolve step 1 explicitly — every branch has a defined outcome:
+
+| Step-1 outcome | Do this |
+|---|---|
+| Exactly one candidate at each end | Use them. |
+| Several candidates (a monorepo tagging one version under multiple prefixes) | Keep the pair that **share a prefix**, preferring the prefix carrying the package's own name (`<pkg>@<version>` is the common monorepo shape). If no pair shares one, stop — report the check as inconclusive and use the Release bodies alone. |
+| No candidate for the recorded version | That version was never tagged here (a changed convention, or a package published from a repo that does not tag per-package). Stop and use the Release bodies alone. |
+| No candidate for the current version | The registry version corresponds to no tag — fall back to the release-list staleness recovery above. |
+
+Then require `.status == "ahead"` before trusting the commit list — `diverged` is realistic on repos that cut from release branches, and there the list is not a clean changelog; fall back to the Release bodies and record the check as inconclusive. If the compare surfaces substantive commits that no Release body in the span accounts for, record them in `## Release Highlights` alongside the curated notes rather than letting the Release bodies stand as the whole story. A refresh with no version change does none of this.
+
+Every "stop" above is a **reportable outcome, never a silent skip** — say in Step 6 that the completeness check did not run and why, so a check that was skipped is never mistaken for a check that passed.
 
 If `gh` is not installed or both the release list and tags return nothing, fall back to:
 ```

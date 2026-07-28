@@ -101,18 +101,32 @@ gh api repos/<owner>/<repo>/compare/<last-release-tag>...<newest-tag> \
 So whenever Step 1 found an existing note and the version changed, read the Release bodies for the **narrative** (they are curated and carry migration notes — raw commit subjects are what `upgrade-haul.md` warns against dumping), and run one `compare` across the whole delta as a **completeness check** on top:
 
 ```bash
-# 1. Resolve the base tag. Take the CURRENT release's tag_name (never the
-#    displayed title) and strip everything from its first digit onward —
-#    that prefix is `v`, empty, or e.g. `jq-`. Rebuild: <prefix><recorded>.
-gh release view --repo <owner>/<repo> --json tagName --jq .tagName
-# 2. Prove the base tag exists. A 404 here is NOT "no changes".
-gh api repos/<owner>/<repo>/git/ref/tags/<base-tag> --jq .ref
-# 3. Compare, paginated (see gh-api-fallback.md).
+# 1. Resolve BOTH endpoints by matching against the real tag list. Never
+#    derive a prefix by pattern-stripping the newest release's tag: in a
+#    monorepo the newest release often belongs to a DIFFERENT package
+#    (vitejs/vite's newest release is `plugin-legacy@8.2.2` while vite core
+#    tags `v8.1.5`), so a derived prefix points at another package's history.
+gh api --paginate repos/<owner>/<repo>/tags --jq '.[].name' > tags.txt
+grep -E '(^|[^0-9.])<recorded-version>$' tags.txt   # base candidates
+grep -E '(^|[^0-9.])<current-version>$'  tags.txt   # head candidates
+# 2. Compare, paginated (see gh-api-fallback.md).
 gh api --paginate repos/<owner>/<repo>/compare/<base-tag>...<head-tag> \
   --jq '.status, .total_commits, (.commits[].commit.message | split("\n")[0])'
 ```
 
-Require `.status == "ahead"` before trusting the commit list — `diverged` is realistic on repos that cut from release branches (`helm v4.1.4...v4.2.0` reports `diverged, ahead_by=306, behind_by=46`), and there the list is not a clean changelog. If the compare surfaces substantive commits that no Release body in the span accounts for, that is the tag-only case: surface those commits explicitly rather than letting the Release bodies stand as the whole story. A refresh with no version change does none of this.
+Resolve step 1 explicitly — every branch below has a defined outcome, because
+an unhandled one leaves the agent improvising:
+
+| Step-1 outcome | Do this |
+|---|---|
+| Exactly one candidate at each end | Use them. |
+| Several candidates (a monorepo tagging one version under multiple prefixes) | Keep the pair that **share a prefix**, preferring the prefix carrying the subject's own name. If no pair shares one, stop — report the check as inconclusive and use the Release bodies alone. |
+| No candidate for the recorded version | That version was never tagged here (a changed tagging convention, a vendored or re-published source, or the wrong repo). Stop and use the Release bodies alone. |
+| No candidate for the current version | The formula/registry version corresponds to no tag — treat it as the `brew:sem` shape above and recover from the newest tag instead. |
+
+Then require `.status == "ahead"` before trusting the commit list — `diverged` is realistic on repos that cut from release branches (`helm v4.1.4...v4.2.0` reports `diverged, ahead_by=306, behind_by=46`), and there the list is not a clean changelog; fall back to the Release bodies and record the check as inconclusive. If the compare surfaces substantive commits that no Release body in the span accounts for, that is the tag-only case: surface those commits explicitly rather than letting the Release bodies stand as the whole story. A refresh with no version change does none of this.
+
+Every "stop" above is a **reportable outcome, never a silent skip** — say in Step 6 that the completeness check did not run and why, so a check that was skipped is never mistaken for a check that passed.
 
 For `action:`, `gh:`, and `docker:` prefixes, [`gh-api-fallback.md`](gh-api-fallback.md) documents additional `gh api` endpoints (contents, commits, contributors, issue/PR verification) — useful when DeepWiki was unreliable in step 3a or when the changelog is sparse.
 
