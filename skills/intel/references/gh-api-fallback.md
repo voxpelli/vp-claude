@@ -86,7 +86,7 @@ path: `gh api repos/<owner>/<repo>/contents` returns an array.
 ## Recovering a Version/Changelog from Tags
 
 When the release list lags the registry / true latest version, recover from
-tags — but five GitHub API/CHANGELOG behaviors will silently mislead a naive
+tags — but seven GitHub API/CHANGELOG behaviors will silently mislead a naive
 read:
 
 - **`/tags` is ordered by creation/reachability, not semver.** Do not
@@ -99,12 +99,31 @@ read:
   "latest stable" — recording `v2.0.0-rc1` as the stable version is worse
   than the lagging-but-correct release list. If nothing parses to a clean
   stable semver, keep the release-list/registry version unchanged.
-- **`compare/<base>...<head>` truncates at 250 commits** and returns a
-  `status` field. If `total_commits` exceeds the returned `.commits`
-  array, the changelog is partial — say so. If `.status` is `diverged`
+- **`compare/<base>...<head>` caps its *default* response at 250 commits —
+  but it paginates.** `gh api --paginate repos/O/R/compare/<base>...<head>`
+  retrieves the full set (measured: 333 of 333 commits on a range the
+  single-page call cut to 250; 1,864 commits across 19 pages on a larger
+  one). Always use `--paginate` and cross-check `total_commits` against
+  the number of commit subjects actually received — if they disagree, the
+  changelog is partial, so say so. It also returns a
+  `status` field. If `.status` is `diverged`
   or `behind`, `<base>` is not an ancestor of `<head>` (wrong/renamed
   tag) and the commit list is meaningless — fall back to
   `commits?sha=<newest-tag>`.
+- **A Release's `name` is not its `tag_name`.** `gh release list`'s human
+  table shows the *title*, and the two can differ: chainsaw's Release is
+  titled `v2.14.0` while its `tag_name` is `v2.14.0-1`, and a separate
+  `v2.14.0` tag exists with no Release at all. Eyeballing the table
+  therefore yields a compare base that 404s or silently points at a
+  different commit. Always read `tag_name`
+  (`gh release list --json tagName,name`), never the displayed title.
+- **Raw REST conflates a merged PR with a rejected one.** Both
+  `repos/O/R/issues/<n>` and `repos/O/R/pulls/<n>` report
+  `state: "closed"` for a merged PR — identical to one closed unmerged.
+  When the raw path matters (this file's whole premise is dropping to
+  `gh api`), read `.merged` or `.merged_at` from `pulls/<n>` instead.
+  `gh pr view` / `gh issue view --json state` already distinguish them
+  and return `MERGED`; the trap is REST-only.
 - **An error is not an empty result.** `2>/dev/null` hides auth,
   rate-limit, network, and 404 failures — all of which yield empty stdout
   indistinguishable from a genuinely empty array. Treat empty output as a
