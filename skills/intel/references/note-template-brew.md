@@ -99,7 +99,11 @@ yields analytics; never fabricate counts.
 
 Also record the **install-on-request** count in the same `[popularity]` line
 (e.g. `… · R on-request/30d · …`) — from `mcp__homebrew__info`'s
-`install-on-request:` line or the JSON `analytics.install_on_request` block. The
+`install-on-request:` line or the JSON `analytics.install_on_request` block.
+In the JSON, each window (`"30d"` etc.) is an **object keyed by invocation
+variant** — `{"<name>": 4210, "<name> --HEAD": 12}` — so read the bare-name key
+out of both fields for the same window rather than treating either as a number,
+and never sum the variants. The
 **ratio** `on-request ÷ install` is a library-vs-tool signal: near 1 means the
 formula is deliberately installed (a leaf tool); far below 1 means it is mostly
 pulled in as a transitive dependency (a library). In the low-ratio case add one
