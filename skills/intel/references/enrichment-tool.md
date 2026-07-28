@@ -76,7 +76,7 @@ instead of the `gh` commands below. `action:`/`gh:`/`docker:` are unaffected
 
 - `action:`: Use GitHub releases — `gh release list --repo <owner>/<repo> --limit 10 2>/dev/null`; if empty, `tavily_extract` on the GitHub CHANGELOG.md
 - `docker:`: Use Docker Hub tags API (see `ecosystem-docker.md`) for tag strategy overview
-- `brew:`/`cask:`: Extract version from the formulae.brew.sh API response (already fetched in Step 2). If that stable version is *newer* than the upstream repo's newest GitHub Release, the release notes for the current version are missing — recover the changelog from git tags per [`gh-api-fallback.md`](gh-api-fallback.md) ("Recovering a Version/Changelog from Tags"). This is the `brew:sem` shape.
+- `brew:`/`cask:`: Extract version from the formulae.brew.sh API response (already fetched in Step 2). If that stable version is *newer* than the upstream repo's newest GitHub Release, the release notes for the current version are missing — recover the changelog from git tags per [`gh-api-fallback.md`](gh-api-fallback.md) ("Recovering a Version/Changelog from Tags"). This is the `brew:sem` shape. That gate catches a lagging *newest* Release only — on a refresh where the version changed, also run the changelog-completeness check below.
 - `vscode:`: Extract version from Open VSX API response (already fetched in Step 2)
 - `gh:`: Use GitHub releases — `gh release list --repo <owner>/<repo> --limit 10 2>/dev/null`; empty result means `runtime_shape: script` (or `local` per Step 2's classification ladder)
 
@@ -95,6 +95,24 @@ gh api repos/<owner>/<repo>/compare/<last-release-tag>...<newest-tag> \
 ```
 
 (With no prior Release to compare from, list recent commits instead: `gh api "repos/<owner>/<repo>/commits?sha=<newest-tag>"`.) Record the recovered version as a `[version]` observation with explicit provenance, so a later reader knows it came from a tag, not a Release: `- [version] X.Y.Z (git tag <tag-name> — no GitHub Release as of YYYY-MM-DD)` — keep that parenthetical link-free (a markdown link plus a trailing parenthetical silently drops the whole observation past BM's `(context)` parser). Curate the commit subjects (skip merges and internal refactors) rather than dumping them. A release list that is empty *and* has no newer git tag (command confirmed to have exited 0) still means `runtime_shape: script` for `gh:`.
+
+**Changelog completeness — tag-only versions (any prefix, on a refresh).** The staleness gates above fire only when the *newest* Release lags. They miss the case where the newest Release matches the current version exactly, yet an intermediate version shipped as a git tag with no Release. GitHub's generated release notes range from the previous **tag**, so when the Release list jumps v1.1.0 → v1.1.2 with a v1.1.1 tag in between, v1.1.2's body covers only v1.1.1→v1.1.2 — the v1.1.1 changes are invisible in *every* Release body, permanently, not just the newest. Measured across 42 GitHub-hosted homebrew-core formulae: tag-only versions account for 7 of 330 version bumps (2.1%) across 3 of 38 repos, and 4 of 42 repos ship an unusable auto-generated newest-Release body.
+
+So whenever Step 1 found an existing note and the version changed, read the Release bodies for the **narrative** (they are curated and carry migration notes — raw commit subjects are what `upgrade-haul.md` warns against dumping), and run one `compare` across the whole delta as a **completeness check** on top:
+
+```bash
+# 1. Resolve the base tag. Take the CURRENT release's tag_name (never the
+#    displayed title) and strip everything from its first digit onward —
+#    that prefix is `v`, empty, or e.g. `jq-`. Rebuild: <prefix><recorded>.
+gh release view --repo <owner>/<repo> --json tagName --jq .tagName
+# 2. Prove the base tag exists. A 404 here is NOT "no changes".
+gh api repos/<owner>/<repo>/git/ref/tags/<base-tag> --jq .ref
+# 3. Compare, paginated (see gh-api-fallback.md).
+gh api --paginate repos/<owner>/<repo>/compare/<base-tag>...<head-tag> \
+  --jq '.status, .total_commits, (.commits[].commit.message | split("\n")[0])'
+```
+
+Require `.status == "ahead"` before trusting the commit list — `diverged` is realistic on repos that cut from release branches (`helm v4.1.4...v4.2.0` reports `diverged, ahead_by=306, behind_by=46`), and there the list is not a clean changelog. If the compare surfaces substantive commits that no Release body in the span accounts for, that is the tag-only case: surface those commits explicitly rather than letting the Release bodies stand as the whole story. A refresh with no version change does none of this.
 
 For `action:`, `gh:`, and `docker:` prefixes, [`gh-api-fallback.md`](gh-api-fallback.md) documents additional `gh api` endpoints (contents, commits, contributors, issue/PR verification) — useful when DeepWiki was unreliable in step 3a or when the changelog is sparse.
 

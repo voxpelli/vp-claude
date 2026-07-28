@@ -88,6 +88,24 @@ gh api repos/owner/repo/compare/<last-release-tag>...<newest-tag> \
 ```
 With no prior Release to compare from, list recent commits via `gh api "repos/owner/repo/commits?sha=<newest-tag>"`. Record the recovered version in `## Release Highlights` with explicit provenance, e.g. `vX.Y.Z (git tag <tag-name>, no GitHub Release as of YYYY-MM-DD)` — and curate the commit subjects (skip merges and internal refactors) rather than dumping them.
 
+**Changelog completeness — tag-only versions (on a refresh).** The staleness gate above fires only when the *newest* Release lags. It misses the case where the newest Release matches the registry version exactly, yet an intermediate version shipped as a git tag with no Release. GitHub's generated release notes range from the previous **tag**, so when the Release list jumps 1.1.0 → 1.1.2 with a 1.1.1 tag in between, 1.1.2's body covers only 1.1.1→1.1.2 — the 1.1.1 changes are invisible in *every* Release body, permanently, not just the newest.
+
+So whenever Step 1 found an existing note and the version changed, read the Release bodies for the **narrative** (curated, with migration notes) and run one `compare` across the whole delta as a **completeness check** on top:
+
+```bash
+# 1. Resolve the base tag. Take the CURRENT release's tag_name (never the
+#    displayed title) and strip everything from its first digit onward —
+#    that prefix is `v`, empty, or e.g. `jq-`. Rebuild: <prefix><recorded>.
+gh release view --repo owner/repo --json tagName --jq .tagName
+# 2. Prove the base tag exists. A 404 here is NOT "no changes".
+gh api repos/owner/repo/git/ref/tags/<base-tag> --jq .ref
+# 3. Compare, paginated (see gh-api-fallback.md).
+gh api --paginate repos/owner/repo/compare/<base-tag>...<head-tag> \
+  --jq '.status, .total_commits, (.commits[].commit.message | split("\n")[0])'
+```
+
+Require `.status == "ahead"` before trusting the commit list — `diverged` is realistic on repos that cut from release branches, and there the list is not a clean changelog. If the compare surfaces substantive commits that no Release body in the span accounts for, record them in `## Release Highlights` alongside the curated notes rather than letting the Release bodies stand as the whole story. A refresh with no version change does none of this.
+
 If `gh` is not installed or both the release list and tags return nothing, fall back to:
 ```
 tavily_extract(urls=["https://github.com/owner/repo/blob/main/CHANGELOG.md"], query="breaking changes migration")
