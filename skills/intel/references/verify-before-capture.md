@@ -34,6 +34,24 @@ run's sources contradicts them — the absence of a second source is not
 confirmation, and a persisted note should not read as more certain than its
 evidence supports.
 
+**A changelog, commit message, or README is a claim — not evidence — about
+anything outside its own diff.** The rules above scale confidence with how many
+sources were fetched; this one is about what a fetched source actually
+establishes. A commit message *is* fetched in this run, so a naive read of the
+checks above passes vacuously on it. A diff proves only what the diff changed.
+When a commit message or release note credits a dependency version, a sibling
+change, another branch, or a downstream release as the mitigation for a
+load-bearing claim, that credit is **unverified by default**: record it as
+attributed (`the fix commit cites Dolt 2.1.10 — not verified present in this
+release`) or omit it. Never restate it as a property of the released artifact.
+The same holds for a README, which documents the default branch, not
+necessarily the published tarball or tagged release the note is about.
+
+This requires no new source calls — it is a rule about how to phrase what you
+already have. Escalating to an actual check at the released ref (reading the
+manifest or file tree at the tag) stays optional and reserved for the
+security-sensitive case the fast-path carve-out above already names.
+
 **Genuinely unresolved contradictions.** The "prefer the more recent or
 authoritative source and name which" guidance above assumes one source can be
 judged more trustworthy. When neither can be — both current, both plausible,
