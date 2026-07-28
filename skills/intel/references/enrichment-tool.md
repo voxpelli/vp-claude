@@ -106,9 +106,14 @@ So whenever Step 1 found an existing note and the version changed, read the Rele
 #    monorepo the newest release often belongs to a DIFFERENT package
 #    (vitejs/vite's newest release is `plugin-legacy@8.2.2` while vite core
 #    tags `v8.1.5`), so a derived prefix points at another package's history.
-gh api --paginate repos/<owner>/<repo>/tags --jq '.[].name' > tags.txt
-grep -E '(^|[^0-9.])<recorded-version>$' tags.txt   # base candidates
-grep -E '(^|[^0-9.])<current-version>$'  tags.txt   # head candidates
+#    Hold the list in a shell variable — never redirect it to a file, which
+#    would litter whatever directory the agent happens to be in.
+TAGS=$(gh api --paginate repos/<owner>/<repo>/tags --jq '.[].name')
+#    Escape the dots before interpolating, or `1.1.2` also matches `1x1x2`.
+RE_BASE=$(printf '%s' '<recorded-version>' | sed 's/[.]/\\./g')
+RE_HEAD=$(printf '%s' '<current-version>' | sed 's/[.]/\\./g')
+printf '%s\n' "$TAGS" | grep -E "(^|[^0-9.])${RE_BASE}$"   # base candidates
+printf '%s\n' "$TAGS" | grep -E "(^|[^0-9.])${RE_HEAD}$"   # head candidates
 # 2. Compare, paginated (see gh-api-fallback.md).
 gh api --paginate repos/<owner>/<repo>/compare/<base-tag>...<head-tag> \
   --jq '.status, .total_commits, (.commits[].commit.message | split("\n")[0])'

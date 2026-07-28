@@ -130,7 +130,7 @@ Report: N operands → D drifted → D workers, wave-capped launches, estimated 
 Reel-line rules baked into the schema docs *and* mechanically enforced later (G2): bare URLs only, no wiki-links, no link+trailing-parenthetical. **Supervisor invariant:** items-in == items-out; a crashed/timed-out worker (after G4 retry) becomes `unverified[worker-failed]`, never a silent drop.
 
 ### Phase 3 — Assemble + GATE 2 pre-write preview (foreground)
-1. Drafts → concrete `edit_note` ops: Axis-A header-pipe + `[version]` observation in the same edit; Axis-B to inline observations or the linked timeline note; `size_hint` > ~40KB → **append-fallback** (find_replace anchoring defeated on big notes — platform gotcha).
+1. Drafts → concrete `edit_note` ops: Axis-A header-pipe + `[version]` observation in the same edit; Axis-B to inline observations or the linked timeline note. (**Superseded 2026-07-28:** this step used to route `size_hint` > ~40KB to an append-fallback because `find_replace` anchoring was believed to fail on big notes. That platform gotcha does not exist — basic-memory has no `read_note` size branch at any tag checked, and ten `find_replace` edits landed byte-exactly on a 53KB note. Do NOT implement a size gate. The real rule is host-side: if a large read was redirected to a file, anchor on that persisted body, never on an inline preview.)
 2. **G2 mechanical lint:** every draft observation line piped through `scripts/lint-observations.mjs` — findings block the line from the preview until fixed. Convention becomes code.
 3. **G6 spot-check:** one random reel line per item re-anchored against the raw fetched evidence (changelog URL / FetchResult), never the worker's summary narrative.
 4. Per-item diff preview; user approves per-item or batch.
@@ -230,7 +230,7 @@ Untouched open beads (orthogonal, stay independent): **8gcf** (designed around, 
 **Risks (post-graft residuals):**
 
 1. ~~Hand-mirrored haul schemas (bf73 class)~~ — **closed by G1**; residual: worker *prompt text* inside `haul-workflow.md` fenced examples is not lockstep-guarded — a prompt edit drifting a field name fails only at run time.
-2. ~~BM gotchas by prompt convention~~ — observation-line gotchas **closed by G2**; residual: the >40KB append-fallback and echo-count distrust remain prose discipline in Phase 3/4 (no validator).
+2. ~~BM gotchas by prompt convention~~ — observation-line gotchas **closed by G2**; residual: echo-count distrust remains prose discipline in Phase 3/4 (no validator). (The >40KB append-fallback was **removed** 2026-07-28 — it was never a real platform behaviour, so there is no longer a gap to validate. See Phase 3 step 1.)
 3. Pre-spend estimates uncalibrated at launch — only the ~15× multiplier and one ~807K-token datapoint anchor the band; first hauls may overshoot. Mitigation: actual-vs-estimated line + P4 calibration bead; the first user surprise is a real cost.
 4. Worker fabrication residual — a real URL can carry a wrong summary; G6's evidence-anchored spot-check is partial mitigation, `--verify` is the systemic backstop on a different cadence. Escalation path: adopt Proposal 2's ground-truth judge stage (Q2).
 5. `--verify` coverage honestly partial — `command-probe` claims and dead/paywalled sources land in `unverifiable`-hedged; a run can exit mostly date-hedged. The confirmed/hedged ratio leading the report is the guard against over-reading.
