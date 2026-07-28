@@ -182,13 +182,68 @@ check('first-parseable regression: all-unparseable with no other pattern present
   extractBmVersion('## Observations\n\n- [version] unknown\n- [version] not yet published\n', 'brew-foo'),
   { version: null, pattern: null })
 
+// NOTE: these two carry `type: npm_package` frontmatter deliberately. A fixture
+// merely TITLED `npm-foo` runs under DEFAULT_PATTERN_ORDER — `isNpmPackageNote`
+// keys on the frontmatter, not the title — so without it the npm-scoped
+// Pattern-3-before-Pattern-1 override is never exercised at all.
 check('first-parseable regression: isRange is carried by the WINNING candidate — an unparseable [version] above a [version-range]',
-  extractBmVersion('## Observations\n\n- [version] unknown\n- [version-range] ^9.0.0\n', 'npm-foo'),
+  extractBmVersion('---\ntitle: npm-foo\ntype: npm_package\n---\n\n## Observations\n\n- [version] unknown\n- [version-range] ^9.0.0\n', 'npm-foo'),
   { version: '9.0.0', pattern: 3, isRange: true })
 
 check('first-parseable regression: and the converse — an unparseable [version-range] above a concrete [version] is not flagged as a range',
-  extractBmVersion('## Observations\n\n- [version-range] see peerDependencies\n- [version] 7.1.0\n', 'npm-foo'),
+  extractBmVersion('---\ntitle: npm-foo\ntype: npm_package\n---\n\n## Observations\n\n- [version-range] see peerDependencies\n- [version] 7.1.0\n', 'npm-foo'),
   { version: '7.1.0', pattern: 3, isRange: false })
+
+// --- KNOWN TRADE-OFF, pinned deliberately so it stays visible ---
+// For an npm_package note Pattern 3 outranks Pattern 1 (bead 9q7e), so when the
+// first `[version]` line is unparseable the loop lands on a LATER one and never
+// consults the header pipe. When that later line is STALE, this returns an older
+// version than the pipe carries — the old first-line-wins code fell through to
+// the pipe here and was, in this one shape, more correct.
+//
+// It is NOT decidable from the note: `- [version] 2.0.0` sitting below an
+// unparseable line is textually identical whether it is the canonical slot
+// (the brew-beads case this fix exists for) or a stale leftover. The two
+// fixtures below are that same shape with opposite desirable answers, which is
+// the proof that no read-ordering rule can satisfy both. Resolving it needs the
+// ambiguity SURFACED (a corpus-quality signal), not a cleverer choice.
+check('trade-off (pinned): npm note — a stale later [version] shadows a FRESHER header pipe the old code fell back to',
+  extractBmVersion(
+    '---\ntitle: npm-foo\ntype: npm_package\n---\n\nGitHub: [foo/foo](https://github.com/foo/foo) | v5.0.0 | MIT\n\n## Observations\n\n- [version] see changelog for details\n- [version] 2.0.0\n',
+    'npm-foo'
+  ),
+  { version: '2.0.0', pattern: 3, isRange: false })
+
+check('trade-off (pinned): the stale-[version-range] variant additionally flips isRange, which EXCLUDES an up-to-date note from --stale bucketing entirely',
+  extractBmVersion(
+    '---\ntitle: npm-foo\ntype: npm_package\n---\n\nGitHub: [foo/foo](https://github.com/foo/foo) | v5.0.0 | MIT\n\n## Observations\n\n- [version] unparseable narrative\n- [version-range] ^2.0.0\n',
+    'npm-foo'
+  ),
+  { version: '2.0.0', pattern: 3, isRange: true })
+
+// --- Boundary coverage for the matchAll loop (all correct today, none pinned before) ---
+check('fence + multi-observation: a Pattern-3-shaped line inside a fence must not leak into the scan even with a real match further down',
+  extractBmVersion(
+    '```markdown\n- [version] 9.9.9 (example only, should be stripped)\n```\n\n## Observations\n\n- [version] unparseable narrative here\n- [version] 4.5.6\n',
+    'npm-foo'
+  ),
+  { version: '4.5.6', pattern: 3, isRange: false })
+
+check('EOF boundary: a parseable [version] line with no trailing newline is still found',
+  extractBmVersion('## Observations\n\n- [version] unparseable\n- [version] 6.6.6', 'npm-foo'),
+  { version: '6.6.6', pattern: 3, isRange: false })
+
+check('CRLF: observation lines separated by \\r\\n are scanned correctly',
+  extractBmVersion('## Observations\r\n\r\n- [version] unparseable\r\n- [version] 7.7.7\r\n', 'npm-foo'),
+  { version: '7.7.7', pattern: 3, isRange: false })
+
+check('build metadata: a +build suffix is kept as part of the token',
+  extractBmVersion('## Observations\n\n- [version] unparseable\n- [version] 1.2.3+build.5\n', 'npm-foo'),
+  { version: '1.2.3+build.5', pattern: 3, isRange: false })
+
+check('three-candidate interleave: first-parseable-wins holds across a mixed version/version-range sequence',
+  extractBmVersion('## Observations\n\n- [version] unparseable\n- [version-range] ^2.0.0\n- [version] 9.9.9\n', 'npm-foo'),
+  { version: '2.0.0', pattern: 3, isRange: true })
 
 // --- Pattern 4: frontmatter `version:` field ---
 check('pattern 4: bare frontmatter version',
