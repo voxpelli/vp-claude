@@ -10,6 +10,13 @@ Loads when editing a `skills/**` file or the plugin manifest. These are the
 conventions and the full per-skill inventory that the root `CLAUDE.md` keeps only
 a one-line index of.
 
+**Before editing `skills/intel/**`, read
+[`docs/design/intel-corrections-2026-07-28.md`](../../docs/design/intel-corrections-2026-07-28.md).**
+Its Part 5 records which claims in that prose were verified against primary
+sources and which were **never verified by anyone** — a distinction no check in
+`npm run check` can make, since every drift guard here verifies that two
+*documents* agree, never that a document matches reality.
+
 ## Skill inventory (full detail)
 
 The 14 skills, with the behaviour the `CLAUDE.md` index summarises:

@@ -36,7 +36,9 @@ it here are not obvious:
   store on a git operation now — export by hand.
 - **`.beads/` is gitignored — the issue history is NOT in this repo.** A fresh
   clone carries no backlog. Treat the local Dolt database as a working copy,
-  never as the record of truth.
+  never as the record of truth. A committed snapshot lives at
+  `docs/design/bd-export-2026-07-29.jsonl` (360 issues + 7 memories); refresh it
+  with `bd export --include-memories -o docs/design/bd-export-<date>.jsonl`.
 - **bd's write path is unreliable here.** The Dolt `invalid hash length: 19`
   panic recurred 2026-07-28, *after* the 1.1.2 upgrade meant to fix it. Reads
   survive panics that kill writes, so the store looks healthy while diverging.
@@ -291,6 +293,19 @@ in the matching area, that rule is the authority:
 These are Claude Code path-scoped rules, so they do **not** load at session start
 (no context cost until relevant) — that is the mechanism keeping `CLAUDE.md`
 under Claude Code's 40k large-file warning while the conventions stay rich.
+
+### Design records
+
+`docs/design/` holds decision records and findings that outlive a sprint. They
+are not indexed anywhere else, so a decision recorded there is invisible unless
+you go looking. The one with the widest reach:
+
+- **`intel-corrections-2026-07-28.md`** — read before touching `skills/intel/**`,
+  the S2 version extractor, or the Homebrew analytics guidance. Its Part 5 maps
+  which claims in that prose were verified at source and which were **never
+  verified by anyone**; Part 3 records a pinned trade-off with its revival
+  trigger, and Part 6 records why the 273 npm notes with no `[version]` slot are
+  deliberately never backfilled.
 
 ## Releasing
 
