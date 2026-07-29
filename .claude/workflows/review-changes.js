@@ -61,7 +61,7 @@ const FOCUS = (A.focus && typeof A.focus === 'object') ? A.focus : {}
 // conventions — reconnaissance is Sonnet's lane, and reviewers cross-check its
 // framing against the real diff, so it is never authoritative alone. Falls back to
 // a generic instruction if that agent dies.
-const GENERIC_CONTEXT = 'No project context was supplied — infer the change’s shape and its primary risk from the diff itself and from the repository’s CLAUDE.md / AGENTS.md house conventions.'
+const GENERIC_CONTEXT = 'No project context was supplied — infer the change’s shape and its primary risk from the diff itself and from the repository’s CLAUDE.md house conventions.'
 
 const CONTEXT_SCHEMA = {
   type: 'object',
@@ -85,7 +85,7 @@ if (typeof A.context === 'string' && A.context) {
 Inspect the change:
 - \`git diff --stat ${BASE} ${HEAD}\` (if empty, use \`git diff --stat HEAD\` — uncommitted work)
 - \`git log --oneline ${BASE}..${HEAD}\` for intent
-- read the repository's CLAUDE.md / AGENTS.md for what this project is and its house conventions
+- read the repository's CLAUDE.md (plus any path-scoped rules in .claude/rules/) for what this project is and its house conventions
 - open a few of the most-changed files if their purpose is not clear from the names
 
 Return via the schema:
@@ -105,7 +105,7 @@ const ALL_DIMENSIONS = [
   {
     label: 'code-reviewer',
     agentType: 'pr-review-toolkit:code-reviewer',
-    focus: 'CORRECTNESS & LOGIC. Read every changed hunk AND its enclosing function — a bug in an unchanged line of a touched function is in scope (the change re-exposes or fails to fix it). Hunt inverted/wrong conditions, off-by-one, null/undefined deref, missing await, falsy-zero checks, wrong-variable copy-paste, swallowed errors, unescaped regex metachars. For every DELETED or replaced line, name the invariant it enforced and find where the new code re-establishes it — a dropped guard, validation, or behavior is the highest-value catch. Trace callers and callees of each changed function for a broken precondition, a changed return shape, or a new exception. Check the diff against the repository’s CLAUDE.md / AGENTS.md conventions and flag clear violations (quote the rule).',
+    focus: 'CORRECTNESS & LOGIC. Read every changed hunk AND its enclosing function — a bug in an unchanged line of a touched function is in scope (the change re-exposes or fails to fix it). Hunt inverted/wrong conditions, off-by-one, null/undefined deref, missing await, falsy-zero checks, wrong-variable copy-paste, swallowed errors, unescaped regex metachars. For every DELETED or replaced line, name the invariant it enforced and find where the new code re-establishes it — a dropped guard, validation, or behavior is the highest-value catch. Trace callers and callees of each changed function for a broken precondition, a changed return shape, or a new exception. Check the diff against the repository’s CLAUDE.md conventions and flag clear violations (quote the rule).',
   },
   {
     label: 'type-design-analyzer',

@@ -2,8 +2,58 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-<!-- Imports vendor-neutral agent instructions (shell-safety rules + `bd onboard` integration block). AGENTS.md is the file other agents read directly; `@AGENTS.md` is Claude Code's documented import syntax that inlines its contents here at session start. -->
-@AGENTS.md
+## Non-Interactive Shell Commands
+
+**ALWAYS use non-interactive flags** with file operations to avoid hanging on
+confirmation prompts. `cp`, `mv`, and `rm` may be aliased to `-i` (interactive)
+mode, which hangs an agent indefinitely waiting for y/n input.
+
+```bash
+# Force overwrite without prompting
+cp -f source dest           # NOT: cp source dest
+mv -f source dest           # NOT: mv source dest
+rm -f file                  # NOT: rm file
+
+# For recursive operations
+rm -rf directory            # NOT: rm -r directory
+cp -rf source dest          # NOT: cp -r source dest
+```
+
+Others that may prompt: `scp` and `ssh` (use `-o BatchMode=yes`), `apt-get`
+(use `-y`), `brew` (use `HOMEBREW_NO_AUTO_UPDATE=1`).
+
+## Task Tracking
+
+**`bd` (beads) is this repo's tracker and `bd ready` is the work queue** — use
+it rather than TodoWrite/TaskCreate or markdown TODO lists. Four things about
+it here are not obvious:
+
+- **bd's git-hook integration was removed deliberately** (2026-07-29):
+  `core.hooksPath` no longer points at `.beads/hooks`. Those shims ran
+  `bd hooks run <name>` on a 300 s timeout and **exited non-zero on a bd panic,
+  aborting the commit or push**, while the JSONL auto-export they existed to
+  drive had been broken since 2026-05-29. Do not re-arm it. Nothing syncs the
+  store on a git operation now — export by hand.
+- **`.beads/` is gitignored — the issue history is NOT in this repo.** A fresh
+  clone carries no backlog. Treat the local Dolt database as a working copy,
+  never as the record of truth.
+- **bd's write path is unreliable here.** The Dolt `invalid hash length: 19`
+  panic recurred 2026-07-28, *after* the 1.1.2 upgrade meant to fix it. Reads
+  survive panics that kill writes, so the store looks healthy while diverging.
+  **Verify every `bd create` / `bd close` with `bd show <id>`** — see
+  [bd CLI quirks](#bd-cli-quirks).
+- **Migration to `diarie` is blocked**, not merely unscheduled. Published
+  `diarie@0.2.2` reads acceptance criteria only from a `## Acceptance Criteria`
+  heading, but this repo's bd records carry `acceptance_criteria` as a
+  standalone field — so `diarie migrate` today silently drops it, exits 0, and
+  passes `diarie validate`. The gate is a published diarie release with that fix.
+
+**Pushing is human-gated.** An earlier machine-generated block in this repo
+mandated `git push` at session end; it was removed on purpose. Commit freely,
+push only when asked.
+
+**MEMORY.md:** the same removed block said not to use it. This file is the
+authority — where [Releasing](#releasing) asks for a MEMORY.md update, do it.
 
 ## What This Is
 
