@@ -324,17 +324,36 @@ same day) — the whole Homebrew analytics group:
 Dolt claims (C1–C6), the vite monorepo tag trap, the tag-matching regex against
 adversarial inputs, and the `--paginate`/`--jq` per-page repetition.
 
-**Never verified by anyone:**
+**Verified 2026-07-29 — three items moved out of "never verified by anyone".**
+All three were cheap, and all three held. That they held is not the point: two
+of them were concrete falsifiable facts sitting in *shipped agent-executed
+prose*, and one was a second-order claim the fact-check agent had flagged as
+the highest-risk gap in the change set.
 
-- B1 chainsaw Release `name` vs `tag_name` (the *specific* example; the general
-  claim is separately evidenced).
-- B4 `helm v4.1.4...v4.2.0` → `diverged, ahead_by=306, behind_by=46`.
-- Independent re-check of the entire **C block** (beads/Dolt). The fact-check
-  agent flagged this as the highest-risk gap, and I agree: the corrected entry
-  asserts the commit's credited mitigations are *absent from the released
-  artifact* — a second-order claim about a claim. If that correction is itself
-  wrong, the operational "don't trust your tracker yet" warning is wrong in
-  both directions. C3/C4 are cheap: two `gh api` contents calls per tag.
+- **B1 — confirmed, and the repo is now named in the prose.** The example was
+  written as "chainsaw", which is ambiguous: `kyverno/chainsaw` has no `v2.14.0`
+  tag at all, so anyone re-checking it against that repo would have concluded
+  the example was fabricated. The formula points at `WithSecureLabs/chainsaw`,
+  where it holds exactly — the Release titled `v2.14.0` has
+  `tag_name: v2.14.0-1`, and a separate bare `v2.14.0` tag exists with no
+  Release, resolving to a **different commit** (`e99aad52` vs `46a238a3`).
+  `gh-api-fallback.md` now names the repo and the differing commits.
+- **B4 — confirmed exactly.** `repos/helm/helm/compare/v4.1.4...v4.2.0` returns
+  `status=diverged ahead_by=306 behind_by=46`, matching the figures in
+  `enrichment-tool.md` digit for digit. `total_commits` is 306 — equal to
+  `ahead_by` — which independently confirms the reading behind finding 7's fix:
+  on `diverged`, the commit list is the head-only side, usable as a changelog
+  but not a linear range.
+- **C3 / C4 — confirmed, both counts.** `go.mod` pins
+  `github.com/dolthub/dolt/go v0.40.5-0.20260605230755-1bf533220ab0` byte-identically
+  at `v1.1.0` and `v1.1.2`, so the credited "Dolt 2.1.10" is absent; and the
+  migrations tree tops out at `0053_repair_rig_wisps` at **both** tags with no
+  `0057_*` file at either. The operational warning ("1.1.2 lets the database
+  open; it does not repair drifted rows") stands. Recorded in
+  `UPSTREAM-vp-beads.md`.
+
+**Still never verified by anyone:** nothing from the B or C blocks. The
+remaining gaps are the prose-accuracy audit's own, below.
 
 **Never verified by anyone — the prose-accuracy audit's own gaps.** It reached
 group 1 (Homebrew) only, and explicitly listed what it did not touch:
