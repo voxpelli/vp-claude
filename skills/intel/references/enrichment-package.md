@@ -122,7 +122,7 @@ Resolve step 1 explicitly — every branch has a defined outcome:
 | Step-1 outcome | Do this |
 |---|---|
 | Exactly one candidate at each end | Use them. |
-| Several candidates (a monorepo tagging one version under multiple prefixes) | Keep the pair that **share a prefix**, preferring the prefix carrying the package's own name (`<pkg>@<version>` is the common monorepo shape). If no pair shares one, stop — report the check as inconclusive and use the Release bodies alone. |
+| Several candidates (a monorepo tagging one version under multiple prefixes) | Derive the expected prefix from the packument's `repository.directory` — its **last path segment**, plus `@` (`packages/plugin-legacy` → `plugin-legacy@`). Use the directory segment, **not** the package name: a scoped name never matches its own tag (`@vitejs/plugin-legacy` vs `plugin-legacy@`). Keep the pair sharing that prefix. If **no** `<segment>@` tag exists anywhere in the list, this package tags **bare** — it is the repo's core package, and a monorepo's core tags `v<version>`, never `<pkg>@<version>` (vitejs/vite has 1036 tags and zero `vite@*`) — so keep the bare/`v`-prefixed pair. Say in Step 6 which prefix you chose and why. Only if neither applies — or the packument carries no `repository.directory` — stop and report the check as inconclusive, using the Release bodies alone. |
 | No candidate for the recorded version | That version was never tagged here (a changed convention, or a package published from a repo that does not tag per-package). Stop and use the Release bodies alone. |
 | No candidate for the current version | The registry version corresponds to no tag — fall back to the release-list staleness recovery above. |
 

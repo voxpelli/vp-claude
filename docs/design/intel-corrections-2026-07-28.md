@@ -355,6 +355,55 @@ the highest-risk gap in the change set.
 **Still never verified by anyone:** nothing from the B or C blocks. The
 remaining gaps are the prose-accuracy audit's own, below.
 
+### The four-branch tag table, dogfooded 2026-07-29 — and it had a dead end
+
+The audit flagged this table as "entirely unexercised against real data" and
+predicted the multi-candidate branch was "most likely to meet an unhandled
+shape". It was right.
+
+Running the procedure verbatim against real repos: branch 1 resolved
+`fastify/fastify` 5.6.0→5.6.1 (`ahead`, 10 commits) from 319 tags; the
+no-base-candidate and no-head-candidate branches both fired correctly. The
+anchoring regex `(^|[^0-9.])${RE}$` was attacked with the exact inputs the audit
+asked for and behaved: from
+`v1.1.2 / v11.1.2 / release-1.1.2 / v1.1.2-rc1 / v1.1.20 / v1x1x2 / 2026.1.1.2`
+it matched only `v1.1.2` and `release-1.1.2` — correctly rejecting the calver
+tag, the rc suffix, and the `v11` near-miss.
+
+**The multi-candidate branch dead-ended.** `vitejs/vite` tags version `2.0.0`
+under six prefixes: `v`, `plugin-vue-jsx@`, `plugin-vue@`, `plugin-react@`,
+`plugin-legacy@`, `create-app@`. Six pairs share a prefix, so the "if no pair
+shares one, stop" escape does not fire. The only disambiguator was "preferring
+the prefix carrying the package's own name" — and for `vite` itself no such
+prefix exists: the repo has **1036 tags and zero `vite@*`**, because a
+monorepo's core package tags bare. The procedure could neither select nor stop.
+
+That is the **same defect the `c2540ef` fix was written to remove** — "stated a
+failure condition with no response" — reintroduced one level down. Worth
+recording as a pattern: a fix that replaces a dead end with a decision table
+must be checked for dead ends *in the table*, and the branch that needs it most
+is the one that never fires on a happy-path example.
+
+A second, quieter defect in the same clause: matching on the **package name**
+cannot work for scoped packages at all. `@vitejs/plugin-legacy` never matches
+`plugin-legacy@` by name comparison.
+
+**Fixed** by deriving the prefix from `repository.directory`'s last path
+segment (`packages/plugin-legacy` → `plugin-legacy@`), which handles scoping,
+plus an explicit bare-prefix branch for the core package, gated on no
+`<segment>@` tag existing anywhere in the list. Verified against all three real
+shapes in `vitejs/vite`: `vite` → the bare `v` pair, `@vitejs/plugin-legacy` →
+`plugin-legacy@`, `@vitejs/create-app` → `create-app@`. Every branch now has a
+defined outcome. The tool-family mirror carried the identical clause and got
+the same treatment, minus the `repository.directory` step (tools have no
+packument).
+
+**One discriminator was wrong on the first attempt and caught by checking.**
+The intuitive rule — "absent `repository.directory` means it is the core
+package" — is false: `vite` carries `repository.directory: packages/vite`. Had
+that gone in unchecked it would have produced a rule that fails on precisely
+the repo it was written for.
+
 **Never verified by anyone — the prose-accuracy audit's own gaps.** It reached
 group 1 (Homebrew) only, and explicitly listed what it did not touch:
 

@@ -18,6 +18,17 @@ that attacked the corrections themselves.
 Full reasoning, including which claims are verified at source and which are not,
 is committed at `docs/design/intel-corrections-2026-07-28.md`.
 
+**On dogfooding.** Invocation-path dogfooding did **not** run: the `vp-plugins`
+marketplace resolves to GitHub, so the local build cannot be installed without
+pushing first, and a session exercises the installed older plugin either way.
+Instead the changed procedures were executed by hand from the working-tree
+prose against live data — which is how the tag-table dead end below was found,
+before tagging rather than after. Confirmed the same way: `compare` paginates
+rather than truncating (306 commits over 4 pages, all returned), the removed
+combined `--jq` filter does repeat its scalar once per page, Homebrew's
+analytics leaves are variant-keyed objects, and the bulk index carries
+`analytics` on 0 of 8,520 entries.
+
 ### Fixed
 
 - **`--stale` could report an older version than a note records.**
@@ -38,8 +49,19 @@ is committed at `docs/design/intel-corrections-2026-07-28.md`.
   that release often belongs to a different package — vitejs/vite's newest is
   `plugin-legacy@8.2.2` while core tags `v8.1.5`. The 404 guard fired and then
   the procedure stopped, having stated a failure condition with no response.
-  Replaced with tag-list matching plus a four-branch resolution table where
-  every branch has a defined outcome (`c2540ef`).
+  Replaced with tag-list matching plus a four-branch resolution table
+  (`c2540ef`) — and then that table's own multi-candidate branch turned out to
+  dead-end the same way, found by dogfooding it against real repos before
+  tagging. `vitejs/vite` tags version `2.0.0` under six prefixes, so the "if no
+  pair shares one, stop" escape never fires, and the only disambiguator was
+  "the prefix carrying the package's own name" — which cannot select anything
+  for `vite` itself, since a monorepo's core package tags bare (1036 tags, zero
+  `vite@*`). The same clause also could not match any **scoped** package:
+  `@vitejs/plugin-legacy` never equals `plugin-legacy@`. Now derived from
+  `repository.directory`'s last path segment, with an explicit bare-prefix
+  branch for the core package. Verified against all three real shapes in that
+  repo. Every branch has a defined outcome — this time checked rather than
+  asserted.
 - **The compare command could not be computed from its own output.** `gh api
   --paginate` re-runs `--jq` per page: arrays concatenate but scalars repeat, so
   the documented filter emitted `subjects + 2 × pages` lines and the

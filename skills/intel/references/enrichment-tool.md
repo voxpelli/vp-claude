@@ -129,7 +129,7 @@ an unhandled one leaves the agent improvising:
 | Step-1 outcome | Do this |
 |---|---|
 | Exactly one candidate at each end | Use them. |
-| Several candidates (a monorepo tagging one version under multiple prefixes) | Keep the pair that **share a prefix**, preferring the prefix carrying the subject's own name. If no pair shares one, stop — report the check as inconclusive and use the Release bodies alone. |
+| Several candidates (a monorepo tagging one version under multiple prefixes) | Keep the pair sharing a `<name>@` prefix, where `<name>` is the subject's own name. If **no** `<name>@` tag exists anywhere in the list, the subject tags **bare** — it is the repo's primary artifact — so keep the bare/`v`-prefixed pair. Say in Step 6 which prefix you chose and why. Only if neither applies, stop and report the check as inconclusive, using the Release bodies alone. (The package family derives `<name>` from `repository.directory`'s last path segment, which the tool family has no equivalent of — hence the subject name here.) |
 | No candidate for the recorded version | That version was never tagged here (a changed tagging convention, a vendored or re-published source, or the wrong repo). Stop and use the Release bodies alone. |
 | No candidate for the current version | The formula/registry version corresponds to no tag — treat it as the `brew:sem` shape above and recover from the newest tag instead. |
 
