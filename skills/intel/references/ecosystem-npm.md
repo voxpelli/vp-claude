@@ -11,11 +11,29 @@ ecosystem is `npm`.
 ## Resolve GitHub Repository
 
 ```bash
-npm view <package-name> repository.url 2>/dev/null
+npm view <package-name> repository.url repository.directory 2>/dev/null
 ```
 
-This returns the full git URL (e.g., `https://github.com/owner/repo.git`).
-Extract `owner/repo` for use in DeepWiki and changelog steps.
+The first returns the full git URL (e.g., `https://github.com/owner/repo.git`);
+extract `owner/repo` for use in DeepWiki and changelog steps.
+
+> **Read the output by label, not by position.** `npm view` changes shape with
+> the number of fields it actually finds: when both exist it prints labelled
+> lines (`repository.url = '…'` / `repository.directory = '…'`), but when only
+> one does it prints the bare value with **no label at all**. So a package with
+> no `repository.directory` (the common single-repo case) yields one unlabelled
+> URL line, and anything reading "the second line" or splitting on `=` silently
+> gets nothing rather than failing.
+
+**Hold `repository.directory` too** — it is how the changelog step disambiguates
+a monorepo's tags, and it is the only reliable source for that. It is a path
+within the repo (`packages/plugin-legacy`), and its **last segment** is the tag
+prefix the package publishes under. Do not substitute the package name: a
+scoped name never matches its own tag (`@vitejs/plugin-legacy` vs
+`plugin-legacy@`). It is frequently absent on single-package repos, which is
+fine — the changelog step has a defined outcome for that. Note that presence
+does **not** mean "sub-package": a monorepo's *core* package carries one too
+(`vite` → `packages/vite`), while still tagging bare.
 
 > **Forge note:** parse the host first. If it is not `github.com` (e.g.
 > `codeberg.org`, `*.sr.ht`), set `repo_forge` and follow `forge-fallback.md`
@@ -37,6 +55,7 @@ npm view <package-name> --json 2>/dev/null
 ```
 
 Useful fields: `version`, `description`, `license`, `repository.url`,
+`repository.directory` (monorepo tag-prefix source — see above),
 `homepage`, `bugs.url`, `time.created` (first-publish timestamp — needed by the
 download-window check below), `bin` (the CLI-distribution signal the
 agent-leverage check gates on — an object `name→path` or a bare string;
