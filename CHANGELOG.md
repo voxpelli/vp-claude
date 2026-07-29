@@ -5,6 +5,98 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.6][] - 2026-07-29
+
+Corrections to guidance the skills **execute**. This repo's product is markdown
+that an LLM agent follows, so a wrong sentence is a behavioural bug that makes a
+future agent write a wrong, durable note into a knowledge graph. Every drift
+guard in `npm run check` verifies that two *documents* agree; none verifies that
+a document matches *reality* — so none of this was caught by CI, and CI was
+green throughout. Found by a `/intel brew:beads` run, then by two review rounds
+that attacked the corrections themselves.
+
+Full reasoning, including which claims are verified at source and which are not,
+is committed at `docs/design/intel-corrections-2026-07-28.md`.
+
+### Fixed
+
+- **`--stale` could report an older version than a note records.**
+  `extractBmVersion` was first-`[version]`-**line**-wins rather than
+  first-**parseable**-wins, so an unparseable first line made the extractor
+  return a stale later line instead of falling through to the header pipe. The
+  `[version-range]` variant additionally set `isRange`, which excludes an
+  up-to-date note from bucketing entirely. Behavioural; found by dogfooding, not
+  review (`02f35c4`). The residual read-order trade-off is deliberately pinned
+  rather than fixed — it is not decidable from the note, and the decision
+  carries an explicit revival trigger.
+- **The changelog completeness check could not see tag-only versions.**
+  GitHub's generated release notes range from the previous **tag**, so a version
+  that was tagged without a published Release is invisible in *every* Release
+  body, permanently — not just the current one. Behavioural (`150d8aa`).
+- **The tag-prefix resolution rule was unsound and dead-ended.** It derived a
+  prefix by pattern-stripping the newest release's `tag_name`, but in a monorepo
+  that release often belongs to a different package — vitejs/vite's newest is
+  `plugin-legacy@8.2.2` while core tags `v8.1.5`. The 404 guard fired and then
+  the procedure stopped, having stated a failure condition with no response.
+  Replaced with tag-list matching plus a four-branch resolution table where
+  every branch has a defined outcome (`c2540ef`).
+- **The compare command could not be computed from its own output.** `gh api
+  --paginate` re-runs `--jq` per page: arrays concatenate but scalars repeat, so
+  the documented filter emitted `subjects + 2 × pages` lines and the
+  completeness check was unperformable. Split into two calls (`aca337b`).
+- **`diverged` meant two contradictory things across a delegation path.** The
+  enrichment steps delegate to `gh-api-fallback.md`, which said `diverged`
+  proves a wrong or renamed tag and a meaningless commit list — so an agent
+  whose tags resolved correctly was told they must be wrong. `behind` keeps that
+  meaning; `diverged` is now stated as ordinary maintenance-branch topology that
+  still is not a clean changelog.
+- **Homebrew analytics were described as scalars.** `analytics.install."30d"`
+  is an object keyed by invocation variant, so the library-detection ratio was
+  dividing two objects. Casks have neither `build_error` nor
+  `install_on_request`, and the bulk `formula.json` index carries no `analytics`
+  or `generated_date` at all (`45dc788`) — a fix that then had to be propagated
+  to `note-template-brew.md`, which is what the agent actually writes from
+  (`ab49d33`).
+- **Several `gh` API claims were wrong.** `compare` does not truncate at 250 —
+  that is the default single-page cap and it paginates. A Release's `name` is
+  not its `tag_name`. Raw REST reports a merged PR as `closed` on both
+  `issues/<n>` and `pulls/<n>` (`1433953`).
+- **`edit_note`'s relation echo was misexplained.** It counts inbound **and**
+  outbound edges, which is correct by design rather than an artifact. The wrong
+  reading invited a destructive "cleanup" of real relations (`afcb16f`).
+
+### Removed
+
+- **The `~40 KB read_note` truncation rule, which never described a real
+  defect.** basic-memory has no size branch at any tag checked, and ten
+  `find_replace` edits landed byte-exactly on a 53 KB note. The worst instance
+  sat inside an upgrade-haul verification step beside genuine failure causes,
+  where it would have absorbed a real byte-mismatch failure and explained it
+  away (`4fd898b`). It survived the first sweep in an unimplemented spec under
+  `docs/design/`, because that grep was scoped to `skills/`, `agents/` and
+  `UPSTREAM-*` only (`c8c854c`).
+
+### Changed
+
+- **A changelog, commit message or README is now treated as a claim, not
+  evidence**, about anything outside its own diff. Two in-session
+  confirmations had already produced a wrong durable note before being caught
+  (`930daae`).
+- **Unsupported rationales removed from prose agents reason *from*.** The
+  variant-summing rule is restated as comparability rather than
+  double-counting — the mechanism was never established, and neither was its
+  opposite. An uncited "most registries' popular packages are published from
+  monorepos" is gone; the rule it justified survives without it. A stamped
+  count that drifted the same day it was written is now just a date, and
+  illustrative analytics figures are obvious placeholders rather than real
+  counts gone stale.
+- **Upstream status corrections.** basic-memory #940 is closed *for a different
+  symptom* — the relation race was quarantined, not fixed, which is materially
+  worse than "open" (`d3e0ecc`). The beads write-lock root cause was wrong: the
+  Dolt pin is 136 commits **ahead** of the cited fix, not behind, and 1.1.2
+  ships a fix that lets the database open without repairing drifted rows
+  (`9452f18`). Both re-verified from primary source on 2026-07-29.
+
 ## [0.33.5][] - 2026-07-22
 
 ### Changed
@@ -2412,6 +2504,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.33.6]: https://github.com/voxpelli/vp-claude/compare/v0.33.5...v0.33.6
 [0.33.5]: https://github.com/voxpelli/vp-claude/compare/v0.33.4...v0.33.5
 [0.33.4]: https://github.com/voxpelli/vp-claude/compare/v0.33.3...v0.33.4
 [0.33.3]: https://github.com/voxpelli/vp-claude/compare/v0.33.2...v0.33.3

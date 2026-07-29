@@ -201,7 +201,7 @@ A focused alternative mode of `/knowledge-gaps` that detects when documented not
 - brew-arm-none-eabi-gcc, brew-mcp-netutils
 ```
 
-Bucket names (`Drifted >30d`, `Drifted <30d`, `Drifted, age unknown`, `Archive candidates`, `Unparseable`, `Not in registry`, `API unavailable`) match the ones the `knowledge-gardener` agent's own version-drift audit emits, so a report from either source feeds the same `knowledge-maintainer` refresh queue — the two are interchangeable inputs. That queue never runs a refresh automatically; it lists `Drifted >30d` notes (and any note with a prior security flag) for a human to action afterward. Supported cohorts: brew, npm, cask, crate, vscode. `action`/`gh`/`go`/`docker` are excluded (no single canonical comparable version); `pypi`/`gem`/`composer` are deferred until their cohorts grow.
+Bucket names (`Drifted >30d`, `Drifted <30d`, `Drifted, age unknown`, `Archive candidates`, `Unparseable`, `Not in registry`, `API unavailable`) match the ones the `knowledge-gardener` agent's own version-drift audit emits, so a report from either source feeds the same `knowledge-maintainer` refresh queue — the two are interchangeable inputs. That queue never runs a refresh automatically; it lists `Drifted >30d` notes (and any note with a prior security flag) for a human to action afterward. Supported cohorts: brew, npm, cask, crate, vscode, plugin. `action`/`gh`/`go`/`docker` are excluded (no single canonical comparable version); `skill` is unsupported (ships off a moving `main`, so no comparable version); `pypi`/`gem`/`composer` are deferred until their cohorts grow.
 
 ### `/knowledge-prime` — Surface project-relevant knowledge
 
@@ -264,7 +264,7 @@ An autonomous agent that produces a health report without modifying anything:
 
 > "Audit my knowledge graph"
 
-Checks for: missing sections, schema violations, orphan notes, broken `[[wiki-links]]`, stale notes (90+ days), **version drift** (recorded versions compared against upstream registries for brew, npm, cask, crate, and vscode, emitted as `### Version Drift — <eco>` report sections), duplicates, project-specific data leaking into cross-project notes, tag alignment (non-canonical forms, retired tags, missing ecosystem tags, out-of-vocabulary tags), and fourth-wall violations (self-referential knowledge-graph language in subject-domain notes).
+Checks for: missing sections, schema violations, orphan notes, broken `[[wiki-links]]`, stale notes (90+ days), **version drift** (recorded versions compared against upstream registries for brew, npm, cask, crate and vscode — and, for plugin, against GitHub directly, since no registry exists — emitted as `### Version Drift — <eco>` report sections), duplicates, project-specific data leaking into cross-project notes, tag alignment (non-canonical forms, retired tags, missing ecosystem tags, out-of-vocabulary tags), and fourth-wall violations (self-referential knowledge-graph language in subject-domain notes).
 
 ### Knowledge Maintainer — All-in-one graph enhancer
 
