@@ -117,14 +117,21 @@ read:
   Then compare `total` against the number of subject lines the second call
   produced — if they disagree, the changelog is partial, so say so. The
   first call needs no `--paginate`: every page carries the same scalars.
-  If `.status` is `diverged`
-  or `behind`, `<base>` is not an ancestor of `<head>` (wrong/renamed
-  tag) and the commit list is meaningless — fall back to
-  `commits?sha=<newest-tag>`.
+  `.status` separates two situations that need opposite responses, so do
+  not treat them alike. **`behind`** means `<base>` is not an ancestor of
+  `<head>` — a wrong or renamed tag — and the commit list is meaningless;
+  fall back to `commits?sha=<newest-tag>`. **`diverged`** means both tags
+  are real but neither is an ancestor of the other, which is the ordinary
+  shape for a repo that cuts releases from a maintenance branch. Nothing
+  is wrong with the tags there, so do not go hunting for a tag error —
+  but the range still is not a clean changelog, so record the
+  completeness check as inconclusive and use the Release bodies. (The
+  enrichment steps that delegate here say the same; keep them in step.)
 - **A Release's `name` is not its `tag_name`.** `gh release list`'s human
-  table shows the *title*, and the two can differ: chainsaw's Release is
-  titled `v2.14.0` while its `tag_name` is `v2.14.0-1`, and a separate
-  `v2.14.0` tag exists with no Release at all. Eyeballing the table
+  table shows the *title*, and the two can differ: `WithSecureLabs/chainsaw`'s
+  Release is titled `v2.14.0` while its `tag_name` is `v2.14.0-1`, and a
+  separate `v2.14.0` tag exists with no Release at all — pointing at a
+  *different commit* (re-verified 2026-07-29). Eyeballing the table
   therefore yields a compare base that 404s or silently points at a
   different commit. Always read `tag_name`
   (`gh release list --json tagName,name`), never the displayed title.

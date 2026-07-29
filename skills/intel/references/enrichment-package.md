@@ -98,8 +98,8 @@ So whenever Step 1 found an existing note and the version changed, read the Rele
 #    monorepo the newest release often belongs to a DIFFERENT package
 #    (vitejs/vite's newest release is `plugin-legacy@8.2.2` while vite core
 #    tags `v8.1.5`), so a derived prefix points at another package's history.
-#    This is the common case for the package family — most registries'
-#    popular packages are published from monorepos.
+#    Monorepo publishing is common enough in the package family that
+#    prefix-stripping cannot be assumed safe.
 #    Hold the list in a shell variable — never redirect it to a file, which
 #    would litter whatever directory the agent happens to be in.
 TAGS=$(gh api --paginate repos/owner/repo/tags --jq '.[].name')

@@ -43,8 +43,8 @@ JSON fetched in Step 2 includes an `analytics` block
 `install_on_request`), so analytics are always obtainable even without the MCP.
 
 **Every leaf window is an object keyed by invocation variant, not a number.**
-`analytics.install."30d"` looks like `{"iterm2": 14285}` — for casks there is
-normally a single key, the cask token itself, but read it by key rather than
+`analytics.install."30d"` has the shape `{"<token>": <count>}` — for casks there
+is normally a single key, the cask token itself, but read it by key rather than
 assuming a scalar. Verified across 6 casks + 44 formulae (2026-07-28).
 
 When the local Homebrew MCP server is available, `mcp__homebrew__info` exposes

@@ -16,8 +16,8 @@ curl -fsSL --max-time 30 "https://formulae.brew.sh/api/formula/<name>.json" | jq
 
 Use the **per-formula** endpoint above, not the bulk
 `https://formulae.brew.sh/api/formula.json` index. The index omits both
-`analytics` and `generated_date` entirely (checked across all 8,519 entries,
-2026-07-28), so batching through it would silently lose the analytics the
+`analytics` and `generated_date` entirely (checked across every entry in the
+index, 2026-07-28), so batching through it would silently lose the analytics the
 `[popularity]` observation depends on. `scripts/fetch-brew-upstream.sh` reads
 the index deliberately — it only needs version/deprecation facts.
 
@@ -114,11 +114,16 @@ API fetched in Step 2 includes an `analytics` block —
 the MCP.
 
 **Every leaf window is an object keyed by invocation variant, not a number.**
-`analytics.install."30d"` looks like `{"ripgrep": 95355, "ripgrep --HEAD": 95}`
-— the same holds for `install_on_request` and `build_error`. Read the
-**bare-name key** (`.["<name>"]`) and record that figure; a `--HEAD` (or other
-flag) key is a separate, much smaller population. Never sum the variants: that
-double-counts a source build against the bottle install it replaces. The
+`analytics.install."30d"` has the shape `{"<name>": <count>, "<name> --HEAD":
+<much smaller count>}` — the same holds for `install_on_request` and
+`build_error`. Read the **bare-name key** (`.["<name>"]`) and record that
+figure; a `--HEAD` (or other flag) key is a separate, much smaller population.
+Never sum the variants — but the reason is **comparability, not
+double-counting**. Whether the variants overlap has never been established
+either way, so do not reason from either premise. What is certain is that every
+note must report the same population: the `install_on_request ÷ install` ratio
+is only meaningful when both figures span one population, and a summed total is
+not comparable with the bare-name figure every other note records. The
 `--HEAD` key can appear even when `urls.head` is `null`, so its presence proves
 nothing about the formula. Verified across 44 formulae + 6 casks (2026-07-28).
 
