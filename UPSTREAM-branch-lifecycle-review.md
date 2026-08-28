@@ -12,24 +12,11 @@ the rough edges worth fixing.
 
 ## Feature Requests
 
-- **Bound or document `size` cost on large diffs** (2026-07-17) — A `size: "s"`
-  run over a 41-commit / 132-file branch spawned 21 agents, ~2M subagent tokens,
-  ~25 min. "Small" did not bound total spend the way the label implies — `size`
-  appears to scale review depth per cluster, not the agent/token ceiling, so a
-  large diff at `s` is still a heavy run. Either cap total agents/tokens by
-  size, or document that `size` controls depth (not total cost) so a caller can
-  gauge spend before launching a big-diff review.
-  Ownership: upstream · Workaround: partial — narrow the base range to shrink
-  the diff.
+_No entries yet._
 
-- **Document that `today` must be supplied by the orchestrator** (2026-07-17) —
-  `today` is a required arg, but workflow scripts cannot call `Date` (blocked in
-  the sandbox), so the orchestrator must inject it. The skill's own invoke hint
-  shows `args: "s"` (size only), which omits `today` and would fail the
-  required-arg contract if pasted literally. Document the requirement, or resolve
-  `today` at the orchestrator boundary automatically.
-  Ownership: upstream · Workaround: full — pass `{today: "YYYY-MM-DD", size:
-  "s"}` explicitly.
+> **Trend review — 2026-08-28 (Sprint 47).** Both feature requests resolved:
+> `size` cost is now documented with two data points, and the `today`
+> requirement is stated in `whenToUse` and hard-fails without it.
 
 ## Bugs
 

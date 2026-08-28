@@ -41,6 +41,6 @@ _No entries yet._
   opportunity (we learn from them); also tracked in `SYNERGY-vp-git.md`.
   Ownership: us (vp-knowledge to adopt) · Workaround: n/a
 
-## Resolved
-
-_No entries yet._
+> **Trend review — 2026-08-28 (Sprint 47).** Re-confirmed live: the README
+> still lists 2 of 3 skills; `tag-audit` (v0.8.0) remains undocumented, and
+> there has been no release since. Not stale — still true.

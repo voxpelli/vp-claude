@@ -2,55 +2,26 @@
 
 Friction, limitations, and capability discoveries found while building vp-knowledge on top of Basic Memory.
 
-## Latest upstream activity (snapshot 2026-06-10)
+## Provenance
 
-**Latest release:** [v0.21.6](https://github.com/basicmachines-co/basic-memory/releases/tag/v0.21.6) (2026-06-05). Five releases since v0.21.1: v0.21.2/v0.21.3 (XDG_CONFIG_HOME + project-routing fixes, 2026-05-23), **v0.21.4 (2026-05-23 — ships the [#818](https://github.com/basicmachines-co/basic-memory/issues/818) fix via [PR #841](https://github.com/basicmachines-co/basic-memory/pull/841): `write_note(overwrite=True)` works from external MCP clients again)**, v0.21.5 (ASGI DB preinit, sqlite-vec load order, workspace-qualified write permalinks, 2026-05-26), v0.21.6 (workspace sync guards, Claude Code plugin v0.4 "memory bridge", picoschema enum YAML fix).
-**Headline:** maintainer attention is on cloud/teams plumbing (workspace-qualified permalinks, team sync), CI automation ("BM Bossbot" PR gate), and a fresh **index-integrity thread**: [#931](https://github.com/basicmachines-co/basic-memory/pull/931) (merged 2026-06-10 — observation-permalink truncation collisions silently dropped observations from the index while the file stayed correct) and [#940](https://github.com/basicmachines-co/basic-memory/issues/940) (closed 2026-06-12 as `completed` — but for its *other* symptom; the relation batch-indexing race was never fixed, only quarantined: `tests/sync/test_sync_service.py` at tag v0.22.1 still carries a `skipif(CI)` marked "#940 … pending root-cause". A closed issue with a quarantined test is materially worse than an open one — nothing is tracking it). [#933](https://github.com/basicmachines-co/basic-memory/pull/933) adds `read_note` pagination.
-**Activity:** very active — ~30 issues filed since 2026-05-17 (69 open), ~15 commits on 2026-06-08–10 alone. Local install: **0.21.6** (current; the Sprint-24 `write_note(overwrite=True)` workaround is obsolete).
+**Installed: 0.23.2** (verified 2026-08-27). Entries below are pinned to the
+version they were measured against; where a figure has not been re-derived
+since, the entry says so.
 
-**Update (2026-07-15):** local install upgraded to **0.22.1** (Homebrew Cellar; SPDX `AGPL-3.0-or-later`). A source-grounded deep-dive re-verified several entries below against 0.22.1 — see the dated status notes on the markdown-link-drop, count-echo, and `append`/`section` entries, plus two new entries (markdown `created_at` reset; local relation-repair feature request). Still pending a live re-test: the count-echo repro.
+> **Trend review — 2026-08-28 (Sprint 47).** The 2026-06-10 activity snapshot
+> that opened this file was deleted: its headline named v0.21.6 as latest (now
+> 0.23.2), and two of the five issues it listed as open had been closed as
+> completed for months — it actively misinformed. A `Should still be filed`
+> section went with it: 19 of its 20 bullets restated an entry below. **The
+> real finding is not staleness but non-delivery — 31 entries here, none ever
+> filed upstream.** Resolved entries are deleted rather than archived; git
+> history is the record.
 
-**Update (2026-07-28):** both of the items previously listed as pending are now answered.
+Two corrections from 2026-07-28 are kept verbatim, because they record a
+reading that was wrong and the evidence that overturned it:
 
 - The ~40KB `read_note` `find_replace`-truncation workaround is **retired** — it described a defect that never existed. `mcp/tools/read_note.py` returns the response body whole at 0.22.1, with no size branch at v0.15.0, v0.20.0 or v0.21.6 either, and `services/entity_service.py`'s `find_replace` is a plain `str.count`/`str.replace` with no size gate. Live: ten `find_replace` edits landed byte-exactly on a 51–53KB note. What is real is host-side — a large tool result may be redirected to a file rather than shown inline, and anchoring on the *inline preview* instead of the persisted body is the actual failure mode. The skill prose now says that instead (no KB threshold; none was ever measured).
 - The count-echo is **explained, not merely observed** — and my earlier reading of it was wrong. `models/knowledge.py` defines a note's relations as `incoming_relations + outgoing_relations`, and `edit_note.py` computes resolved/unresolved over that combined set, emitting the `Unresolved:` line only when non-zero. So an inflated relations echo is correct by design, not an artifact (verified arithmetically against the live graph: 15 inbound + 14 outbound − 1 unresolved = the observed 28/1). The genuine artifact is the opposite — a transient **under**-count listing inbound rows only, which is the #940 symptom above.
-
-**Update (2026-07-29):** the snapshot above is stale on one point — **v0.22.1 is now the latest RELEASE** (verified `gh release list`), not v0.21.6; the local install matches it. Upstream `main` is well ahead of that release (issue numbers past #1163, closed 2026-07-27), so several entries below are pinned to 0.22.1 and need re-measuring after the next release. Four new entries added this session from a link-integrity audit: the relation search-index projection defect, `SearchResult` omitting `to_name`, `build_context`'s default 7-day relation window, and a link-repair-suggestion Upstream Opportunity. Two relevant merged-but-unreleased fixes: [#1163](https://github.com/basicmachines-co/basic-memory/issues/1163)/PR #1165 (durable relation-resolution search refresh) and #1076/PR #1079 (DB-first writes omitting observation/relation rows).
-
-### Open / in-progress upstream
-
-| Issue/PR | Effect on local entries |
-|---|---|
-| [#762](https://github.com/basicmachines-co/basic-memory/issues/762) (closed completed 2026-05-11) | "Show which entities do not have relations" — **implemented upstream**; verify the shipped capability covers zero-in + zero-out, then retire the two-pass orphan-detection workaround in `build_context` entry below |
-| [#763](https://github.com/basicmachines-co/basic-memory/issues/763) (closed not-a-bug 2026-04-29) | `write_note` / `edit_note` async vector indexing — maintainer ruled by design; see reframed entry below |
-| [#786](https://github.com/basicmachines-co/basic-memory/issues/786) (open enhancement) | MCP settings tool for active project/workspace context |
-| [#760](https://github.com/basicmachines-co/basic-memory/issues/760) (open) | Harden subprocess usage in `sync_service.py` and expand `SECURITY.md` |
-| Workspace-aware MCP routing sprint | PRs #777, #783, #788, #789, #790 — post-v0.20.3 multi-workspace support; introduces `external_id` project resolution and workspace-qualified memory URLs |
-
-### Should still be filed (no upstream activity yet)
-
-These local entries have no upstream issue/PR despite being clear friction. Candidates for filing:
-
-- `operation="append"` with `section=` appends to end of file — high-value bug filing
-- `search_notes(note_types=[X])` matches directory paths instead of just frontmatter type — clear bug
-- `edit_note(find_replace)` on schema frontmatter creates duplicate frontmatter — high-value bug filing
-- `list_directory` has no `bm tool` CLI wrapper — feature request
-- Observation search does not filter by parent note type — feature request
-- FTS tokenizer doesn't match bare `[[` — feature request (low-medium pri)
-- `search_type="text"` required for `[[prefix:` queries — feature request (low pri)
-- `character-handling.md` omits colon documentation — **docs-only PR, easy contribution**
-- LinkResolver should resolve wiki-links against aliases/metadata — design proposal
-- Phased Obsidian colon-compatibility — Upstream Opportunity, **Merge readiness: needs-redesign**, no PR submitted
-- Markdown link inside an observation silently drops the whole observation (root cause confirmed 0.22.1: `is_observation` exclusion-regex over-match; broader than a *trailing* parenthetical) — clear bug, high-value filing
-- Markdown `created_at` overwritten to edit-time on every write, no `is_new_entity` gate (attachment path has one) — file as a question; use git for authorship (confirmed 0.22.1)
-- No local relation-repair pass (`bm reindex --relations`) — feature request; remedy for the phantom forward-reference bug, workaround today is the heavier `bm reset --reindex` (confirmed 0.22.1)
-- No bulk metadata/version projection — cohort `--stale` must `read_note` every entity (388 npm notes = 388 round-trips) — feature request (high-value; candidate home: `.md-wiki-vec` committable index; **verified novel upstream 2026-06-10** — nearest is #884 directory-index records and #933 read_note pagination, neither projects metadata)
-- `edit_note` response metadata transiently inflates/deflates observation/relation counts (index re-parse echo on `###`-subsectioned notes; file stays correct; self-clears on re-sync) — clear bug, high-value filing; **verified unreported upstream 2026-06-10** — cite [#763](https://github.com/basicmachines-co/basic-memory/issues/763) + [#940](https://github.com/basicmachines-co/basic-memory/issues/940) as likely shared async-indexing root; distinct from #931 (persistent silent drop, not transient inflation) — **downgraded to unconfirmed on 0.22.1 (2026-07-15), pending live re-test**
-- `[[wiki-link]]` in prose/observation context silently extracted as a spurious / `relation_type`-polluted relation — the silent under-200-char sibling of the `edit_note` MaxLen(200) error; file + `schema_validate` look clean. **Verified this session 2026-06-16** (Flattr `relation_type` = a whole sentence; 2 stray `links_to` in the new OAuth notes); clear bug, high-value filing
-- Relation search index is a lossy AND duplicated projection of the `relation` table — ~40 relations absent from the index entirely is the serious half; **no upstream issue found** (two `gh search issues` queries, 2026-07-29 — absence of evidence). Re-measure past 0.22.1 before filing, since #1163/PR #1165 may cover part of it
-- `SearchResult` omits `to_name` (the literal wiki-link text) though `SearchIndexRow` and `RelationSummary` both carry it — one optional field; **easy, well-scoped contribution**
-- `build_context` relation traversal defaults to a 7-day window and caps at 1 year, returning an empty relation set indistinguishable from a note with no relations — clear footgun, feature request
-- `edit_note` non-transactional file-vs-index write, and the checksum committing before search indexing (a lock at the index stage leaves a checksum-clean entity that sync then skips) — clear bug, high-value filing
 
 ## Open items
 

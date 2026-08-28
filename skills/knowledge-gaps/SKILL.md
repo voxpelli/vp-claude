@@ -734,7 +734,9 @@ is present in the JSON response. Relations missing `to_entity` are unresolved
 — the wiki-link target has no corresponding note.
 
 Extract the target name from the relation `title` (format:
-`"source → target"`) or `matched_chunk`. Cross-reference against the
+`"source -> target"` — ASCII, not `→`) or `matched_chunk`. When the target
+is unresolved the title is the **source name alone, with no arrow at all**,
+which is exactly the case this technique exists to find. Cross-reference against the
 `list_directory` results from Steps 2 and 8 to confirm.
 
 **Deduplicate:** If a dead-linked package already appears in Tier 1/2/3

@@ -4,7 +4,7 @@ set -euo pipefail
 # PostToolUse hook for write_note|edit_note — emit additionalContext so the
 # main Claude session calls schema_validate. We use type:"command" with
 # additionalContext because type:"prompt" hooks spawn Haiku without MCP access
-# (RETRO-02 and UPSTREAM-claude-code.md document this constraint).
+# (.claude/rules/hook-development.md documents this constraint).
 #
 # Also runs the note text just written through fourth-wall-check.mjs (the
 # runtime consumer for lib/fourth-wall-rules.mjs's deterministic `detect`

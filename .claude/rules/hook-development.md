@@ -37,6 +37,22 @@ Hooks use `${CLAUDE_PLUGIN_ROOT}` for portable paths. All hooks are `type: "comm
 
 SessionStart `additionalContext` should suggest existing skills (e.g., "suggest running `/knowledge-prime`") rather than duplicating skill workflow steps inline. Keeps hooks lightweight (~1 sentence) and avoids drift between hook instructions and skill definitions.
 
+## Hook handler types and MCP access
+
+`type: "prompt"` hooks spawn a separate Haiku instance with **no MCP tool
+access**. A prompt hook referencing an `mcp__*` tool is silently non-functional
+— it runs without error and cannot execute the tool. Use `type: "command"` with
+`additionalContext` to inject instructions into the main session, which retains
+full MCP access. This cost ten versions of silent PreCompact failure before it
+was diagnosed.
+
+**The restriction is scoped to `type: "prompt"`.** `type: "mcp_tool"` (Claude
+Code v2.1.118+) is a first-class handler that invokes MCP tools directly, with
+no shell subprocess and no Haiku dispatch — it is unaffected.
+
+Hook stdout is parsed as a **single** JSON object; a second object on stdout is
+silently ignored, so a hook must emit exactly one.
+
 ## See also
 
 - Hooks are integration-tested by `check-hooks.mjs` (one JSON object per hook) → `scripts-and-validation.md`.

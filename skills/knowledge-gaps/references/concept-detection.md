@@ -39,7 +39,8 @@ Among the unresolved targets:
   Step 10's dead wiki-link detection — skip these.
 - **Non-prefixed targets** are concept/engineering/standard candidates.
   Extract the target name from the relation `title` (format:
-  `"source → target"`).
+  `"source -> target"` — ASCII hyphen-arrow, not `→`; a search for the
+  Unicode form matches nothing).
 
 Count non-prefixed unresolved targets by frequency. A target appearing in
 3+ distinct source notes is a **hub gap candidate**.

@@ -266,8 +266,9 @@ of maintaining both halves catches drift cases a single-source record misses.
   Reason: RESOLVED — vp-beads shipped `.local.json` private-add mode in v0.18.0
   (2026-06-04): a `.local.json`-only entry whose `file` is
   `PRIVATE-SYNERGY-<name>.md` now registers as a recognized, sibling-syncable
-  private sibling with zero committed footprint. Our own FR is annotated
-  `_(Resolved 2026-06-16)_` in `UPSTREAM-vp-beads.md`, and vp-claude now registers
+  private sibling with zero committed footprint. Our own FR was tracked in
+  `UPSTREAM-vp-beads.md` and removed on resolution (2026-08-28 prune; see git
+  history), and vp-claude now registers
   a proprietary open-core-partner sibling via exactly this mechanism (confirmed
   live in a `/sibling-sync --auto-reciprocate` run, 2026-07-07).
 
