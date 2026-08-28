@@ -61,7 +61,7 @@ console.log('\nupstream-headings: all real canonical headings produce zero viola
 const ALL_CANONICAL_HEADINGS_DOC = CANONICAL_UPSTREAM_HEADINGS.map((h) => `## ${h}\n\ntext\n`).join('\n')
 check('the full canonical set in document order has zero violations', detectInvalidHeadings(ALL_CANONICAL_HEADINGS_DOC).length === 0)
 
-const REORDERED_SUBSET_DOC = '## Bugs\n\ntext\n\n## Resolved\n\ntext\n\n## Feature Requests\n\ntext\n'
+const REORDERED_SUBSET_DOC = '## Bugs\n\ntext\n\n## Trend Reviews\n\ntext\n\n## Feature Requests\n\ntext\n'
 check('a reordered subset of canonical headings has zero violations (order-agnostic)', detectInvalidHeadings(REORDERED_SUBSET_DOC).length === 0)
 
 const MISSING_SECTIONS_DOC = '## Feature Requests\n\ntext\n\n## Bugs\n\ntext\n'

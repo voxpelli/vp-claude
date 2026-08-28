@@ -286,6 +286,25 @@ These are Claude Code path-scoped rules, so they do **not** load at session star
 (no context cost until relevant) — that is the mechanism keeping `CLAUDE.md`
 under Claude Code's 40k large-file warning while the conventions stay rich.
 
+### Upstream trackers
+
+`UPSTREAM-*.md` are a **personal filing queue, not a delivery pipeline.** Only
+the maintainer can file upstream, and only manually — so a low filing rate is
+the expected steady state, not a process failure, and an audit should never
+report it as one.
+
+What that makes valuable is the opposite of throughput: **accuracy and
+currency**. An entry is worth keeping only if it is still true, still
+reproducible, and states what would settle it. Re-verify against a version, a
+closed issue, or observed behaviour before touching an entry — and never mark
+one resolved on absence of evidence.
+
+Resolved entries are **deleted, not archived**; git history is the record. A
+`## Resolved` heading fails `check:upstream-headings` on purpose. Before
+deleting, grep the repo for anything the entry uniquely documents — the
+2026-08-28 prune found two facts that existed nowhere else and would have gone
+with it.
+
 ### Design records
 
 `docs/design/` holds decision records and findings that outlive a sprint. They
