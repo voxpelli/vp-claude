@@ -107,4 +107,4 @@ check('canonical Ownership list is non-empty', OBSERVATION_OWNERSHIP_VALUES.leng
 check('isObservationOwnership accepts every canonical value', OBSERVATION_OWNERSHIP_VALUES.every((v) => isObservationOwnership(v)))
 check('isObservationOwnership rejects an unknown value', !isObservationOwnership('contractor'))
 
-done()
+done(20)

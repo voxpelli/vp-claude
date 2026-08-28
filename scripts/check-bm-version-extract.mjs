@@ -13,7 +13,7 @@
 import { extractBmVersion, PATTERN_SIGNATURES } from '../lib/bm-version-extract.mjs'
 import { createCheckHarness } from '../lib/check-harness.mjs'
 
-const { getCounts, record } = createCheckHarness()
+const { done, record } = createCheckHarness()
 
 /**
  * Richer form of `check-harness.mjs`'s `check(name, cond)`: a custom
@@ -465,8 +465,11 @@ check('9q7e: full priority-order sweep on an npm_package note now yields pattern
   ),
   { version: '3.0.0', pattern: 3 })
 
-console.log(`${getCounts().passed}/${getCounts().passed + getCounts().failed} passed`)
-
+// This assertion USED TO run after the summary line was printed, so a run that
+// tripped it read `N/N passed` followed by a FAIL. The gate still held — the
+// exit code was correct — but the output lied about it. Asserting before the
+// summary, then handing both the summary and the exit to the shared harness,
+// removes the last hand-rolled reporting tail in scripts/.
 if (PATTERN_SIGNATURES.length !== 6 || PATTERN_SIGNATURES.some((p, i) => p.id !== i + 1)) {
   console.error('  FAIL  PATTERN_SIGNATURES must list exactly 6 entries with ids 1..6 in order')
   record(false)
@@ -474,4 +477,4 @@ if (PATTERN_SIGNATURES.length !== 6 || PATTERN_SIGNATURES.some((p, i) => p.id !=
 
 console.log(`PATTERN_SIGNATURES: ${PATTERN_SIGNATURES.length} entries`)
 
-if (getCounts().failed > 0) process.exit(1)
+done(50)

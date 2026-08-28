@@ -169,4 +169,4 @@ const retriesOff = fetcherOver([{ status: 429 }], 0)
 await retriesOff.fetchJson('u', 1e6)
 check('retries:0 means exactly one attempt', retriesOff.calls.length, 1)
 
-done()
+done(25)

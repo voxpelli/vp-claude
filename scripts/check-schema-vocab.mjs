@@ -154,4 +154,4 @@ console.log('\nschema-vocab: malformed-variant drift detection')
   check('well-formed but undeclared verb → zero errors (out of scope for this guard)', errors.length === 0)
 }
 
-done()
+done(14)

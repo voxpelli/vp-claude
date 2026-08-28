@@ -76,4 +76,4 @@ for (const allowlistedFile of UPSTREAM_HEADING_ALLOWLIST) {
   check(`${allowlistedFile}'s real content WOULD fail the membership check if it weren't allowlisted (proves the skip is meaningful, not vacuous)`, wouldFailIfChecked)
 }
 
-done()
+done(12)

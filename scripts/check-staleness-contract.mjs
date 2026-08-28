@@ -107,4 +107,4 @@ console.log('\nstaleness-contract: canonical list')
 check('canonical bucket list is non-empty', CANONICAL_STALENESS_BUCKETS.length > 0)
 check('canonical bucket list has no duplicates', new Set(CANONICAL_STALENESS_BUCKETS).size === CANONICAL_STALENESS_BUCKETS.length)
 
-done()
+done(12)

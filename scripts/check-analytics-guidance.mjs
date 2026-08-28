@@ -71,4 +71,4 @@ check('detects the fallback mention in corrected schema wording (reverse order)'
 check('does NOT detect a fallback mention when analytics/JSON are unrelated and far apart', !hasAnalyticsJsonFallbackMention('Homebrew analytics are popular.' + ' filler'.repeat(100) + ' This uses JSON elsewhere in an unrelated file.'))
 check('does NOT detect a fallback mention when the text never mentions JSON at all', !hasAnalyticsJsonFallbackMention('Homebrew install analytics come from the MCP server only.'))
 
-done()
+done(20)

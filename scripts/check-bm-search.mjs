@@ -201,4 +201,4 @@ check('dropped unparseable rows make the run incomplete',
 const emptyRun = assessCompleteness({ scanned: 0, total: 0, pages: 1, truncated: false, unparseable: 0 })
 check('an empty project is complete AND flagged empty', emptyRun.complete === true && emptyRun.empty === true)
 
-done()
+done(30)

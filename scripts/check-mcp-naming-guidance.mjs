@@ -60,4 +60,4 @@ for (const rel of MCP_NAMING_FILES) {
   check(`${rel} states no retired rule`, hits.length === 0)
 }
 
-done()
+done(12)

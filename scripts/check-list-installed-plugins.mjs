@@ -112,4 +112,4 @@ check('single-skill source resolves', skills.some((s) => s.identifier === 'skill
 check('skill title normalizes -> skill-<owner>-<repo>', skills.some((s) => s.title === 'skill-basicmachines-co-basic-memory-skills'))
 check('source-less dir -> name-only, sourceResolved:false', skills.some((s) => s.identifier === 'skill:hand-copied' && s.sourceResolved === false))
 
-done()
+done(20)

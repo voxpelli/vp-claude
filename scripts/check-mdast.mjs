@@ -31,4 +31,4 @@ check('indented-code token is NOT collected', !scan('    ' + TOKEN).includes(TOK
 check('unclosed fence with a token yields no segments', collectScannableText('```\n' + TOKEN + '\nno closing fence\n').length === 0)
 check('unclosed fence without a token also yields no segments', collectScannableText('```\njust prose\nno closing fence\n').length === 0)
 
-done()
+done(8)

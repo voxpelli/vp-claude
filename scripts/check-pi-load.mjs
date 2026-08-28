@@ -69,4 +69,4 @@ try {
 }
 check('extensions/index.js exports a default factory function', factoryOk)
 
-done()
+done(4)

@@ -103,4 +103,4 @@ check('an empty row set is still parseable', readNdjson(empty).rows, 0)
 check('...and is zero bytes, so `wc -l` reports 0 lines, not 1',
   readFileSync(empty, 'utf8').length, 0)
 
-done()
+done(15)
