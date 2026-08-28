@@ -71,6 +71,13 @@ import {
   buildGate, classifyRow, compareRows, DRIFT_ORDER, isResolvedAction, RENDERED_ACTIONS,
 } from '../../../lib/npm-triage.mjs'
 
+/**
+ * @typedef {import('../../../lib/npm-triage.mjs').ScanRow} ScanRow
+ * @typedef {import('../../../lib/npm-triage.mjs').RegistryRow} RegistryRow
+ * @typedef {import('../../../lib/npm-triage.mjs').DownloadsRow} DownloadsRow
+ * @typedef {import('../../../lib/npm-triage.mjs').SchemaRow} SchemaRow
+ */
+
 // Guarded, not just destructured. Every one of these files previously read
 // `process.argv` positionally with no check, so invoking a driver with a
 // missing argument reached `readFileSync(undefined)` and failed with a message
@@ -101,13 +108,24 @@ let malformedLines = 0
  * truncated shard write. Silently skipping would shrink coverage while every
  * count still looked self-consistent.
  *
+ * Generic in the row type, and each call below names which one it is reading.
+ * It returned one `Map<string, Record<string, unknown>>` for all four files,
+ * which is structurally assignable to every row type at once — so the four
+ * `classifyRow` slots below accepted any of the four maps interchangeably, and
+ * wiring `downloads` into `scanRow:` type-checked cleanly while classifying the
+ * whole cohort as unscanned. The rows come off disk, so the type argument is an
+ * assertion about what the producer wrote rather than something this function
+ * can verify; naming it per call site is what makes that assertion reviewable
+ * instead of blanket.
+ *
+ * @template {Record<string, unknown>} T
  * @param {string} p
- * @returns {Map<string, Record<string, unknown>>}
+ * @returns {Map<string, T>}
  */
 function loadNdjson (p) {
   const { malformed, map } = readNdjson(p)
   malformedLines += malformed
-  return map
+  return /** @type {Map<string, T>} */ (/** @type {unknown} */ (map))
 }
 
 const cohortPath = `${outDir}/cohort.txt`
@@ -117,9 +135,13 @@ const registryPath = `${outDir}/registry.ndjson`
 const cohort = existsSync(cohortPath)
   ? readFileSync(cohortPath, 'utf8').split('\n').map(s => s.trim()).filter(Boolean)
   : []
+/** @type {Map<string, ScanRow>} */
 const scan = loadNdjson(scanPath)
+/** @type {Map<string, RegistryRow>} */
 const registry = loadNdjson(registryPath)
+/** @type {Map<string, SchemaRow>} */
 const schema = loadNdjson(`${outDir}/schema.ndjson`)
+/** @type {Map<string, DownloadsRow>} */
 const downloads = loadNdjson(`${outDir}/downloads.ndjson`)
 
 /** Carried forward so the denominator can be reconciled against what BM reported. */

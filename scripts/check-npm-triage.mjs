@@ -43,13 +43,13 @@ const TODAY = new Date('2026-08-05T00:00:00Z')
 /**
  * @param {Partial<import('../lib/npm-triage.mjs').ScanRow>} [scanRow]
  * @param {Partial<import('../lib/npm-triage.mjs').RegistryRow>} [registryRow]
- * @param {{ schemaRow?: { fields?: string[] }, censusDate?: string | null }} [extra]
+ * @param {{ schemaRow?: import('../lib/npm-triage.mjs').SchemaRow, censusDate?: string | null }} [extra]
  * @returns {Record<string, unknown>} the classified row
  */
 function row (scanRow, registryRow, extra) {
   return classifyRow({
     id: 'npm-fixture',
-    scanRow: scanRow ? { status: 'ok', packagesShape: 'string-array', titleForm: 'hyphen', hasVersionObs: true, relationCount: 3, missingSections: [], ...scanRow } : undefined,
+    scanRow: scanRow ? { id: 'npm-fixture', status: 'ok', packagesShape: 'string-array', titleForm: 'hyphen', hasVersionObs: true, relationCount: 3, missingSections: [], ...scanRow } : undefined,
     registryRow: registryRow ? { upstreamState: 'ok', ...registryRow } : undefined,
     schemaRow: extra?.schemaRow,
     censusDate: extra?.censusDate ?? null,
@@ -174,7 +174,7 @@ check('an unread note is not credited with fabricated defects',
  * overridable — it is the gate's only failure-independent denominator, so the
  * cases that matter set it apart from `cohort`.
  *
- * @param {{ cohort?: string[], rows?: Record<string, unknown>[], scan?: Map<string, Record<string, unknown>>, registry?: Map<string, Record<string, unknown>>, expectedTotal?: number | null, artefactsFromThisRun?: boolean, downloadsEligible?: number, downloadsOk?: number, censusSupplied?: boolean, censusMatched?: number }} [o]
+ * @param {{ cohort?: string[], rows?: Record<string, unknown>[], scan?: Map<string, import('../lib/npm-triage.mjs').ScanRow>, registry?: Map<string, import('../lib/npm-triage.mjs').RegistryRow>, expectedTotal?: number | null, artefactsFromThisRun?: boolean, downloadsEligible?: number, downloadsOk?: number, censusSupplied?: boolean, censusMatched?: number }} [o]
  * @returns {Record<string, boolean>} the named sub-checks
  */
 function gate (o) {
