@@ -110,8 +110,19 @@ export function parseFrontmatter (content) {
     }
     // `(?:\s(.*))?` not `(.*)`: the bare `tools:` case needs the colon to be
     // optionally-final, but accepting ANY colon-then-non-space also matched a
-    // wrapped line like `https://example.com` as key `https`, which would flush
-    // a pending list and truncate it. Narrower fixes the bug without that.
+    // wrapped line like `https://example.com` as key `https`.
+    //
+    // That is ALL it fixes, and an earlier version of this comment claimed
+    // otherwise — it said the narrower regex "fixes the bug", meaning the
+    // list-truncation bug. It does not. The unconditional flush eleven lines
+    // above runs on ANY line that is not a list item, before this regex is ever
+    // reached, so a stray prose line between two `- item` lines still drops
+    // every item after it. Measured: `tools:` with `- a`, a stray line, `- b`
+    // yields `["a"]`. That behaviour is deliberate-and-pinned (see
+    // test/port-agent-frontmatter.test.js and the ROADMAP entry) — it fails in
+    // the quiet direction, which is this repo's recurring shape — but a comment
+    // saying it is fixed is worse than the bug, because the next reader stops
+    // looking.
     const m = /^([\w-]+):(?:\s(.*))?$/.exec(trimmed)
     if (m) {
       const key = m[1] ?? ''

@@ -17,137 +17,105 @@ Items are deliberately **unnumbered**: numbered lists invite cross-references
 that go stale the moment one item lands, which is a drift class this repo has
 now been bitten by more than once. Refer to an item by its heading.
 
+**Shipped work is not recorded here** — `CHANGELOG.md` is its home, and a
+roadmap that accumulates a history section stops being read as a to-do list.
+What IS worth keeping is a decision *not* to act, which is why several entries
+below explain why something was left alone and what would change that.
+
+Every factual claim below was re-verified against the tree on 2026-08-28. Three
+were wrong rather than merely stale, and the corrections are noted inline where
+they are instructive: a roadmap that is confidently wrong costs more than one
+that is out of date, because it gets acted on.
+
 ---
 
-## ✔ Closed (2026-08-28): the post-0.34.0 review findings
-
-Three adversarial reviews after the release found live defects. All are fixed,
-each verified by planting the defect and watching the guard fail. Recorded here
-only so nobody re-derives them from the reviews; the detail is in the commits.
-
-The two with lasting consequences:
-
-- **The audit cadence was implemented twice and the copies contradicted each
-  other.** Both sides were tested and the tests pinned opposite answers, so
-  neither guard could fail on the disagreement. Fixed, and `check:host-parity`
-  now compares the two hosts *behaviourally* — replanting the old bash cadence
-  fails it at 9 of 13 sprint counts. That guard is the durable half.
-- **`createCheckHarness().done()` exited 0 having run no assertions.** It now
-  fails on zero. The first fix made the floor a REQUIRED argument at all 24 call
-  sites; the re-review showed 20 of those scripts have counts that vary with
-  nothing but hand-edited source, so their floors bounded nothing while inviting
-  reflexive bumping. An explicit floor now survives only where the count is
-  genuinely corpus-driven — and where a specific constant matters, it is
-  asserted directly, since a total-assertion floor cannot see one shrink.
-
-One finding is deliberately **not** acted on. `driftClassesRanked` and
-`unmeasuredReasonsRanked` in `lib/npm-triage.mjs` are `[].every()` over a
-filtered set, so a cohort with zero `intel` rows passes having checked nothing —
-but `every()` on an empty set is *semantically correct*: with no intel rows
-there is genuinely nothing unrankable. Deleting them needs `distance`
-union-typed and `DRIFT_ORDER` keyed on that union, and a previous attempt at
-this exact coverage check was found vacuous by plant-and-revert because both its
-sides derived from one tuple. **Revival trigger:** `ClassifiedRow.distance`
-becomes a union type for some other reason, at which point the two checks become
-statically provable and can go.
-
-## Deferred from the post-0.34.0 re-review
-
-Two findings raised by adversarial review and explicitly marked by the reviewer
-as **inferred from reading, not verified by execution**. Recorded rather than
-acted on, because acting on an unverified premise is the mistake CLAUDE.md's
-verify-before-fix rule exists to prevent.
-
-- **The third cross-host policy was compared, and one real divergence fixed.**
-  `check:host-parity` covers the audit cadence and the error taxonomy; the
-  schema_validate + fourth-wall reminder is duplicated the same way
-  (`hooks/post-bm-write-validate.sh` vs `extensions/index.js`) and was not
-  compared. This was first written here as a deferral with the trigger "any edit
-  to either file" — a trigger that had already fired two commits earlier, which
-  is why it is closed rather than carried. Reading both, three differences:
-  - **Fixed.** The hook exits on a `*/schema/*` permalink *before* its
-    fourth-wall block, so Claude Code skips both checks on a schema-definition
-    note. Pi gated only the schema sentence and flagged fourth-wall violations
-    on schema notes. The exemption is the correct behaviour — the note-quality
-    rules exempt meta-notes whose subject IS the knowledge graph — so Pi now
-    matches, with a test carrying a control case.
-  - **Declared, not a defect.** The hook exits when there is no permalink; Pi
-    still runs the fourth-wall check on input content. That is a genuine host
-    difference: on the Pi proxy path the host may not surface a permalink for a
-    real write, while on Claude Code one is always present.
-  - **Open, cosmetic.** The two concatenate the fourth-wall and schema text in
-    opposite orders. Both messages appear either way.
-
-  **Remaining work:** none of this is guarded by `check:host-parity` yet, so it
-  can drift again. **Revival trigger:** the next edit to either file — and this
-  time the entry is accurate at the moment it is written.
-
-- **An unreadable tool-call argument tells the human, not the model.** When
-  `normalizeBmToolCall` returns `params: null` the extension writes to stderr;
-  the fourth-wall *finding* path patches `tool_result.content`, which is the
-  model-visible channel. So the agent that just wrote a note whose quality check
-  was skipped is not told. Routing it into `patches.content` is arguably the
-  consistent choice — but it changes what the model sees on a write, so it wants
-  its own decision rather than riding along in a fix commit.
-  **Revival trigger:** an observed case of a note landing with the check skipped
-  and nobody noticing, or a deliberate decision that advisory-to-model is right.
-
-## ▶ Next step (2026-08-28): make the read-only agents read-only on Pi
+## ▶ Next step: make the read-only agents read-only on Pi
 
 Four agents this plugin documents as read-only — `knowledge-gardener`,
 `knowledge-primer`, `raindrop-gardener`, `finding-verifier` — reach every write
-tool on every configured server through the `mcp` proxy. On Claude Code a
-`tools` allowlist plus a `PreToolUse` hook enforce the boundary; **Pi has
-neither**. Today the guarantee is prose.
+tool on every configured server through the `mcp` proxy. Verified: `mcp.json`
+wires `basic-memory` and `raindrop` as full servers, so `write_note`,
+`delete_note`, `move_note` and the raindrop write set are all reachable. On
+Claude Code a `tools` allowlist plus a `PreToolUse` hook enforce the boundary;
+**Pi has neither**. Today the guarantee is prose.
 
 **How to update this section** — when the next step is started or completed, or
-when a state change makes it stale, replace the title and date (keeping the
-`## ▶ Next step (date): <title>` shape), rewrite the content, and re-derive what
-follows. Keep the structure: single action, then why, then what comes after.
+when a state change makes it stale, replace the title and rewrite the content,
+keeping the `## ▶ Next step: <title>` shape. Single action, then why, then what
+comes after.
 
-**The work is one pass over the five `agents-pi/*.md` files**, because three
-separate findings land in the same frontmatter:
+### The work
 
-- **Add `permission:` blocks** to the four read-only agents. Denied tools are
-  removed before the agent starts and the `tools:` allowlist cannot restore
-  them, so this is real enforcement. `knowledge-maintainer` is deliberately
-  excluded — it is the sole write path by design — but takes
-  `mcp: { "*": ask, "*delete*": deny }`.
-- **Fix the `tools:` lists.** `tools:` is a *complete allowlist* on the installed
-  runtime, not a filter over the builtins. `knowledge-gardener` currently ships
-  without `read` or `grep` and cannot read a file; `knowledge-primer` and
-  `knowledge-maintainer` lack `grep`; `raindrop-gardener` has only `mcp`.
-- **Fix `max_turns`.** All five carry `20`, which caps *below* this machine's
-  `defaultMaxTurns: 40` and cannot be raised per call. Enforcement is a wrap-up
-  steer at the limit then a hard abort five turns later, surfacing as
-  `steered`/`aborted` rather than an error — so a capped gardener returns a
-  truncated audit that reads like a complete one. The installed
-  `finding-verifier.md` already carries `40`, which is someone having hit this.
+**One pass over the five `agents-pi/*.md` files**, plus one canonical-side
+change. All numbers below re-verified 2026-08-28 against the current tree.
 
-**The block shape is settled and the two traps are verified** — read
-[§6 of the findings record](docs/design/pi-runtime-findings-2026-08-28.md)
-before writing a single block. In short: use `"*": "ask"` and never
-`"*": deny` on the `mcp` surface (deny strips the proxy tool entirely at
-`before_agent_start`, which for `raindrop-gardener` means zero tools), and never
-put a colon in a pattern key (the hand-rolled parser splits on the first colon
-and discards the entry without error).
+- **Add `permission:` blocks** to the four read-only agents. None of the five
+  has one today. Denied tools are removed before the agent starts and the
+  `tools:` allowlist cannot restore them, so this is real enforcement.
+  `knowledge-maintainer` is deliberately excluded — it is the sole write path by
+  design — but takes `mcp: { "*": ask, "*delete*": deny }`. Six *other*
+  installed agents already carry `permission:` blocks and are usable as
+  worked precedent.
+- **Fix the `tools:` lists**, on BOTH sides. `tools:` is a complete allowlist on
+  the installed runtime, not a filter over the builtins. Current state:
 
-**Also in the same pass, two guards** so it cannot silently regress:
-`check:agent-parity` should assert every `agents-pi/` tool entry is one of the
-seven Pi builtins or the literal `mcp` — which encodes the portability decision
-and would have caught the drift the installed copies showed — and that
-`basename(file, '.md') === frontmatter.name`, because an unknown `subagent_type`
-falls back to **write-capable `general-purpose`** with no signal beyond a line of
-prose inside the child's own prompt. Plant-and-revert both; this repo has shipped
-eight checks that could not fail, the most recent written inside the guard built
-to prevent that class.
+  | agent | `tools:` today | missing |
+  |---|---|---|
+  | `knowledge-gardener` | `mcp, bash, find, ls` | `read`, `grep` |
+  | `knowledge-primer` | `read, find, ls, mcp` | `grep`, `bash` |
+  | `knowledge-maintainer` | `read, find, ls, mcp` | `grep`, `bash` |
+  | `raindrop-gardener` | `mcp` | everything else |
+  | `finding-verifier` | `mcp, bash, find, ls, grep, read` | — (complete) |
 
-**Why this next:** it is the largest remaining gap between what this plugin says
-about itself and what it enforces.
+  Note what an earlier version of this entry got wrong: `knowledge-gardener`
+  **can** read a file, because it has `bash`. And every one of these gaps is
+  inherited from the canonical `agents/*.md` twin, so this is a change to
+  `agents/` **and** `agents-pi/` together, not a port repair.
+- **Fix `max_turns`.** All five carry `20`; `~/.pi/agent/subagents.json` sets
+  `defaultMaxTurns: 40`, so the cap is genuinely below the default and cannot be
+  raised per call. Enforcement is a wrap-up steer at the limit then a hard abort
+  five turns later, surfacing as `steered`/`aborted` rather than an error — so a
+  capped gardener returns a truncated audit that reads like a complete one. The
+  installed `finding-verifier.md` already carries `40`, which is someone having
+  hit this.
+
+### Before writing a single block
+
+Read [§6 of the findings record](docs/design/pi-runtime-findings-2026-08-28.md).
+Its two traps are **confirmed at source in the currently-installed packages, but
+never observed at runtime** — every cited line number resolves, and no test or
+log shows the behaviour. Trust it for mechanism, not as proof:
+
+- Never `"*": deny` on the `mcp` surface. Matching is whole-string against the
+  literal `"*"` with no per-kind branch, so a deny strips the proxy tool entirely
+  at `before_agent_start` — for `raindrop-gardener` that means **zero tools**.
+  Use `"*": "ask"`.
+- Never put a colon in a pattern key. The hand-rolled parser splits on the first
+  colon and `continue`s with no error path, so the entry is discarded silently.
+
+**Cheapest empirical confirmation before committing to four blocks:** apply
+Trap 1 to `raindrop-gardener` alone and see whether it starts with no tools.
+One agent, one run, and it converts the whole section from source-read to
+observed.
+
+### Two guards, in the same pass
+
+Neither exists today, and **`check:agent-parity` will not catch either**: it
+hashes only the canonical *body*, so changing `tools:` or adding `permission:`
+in `agents-pi/` does not trip it. Nothing guards those fields at all.
+
+- Assert every `agents-pi/` tool entry is one of the seven Pi builtins or the
+  literal `mcp` — that encodes the portability decision, and it would catch the
+  drift the *installed* copies already show (see Known-bad below).
+- Assert `basename(file, '.md') === frontmatter.name`, because an unknown
+  `subagent_type` falls back to **write-capable `general-purpose`** with no
+  signal beyond a line of prose inside the child's own prompt.
+
+Plant-and-revert both. This repo keeps shipping checks that cannot fail, the
+most recent written inside the guard built to prevent that class.
 
 **After it:** the MCP tool-name chain below, in order — runtime enumeration
-first, then `directTools` coverage, then the generator redesign that depends on
-both.
+first, then `directTools` coverage, then the generator that depends on both.
 
 ---
 
@@ -255,7 +223,51 @@ sibling repo publishes a frozen, dependency-free JSONL logger with session
 scoping and a durable `fallbackDir`.
 
 **Revival trigger:** a fault we cannot diagnose from stderr, or that package
-being published to npm — taking it is an ASK-FIRST dependency decision either way.
+being published to npm — taking it is an ASK-FIRST dependency decision either
+way. Checked 2026-08-28: `npm view @voxpelli/pi-logger` returns **404, not
+published**, so the trigger has not fired. 0.34.1 *added* three more raw
+`process.stderr.write` sites (five total in `extensions/index.js`), which raises
+the value of the swap without changing its gate.
+
+### Quality-check plumbing
+
+#### An unreadable tool-call argument tells the human, not the model
+
+When `normalizeBmToolCall` returns `params: null` the extension writes to
+stderr. The fourth-wall *finding* path patches `tool_result.content`, which is
+the model-visible channel — so the agent that just wrote a note whose quality
+check was skipped is not told. Routing it into `patches.content` is arguably
+the consistent choice, but it changes what the model sees on every write, so it
+wants a deliberate decision rather than riding along in a fix commit.
+
+**Revival trigger:** an observed case of a note landing with the check skipped
+and nobody noticing, or a decision that advisory-to-model is right.
+
+#### The schema_validate + fourth-wall pair is still unguarded
+
+The two hosts implement it separately (`hooks/post-bm-write-validate.sh` vs
+`extensions/index.js`) and `check:host-parity` does **not** cover the pair. One
+real divergence was found and fixed in 0.34.1 — Pi flagged fourth-wall
+violations on schema-definition notes that Claude Code exempts — and one
+cosmetic difference remains: the two concatenate the fourth-wall and schema text
+in opposite orders. Both messages appear either way.
+
+**Revival trigger:** the next edit to either file. (The previous version of this
+entry used the same trigger and it had already fired two commits before the
+entry was written — check the log, not the prose.)
+
+#### The two `[].every()` ranking gates pass vacuously on an empty set
+
+`driftClassesRanked` and `unmeasuredReasonsRanked` in `lib/npm-triage.mjs`
+filter to `intel`/`unmeasured` rows and then `.every()`, so a cohort with none
+of those passes having checked nothing. Deliberately left: `every()` on an empty
+set is *semantically correct* — with no intel rows there is genuinely nothing
+unrankable — and the type-level fix that would delete them is the same shape as
+a coverage check this repo already found vacuous by plant-and-revert, because
+both its sides derived from one tuple.
+
+**Revival trigger:** `ClassifiedRow.distance` becomes a union type for some
+other reason, at which point both checks become statically provable and can go.
 
 ### Known-bad, carried so it is not rediscovered
 
@@ -267,6 +279,19 @@ catches deletes by luck. Outside this repo, so not fixable from here.
 
 **Revival trigger:** next time that file is edited for any reason.
 
+#### The INSTALLED agent copies still carry the retired underscore spelling
+
+`~/.pi/agent/agents/knowledge-gardener.md` lists `basic_memory_search_notes` and
+siblings; the installed `finding-verifier.md` has `basic_memory_*` and
+`hyper_mcp_context7-*`. The server keys in `mcp.json` are `basic-memory` and
+`hyper-mcp`, so those names register nowhere and are **dropped silently** — the
+0.34.0 defect, still live in the installed copies. The repo's own `agents-pi/`
+files are clean (they carry no direct names at all), so this is install drift
+rather than a source bug, and `/vpk-sync` overwrites them.
+
+**Revival trigger:** it resolves itself the moment the Next-step pass runs and
+the profiles are re-synced. Listed so it is not rediscovered as a source bug.
+
 #### A stray frontmatter line silently truncates a tool list
 
 `parseFrontmatter` in the port script flushes a pending block list when it meets
@@ -275,6 +300,12 @@ a shorter `tools:` list with no complaint. Since `tools:` is a complete allowlis
 a dropped entry is a capability the agent silently does not have. Conservative,
 but it fails in the quiet direction — this repo's recurring shape. Pinned by a
 test rather than fixed.
+
+Re-measured 2026-08-28 and unchanged: `tools:` with `- a`, a stray prose line,
+`- b` yields `["a"]`. The 0.34.1 regex narrowing fixed only the separate problem
+of `https://…` parsing as a key — the unconditional flush above it still
+truncates, and the in-file comment claiming otherwise has been corrected, since
+a comment saying a bug is fixed is worse than the bug.
 
 **Revival trigger:** the parser gains a caller that does not hand-review its
 output, or a real agent file acquires a wrapped frontmatter value.
@@ -285,11 +316,17 @@ output, or a real agent file acquires a wrapped frontmatter value.
 
 Not tasks — rules that hold until upstream changes.
 
-- **Never use `tools: none`.** `agent-types.ts:98` falls back to all seven
-  builtins on an empty list while `create-subagent-session.ts:220` passes the
-  empty list straight through. The two paths disagree, and the documented
-  behaviour ("no tools at all") matches only one of them. Lifts when upstream
-  resolves the disagreement.
+- **Never use `tools: none`.** An empty or `none` tool list resolves to **all
+  seven builtins, including `write` and `edit`** — the exact opposite of the
+  documented "no tools at all".
+
+  The mechanism matters, because an earlier version of this entry cited the
+  wrong pair of files. It named `agent-types.ts:98` and
+  `create-subagent-session.ts:220` as disagreeing; they do not — `:220` passes
+  `cfg.toolNames`, which is already `:98`'s resolved output, so there is one
+  path, not two. The real disagreement is between `custom-agents.ts` (`none` or
+  empty → `[]`, meaning "nothing") and `agent-types.ts:98`, which turns that
+  `[]` into the full builtin set. Lifts when upstream reconciles those two.
 
 ---
 
