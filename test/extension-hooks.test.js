@@ -193,9 +193,23 @@ describe('event hooks', () => {
       controller.abort()
       const { ctx } = createMockContext({ signal: controller.signal })
 
-      const result = await handler({ toolName: 'basic_memory_write_note' }, ctx)
+      // The event must be one that WOULD produce a patch, or this asserts
+      // nothing: the fixture used to be `{ toolName }` alone, with no input and
+      // no details, which returns undefined whether the abort guard is there or
+      // not. A `details.permalink` makes the schema_validate reminder fire on
+      // the unaborted path, so undefined here can only come from the guard.
+      const event = {
+        toolName: 'basic-memory_write_note',
+        input: { title: 'T' },
+        details: { permalink: 'notes/some-note' },
+      }
+      assert.strictEqual(await handler(event, ctx), undefined)
 
-      assert.strictEqual(result, undefined)
+      // Same event, live signal: proves the fixture is patch-producing rather
+      // than inert, which is the half the assertion above cannot see.
+      const { ctx: liveCtx } = createMockContext()
+      const unaborted = await handler(event, liveCtx)
+      assert.ok(unaborted?.content?.length > 0, 'fixture must produce a patch when not aborted')
     })
 
     it('classifies BM error and appends recovery text', async () => {

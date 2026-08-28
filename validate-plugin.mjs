@@ -1026,6 +1026,12 @@ const maintainerPath = join(ROOT, 'agents', 'knowledge-maintainer.md')
 if (existsSync(maintainerPath)) {
   const { errors: consumeErrors } = checkStalenessConsume(await readFile(maintainerPath, 'utf8'))
   for (const message of consumeErrors) error(maintainerPath, message)
+} else {
+  // The emit side six lines above is guarded by stalenessBucketsSeen === 0; the
+  // consume side had no counterpart, so deleting or renaming this one agent left
+  // half the staleness contract unchecked and CI green about it. The consumer is
+  // not optional — it is the only reader of the buckets the emit side declares.
+  error(maintainerPath, 'Staleness consume-contract file is missing — the contract has an emit side with no reader; if this agent was renamed, update the path here rather than letting the check skip itself')
 }
 if (stalenessBucketsSeen === 0) {
   error(gardenerStalenessPath, 'Staleness contract check matched zero canonical bucket headings across emit files — the heading regex or fences likely changed; refusing to pass vacuously')
