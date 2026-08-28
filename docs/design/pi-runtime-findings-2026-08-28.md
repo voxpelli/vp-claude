@@ -151,3 +151,62 @@ not a name list. Two guards the sibling repo learned the hard way apply:
   does not prevent a worker from re-running the sync.
 - The superset-frontmatter approach is a deliberate choice, not a default. The
   sibling repo explicitly disowns it for a single-flavor environment.
+
+## 6. The permission system, verified at source
+
+Read from the installed `@gotgenes/pi-permission-system` 27.1.1 before designing
+against it, because the obvious block shape turned out to be wrong twice.
+
+**`permission:` frontmatter IS read from `~/.pi/agent/agents/`.**
+`permission-manager.ts:177-190` loads four scopes unconditionally and merges them
+lowest-to-highest: `global → project → agent → project-agent`. The global-agents
+scope reads `join(getAgentDir(), "agents")/<name>.md`. The agent is identified by
+the `<active_agent name="…"/>` tag, which `@gotgenes/pi-subagents`
+(`src/session/prompts.ts:45`) really emits using `basename(file, ".md")` — the
+exact string the policy loader joins. A per-agent block **does** override a
+global `"*": "allow"`. So the blocks enforce; they are not decorative.
+
+**Trap 1 — `mcp: {"*": deny}` deletes the tool rather than narrowing it.**
+`before_agent_start` filters the tool set through `getToolPermission(toolName)`,
+which evaluates the surface against the **literal pattern `"*"`**
+(`permission-manager.ts:263-268`). Matching is anchored whole-string, so
+`"*recent_activity*"` does not match the string `"*"` — the only rule that fires
+is `"*": deny`, the `mcp` proxy is stripped before the agent starts, and every
+sibling `allow` becomes unreachable. For `raindrop-gardener`, whose entire
+`tools:` is `mcp`, that is an agent with zero tools. **Use `"*": "ask"`.**
+
+**Trap 2 — a colon in a pattern key is silently discarded.** Agent frontmatter
+goes through a hand-rolled parser that splits on the FIRST colon
+(`yaml-frontmatter.ts:15-24`), so `"basic-memory:recent_activity": allow` parses
+to `{"basic-memory": "recent_activity\": allow"}` and is then dropped as an
+invalid decision value. No error. Never write a `server:tool` pattern in
+frontmatter — use the underscore form or a `*…*` glob. It works in `config.json`,
+which is real JSON.
+
+**Grammar facts to build on:**
+
+- An `mcp` call matches against a candidate *list*, most-specific first:
+  `server_tool`, `server:tool`, `server`, `tool`, `mcp_call`, `mcp`.
+- Patterns are anchored whole-string globs — `*` → `.*` under the dotAll flag,
+  `?` → one character. Not minimatch, not prefix matching. A pattern ending
+  `" *"` makes the argument tail optional, so `"bm *"` also matches bare `bm`.
+- `bash` is decomposed before matching: tree-sitter splits `bm x; rm -rf /` into
+  units and the most restrictive wins, so `"bm *": allow` cannot be ridden by
+  chaining, and a `sudo`/`eval` wrapper is floored to `ask`.
+- Decisions are exactly `allow` / `deny` / `ask` (plus `{action:"deny",reason}`).
+  Anything else — `"Allow"`, `"warn"` — is dropped silently.
+- Never write a per-agent `"*": "allow"` inside a surface map: it lands last, and
+  last-match-wins defeats lower-scope specific denies.
+
+**Flattened direct tools are gated, but not by `mcp:`.** `classifyToolKind`
+returns `"mcp"` only for the literal name `mcp`; a flattened name is `"extension"`
+kind and normalizes to `{surface: <toolName>, values: ["*"]}`, so it falls to the
+universal `"*"` fallback. That is real enforcement — the unclaimed
+`tool-approval-request` broker slot does not matter, because every registered tool
+passes this extension's `tool_call` hook. To allow specific ones, use their own
+name as a top-level surface key; surface keys are themselves wildcards, so
+`"basic-memory_*": allow` works.
+
+**Budget consequence:** `"*": deny` also hides `write`, `skill`, `todo_write` and
+every flattened MCP tool. Each agent's allow-list must enumerate everything it
+actually needs, or it starts crippled.
