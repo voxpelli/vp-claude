@@ -10,7 +10,7 @@ import { join } from 'node:path'
 import { describe, it } from 'node:test'
 
 import { __resetConfigCache } from '../extensions/config.js'
-import vpKnowledgePiExtension, { normalizeBmToolCall } from '../extensions/index.js'
+import vpKnowledgePiExtension, { isToolNameError, normalizeBmToolCall } from '../extensions/index.js'
 import { createMockContext, createMockPi } from './mock-pi-api.js'
 
 /** @typedef {{ content?: Array<{ type: string, text: string }> } | undefined} ToolResultPatch */
@@ -77,7 +77,24 @@ describe('normalizeBmToolCall', () => {
     )
   })
 
-  it('flat direct name (directTools:true)', () => {
+  it('flat direct name — the spelling the adapter actually registers', () => {
+    // The regression: `basic-memory_` (hyphen) is what pi-mcp-adapter registers.
+    // This returned null before 0.34.0, so on every host with directTools for
+    // basic-memory the write-time quality checks silently never ran.
+    assert.deepStrictEqual(
+      normalizeBmToolCall({ toolName: 'basic-memory_read_note', input: { identifier: 'x' } }),
+      { tool: 'read_note', params: { identifier: 'x' } }
+    )
+    assert.deepStrictEqual(
+      normalizeBmToolCall({ toolName: 'basic-memory_write_note', input: { title: 'T' } }),
+      { tool: 'write_note', params: { title: 'T' } }
+    )
+  })
+
+  it('flat direct name — the pre-0.34.0 spelling still matches', () => {
+    // Kept deliberately: an older install or a toolPrefix variant may emit it.
+    // This is a detector for running checks, not a security boundary, so a
+    // false positive costs nothing and a false negative costs a skipped check.
     assert.deepStrictEqual(
       normalizeBmToolCall({ toolName: 'basic_memory_read_note', input: { identifier: 'x' } }),
       { tool: 'read_note', params: { identifier: 'x' } }
@@ -89,6 +106,71 @@ describe('normalizeBmToolCall', () => {
       normalizeBmToolCall({ toolName: 'mcp__basic-memory__edit_note', input: {} }),
       { tool: 'edit_note', params: {} }
     )
+  })
+
+  it('every registered spelling normalizes — all four toolPrefix modes', () => {
+    // pi-mcp-adapter registers a different name per mode. Missing one means a
+    // real write silently skips every quality check on that host.
+    const shapes = {
+      'server/short mode': 'basic-memory_read_note',
+      'mcp mode (SINGLE underscore before the tool)': 'mcp__basic-memory_read_note',
+      'none mode (bare name)': 'read_note',
+      'claude-style verbatim': 'mcp__basic-memory__read_note',
+      'pre-0.34.0 derived form': 'basic_memory_read_note',
+    }
+    for (const [label, toolName] of Object.entries(shapes)) {
+      assert.deepStrictEqual(
+        normalizeBmToolCall({ toolName, input: { identifier: 'x' } }),
+        { tool: 'read_note', params: { identifier: 'x' } },
+        `${label} (${toolName}) must normalize`
+      )
+    }
+  })
+
+  it('proxy args accept an object, not only a JSON string', () => {
+    // The adapter's schema is Union([String, Object]); reading only the string
+    // form yielded empty params while still returning a TRUTHY result, so the
+    // write was recognised and the fourth-wall check skipped itself silently.
+    const expected = { tool: 'write_note', params: { content: 'x' } }
+    assert.deepStrictEqual(
+      normalizeBmToolCall({ toolName: 'mcp', input: { server: 'basic-memory', tool: 'write_note', args: { content: 'x' } } }),
+      expected, 'object args'
+    )
+    assert.deepStrictEqual(
+      normalizeBmToolCall({ toolName: 'mcp', input: { server: 'basic-memory', tool: 'write_note', args: '{"content":"x"}' } }),
+      expected, 'string args'
+    )
+  })
+
+  it('proxy `server` is optional, and a prefixed tool name is accepted', () => {
+    // `server` disambiguates; the adapter resolves an unqualified tool across
+    // servers. And mcp({ search }) hands the model the PREFIXED name, so a
+    // proxy call carrying it is a documented, working call.
+    assert.deepStrictEqual(
+      normalizeBmToolCall({ toolName: 'mcp', input: { tool: 'write_note', args: '{}' } }),
+      { tool: 'write_note', params: {} }
+    )
+    assert.deepStrictEqual(
+      normalizeBmToolCall({ toolName: 'mcp', input: { server: 'basic-memory', tool: 'basic-memory_write_note', args: '{}' } }),
+      { tool: 'write_note', params: {} }
+    )
+  })
+
+  it('does not over-claim a neighbouring server or an unrelated tool', () => {
+    // The permissive prefix set must not start swallowing other servers' calls.
+    assert.strictEqual(normalizeBmToolCall({ toolName: 'mcp', input: { server: 'raindrop', tool: 'find_bookmarks', args: '{}' } }), null)
+    assert.strictEqual(normalizeBmToolCall({ toolName: 'raindrop_find_bookmarks', input: {} }), null)
+    assert.strictEqual(normalizeBmToolCall({ toolName: 'search_files', input: {} }), null, 'a bare non-BM name must not match')
+  })
+
+  it('isToolNameError matches what a host actually emits', () => {
+    // Regression: the old substrings 'tool not found' / 'unknown tool' never
+    // matched the adapter's real text, because the name sits between the words.
+    assert.ok(isToolNameError('Tool "basic-memory_read_note" not found. Use mcp({ search: "..." }) to search.'))
+    assert.ok(isToolNameError('Server "basic-memory" not found. Use mcp({}) to see available servers.'))
+    assert.ok(isToolNameError('unknown tool: read_note'), 'the bare phrasing other servers use')
+    assert.ok(!isToolNameError('schema validation failed'))
+    assert.ok(!isToolNameError('Entity not found: some/note'), 'a missing NOTE is not a missing tool')
   })
 
   it('returns null for non-BM tools', () => {

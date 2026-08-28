@@ -41,15 +41,17 @@ reference — see "What the extension injects" below.
 `pi-mcp-adapter` defaults to `directTools: false`, which exposes every MCP tool
 ONLY through a single `mcp` proxy tool. The skills still work — the injected
 guidance leads with the proxy — but flattened direct-tool names (e.g.
-`basic_memory_write_note`) do not exist in that mode. Setting `directTools: true`
+`basic-memory_write_note`) do not exist in that mode. Setting `directTools: true`
 additionally registers those direct names. After changing it, run `/mcp reconnect`
 to warm the tool cache.
 
 ### Caveats
 
-- **`toolPrefix`**: leave it at the default `"server"`. `toolPrefix: "short"` drops
-  the server segment from flattened names, diverging from the mapping the injected
-  guidance documents.
+- **`toolPrefix`**: leave it at the default `"server"`. The other modes diverge from
+  the mapping the injected guidance documents: `"short"` strips a trailing `-mcp`
+  (`socket-mcp` → `socket`, while `basic-memory` is unchanged), `"none"` drops the
+  server segment entirely, and `"mcp"` prefixes with `mcp__` and a single underscore.
+  Only `"server"` matches what this plugin derives.
 - **`socket-mcp`**: only `depscore` is used; no special configuration needed.
 
 ## What the extension injects
@@ -57,11 +59,37 @@ to warm the tool cache.
 When a session has any vp-knowledge skill active, the extension injects MCP mapping
 guidance: it leads with the `mcp` proxy call shape —
 `mcp({ server, tool, args: "<JSON string>" })` (the DEFAULT, `directTools:false`
-path) — and also documents the `directTools:true` flattened form (drop `mcp__`,
-server hyphens→`_`, tool unchanged). On `session_start` it injects
+path) — and also documents the flattened form a server opted into `directTools`
+exposes: drop `mcp__` and join server and tool with `_`, changing neither
+segment — hyphens survive on both sides. On `session_start` it injects
 knowledge-graph context. On Basic Memory writes it runs write-time quality checks
 (fourth-wall + `schema_validate` reminders), whether the write arrived via the
 proxy or a direct name.
+
+## Agent profiles (`/vpk-sync`)
+
+The plugin ships five agents twice: `agents/` for Claude Code, and `agents-pi/`
+in pi-subagents frontmatter. The extension installs the **pi** set into
+`~/.pi/agent/agents/`. It has to be that set — the Claude-shaped files use
+`mcp__*` tool names, capitalized builtins and `model: inherit`, none of which Pi
+resolves, so they load as agents with no tools at all.
+
+**Sync is opt-in.** Nothing is copied unless you ask:
+
+```jsonc
+// ~/.pi/agent/extensions/vp-knowledge.json
+{ "agents": { "autoSync": true } }
+```
+
+With that set, profiles sync on startup. Without it, run `/vpk-sync` when you
+want them — which is also how you pull a new version's agents on demand.
+
+Sync **overwrites unconditionally**: `~/.pi/agent/agents/*.md` are managed
+copies. Edit `agents/` in the repo, not the installed files — hand edits are
+replaced on the next sync, which is why auto-sync is off by default.
+
+Ported agents call MCP through the `mcp` proxy, so they work regardless of your
+`directTools` setting.
 
 ## Verifying
 
@@ -82,7 +110,7 @@ that reaches it (e.g. `/knowledge-prime` or `/knowledge-ask`):
 
 1. **Default (`directTools:false`)** — confirm BM is reached via
    `mcp({ tool: "read_note", … })` and that the write-time quality checks fire.
-2. **`directTools:true` + `/mcp reconnect`** — confirm `basic_memory_read_note`
+2. **`directTools:true` + `/mcp reconnect`** — confirm `basic-memory_read_note`
    appears as a direct tool.
 
 A failure signature is `unknown tool`. Run `/nudge` to confirm its BM

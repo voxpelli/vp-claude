@@ -190,11 +190,16 @@ function resolveExtensionDir () {
 }
 
 /**
- * Find the agents source directory: the sibling `../agents` dir relative to
- * the extension's install dir. In the single-root hybrid layout the
- * extension lives at repo-root `extensions/`, so `../agents` is the one
- * canonical location for both local dev and a `pi install git:` whole-tree
- * clone.
+ * Find the agents source directory: the sibling `../agents-pi` dir relative to
+ * the extension's install dir. In the single-root hybrid layout the extension
+ * lives at repo-root `extensions/`, so `../agents-pi` is the one canonical
+ * location for both local dev and a `pi install git:` whole-tree clone.
+ *
+ * The pi-targeted set (`agents-pi/`) is the sync source, NOT the canonical
+ * Claude Code set (`agents/`): the canonical agents use `mcp__*` tool names and
+ * capitalized tool names that do not resolve in pi-subagents children (they
+ * launch with zero tools — see the BM note `claude-code-pi-agent-file-interop`).
+ * The pi set is the hand-maintained port in pi-subagents superset format.
  *
  * @returns {string | undefined}
  */
@@ -206,6 +211,6 @@ export function findAgentsSourceDir () {
   } catch {
     return
   }
-  const candidate = join(extDir, '..', 'agents')
+  const candidate = join(extDir, '..', 'agents-pi')
   if (existsSync(candidate)) return candidate
 }

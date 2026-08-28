@@ -1,0 +1,41 @@
+{
+  "_source": "~/.pi/agent/tool-registry.json",
+  "_capturedAt": "2026-08-28T11:54:44.250Z",
+  "_note": "Captured observation of what pi-mcp-adapter 2.30.0 actually registered on a real host. Entries for local projects unrelated to this plugin were REMOVED before committing to a public repo; nothing was added, renamed or reshaped, so every remaining row is verbatim. Data, not a derivation: regenerating it from flattenMcpToolName would make the tests assert the transform against itself, which is exactly the failure this fixture exists to prevent.",
+  "builtins": [
+    "read",
+    "write",
+    "edit",
+    "bash",
+    "grep",
+    "find",
+    "ls"
+  ],
+  "mcpDirect": [
+    "deepwiki_ask_question",
+    "deepwiki_read_wiki_contents",
+    "deepwiki_read_wiki_structure",
+    "raindrop_fetch_bookmark_content",
+    "raindrop_find_bookmarks",
+    "basic-memory_build_context",
+    "basic-memory_search_notes",
+    "basic-memory_read_note",
+    "basic-memory_view_note",
+    "basic-memory_list_directory",
+    "basic-memory_search",
+    "basic-memory_fetch",
+    "readwise_readwise_search_highlights",
+    "readwise_reader_search_documents",
+    "readwise_reader_get_document_details",
+    "socket-mcp_depscore",
+    "hyper-mcp_hyper_mcp-list_plugins",
+    "hyper-mcp_dash-list_installed_docsets",
+    "hyper-mcp_dash-search_documentation",
+    "hyper-mcp_dash-load_documentation_page",
+    "hyper-mcp_context7-query_docs",
+    "hyper-mcp_context7-resolve_library_id",
+    "grep_searchGitHub",
+    "huggingface_read_huggingface_papers"
+  ],
+  "mcpProxyOnly": []
+}

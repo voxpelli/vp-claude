@@ -37,7 +37,7 @@ describe('event hooks', () => {
       assert.ok(result)
       assert.ok(result.systemPrompt.includes('MCP Tool Names'))
       // the rule-based guidance shows a flattened example + the proxy fallback
-      assert.ok(result.systemPrompt.includes('basic_memory_write_note'))
+      assert.ok(result.systemPrompt.includes('basic-memory_search_notes'))
       assert.ok(result.systemPrompt.includes('`mcp` proxy'))
     })
 
@@ -97,9 +97,9 @@ describe('event hooks', () => {
     })
 
     it('does not sync agent profiles when agents.autoSync is disabled', async () => {
-      // The startup agent-sync is gated on config.agents.autoSync; every other
-      // test runs under DEFAULTS (autoSync:true). Point the config read at a
-      // file that disables it, and the agents dir at a fresh empty tmpdir, then
+      // The startup agent-sync is gated on config.agents.autoSync; the seam
+      // config pins autoSync:true for the other tests. Point the config read at
+      // a file that disables it, and the agents dir at a fresh empty tmpdir, then
       // assert the startup handler leaves that dir untouched. loadConfig caches
       // per resolved path, so __resetConfigCache() must run before firing or the
       // cached DEFAULTS (true) would win and silently keep this on the sync path.
@@ -138,18 +138,23 @@ describe('event hooks', () => {
       /* eslint-enable n/no-process-env */
     })
 
-    it('DOES sync agent profiles under the default autoSync:true', async () => {
+    it('DOES sync agent profiles when agents.autoSync is explicitly enabled', async () => {
       // Anchors the autoSync:false negative above: proves the SAME startup with
       // the gate on genuinely populates the dir, so the negative's empty-dir
       // assertion is meaningful — it can't silently rot into a no-op if source
       // resolution (findAgentsSourceDir) ever starts returning undefined, since
-      // that would make this positive fail loudly instead.
-      /* eslint-disable n/no-process-env -- agents-dir override is the test seam */
+      // that would make this positive fail loudly instead. autoSync is opt-in
+      // (DEFAULTS false), so this writes an explicit autoSync:true config,
+      // mirroring the disabled test's shape. loadConfig caches per resolved
+      // path, so __resetConfigCache() must run before firing.
+      /* eslint-disable n/no-process-env -- config + agents-dir overrides are the test seam */
+      const origConfig = process.env.VP_KNOWLEDGE_CONFIG_FILE
       const origAgents = process.env.VP_KNOWLEDGE_AGENTS_DIR
+      const cfgPath = join(tmpdir(), `vpk-autosync-on-${process.pid}.json`)
       const agentsDir = mkdtempSync(join(tmpdir(), 'vpk-autosync-on-agents-'))
+      writeFileSync(cfgPath, JSON.stringify({ agents: { autoSync: true } }), 'utf8')
+      process.env.VP_KNOWLEDGE_CONFIG_FILE = cfgPath
       process.env.VP_KNOWLEDGE_AGENTS_DIR = agentsDir
-      // The isolate seam pins the config read to a nonexistent path → DEFAULTS
-      // (autoSync:true); reset the cache so no earlier test's pinned config wins.
       __resetConfigCache()
       __resetStartupMaintenance()
       try {
@@ -162,14 +167,17 @@ describe('event hooks', () => {
 
         assert.ok(
           readdirSync(agentsDir).length > 0,
-          'default autoSync:true must copy agent profiles into the dir'
+          'autoSync:true must copy agent profiles into the dir'
         )
       } finally {
+        if (origConfig === undefined) delete process.env.VP_KNOWLEDGE_CONFIG_FILE
+        else process.env.VP_KNOWLEDGE_CONFIG_FILE = origConfig
         if (origAgents === undefined) delete process.env.VP_KNOWLEDGE_AGENTS_DIR
         else process.env.VP_KNOWLEDGE_AGENTS_DIR = origAgents
         __resetConfigCache()
         __resetStartupMaintenance()
         rmSync(agentsDir, { recursive: true, force: true })
+        try { unlinkSync(cfgPath) } catch { /* ignore */ }
       }
       /* eslint-enable n/no-process-env */
     })

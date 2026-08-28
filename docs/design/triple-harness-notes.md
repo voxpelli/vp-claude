@@ -51,9 +51,14 @@ than shelling out to a live `pi` process. Worth a general note in `voxpelli/ai-m
 - **Runtime path resolution** in the extension should assume the single-root layout: `extensions/../lib`,
   `extensions/../agents` — one candidate, no dual-probe for a build-copy layout. Import dynamic modules via
   `pathToFileURL(path).href` (a bare absolute path is not a valid import specifier on Windows).
-- **MCP tool names**: express Claude↔Pi mapping as a RULE (`mcp__<server>__<tool>` → server hyphens→`_`,
-  tool verbatim) + an `mcp`-proxy fallback in injected guidance — never a hand-maintained table (it rots and
-  can promise non-existent tools).
+- **MCP tool names**: lead with the `mcp`-proxy call shape in injected guidance, and treat flattened
+  direct names as host-specific — usable only when present verbatim in the agent's own tool list.
+  Never a hand-maintained table (it rots and can promise non-existent tools) and, correcting this
+  note's own earlier advice, **never a derivation rule either**: the rule this bullet used to
+  prescribe — "server hyphens→`_`, tool verbatim" — was wrong. `pi-mcp-adapter` preserves hyphens in
+  the server segment, so it named tools no adapter registers, and an unknown name is dropped
+  silently rather than refused. A rule that rots promises non-existent tools exactly as a table does;
+  the durable answer is to enumerate the host's live registry, not to derive names at all.
 - **Verify the extension offline** with `check-pi-load.mjs` (loadSkillsFromDir + factory import) — CI-portable,
   no running agent. Template could ship this as a `check:pi-load` when a plugin adds a Pi extension.
 

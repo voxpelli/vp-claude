@@ -31,7 +31,9 @@ import { CONFIG_DIR_NAME } from '@earendil-works/pi-coding-agent'
 /** @type {VpKnowledgeConfig} */
 export const DEFAULTS = {
   agents: {
-    autoSync: true,
+    // Opt-in: agent profiles are never copied into ~/.pi/agent/agents/ unless
+    // the user explicitly enables autoSync (or runs /vpk-sync).
+    autoSync: false,
   },
   qualityChecks: {
     fourthWall: true,

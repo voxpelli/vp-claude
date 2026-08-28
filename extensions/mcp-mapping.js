@@ -29,10 +29,26 @@ export function parseMcpToolName (claudeName) {
 
 /**
  * Flatten a Claude-style MCP tool reference to the direct-tool name a Pi MCP
- * shim exposes WHEN `directTools:true` is set: drop the `mcp__` prefix, replace
- * the server's hyphens with underscores, and append the tool name UNCHANGED
- * (hyphens inside the tool name are preserved, e.g. `resolve-library-id`).
- * Returns null for anything that is not a Claude MCP reference.
+ * shim exposes WHEN `directTools` covers it: drop the `mcp__` prefix, join the
+ * server and tool segments with `_`, and change NEITHER segment — hyphens
+ * survive on both sides (`basic-memory_search_notes`,
+ * `hyper-mcp_context7-query_docs`). Returns null for anything that is not a
+ * Claude MCP reference.
+ *
+ * This used to replace the server's hyphens with underscores, and the docblock
+ * asserted that as fact. It was wrong: `pi-mcp-adapter`'s `sanitizeServerPrefix`
+ * keeps `-` in its valid-character class (`/^[A-Za-z0-9_-]$/`) under the default
+ * `"server"` prefix mode, so the adapter registers `basic-memory_search_notes`
+ * while this returned `basic_memory_search_notes`. Six of ten sampled
+ * derivations missed, including every `basic-memory` tool. The names are not
+ * merely unused — `buildMappingGuidance` states the rule in the injected system
+ * prompt, and an unknown tool name is silently dropped rather than refused, so
+ * the model was told to call tools that do not exist.
+ *
+ * `test/mcp-mapping.test.js` pins this against a captured registry. Note it runs
+ * under `test:node`, which `npm test` includes but `npm run check` does not —
+ * this sentence previously named a `check:mcp-mapping` script that has never
+ * existed, which is the same overclaiming shape as the bug above.
  *
  * Direct-tool names DO NOT EXIST on the default pi-mcp-adapter config
  * (`directTools:false`), where every MCP tool is reachable only through the
@@ -46,7 +62,7 @@ export function parseMcpToolName (claudeName) {
 export function flattenMcpToolName (claudeName) {
   const parsed = parseMcpToolName(claudeName)
   if (!parsed) return null
-  return `${parsed.server.replaceAll('-', '_')}_${parsed.tool}`
+  return `${parsed.server}_${parsed.tool}`
 }
 
 /**

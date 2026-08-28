@@ -33,7 +33,7 @@ function tempConfig (contents) {
 describe('config', () => {
   it('exports DEFAULTS with expected structure', () => {
     assert.strictEqual(typeof DEFAULTS, 'object')
-    assert.strictEqual(DEFAULTS.agents.autoSync, true)
+    assert.strictEqual(DEFAULTS.agents.autoSync, false)
     assert.strictEqual(DEFAULTS.qualityChecks.fourthWall, true)
     assert.strictEqual(DEFAULTS.qualityChecks.schemaValidate, true)
     assert.strictEqual(DEFAULTS.guidance.auditReminders, true)
@@ -55,7 +55,7 @@ describe('config', () => {
       const config = loadConfig(path)
       assert.strictEqual(config.qualityChecks.fourthWall, false) // flipped
       assert.strictEqual(config.qualityChecks.schemaValidate, true) // default
-      assert.strictEqual(config.agents.autoSync, true) // default
+      assert.strictEqual(config.agents.autoSync, false) // default (opt-in)
       assert.strictEqual(config.guidance.auditReminders, true) // default
     } finally {
       cleanup()
@@ -78,7 +78,7 @@ describe('config', () => {
       const config = loadConfig(path)
       assert.deepStrictEqual(config, DEFAULTS)
       // The returned object is always the full DEFAULTS shape, so this is safe.
-      assert.strictEqual(config.agents.autoSync, true)
+      assert.strictEqual(config.agents.autoSync, false)
     } finally {
       cleanup()
     }
@@ -120,7 +120,7 @@ describe('config', () => {
     const { cleanup, path } = tempConfig(JSON.stringify({ agents: { autoSync: 'yes' } }))
     try {
       const config = loadConfig(path)
-      assert.strictEqual(config.agents.autoSync, true) // default, not the string
+      assert.strictEqual(config.agents.autoSync, false) // default, not the string
     } finally {
       cleanup()
     }

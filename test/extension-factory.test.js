@@ -75,7 +75,8 @@ describe('extension factory', () => {
     // C1 regression guard: point the override at a FRESH EMPTY dir. It ends up
     // populated only if getAgentsDir() returned the env value — if the seam ever
     // reverts to a module-load const targeting the real home, `fresh` stays empty
-    // and this fails. Config isolation makes autoSync deterministically true.
+    // and this fails. The seam config explicitly enables autoSync:true, so the
+    // startup sync runs deterministically.
     __resetStartupMaintenance()
     const saved = process.env.VP_KNOWLEDGE_AGENTS_DIR
     const fresh = mkdtempSync(join(tmpdir(), 'vpk-g1-'))

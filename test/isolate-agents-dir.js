@@ -18,7 +18,7 @@
 // tmpdir, matching getAgentsDir()'s `||` fallback — otherwise `??=` would keep a
 // blank string and the startup sync would resolve to the real home dir.
 
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -27,11 +27,18 @@ import { join } from 'node:path'
 // Redirect the agent-profile sync target to a throwaway tmpdir.
 process.env.VP_KNOWLEDGE_AGENTS_DIR ||= mkdtempSync(join(tmpdir(), 'vpk-agents-'))
 
-// Pin the config read to a nonexistent path so loadConfig() returns DEFAULTS
-// deterministically (autoSync + quality checks ON), independent of the
-// contributor's real ~/.pi/agent/extensions/vp-knowledge.json — otherwise a
-// contributor with autoSync/fourthWall disabled would silently skip the very
+// Pin the config read to a tmp file that explicitly enables agent auto-sync.
+// autoSync is OPT-IN by default (DEFAULTS.agents.autoSync === false), so a
+// nonexistent config would yield the new default and the startup-sync code
+// paths in the factory tests would silently stop being exercised. An explicit
+// {"agents":{"autoSync":true}} keeps them deterministically exercised,
+// independent of the contributor's real ~/.pi/agent/extensions/vp-knowledge.json
+// — otherwise a contributor with autoSync disabled would silently skip the very
 // code paths these tests exercise.
-process.env.VP_KNOWLEDGE_CONFIG_FILE ||= join(tmpdir(), 'vpk-no-such-config.json')
+if (!process.env.VP_KNOWLEDGE_CONFIG_FILE) {
+  const cfgPath = join(tmpdir(), `vpk-test-config-${process.pid}.json`)
+  writeFileSync(cfgPath, JSON.stringify({ agents: { autoSync: true } }), 'utf8')
+  process.env.VP_KNOWLEDGE_CONFIG_FILE = cfgPath
+}
 
 /* eslint-enable n/no-process-env */

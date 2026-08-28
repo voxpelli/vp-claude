@@ -84,8 +84,9 @@ export function buildMappingGuidance () {
   // The directTools examples are computed through flattenMcpToolName so that
   // documented output can never drift from the rule the model is told to apply.
   const directExamples = [
-    'mcp__basic-memory__write_note',
+    'mcp__basic-memory__search_notes',
     'mcp__socket-mcp__depscore',
+    'mcp__hyper-mcp__context7-query_docs',
   ]
 
   return [
@@ -109,8 +110,9 @@ export function buildMappingGuidance () {
     '- `mcp__basic-memory__write_note` → `mcp({ server: "basic-memory", tool: "write_note", args: "{…}" })`',
     '- `mcp__plugin_context7_context7__resolve-library-id` → `mcp({ server: "context7", tool: "resolve-library-id", args: "{…}" })`',
     '',
-    'If the host sets `directTools:true`, each tool ALSO appears as a flattened direct name (drop `mcp__`,',
-    'server hyphens→`_`, tool unchanged) callable with the plain parameter object:',
+    'If the host exposes a tool via `directTools`, it ALSO appears as a flattened direct name — drop',
+    '`mcp__` and join the two segments with `_`, changing NEITHER. Hyphens survive on both sides. Callable',
+    'with the plain parameter object:',
     ...directExamples.map((claudeName) => `- \`${claudeName}\` → \`${flattenMcpToolName(claudeName)}\``),
     'Only call a flat name if it is actually in your available tool list; otherwise use the `mcp` proxy above.',
   ].join('\n')
@@ -169,6 +171,29 @@ export function buildAuditReminder (cwd) {
 }
 
 /**
+ * Does this error text say a tool or server NAME did not resolve?
+ *
+ * The literal substrings this replaced — `'tool not found'` and
+ * `'unknown tool'` — never matched anything a host actually emits.
+ * `pi-mcp-adapter` writes `Tool "basic-memory_read_note" not found. Use
+ * mcp({ search: ... })`, with the name between the two words, so
+ * `includes('tool not found')` was false for the one message it existed to
+ * catch. The `tool-missing` category was unreachable in practice, and the test
+ * that covered it passed only because it planted a string no host produces.
+ *
+ * Matched shapes are the adapter's own (`proxy-modes.ts`), plus the bare
+ * phrasings other MCP servers use.
+ *
+ * @param {string} errorText
+ * @returns {boolean}
+ */
+export function isToolNameError (errorText) {
+  return /\b(?:tool|server)\s+"[^"]*"\s+not found/i.test(errorText) ||
+    /\bunknown tool\b/i.test(errorText) ||
+    /\btool not found\b/i.test(errorText)
+}
+
+/**
  * Classify a Basic Memory error message into a recovery category.
  *
  * @param {string} errorText
@@ -197,7 +222,13 @@ export function classifyBmError (errorText) {
 const RECOVERY_MESSAGES = {
   'schema-violation': 'Fix the note structure to match the schema, then retry. Use schema_validate to preview errors.',
   'missing-target': 'The note or directory may have been moved/deleted. Search for it or create it fresh.',
-  'tool-missing': 'The tool name may be incorrect. Re-derive it from the MCP naming rule — the mcp proxy is mcp({ server, tool, args }); a direct name drops the mcp__ prefix and turns server hyphens into underscores — then retry.',
+  // Deliberately restates NO derivation rule. This string used to say a direct
+  // name "turns server hyphens into underscores" — the rule disproven in 0.34.0
+  // — which meant the one message shown when a tool name failed to resolve told
+  // the model to regenerate the same failing name. The correct guidance already
+  // sits in this session's system prompt (buildMappingGuidance), computed from
+  // flattenMcpToolName, so pointing at it cannot drift the way a second copy did.
+  'tool-missing': 'The host did not recognise that tool name. Do NOT re-derive a flattened direct name — direct names are host-specific and an unrecognised one is dropped silently, so guessing again reproduces the failure. Retry through the `mcp` proxy with the bare tool name — mcp({ server: "basic-memory", tool: "<bare name>", args: "<JSON string>" }) — which needs no flattening. If you were already using the proxy, the `tool` value itself is misspelled. For the direct-name form, follow the "MCP Tool Names" guidance already in your system prompt rather than deriving it again.',
   conflict: 'A note with this identifier already exists. Read the existing note first, then decide whether to update or use a different name.',
   permission: 'Check file permissions in ~/basic-memory or the MCP server config. You may need to restart the basic-memory MCP server.',
   'transient': 'The MCP server may be restarting or overloaded. Wait a moment and retry the same call.',
@@ -236,15 +267,87 @@ function parseJsonObject (raw) {
 }
 
 /**
+ * Every spelling a Basic Memory tool call arrives under, longest prefix first.
+ *
+ * `pi-mcp-adapter` has four `toolPrefix` modes and they register different
+ * names: `"server"`/`"short"` give `basic-memory_read_note`, `"mcp"` gives
+ * `mcp__basic-memory_read_note` (a SINGLE underscore before the tool, which is
+ * why the old `mcp__basic-memory__` test looked right and never matched), and
+ * `"none"` gives the bare `read_note`. `basic_memory_` is the form this
+ * extension wrongly derived before 0.34.0 and is kept so an older install still
+ * matches.
+ *
+ * Order matters: `mcp__basic-memory__` must be tried before
+ * `mcp__basic-memory_`, or the double-underscore form loses one underscore.
+ */
+const BM_TOOL_PREFIXES = [
+  'mcp__basic-memory__',
+  'mcp__basic-memory_',
+  'basic-memory_',
+  'basic_memory_',
+]
+
+/**
+ * Recover the bare Basic Memory tool name from any registered spelling, or
+ * null when this is not a Basic Memory tool.
+ *
+ * The `"none"` prefix mode registers the bare name, so an exact `BM_TOOLS` hit
+ * counts — that is the only case where a name with no prefix is accepted, which
+ * keeps this from claiming every unprefixed tool in the session.
+ *
+ * @param {string} toolName
+ * @returns {string | null}
+ */
+export function stripBmPrefix (toolName) {
+  for (const prefix of BM_TOOL_PREFIXES) {
+    if (toolName.startsWith(prefix)) return toolName.slice(prefix.length)
+  }
+  return BM_TOOLS.has(toolName) ? toolName : null
+}
+
+/**
+ * Read the proxy call's `args`, which the adapter's schema declares as
+ * `Union([String, Object])` — a plain object is a documented, supported form,
+ * not a mistake.
+ *
+ * Reading it as a string only meant an object yielded `{}` while the call still
+ * normalized successfully. That is worse than returning null: the write was
+ * recognised, so nothing downstream noticed, and the fourth-wall check silently
+ * skipped itself on an empty `content`. The prompt asks the model to stringify;
+ * that is a request, not a guarantee.
+ *
+ * @param {unknown} input
+ * @returns {Record<string, unknown>}
+ */
+export function readProxyArgs (input) {
+  if (typeof input !== 'object' || input === null) return {}
+  const { args } = /** @type {Record<string, unknown>} */ (input)
+  if (typeof args === 'string') return parseJsonObject(args)
+  if (typeof args === 'object' && args !== null && !Array.isArray(args)) {
+    return /** @type {Record<string, unknown>} */ (args)
+  }
+  return {}
+}
+
+/**
  * Normalize a tool_result event to the Basic Memory tool it represents plus that
  * tool's input params, across the three shapes a BM call arrives as on Pi:
- *   - flat direct name (`directTools:true`): toolName `basic_memory_write_note`, params = event.input
+ *   - flat direct name (`directTools`):       toolName `basic-memory_write_note`, params = event.input
  *   - Claude-style verbatim (some shims):    toolName `mcp__basic-memory__write_note`, params = event.input
  *   - `mcp` proxy (default pi-mcp-adapter):  toolName `mcp`; real tool in event.input.tool,
  *                                            params in the JSON-STRING event.input.args
  * Returns `{ tool, params }` with a bare BM tool name, or null when not a BM
- * call. The `basic_memory_` / `mcp__basic-memory__` prefixes are flattenMcpToolName's
- * output / the Claude form for the fixed `basic-memory` server.
+ * call.
+ *
+ * BOTH direct spellings are accepted. `basic-memory_` is what the adapter
+ * actually registers (its server prefix keeps hyphens); `basic_memory_` is the
+ * form this extension wrongly derived before 0.34.0, and it is still what an
+ * older install or a `toolPrefix` variant may emit. This is a detector for
+ * running quality checks, not a security boundary, so being permissive costs
+ * nothing and a missed match costs a silently-skipped check — which is exactly
+ * what happened: on any host with `directTools` for basic-memory, every direct
+ * call fell through to `null` and neither the fourth-wall nor the
+ * `schema_validate` reminder ever fired.
  *
  * @param {{ toolName?: string, input?: unknown }} event
  * @returns {{ tool: string, params: Record<string, unknown> } | null}
@@ -254,22 +357,22 @@ export function normalizeBmToolCall (event) {
 
   // Proxy path: toolName is the literal 'mcp'; the real call is inside input.
   if (toolName === 'mcp') {
-    const server = getValueOfKeyWithType(event.input, 'server', 'string')
     const tool = getValueOfKeyWithType(event.input, 'tool', 'string')
-    if (server !== 'basic-memory' || !tool) return null
-    const rawArgs = getValueOfKeyWithType(event.input, 'args', 'string') ?? ''
-    return { tool, params: parseJsonObject(rawArgs) }
+    if (!tool) return null
+    // `server` is OPTIONAL in the adapter's proxy schema — it disambiguates,
+    // it is not required, and an unqualified tool is resolved across every
+    // connected server. Requiring it here meant `mcp({ tool: "write_note" })`
+    // wrote a note with every quality check skipped.
+    const server = getValueOfKeyWithType(event.input, 'server', 'string')
+    const bare = stripBmPrefix(tool)
+    if (bare === null) return null
+    if (server !== undefined && server !== 'basic-memory') return null
+    return { tool: bare, params: readProxyArgs(event.input) }
   }
 
   // Direct paths: flat name or Claude-style verbatim.
-  /** @type {string | null} */
-  let bare = null
-  if (toolName.startsWith('basic_memory_')) {
-    bare = toolName.slice('basic_memory_'.length)
-  } else if (toolName.startsWith('mcp__basic-memory__')) {
-    bare = toolName.slice('mcp__basic-memory__'.length)
-  }
-  if (!bare) return null
+  const bare = stripBmPrefix(toolName)
+  if (bare === null) return null
   const params = (typeof event.input === 'object' && event.input !== null)
     ? /** @type {Record<string, unknown>} */ (event.input)
     : {}
@@ -416,7 +519,14 @@ export default function vpKnowledgePiExtension (pi) {
     const config = loadConfig()
 
     // ── Branch 1: BM write quality checks ───────────────────────────────
-    if (BM_WRITE_TOOLS.has(bm.tool)) {
+    // `!event.isError` matters: a FAILED write has no note to quality-check,
+    // and this branch returns early. Without the guard, a failed write whose
+    // attempted content happened to trip the fourth-wall detector returned the
+    // advisory INSTEAD of the error classification below — so the recovery
+    // guidance appeared only when the detector found nothing, exactly inverted.
+    // Worse, the advisory says "before finalizing", which reads as though the
+    // note exists; an agent could reasonably conclude the write landed.
+    if (BM_WRITE_TOOLS.has(bm.tool) && !event.isError) {
       /** @type {{ content?: Array<{ type: 'text', text: string }> }} */
       const patches = {}
 
@@ -471,8 +581,8 @@ export default function vpKnowledgePiExtension (pi) {
 
       let category = classifyBmError(errorText)
 
-      // Override: if the error is about an unknown tool name itself, it's tool-missing
-      if (errorText.includes('tool not found') || errorText.includes('unknown tool')) {
+      // Override: an unresolved tool NAME is not a note problem.
+      if (isToolNameError(errorText)) {
         category = 'tool-missing'
       }
 

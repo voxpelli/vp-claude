@@ -31,9 +31,9 @@ describe('vp-knowledge-pi extension', () => {
     assert.strictEqual(hasVpKnowledgeSkill([{ name: 'some-other-skill' }]), false)
   })
 
-  it('buildMappingGuidance contains basic_memory_write_note mapping', () => {
+  it('buildMappingGuidance shows real, registry-resolvable direct names', () => {
     const guidance = buildMappingGuidance()
-    assert.ok(guidance.includes('basic_memory_write_note'))
+    assert.ok(guidance.includes('basic-memory_search_notes'))
     assert.ok(guidance.includes('mcp__basic-memory__write_note'))
   })
 
