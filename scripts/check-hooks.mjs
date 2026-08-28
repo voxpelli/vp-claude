@@ -454,6 +454,8 @@ for (const [error, contains] of /** @type {const} */ ([
   ['note does not exist', '[note-not-found]'],
   ['missing required field', '[invalid-argument]'],
   ['permission denied', '[permission-error]'],
+  ['unauthorized request', '[permission-error]'],
+  ['a note with that title already exists', '[note-conflict]'],
   ['something unexpected', '[unknown-error]'],
 ])) {
   test(`"${error}" → ${contains}`, () => {

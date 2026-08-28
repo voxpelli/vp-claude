@@ -21,7 +21,8 @@ import { fileURLToPath } from 'node:url'
 import { buildAuditReminder, classifyBmError } from '../extensions/index.js'
 import { createCheckHarness } from '../lib/check-harness.mjs'
 import {
-  CADENCE_SPRINT_RANGE, CROSS_HOST_ERROR_CASES, PI_ERROR_CATEGORIES, PI_ONLY_ERROR_CATEGORIES,
+  CADENCE_SPRINT_RANGE, ERROR_CATEGORY_EQUIVALENCE, ERROR_CORPUS,
+  PI_ERROR_CATEGORIES, PI_ONLY_ERROR_CATEGORIES,
 } from '../lib/host-parity.mjs'
 
 const { check, done } = createCheckHarness()
@@ -110,39 +111,58 @@ for (let n = 0; n < CADENCE_SPRINT_RANGE; n++) {
 
 // ── 2. Basic Memory error taxonomy ──────────────────────────────────────────
 //
-// Not byte-parity: the two vocabularies genuinely differ (5 bash tags, 7 JS
-// categories). What must hold is that the same error text reaches CORRESPONDING
-// categories, so the advice a user gets does not depend on their host.
-console.log('\nBM error taxonomy (same input → corresponding category)')
-for (const { claude, pi, sample } of CROSS_HOST_ERROR_CASES) {
+// Not byte-parity: the two vocabularies genuinely differ (server-unavailable vs
+// transient, and so on), so equality would be the wrong claim. What must hold is
+// that the same error text reaches EQUIVALENT categories, so the advice a user
+// gets does not depend on their host.
+//
+// Run over the WHOLE corpus. The first version of this check listed nine
+// hand-picked samples and passed while the two hosts disagreed on 17 of 27 real
+// inputs — a check that could not fail, because it chose its own inputs.
+console.log('\nBM error taxonomy (same input → equivalent category)')
+/** @type {Set<string>} */
+const seenPiCategories = new Set()
+for (const sample of ERROR_CORPUS) {
   const ctx = additionalContext(runHook('post-bm-failure-classify.sh', JSON.stringify({ error: sample })))
-  check(`"${sample}" → [${claude}] on Claude Code`, ctx.includes(`[${claude}]`))
-  check(`"${sample}" → ${pi} on Pi`, classifyBmError(sample) === pi)
+  const claudeTag = /\[([a-z-]+)\]/.exec(ctx)?.[1] ?? '(none)'
+  const piCategory = classifyBmError(sample)
+  seenPiCategories.add(piCategory)
+  const expected = ERROR_CATEGORY_EQUIVALENCE[claudeTag]
+  const same = expected === piCategory
+  if (!same) {
+    console.error(`        Claude Code: [${claudeTag}] → expects "${expected ?? '(unmapped tag)'}"`)
+    console.error(`        Pi:          ${piCategory}`)
+  }
+  check(`"${sample}": [${claudeTag}] ≡ ${piCategory}`, same)
 }
 
-// ── 3. Coverage: is every Pi category either mapped or declared Pi-only? ─────
+// ── 3. Coverage ─────────────────────────────────────────────────────────────
 //
-// The two sides come from different places ON PURPOSE. `PI_ERROR_CATEGORIES` is
-// hand-written in lib/host-parity.mjs; the reachable set below is what the
-// classifier actually returns for the mapped samples. A coverage check whose
-// sides both derive from one source passes for any content — this repo has
-// shipped that mistake five times, most recently inside the guard written to
-// end it.
+// The sides come from different places ON PURPOSE. `PI_ERROR_CATEGORIES` is
+// hand-written in lib/host-parity.mjs; `seenPiCategories` is what the classifier
+// actually returned above. A coverage check whose sides both derive from one
+// source passes for any content — this repo has shipped that five times, most
+// recently inside the guard written to end it.
 console.log('\ntaxonomy coverage')
-const mapped = new Set(CROSS_HOST_ERROR_CASES.map((c) => c.pi))
 const declaredPiOnly = new Set(Object.keys(PI_ONLY_ERROR_CATEGORIES))
 for (const category of PI_ERROR_CATEGORIES) {
   check(
-    `${category} is either cross-host mapped or declared Pi-only`,
-    mapped.has(category) || declaredPiOnly.has(category)
+    `${category} is exercised by the corpus, or declared unreachable from it`,
+    seenPiCategories.has(category) || declaredPiOnly.has(category)
   )
 }
-// The reverse direction: a hand-written list that has fallen behind the code is
-// the more likely drift, since the code is what changes.
-for (const category of [...mapped, ...declaredPiOnly]) {
+for (const category of seenPiCategories) {
   check(
-    `${category} is a category the classifier can actually return`,
+    `${category} is a category the hand-written list knows about`,
     /** @type {readonly string[]} */ (PI_ERROR_CATEGORIES).includes(category)
+  )
+}
+// Both directions of the name map must be live: an equivalence entry naming a
+// category the classifier cannot return is a map that has fallen behind.
+for (const piName of Object.values(ERROR_CATEGORY_EQUIVALENCE)) {
+  check(
+    `equivalence target "${piName}" is a real Pi category`,
+    /** @type {readonly string[]} */ (PI_ERROR_CATEGORIES).includes(piName)
   )
 }
 
@@ -158,4 +178,4 @@ const compactCtx = additionalContext(runHook('session-start.sh', JSON.stringify(
 check('the Claude Code recovery block names the BM tool namespace', compactCtx.includes('mcp__basic-memory__'))
 check('...and tells the reader not to edit the store directly', /never edit ~\/basic-memory files directly/.test(compactCtx))
 
-done(30)
+done(50)

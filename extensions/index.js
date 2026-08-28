@@ -200,20 +200,37 @@ export function isToolNameError (errorText) {
  * @returns {string}
  */
 export function classifyBmError (errorText) {
-  if (errorText.includes('schema validation failed') || errorText.includes('ValidationError')) {
-    return 'schema-violation'
+  // Case-INSENSITIVE, and in the SAME branch order and with the same patterns
+  // as hooks/post-bm-failure-classify.sh's `grep -qi` chain. Both halves of
+  // that mattered, and both were wrong:
+  //
+  //   - This function was case-sensitive where the hook is not, so `Timeout`
+  //     was `unknown` here and server-unavailable there.
+  //   - `connection refused` and `unavailable` had NO arm at all, so the single
+  //     most common Basic Memory failure got "review the error message and
+  //     retry" on Pi while Claude Code correctly said the server is down.
+  //   - The branch ORDER differed, so text matching two arms could land in
+  //     different categories on each host even where both recognised it.
+  //
+  // A sweep over 27 realistic error strings had the two agreeing on 10.
+  // `check:host-parity` now runs that corpus rather than a curated sample —
+  // choosing the inputs on which two implementations agree is the same
+  // can't-fail defect this repo keeps shipping, wearing a different hat.
+  const t = errorText.toLowerCase()
+  if (/connection refused|timeout|unavailable|econnrefused|etimedout/.test(t)) {
+    return 'transient'
   }
-  if (errorText.includes('tool not found') || errorText.includes('unknown tool') || errorText.includes('does not exist') || errorText.includes('No such file')) {
+  if (/not found|does not exist|no note|no such/.test(t)) {
     return 'missing-target'
   }
-  if (errorText.includes('already exists') || errorText.includes('duplicate') || errorText.includes('conflict')) {
-    return 'conflict'
+  if (/invalid|missing.*field|malformed|validation ?error|schema validation|too long|too short/.test(t)) {
+    return 'schema-violation'
   }
-  if (errorText.includes('permission') || errorText.includes('denied') || errorText.includes('unauthorized')) {
+  if (/permission|denied|unauthorized|forbidden/.test(t)) {
     return 'permission'
   }
-  if (errorText.includes('timeout') || errorText.includes('ETIMEDOUT') || errorText.includes('ECONNREFUSED')) {
-    return 'transient'
+  if (/already exists|duplicate|conflict/.test(t)) {
+    return 'conflict'
   }
   return 'unknown'
 }
