@@ -4,10 +4,16 @@ A Workflow-tool sweep of the `npm_package` Basic Memory cohort that produces one
 prioritised markdown report: what most needs a fresh `/intel`, what needs a
 one-line `[version]` slot instead, and what could not be assessed at all.
 
-Built in one session, reviewed by five adversarial agents, and **not yet run at
-full scale**. This record exists because the most valuable output of that review
-was a set of lessons and a set of *deliberately unfixed* findings, neither of
-which survives in the code.
+Built in one session and reviewed by five adversarial agents. This record exists
+because the most valuable output of that review was a set of lessons and a set
+of *deliberately unfixed* findings, neither of which survives in the code.
+
+**It said "not yet run at full scale" when written. It has since run at scale
+twice, over 578 notes**, and what those runs found is the reason several
+entries below are now struck through — including two whose recorded revival
+trigger had already fired without anyone noticing. Read the strikethroughs
+before trusting anything else here: a design record nobody re-reads is a record
+that quietly stops describing the system.
 
 ## Files
 
@@ -16,8 +22,17 @@ which survives in the code.
 | `.claude/workflows/stale-npm-triage.js` | Orchestration: Enumerate → Scan → Resolve → Rank → Audit → Report |
 | `.claude/workflows/stale-npm-triage/enumerate.mjs` | Cohort + schema-field view from one `bm tool schema-validate` call |
 | `.claude/workflows/stale-npm-triage/scan-shard.mjs` | Per-note version + structural-compliance signals |
-| `.claude/workflows/stale-npm-triage/registry-shard.mjs` | npm registry resolution (version, release date, downloads) |
-| `.claude/workflows/stale-npm-triage/rank.mjs` | Action classes, scoring, the gate, table rendering |
+| `.claude/workflows/stale-npm-triage/registry-shard.mjs` | npm registry resolution (version, release date) |
+| `.claude/workflows/stale-npm-triage/downloads-batch.mjs` | Weekly downloads, in a separate batched pass |
+| `.claude/workflows/stale-npm-triage/rank.mjs` | Action classes, the ordering key, the gate, table rendering |
+
+Two corrections to that table since it was written. Downloads moved OUT of
+`registry-shard.mjs` into their own driver: the 2026-08-05 run opened four
+shards x concurrency 8 against the downloads API and lost 462 of 512 eligible
+counts to HTTP 429, which the ranking then read as 462 packages nobody uses.
+And `rank.mjs` no longer scores anything — the weighted sum was replaced by a
+declared lexicographic key, because a `patch` bump on an old, popular, untidy
+note could out-total a confirmed `semver-major`. See that file's own header.
 
 Commits: `9b4f373` (lib), `0017a15` (workflow).
 
@@ -74,9 +89,9 @@ it worth doing.
 | Drivers sit outside every gate (`.claude/workflows/**` is eslint- and ast-grep-ignored, outside `tsconfig.include`) | Fixing it touches checked config; two reviewers called it the real risk | Any second consumer of these drivers, or the first wrong-classification bug traced to an untyped row shape |
 | No fixture self-test for `rank.mjs`'s decision chain | Same; the repo already tests `version-distance` and `bm-version-extract` this way | The first change to the action-class chain by anyone who did not write it |
 | Relevance is a global proxy (weekly downloads); no project-manifest cross-reference | Mode B (`/knowledge-gaps` coverage) already owns manifest reading | A run whose top rows are all packages this user does not depend on |
-| `contract.mjs` with discriminated unions for the NDJSON row shapes | Prototype scope; the discriminants (`status`, `upstreamState`) already exist | Adding a third producer, or a second ecosystem |
+| ~~`contract.mjs` with discriminated unions for the NDJSON row shapes~~ **DONE** | Not for the reason recorded here. The discriminants existed but were OPTIONAL, which made all four row types structurally satisfied by `Record<string, unknown>` and therefore by each other; `scanRow: downloads.get(id)` type-checked cleanly | — the four discriminants are now required, in `lib/npm-triage.mjs` |
 | Sharding moved into `enumerate.mjs` (would delete ~20 lines of prompt and two platform workarounds, and make `splitVerified` structurally true) | Works as-is; pure simplification | Next substantive edit to `enumeratePrompt` |
-| Shared `pool()` / NDJSON helpers (duplicated across two drivers) | 12 duplicated lines; the rationale comment has already diverged between them | A third driver, or a bug fixed in one pool and not the other |
+| ~~Shared `pool()` / NDJSON helpers~~ **DONE** | Both triggers had fired: `lib/ndjson.mjs` landed first, and the third driver turned out to already exist — `downloads-batch.mjs` inlines the same loop without naming it, so a grep for `pool` never found it | — now `lib/pool.mjs` + `check:pool` |
 | Multi-package notes: only `packages[0]` is resolved | Reported per row as `extraPackages`, not silently dropped | A cohort where the count is material |
 | Fourth-wall detection is report-only and scores nothing | Its false-positive rate over a full cohort is unmeasured | One full-cohort run's `fourthWallFlagged` list, eyeballed |
 | Packument size cap biases release-date loss toward popular packages | Reported honestly per row (`dateState`) and marked `?` in the table | A cheaper release-date source than the full packument |
