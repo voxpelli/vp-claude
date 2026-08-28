@@ -9,17 +9,24 @@ set -euo pipefail
 count=$(find . -maxdepth 1 -name "RETRO-*.md" 2>/dev/null | wc -l | tr -d ' ')
 
 # Build the optional audit-cycle sentence.
-# Audit cycle: every 4th sprint (mod 4 == 3 is pre-warning, mod 4 == 0 is audit sprint).
+# Audit every 4th sprint: sprint N is an audit sprint iff N % 4 == 0.
+# `count` = completed sprints (RETRO files), so the sprint about to start is
+# `upcoming`. Fire the do-it-now message when the upcoming sprint IS an audit
+# sprint, and a heads-up when the one after it is.
+#
+# THIS MUST STAY IN LOCKSTEP WITH `buildAuditReminder` in extensions/index.js —
+# the same policy, once per host. It did not: this side kept the original
+# off-by-one (do-it-now on the sprint AFTER an audit) for every release up to
+# 0.34.0, while the JS side was corrected. Both sides were tested and the tests
+# pinned opposite answers, so neither guard could fail on the disagreement.
 # Assumes sequential RETRO-N.md naming.
 audit_reminder=""
 if [ "$count" -gt 0 ]; then
-	mod=$((count % 4))
-	if [ "$mod" -eq 3 ]; then
-		next=$((count + 1))
-		audit_reminder="Graph-audit reminder: Sprint ${next} will be a graph-audit sprint. When running /retrospective next time, run the knowledge-gardener agent (read-only audit) then knowledge-maintainer (auto-fix) for full graph health: schema validation, stale-note detection, drift check, and orphan audit."
-	elif [ "$mod" -eq 0 ]; then
-		current=$((count + 1))
-		audit_reminder="Graph-audit sprint: Sprint ${current} — run knowledge-gardener (audit) then knowledge-maintainer (fix) alongside /retrospective for full graph health: schema validation, stale-note detection, drift detection, and orphan check."
+	upcoming=$((count + 1))
+	if [ $((upcoming % 4)) -eq 0 ]; then
+		audit_reminder="Graph-audit sprint: Sprint ${upcoming} is a graph-audit sprint — run knowledge-gardener (audit) then knowledge-maintainer (fix) alongside /retrospective for full graph health: schema validation, stale-note detection, drift detection, and orphan check."
+	elif [ $(((upcoming + 1) % 4)) -eq 0 ]; then
+		audit_reminder="Graph-audit reminder: Sprint $((upcoming + 1)) will be a graph-audit sprint. When running /retrospective next time, run the knowledge-gardener agent (read-only audit) then knowledge-maintainer (auto-fix) for full graph health: schema validation, stale-note detection, drift check, and orphan audit."
 	fi
 fi
 

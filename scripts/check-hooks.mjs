@@ -168,23 +168,41 @@ test('no RETRO files → 1 object with additionalContext', () => {
   return { ok: true }
 })
 
-test('3 RETRO files → 1 object, contains audit reminder', () => {
+// The next three assert the audit cadence by SPRINT NUMBER, not just by which
+// sentence appears. Until 0.34.0 they asserted only the sentence, and pinned
+// this hook's off-by-one: 3 RETROs claimed sprint 4 "will be" an audit sprint
+// when sprint 4 was the one starting, and 4 RETROs claimed sprint 5 "is" one.
+// extensions/index.js implements the same policy correctly and its own tests
+// pinned the opposite answer, so the two hosts contradicted each other with
+// both guards green. Naming the number is what makes a future drift fail.
+
+test('2 RETRO files → heads-up naming sprint 4 (the one after next)', () => {
+  const { stdout } = runHook(join(HOOKS_DIR, 'session-start.sh'), '{}', { cwd: makeTempDirWithRetros(2) })
+  const { count, objects, parseError } = parseJsonObjects(stdout)
+  if (parseError) return { ok: false, reason: parseError }
+  if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count} — multi-object bug!` }
+  const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
+  if (!ctx.includes('Sprint 4 will be a graph-audit sprint')) return { ok: false, reason: 'missing the sprint-4 heads-up' }
+  return { ok: true }
+})
+
+test('3 RETRO files → do-it-now naming sprint 4 (starting now)', () => {
   const { stdout } = runHook(join(HOOKS_DIR, 'session-start.sh'), '{}', { cwd: makeTempDirWithRetros(3) })
   const { count, objects, parseError } = parseJsonObjects(stdout)
   if (parseError) return { ok: false, reason: parseError }
   if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count} — multi-object bug!` }
   const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
-  if (!ctx.includes('Graph-audit reminder')) return { ok: false, reason: 'missing audit reminder text' }
+  if (!ctx.includes('Sprint 4 is a graph-audit sprint')) return { ok: false, reason: 'missing the sprint-4 do-it-now message' }
   return { ok: true }
 })
 
-test('4 RETRO files → 1 object, contains audit sprint', () => {
+test('4 RETRO files → silent (sprint 5 is not an audit sprint)', () => {
   const { stdout } = runHook(join(HOOKS_DIR, 'session-start.sh'), '{}', { cwd: makeTempDirWithRetros(4) })
   const { count, objects, parseError } = parseJsonObjects(stdout)
   if (parseError) return { ok: false, reason: parseError }
   if (count !== 1) return { ok: false, reason: `expected 1 object, got ${count} — multi-object bug!` }
   const ctx = String(/** @type {Record<string,unknown>} */ (objects[0]).additionalContext ?? '')
-  if (!ctx.includes('Graph-audit sprint')) return { ok: false, reason: 'missing audit sprint text' }
+  if (ctx.includes('Graph-audit')) return { ok: false, reason: 'fired an audit message on the sprint after an audit' }
   return { ok: true }
 })
 
