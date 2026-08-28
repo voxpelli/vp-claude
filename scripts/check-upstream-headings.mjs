@@ -76,4 +76,11 @@ for (const allowlistedFile of UPSTREAM_HEADING_ALLOWLIST) {
   check(`${allowlistedFile}'s real content WOULD fail the membership check if it weren't allowlisted (proves the skip is meaningful, not vacuous)`, wouldFailIfChecked)
 }
 
-done(12)
+// Floor 10, not the current 18. Nine of those 18 are one-per-`UPSTREAM-*.md`,
+// and CLAUDE.md says a resolved entry is DELETED, not archived — so this corpus
+// is designed to shrink, and a floor tracking today's total would fail CI on a
+// legitimate prune. That is exactly the "bump it reflexively" dynamic floors
+// exist to avoid. Ten sits just above the checks that do not depend on the
+// corpus at all, so it still catches the case it is for: every tracker gone and
+// the live scan silently checking nothing.
+done(10)

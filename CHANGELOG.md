@@ -5,6 +5,85 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased][]
+
+Post-0.34.0 review findings, and one theme that runs through all of them:
+**removing a suppression is a search strategy, not just a fix.** `@ts-nocheck`
+and a typedef with every property optional are the same tool — both say "do not
+check this" — and both had accumulated drift behind them that no amount of
+reading would have found.
+
+Every fix below was verified by planting the defect and watching the guard fail.
+
+### Fixed
+
+- **The graph-audit cadence was a full sprint out on Claude Code.**
+  `hooks/session-start.sh` and `extensions/index.js` implement one policy twice
+  and had diverged: with 47 completed sprints the hook announced "Sprint 48
+  *will be* a graph-audit sprint" while the extension correctly announced that
+  it *is* one, and the hook's do-it-now branch fired on sprint 49, which is not
+  an audit sprint at all. Both sides were tested and the tests pinned opposite
+  answers, so neither guard could fail on the disagreement.
+- **The two Basic Memory error classifiers gave different advice for the same
+  error.** A sweep over 27 realistic error strings found them agreeing on ten.
+  The Pi-side classifier was case-sensitive where the hook uses `grep -qi`, had
+  no `connection refused` or `unavailable` branch at all — so the single most
+  common failure got "review the error message and retry" instead of "the server
+  is not responding" — and checked its branches in a different order. The hook
+  gains `unauthorized`, `ETIMEDOUT`, `schema validation` and a `[note-conflict]`
+  branch; it had been folding "already exists" into `unknown-error`.
+- **`/vpk-sync` reported success when nothing was installed.** All profiles
+  already current, a source directory holding no `.md` files, and a source
+  directory that does not exist all returned the same empty result and rendered
+  as "no changes needed" at severity `info`. On a sparse checkout the user was
+  told their agent profiles were current when none were installed.
+- **A truncated tool-call argument string read as a note with no content**, so
+  the fourth-wall check skipped itself silently on exactly the long notes most
+  worth checking. Unreadable arguments are now `null` rather than `{}`, and the
+  type makes a caller decide what that means.
+- **`validate-plugin.mjs` could not run from a path containing a space** — and
+  fixing that exposed a second instance behind it, where the hook-path check
+  tore the path in half on whitespace. `%20` is not whitespace, so that split
+  had worked by accident for exactly as long as the path was wrong.
+- Three references to files that have never existed on any branch, one of them
+  inside a runtime error telling the operator to run a script that was never
+  written, and one claiming a drift guard covers a risk that nothing covers.
+- A design record that had stopped describing the system: it named the wrong
+  driver as fetching download counts, omitted the driver that replaced it,
+  called a lexicographic ordering key "scoring", and said the workflow had never
+  run at scale when it has run twice over 578 notes.
+
+### Added
+
+- **`check:host-parity`** — the `hooks/` ↔ `extensions/` guard that did not
+  exist. `check:agent-parity` covers `agents/` ↔ `agents-pi/`; this pair
+  implements four policies once per host and nothing compared them. Deliberately
+  *behavioural*: it runs the real hook as a subprocess against the real
+  JS function, over a full 4-sprint cycle and a 27-string error corpus, because
+  comparing two documents is the shape that failed here.
+- **`check:pool`** — guards the bounded worker pool now shared by three sweep
+  drivers, pinning the two properties a live 21-minute run cannot show you: a
+  broken concurrency cap still finishes, and a scrambled result order still
+  reconciles.
+
+### Changed
+
+- **`createCheckHarness().done()` now requires a floor**, and refuses `done(0)`.
+  It used to print `0/0 passed` and exit 0, under 22 check scripts of which two
+  carried any denominator guard — so any script whose fixture list came from a
+  glob went green having verified nothing the moment that list emptied. A guard
+  against vacuous checks that permits its own vacuous configuration is the same
+  bug in the remedy's clothes.
+- The four NDJSON row discriminants are **required**, which is what stops those
+  four types being interchangeable. This surfaced seven fields whose declared
+  type was fiction and one the producer writes and a consumer counts but no
+  typedef ever declared. Replayed against the real 578-note artifacts: every
+  discriminant holds.
+- `pool()` had three copies — two named, one inlined and therefore invisible to
+  a grep — and now has one. The prediction that their retry policies would
+  diverge is kept in the file it was written in, because a confident forecast
+  about which code will diverge, falsified, is worth more than a clean account.
+
 ## [0.34.0][] - 2026-08-28
 
 Two bodies of work land together, and they share a theme: **the checks were
@@ -2740,6 +2819,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[Unreleased]: https://github.com/voxpelli/vp-claude/compare/v0.34.0...HEAD
 [0.34.0]: https://github.com/voxpelli/vp-claude/compare/v0.33.5...v0.34.0
 [0.33.5]: https://github.com/voxpelli/vp-claude/compare/v0.33.4...v0.33.5
 [0.33.4]: https://github.com/voxpelli/vp-claude/compare/v0.33.3...v0.33.4
