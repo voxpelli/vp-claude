@@ -76,7 +76,7 @@ for (const row of scanRows.values()) {
 
 /**
  * @param {{ id: string, name: string }} row
- * @returns {Promise<Record<string, unknown>>}
+ * @returns {Promise<import('../../../lib/ndjson.mjs').NdjsonRow & import('../../../lib/npm-triage.mjs').RegistryRow>}
  */
 async function resolveOne (row) {
   const enc = row.name.split('/').map(seg => encodeURIComponent(seg)).join('/')
@@ -125,11 +125,11 @@ async function resolveOne (row) {
  *
  * @param {{ id: string, name: string }[]} items
  * @param {number} limit
- * @param {(item: { id: string, name: string }) => Promise<Record<string, unknown>>} fn
- * @returns {Promise<Record<string, unknown>[]>}
+ * @param {(item: { id: string, name: string }) => Promise<import('../../../lib/ndjson.mjs').NdjsonRow & import('../../../lib/npm-triage.mjs').RegistryRow>} fn
+ * @returns {Promise<(import('../../../lib/ndjson.mjs').NdjsonRow & import('../../../lib/npm-triage.mjs').RegistryRow)[]>}
  */
 async function pool (items, limit, fn) {
-  /** @type {Record<string, unknown>[]} */
+  /** @type {(import('../../../lib/ndjson.mjs').NdjsonRow & import('../../../lib/npm-triage.mjs').RegistryRow)[]} */
   const results = Array.from({ length: items.length })
   let next = 0
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {

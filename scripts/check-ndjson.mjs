@@ -103,4 +103,23 @@ check('an empty row set is still parseable', readNdjson(empty).rows, 0)
 check('...and is zero bytes, so `wc -l` reports 0 lines, not 1',
   readFileSync(empty, 'utf8').length, 0)
 
+// A line can parse as JSON and still not be a row. `null` is the one that bit:
+// `writeNdjson` took `unknown[]`, so `[null]` was a legal call, and reading it
+// back died on `String(row.id)` — the uncaught throw this module was extracted
+// to prevent, reintroduced through the writer.
+const notObjects = fixture('not-objects.ndjson', 'null\n[1,2]\n42\n"str"\n{"id":"a"}\n')
+check('a JSON null is malformed, not a throw', readNdjson(notObjects).malformed, 4)
+check('...and the one real row still lands', readNdjson(notObjects).rows, 1)
+
+// A row with no `id` used to key itself under the STRING "undefined": it counted
+// as valid, and a SECOND such row was then dropped as a duplicate while
+// `malformed` stayed 0. Every count reconciled around data that had gone
+// missing, which is the quietest shape this file exists to make loud.
+const noIds = fixture('no-ids.ndjson', '{"v":1}\n{"v":2}\n{"id":"real"}\n')
+const noIdRead = readNdjson(noIds)
+check('an id-less row is malformed, not silently keyed "undefined"', noIdRead.malformed, 2)
+check('...so the second one is not mistaken for a duplicate', noIdRead.duplicates.length, 0)
+check('...and only the real row is keyed', [...noIdRead.map.keys()].join(','), 'real')
+check('a non-string id is malformed too', readNdjson(fixture('num-id.ndjson', '{"id":7}\n')).malformed, 1)
+
 done(15)

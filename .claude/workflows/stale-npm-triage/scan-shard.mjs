@@ -196,7 +196,7 @@ function nonCanonicalVersion (frontmatter) {
 
 /**
  * @param {string} id
- * @returns {Promise<Record<string, unknown>>}
+ * @returns {Promise<import('../../../lib/npm-triage.mjs').ScanRow>}
  */
 async function scanOne (id) {
   /** @type {{ frontmatter?: Record<string, unknown>, content?: string, title?: string }} */
@@ -340,11 +340,11 @@ async function scanOne (id) {
  *
  * @param {string[]} items
  * @param {number} limit
- * @param {(item: string) => Promise<Record<string, unknown>>} fn
- * @returns {Promise<Record<string, unknown>[]>}
+ * @param {(item: string) => Promise<import('../../../lib/npm-triage.mjs').ScanRow>} fn
+ * @returns {Promise<import('../../../lib/npm-triage.mjs').ScanRow[]>}
  */
 async function pool (items, limit, fn) {
-  /** @type {Record<string, unknown>[]} */
+  /** @type {import('../../../lib/npm-triage.mjs').ScanRow[]} */
   const results = Array.from({ length: items.length })
   let next = 0
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {
