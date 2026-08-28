@@ -19,27 +19,36 @@ now been bitten by more than once. Refer to an item by its heading.
 
 ---
 
-## ▶ Next step (2026-08-28): the post-0.34.0 review findings
+## ✔ Closed (2026-08-28): the post-0.34.0 review findings
 
-Three adversarial reviews after the release found live defects, each verified by
-execution. The executable detail is in the session plan; the two that matter
-most, recorded here because they travel with a clone:
+Three adversarial reviews after the release found live defects. All are fixed,
+each verified by planting the defect and watching the guard fail. Recorded here
+only so nobody re-derives them from the reviews; the detail is in the commits.
 
-- **The audit-cadence policy is implemented twice and the copies contradict each
-  other today.** `hooks/session-start.sh` says sprint 48 *will be* an audit
-  sprint; `extensions/index.js` says it *is* one. The JS is right. Both sides are
-  tested and the tests pin opposite answers, so neither guard can fail on the
-  thing that is wrong. `check:agent-parity` guards `agents/` ↔ `agents-pi/`;
-  **nothing guards `hooks/` ↔ `extensions/`**.
-- **`createCheckHarness().done()` exits 0 having run no assertions** — `0/0
-  passed`. It sits under 22 check scripts, 7 of which carry a denominator guard.
-  Ninth instance of this repo's signature bug class, and the first in the shared
-  substrate rather than in one check.
+The two with lasting consequences:
 
-Then the Pi hardening below, which is unchanged and still the largest gap between
-what this plugin claims about itself and what it enforces.
+- **The audit cadence was implemented twice and the copies contradicted each
+  other.** Both sides were tested and the tests pinned opposite answers, so
+  neither guard could fail on the disagreement. Fixed, and `check:host-parity`
+  now compares the two hosts *behaviourally* — replanting the old bash cadence
+  fails it at 9 of 13 sprint counts. That guard is the durable half.
+- **`createCheckHarness().done()` exited 0 having run no assertions.** `done()`
+  now takes a required floor and refuses `done(0)`, because a guard against
+  vacuous checks that permits its own vacuous configuration is the same bug in
+  the remedy's clothes.
 
-## After that: make the read-only agents read-only on Pi
+One finding is deliberately **not** acted on. `driftClassesRanked` and
+`unmeasuredReasonsRanked` in `lib/npm-triage.mjs` are `[].every()` over a
+filtered set, so a cohort with zero `intel` rows passes having checked nothing —
+but `every()` on an empty set is *semantically correct*: with no intel rows
+there is genuinely nothing unrankable. Deleting them needs `distance`
+union-typed and `DRIFT_ORDER` keyed on that union, and a previous attempt at
+this exact coverage check was found vacuous by plant-and-revert because both its
+sides derived from one tuple. **Revival trigger:** `ClassifiedRow.distance`
+becomes a union type for some other reason, at which point the two checks become
+statically provable and can go.
+
+## ▶ Next step (2026-08-28): make the read-only agents read-only on Pi
 
 Four agents this plugin documents as read-only — `knowledge-gardener`,
 `knowledge-primer`, `raindrop-gardener`, `finding-verifier` — reach every write
