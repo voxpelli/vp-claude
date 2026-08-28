@@ -146,6 +146,25 @@ workflow rather than merely trimming the rendered report:
   (`--since <today−7d> --sample 30`) — already valid with no extra logic: `--since`
   narrows the pool first, `--sample` draws from what's left, exactly as documented
   for the `--since`/`--sample` sequence above.
+  **Draw it mechanically, with a recorded seed — never hand-pick the N titles.**
+  The "do not script" note in the `--since` bullet above does not extend here,
+  and the distinction is principled rather than stylistic: a set subtraction is
+  *deterministic*, so a reader can re-derive it from the same two lists, whereas
+  a hand-picked "random" sample is neither demonstrably unbiased nor reproducible
+  by anyone — including whoever drew it, ten minutes later. Pipe the surviving
+  titles through a seeded draw, the same shape as the S3 fetch call:
+  `Bash("printf '%s\\n' <title1> <title2> … | shuf --random-seed <seed> -n <N>")`.
+  Where `shuf` does not resolve, swap the `shuf` segment of that same pipeline for
+  `awk -v s=<seed> 'BEGIN{srand(s)}{print rand()"\t"$0}' | sort -n | head -<N> | cut -f2-`.
+  Both honour the `min(N, pool)` clamp above natively — a pool shorter than N
+  comes back whole, never an error. Prefer `shuf`: its `--random-seed` is a
+  documented construction, so the draw repeats on any machine with the same
+  `shuf`, whereas `awk`'s `rand()` sequence is implementation-defined and repeats
+  only under the same `awk`. Carry BOTH the seed and the exact command forward —
+  S8 reports them, and it is the *command*, not the seed alone, that fixes the
+  reproducibility scope. Any stable value serves as a seed (a date-derived integer
+  reads well). Re-running with the same seed reproduces the same draw **by
+  design**, so a genuinely fresh sample needs a different seed.
 
 Only the notes surviving this filtering proceed to S2. Carry forward how many
 were excluded by the `@types/*` filter and by each scope modifier — S8
@@ -760,6 +779,14 @@ reader can tell a user's deliberate choice from an automatic one:
 - **Timeout default** — "`--since <date>` applied as the automatic default — no
   response to the pre-sweep scope prompt within the session's timeout window."
   (The timeout always defaults to the 90-day `--since`, never `--sample`.)
+
+**Any `--sample` run must also report its seed and the command that drew it** —
+typed or interactive, since S1 requires the draw to be mechanical. This is what
+turns "a random sample" from an unverifiable claim into one a reader can re-run:
+"30 of the recency-floored pool of 584 notes checked (random sample, seed
+20260828, drawn with `shuf --random-seed`)". The seed alone is not enough — the
+draw repeats only under the tool that made it — and without both, a sample is
+indistinguishable in the report from a hand-picked one.
 
 A `--full` run (preflight opt-out) is an unscoped sweep, so it gets no scope
 footnote at all — only the standard exclusion-count line, if any.
