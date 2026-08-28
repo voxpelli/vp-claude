@@ -53,6 +53,44 @@ Every fix below was verified by planting the defect and watching the guard fail.
   called a lexicographic ordering key "scoring", and said the workflow had never
   run at scale when it has run twice over 578 notes.
 
+### Fixed (re-review of this branch's own work)
+
+Three adversarial reviewers were re-run against the branch above. They found
+that **three of the four guards it added contained an instance of the exact
+defect those guards exist to catch** — and the mechanism was the same each time:
+a confident comment explaining why the code was sound, reviewed instead of the
+code.
+
+- **A regex quantifier was mistranslated between the hosts.** `grep`'s
+  `validation *error` is a POSIX BRE — zero-or-more spaces — and the JS was
+  written ` ?error`, zero-or-one. So `"validation  error"` still classified
+  differently on the two hosts, and the parity corpus contained the one-space
+  form but not the two-space one.
+- **`check:host-parity`'s "both hosts" section called one host.** Replacing the
+  entire Pi recovery text with placeholder text left it green. It now compares
+  both, byte for byte, after normalising the single declared difference.
+- **Its branch-order contract was unobservable** — no corpus string matched two
+  classifier arms, so swapping two arms changed nothing — and **its coverage ran
+  in one direction**, so a seventh category added to the hook passed unnoticed.
+  Both implementations are now source-scanned for the literals they can emit.
+- **The required row discriminants were laundered at the boundary.** Every map
+  is minted by one cast through `unknown`, so a registry row in the scan slot
+  still type-checked and produced `reason: "undefined"` for a whole cohort.
+- An array reached `params` on the direct tool-call path, so the fourth-wall
+  check skipped itself *silently* — the bug the preceding entry claims to fix.
+- `errorMessage` returned the literal text `"undefined"` for any non-Error
+  rejection, `pool()` returned array holes for a `limit` below 1, and
+  `validate-plugin.mjs` went blind on a **quoted** hook path — which is what you
+  would write if your plugin root contained a space, the case its own fix cites.
+
+### Changed (re-review)
+
+- **`done()`'s floor is no longer required.** 20 of 24 scripts have assertion
+  counts that vary with nothing but hand-edited source, so their floors bounded
+  nothing while inviting reflexive bumping. It defaults to 1; an explicit floor
+  remains only where the count is genuinely corpus-driven, and the two constants
+  that mattered are now asserted directly instead.
+
 ### Added
 
 - **`check:host-parity`** — the `hooks/` ↔ `extensions/` guard that did not

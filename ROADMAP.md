@@ -48,6 +48,36 @@ sides derived from one tuple. **Revival trigger:** `ClassifiedRow.distance`
 becomes a union type for some other reason, at which point the two checks become
 statically provable and can go.
 
+## Deferred from the post-0.34.0 re-review
+
+Two findings raised by adversarial review and explicitly marked by the reviewer
+as **inferred from reading, not verified by execution**. Recorded rather than
+acted on, because acting on an unverified premise is the mistake CLAUDE.md's
+verify-before-fix rule exists to prevent.
+
+- **A third cross-host policy is uncompared, and may already have diverged.**
+  `check:host-parity` covers the audit cadence and the error taxonomy. The
+  schema_validate + fourth-wall reminder is duplicated the same way
+  (`hooks/post-bm-write-validate.sh` vs `extensions/index.js`) and is not
+  compared at all. Reading both, they appear to differ in three ways: the hook
+  exits on a `*/schema/*` permalink and so suppresses the fourth-wall message
+  too, where Pi gates only the schema sentence; the hook exits when there is no
+  permalink, where Pi still runs the check on input content; and the two
+  concatenate the fourth-wall and schema text in opposite orders. At least the
+  first may be intentional.
+  **Revival trigger:** any edit to either file, or the next time a Pi host is
+  available to compare them behaviourally rather than by reading.
+
+- **An unreadable tool-call argument tells the human, not the model.** When
+  `normalizeBmToolCall` returns `params: null` the extension writes to stderr;
+  the fourth-wall *finding* path patches `tool_result.content`, which is the
+  model-visible channel. So the agent that just wrote a note whose quality check
+  was skipped is not told. Routing it into `patches.content` is arguably the
+  consistent choice — but it changes what the model sees on a write, so it wants
+  its own decision rather than riding along in a fix commit.
+  **Revival trigger:** an observed case of a note landing with the check skipped
+  and nobody noticing, or a deliberate decision that advisory-to-model is right.
+
 ## ▶ Next step (2026-08-28): make the read-only agents read-only on Pi
 
 Four agents this plugin documents as read-only — `knowledge-gardener`,
