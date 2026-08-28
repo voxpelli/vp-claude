@@ -254,9 +254,16 @@ check('the two recovery texts are identical once the declared difference is norm
 // With CADENCE_SPRINT_RANGE at 2 instead of 13 this file reported 50/50 and
 // exit 0 — against a floor of 50 — while losing the very property its own
 // docblock says the constant exists to protect.
+// NOTE: there is deliberately no `ERROR_CORPUS.length >= N` assertion here. A
+// hardcoded total is exactly the reflexive-bump dynamic that justified stripping
+// 20 `done()` floors two commits ago, and it would be the same mistake wearing a
+// different name. What actually matters is covered by assertions derived from
+// the corpus itself: §3 requires every ClaudeErrorCategory to be REACHED by some
+// corpus string, and the ambiguity check below requires enough two-arm strings
+// for branch order to stay observable. Trim the corpus and those fail by
+// content; grow it and they keep working untouched.
 console.log('\ncorpus sizes')
 check(`CADENCE_SPRINT_RANGE (${CADENCE_SPRINT_RANGE}) spans more than one 4-sprint cycle`, CADENCE_SPRINT_RANGE > 8)
-check(`ERROR_CORPUS (${ERROR_CORPUS.length}) has not been trimmed`, ERROR_CORPUS.length >= 33)
 check('the corpus still contains strings matching TWO arms, or branch order is unobservable',
   ERROR_CORPUS.filter((sample) => {
     const t = sample.toLowerCase()

@@ -58,18 +58,29 @@ as **inferred from reading, not verified by execution**. Recorded rather than
 acted on, because acting on an unverified premise is the mistake CLAUDE.md's
 verify-before-fix rule exists to prevent.
 
-- **A third cross-host policy is uncompared, and may already have diverged.**
-  `check:host-parity` covers the audit cadence and the error taxonomy. The
+- **The third cross-host policy was compared, and one real divergence fixed.**
+  `check:host-parity` covers the audit cadence and the error taxonomy; the
   schema_validate + fourth-wall reminder is duplicated the same way
-  (`hooks/post-bm-write-validate.sh` vs `extensions/index.js`) and is not
-  compared at all. Reading both, they appear to differ in three ways: the hook
-  exits on a `*/schema/*` permalink and so suppresses the fourth-wall message
-  too, where Pi gates only the schema sentence; the hook exits when there is no
-  permalink, where Pi still runs the check on input content; and the two
-  concatenate the fourth-wall and schema text in opposite orders. At least the
-  first may be intentional.
-  **Revival trigger:** any edit to either file, or the next time a Pi host is
-  available to compare them behaviourally rather than by reading.
+  (`hooks/post-bm-write-validate.sh` vs `extensions/index.js`) and was not
+  compared. This was first written here as a deferral with the trigger "any edit
+  to either file" — a trigger that had already fired two commits earlier, which
+  is why it is closed rather than carried. Reading both, three differences:
+  - **Fixed.** The hook exits on a `*/schema/*` permalink *before* its
+    fourth-wall block, so Claude Code skips both checks on a schema-definition
+    note. Pi gated only the schema sentence and flagged fourth-wall violations
+    on schema notes. The exemption is the correct behaviour — the note-quality
+    rules exempt meta-notes whose subject IS the knowledge graph — so Pi now
+    matches, with a test carrying a control case.
+  - **Declared, not a defect.** The hook exits when there is no permalink; Pi
+    still runs the fourth-wall check on input content. That is a genuine host
+    difference: on the Pi proxy path the host may not surface a permalink for a
+    real write, while on Claude Code one is always present.
+  - **Open, cosmetic.** The two concatenate the fourth-wall and schema text in
+    opposite orders. Both messages appear either way.
+
+  **Remaining work:** none of this is guarded by `check:host-parity` yet, so it
+  can drift again. **Revival trigger:** the next edit to either file — and this
+  time the entry is accurate at the moment it is written.
 
 - **An unreadable tool-call argument tells the human, not the model.** When
   `normalizeBmToolCall` returns `params: null` the extension writes to stderr;

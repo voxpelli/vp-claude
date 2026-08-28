@@ -583,6 +583,21 @@ export default function vpKnowledgePiExtension (pi) {
       /** @type {{ content?: Array<{ type: 'text', text: string }> }} */
       const patches = {}
 
+      // Read the permalink FIRST: a schema-definition note is exempt from BOTH
+      // checks, not just the schema_validate reminder. `hooks/post-bm-write-
+      // validate.sh` exits on a `*/schema/*` permalink before it reaches its
+      // fourth-wall block, so this host was flagging fourth-wall violations on
+      // schema notes that Claude Code deliberately skips — and the exemption is
+      // right: the note-quality rules exempt meta-notes whose subject IS the
+      // knowledge graph, which is exactly what a schema note is.
+      //
+      // An ABSENT permalink is different and stays a genuine host difference:
+      // on the Pi proxy path the host may not surface one for a real write, so
+      // the fourth-wall check still runs from the input content. The bash hook
+      // exits there because on Claude Code a permalink is always present.
+      const permalink = getValueOfKeyWithType(event.details, 'permalink', 'string') ?? ''
+      const isSchemaNote = permalink.includes('/schema/')
+
       // `content` is an input param: from the parsed JSON args on the proxy path,
       // from event.input on the direct paths — normalizeBmToolCall unifies both.
       //
@@ -593,11 +608,11 @@ export default function vpKnowledgePiExtension (pi) {
       // Gated on the same config flag as the check itself. Unconditional, this
       // reported "fourth-wall check skipped" for a check that was never going to
       // run when `qualityChecks.fourthWall` is false.
-      if (bm.params === null && config.qualityChecks.fourthWall) {
+      if (bm.params === null && config.qualityChecks.fourthWall && !isSchemaNote) {
         process.stderr.write(`[vp-knowledge] fourth-wall check skipped: could not read arguments for ${bm.tool}\n`)
       }
       const noteContent = typeof bm.params?.content === 'string' ? bm.params.content : ''
-      if (noteContent && config.qualityChecks.fourthWall) {
+      if (noteContent && config.qualityChecks.fourthWall && !isSchemaNote) {
         try {
           const modPath = findFourthWallModule()
           if (modPath) {
@@ -615,12 +630,10 @@ export default function vpKnowledgePiExtension (pi) {
         }
       }
 
-      // schema_validate reminder (skip schema definition notes). permalink is a
-      // RESULT field (event.details); on the proxy path the host may not surface
-      // it, in which case the reminder simply does not fire — the fourth-wall
-      // check above still runs from the input content.
-      const permalink = getValueOfKeyWithType(event.details, 'permalink', 'string') ?? ''
-      if (permalink && config.qualityChecks.schemaValidate && !permalink.includes('/schema/')) {
+      // schema_validate reminder. permalink is a RESULT field (event.details);
+      // on the proxy path the host may not surface it, in which case the
+      // reminder simply does not fire.
+      if (permalink && config.qualityChecks.schemaValidate && !isSchemaNote) {
         const text = `A note was just written/edited (permalink: ${permalink}). Call mcp__basic-memory__schema_validate with that identifier. If validation reports errors, surface them. If the note type has no schema or validation passes, do nothing.`
         if (patches.content) {
           patches.content.push({ type: 'text', text })

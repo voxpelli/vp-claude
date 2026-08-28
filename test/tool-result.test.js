@@ -244,6 +244,48 @@ describe('tool_result handler on the mcp proxy path (the default Pi config)', ()
     )
   })
 
+  it('a schema-definition note is exempt from the fourth-wall check, as it is on the other host', async () => {
+    // hooks/post-bm-write-validate.sh exits on a `*/schema/*` permalink BEFORE
+    // its fourth-wall block, so Claude Code skips both checks on a schema note.
+    // This host ran the fourth-wall check anyway and flagged violations Claude
+    // Code deliberately never reports — and the exemption is the correct one:
+    // the note-quality rules exempt meta-notes whose subject IS the knowledge
+    // graph, which is exactly what a schema note is.
+    const handler = toolResultHandler()
+    const { ctx } = createMockContext()
+    const contentThatWouldFlag = 'This note has zero presence in Raindrop.'
+    const result = await handler({
+      toolName: 'mcp',
+      input: {
+        server: 'basic-memory',
+        tool: 'write_note',
+        args: JSON.stringify({ title: 'npm_package schema', content: contentThatWouldFlag }),
+      },
+      details: { permalink: 'main/schema/npm-package' },
+      isError: false,
+    }, ctx)
+    const texts = (result?.content ?? []).map((c) => c.text).join('\n')
+    assert.ok(!texts.includes('Fourth-wall check flagged'),
+      'a schema note must not get a fourth-wall advisory')
+    assert.ok(!texts.includes('schema_validate'),
+      'and it must not get the schema_validate reminder either — it cannot validate against itself')
+
+    // The same content on a NON-schema permalink still flags, so the assertions
+    // above are an exemption rather than a check that stopped working.
+    const control = await handler({
+      toolName: 'mcp',
+      input: {
+        server: 'basic-memory',
+        tool: 'write_note',
+        args: JSON.stringify({ title: 'X', content: contentThatWouldFlag }),
+      },
+      details: { permalink: 'main/npm/npm-foo' },
+      isError: false,
+    }, ctx)
+    assert.ok((control?.content ?? []).some((c) => c.text.includes('Fourth-wall check flagged')),
+      'control: the same content on an ordinary note must still flag')
+  })
+
   it('preserves the original write result when appending a fourth-wall advisory', async () => {
     const handler = toolResultHandler()
     const { ctx } = createMockContext()
