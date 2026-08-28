@@ -5,17 +5,45 @@
  * Pattern inspired by rpiv-pi's test utilities, adapted for node:test.
  */
 
-// @ts-nocheck — Test mocks intentionally skip full ExtensionContext type fidelity
-
 /** @typedef {import('@earendil-works/pi-coding-agent').ExtensionAPI} ExtensionAPI */
 /** @typedef {import('@earendil-works/pi-coding-agent').ExtensionContext} ExtensionContext */
+
+/**
+ * `events.on` returns the caller's unsubscribe function. Hoisted rather than
+ * inlined so it is one shared no-op, and so the mock's shape says plainly that
+ * an unsubscriber exists — the mock used to return void, so any code storing
+ * and later calling it would have thrown against the mock while working
+ * against the real API.
+ */
+const noopUnsubscribe = () => {}
+
+/**
+ * The recorded calls, one named array per ExtensionAPI method.
+ *
+ * A named shape rather than `Record<string, unknown[]>`: under
+ * `noUncheckedIndexedAccess` every `calls.on.push(...)` on a Record is
+ * "possibly undefined", which is the noise that made `@ts-nocheck` look
+ * reasonable here. Naming the keys removes the noise and leaves the two real
+ * fidelity gaps this file was hiding.
+ *
+ * @typedef MockCalls
+ * @property {unknown[]} on
+ * @property {unknown[]} registerCommand
+ * @property {unknown[]} registerTool
+ * @property {unknown[]} sendMessage
+ * @property {unknown[]} sendUserMessage
+ * @property {unknown[]} appendEntry
+ * @property {unknown[]} setActiveTools
+ * @property {unknown[]} setModel
+ * @property {unknown[]} getFlag
+ */
 
 /**
  * Build a mock ExtensionAPI suitable for testing extension factories.
  *
  * @returns {{
  *   pi: ExtensionAPI,
- *   calls: Record<string, unknown[]>,
+ *   calls: MockCalls,
  *   handlers: Map<string, Function[]>,
  *   commands: Map<string, { handler: Function }>
  * }}
@@ -24,7 +52,7 @@ export function createMockPi () {
   /** @type {Map<string, Function[]>} */
   const handlers = new Map()
 
-  /** @type {Record<string, unknown[]>} */
+  /** @type {MockCalls} */
   const calls = {
     on: [],
     registerCommand: [],
@@ -40,12 +68,21 @@ export function createMockPi () {
   /** @type {Map<string, { handler: Function }>} */
   const commands = new Map()
 
-  /** @type {ExtensionAPI} */
-  const pi = {
+  // `Partial<ExtensionAPI>`, then one narrow cast at the return below. The mock
+  // implements the nine methods this extension actually calls, not all 24 --
+  // deliberate, but previously expressed as a whole-file `@ts-nocheck`, which
+  // switched off checking of the nine it DOES implement. `Partial` keeps every
+  // member checked against its real signature while dropping only the
+  // must-implement-all requirement. That distinction is what surfaced the
+  // getFlag return type, the missing events.on unsubscriber, and an `off`
+  // method the real EventBus does not have.
+  /** @type {Partial<ExtensionAPI>} */
+  const partialPi = {
     on: (event, handler) => {
       calls.on.push({ event, handler })
-      if (!handlers.has(event)) handlers.set(event, [])
-      handlers.get(event).push(handler)
+      const forEvent = handlers.get(event) ?? []
+      forEvent.push(handler)
+      handlers.set(event, forEvent)
     },
     registerCommand: (name, options) => {
       calls.registerCommand.push({ name, options })
@@ -72,13 +109,30 @@ export function createMockPi () {
     },
     getFlag: (name) => {
       calls.getFlag.push({ name })
+      // Explicit: the real signature is `string | boolean | undefined`, and an
+      // arrow with a bare statement body returns void, which is NOT assignable
+      // to it. `@ts-nocheck` hid that the mock had a different contract from
+      // the thing it stands in for. The `undefined` is load-bearing, not
+      // useless -- it is what makes the return type match.
+      // eslint-disable-next-line unicorn/no-useless-undefined
+      return undefined
     },
     events: {
-      on: () => {},
+      // `on` returns its own unsubscribe function. The mock returned void, so
+      // any code that stored and later called the unsubscriber would have
+      // thrown against the mock while working against the real API.
+      on: () => noopUnsubscribe,
       emit: () => {},
-      off: () => {},
+      // No `off`: the real EventBus has none -- unsubscribing goes through the
+      // function `on` returns. The mock had invented one, which `@ts-nocheck`
+      // let stand, and nothing in this repo ever called it.
     },
   }
+
+  // The one place fidelity is asserted rather than checked. A test that reaches
+  // for an unmocked method gets `undefined is not a function` at run time,
+  // which is a louder and more locatable failure than a silently-typed stub.
+  const pi = /** @type {ExtensionAPI} */ (/** @type {unknown} */ (partialPi))
 
   return { pi, calls, handlers, commands }
 }
