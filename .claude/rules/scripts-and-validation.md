@@ -192,9 +192,9 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
 - **`check:upstream-headings` (`check-upstream-headings.mjs`)** — live +
   fixture guard against a bug-shaped entry landing under an invented or
   misspelled `## ` heading in an `UPSTREAM-*.md` file. `lib/upstream-heading-
-  vocab.mjs` exports a canonical six-name vocabulary (Feature Requests, Bugs,
-  Upstream Opportunities, Cross-Vendor Inconsistencies, Trend Reviews,
-  Resolved) and a pure `detectInvalidHeadings` membership check. Deliberately
+  vocab.mjs` exports a canonical five-name vocabulary (Feature Requests, Bugs,
+  Upstream Opportunities, Cross-Vendor Inconsistencies, Trend Reviews) and a
+  pure `detectInvalidHeadings` membership check. Deliberately
   a MEMBERSHIP check only — it does NOT enforce heading order (some
   conforming files legitimately space sections far apart) and does NOT
   enforce completeness (some conforming files legitimately omit optional
@@ -203,9 +203,10 @@ to turn silent doc/config drift into a hard CI failure — the house pattern is
   ("## Latest upstream activity", "## Open items") — rewriting a
   user-maintained tracking file's structure to fit a template would be
   exactly the kind of "changing what you don't understand" this project's
-  conventions warn against. `UPSTREAM-vp-git.md`'s extra `## Resolved`
-  section needed no allowlist entry once `Resolved` was added to the
-  vocabulary itself.
+  conventions warn against. `Resolved` was a sixth vocabulary member until
+  2026-08-28 and is now deliberately absent: a resolved entry is DELETED, and
+  git history is the record, so a `## Resolved` heading failing this check is
+  the intent rather than an oversight (see `CLAUDE.md` → Upstream trackers).
 - **`check:cohort-lockstep` (`check-cohort-lockstep.mjs`)** — live + fixture
   guard that the `--stale` cohort configuration table in
   `staleness-detection.md` and its mirrored table in `knowledge-gardener.md`
@@ -298,7 +299,7 @@ when you are actually editing this tree.
 | `check-analytics-guidance.mjs` | Live + fixture check: the two `intel` brew/cask ecosystem references, both note templates, the `brew_formula`/`brew_cask` schemas, and the user-facing `README.md` (imports `lib/analytics-guidance.mjs`) never reintroduce the inverted "JSON API does not expose analytics" claim fixed in v0.31.5, and each still mentions the JSON `analytics` fallback | `npm run check:analytics-guidance` |
 | `check-observation-metadata.mjs` | Fixture tests for the observation `Verified:`/`Since:`/`Ownership:` trailer parser (imports `lib/observation-metadata.mjs`) — valid trailers, near-miss non-matches that must not parse (lowercase field names, missing colon, ordinary em-dash prose), and malformed field values (non-ISO date, invalid calendar date, non-version `Since`, unenumerated `Ownership`) | `npm run check:obs-metadata` |
 | `check-schema-vocab.mjs` | Fixture tests for the relation-vocabulary malformed-variant drift guard (imports `lib/schema-vocab.mjs`) — picoschema Note-field extraction, `## Relation Vocabulary` bullet-candidate extraction, the space/colon malformed-variant detector (the v0.29.1 bug class), and confirms a well-formed-but-undeclared verb is deliberately left unflagged (that class belongs to `/schema-evolve`'s interactive reconciliation, not this guard) | `npm run check:schema-vocab` |
-| `check-upstream-headings.mjs` | Live + fixture check: every `## ` heading in a non-allowlisted `UPSTREAM-*.md` file (imports `lib/upstream-heading-vocab.mjs`) is a member of the canonical vocabulary (Feature Requests, Bugs, Upstream Opportunities, Cross-Vendor Inconsistencies, Trend Reviews, Resolved) — a membership check only, not order or completeness; `UPSTREAM-basic-memory.md` is allowlisted (genuinely different heading scheme by design) | `npm run check:upstream-headings` |
+| `check-upstream-headings.mjs` | Live + fixture check: every `## ` heading in a non-allowlisted `UPSTREAM-*.md` file (imports `lib/upstream-heading-vocab.mjs`) is a member of the canonical vocabulary (Feature Requests, Bugs, Upstream Opportunities, Cross-Vendor Inconsistencies, Trend Reviews) — a membership check only, not order or completeness; `UPSTREAM-basic-memory.md` is allowlisted (genuinely different heading scheme by design) | `npm run check:upstream-headings` |
 | `check-ast-grep.mjs` | Runs the `.ast-grep/rules/` bespoke lint suite (via the `@ast-grep/cli` devDependency) over `lib/`+`scripts/`; in CI (`GITHUB_ACTIONS`) passes `--format github` so ast-grep's own native workflow-command annotations cover these findings, the same CI-visible-warnings treatment `validate-plugin.mjs`'s hand-rolled `warn()` gets, with no reimplementation needed. Detect-only — never mutates; see `npm run fix:ast-grep` and `.claude/rules/ast-grep-rules.md` | `npm run check:ast-grep` |
 | `list-notes.mjs` | Enumerates every note in a project as NDJSON `{_record:'note', title, permalink, entityId}` plus a terminal `_record:'summary'` sentinel; the corpus side of the link-integrity pipeline, since `buildTitleIndex` needs every note's title AND permalink and nothing else produced that list. Exits non-zero on any partial run. I/O only — argv, envelope validation, paging and the completeness verdict live in `lib/bm-search.mjs` | link-integrity pipeline |
 | `list-unresolved-links.mjs` | Enumerates dangling relations as NDJSON `_record:'edge'` rows; `--all` additionally emits resolved edges tagged `resolved`, for the prose-verb spurious detector (a prose-shaped relation verb can land on a real note and then looks healthy in the relation index). Explicit mode, never a widened default. Exits non-zero on any partial run | link-integrity pipeline |
