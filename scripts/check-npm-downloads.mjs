@@ -24,18 +24,7 @@ import {
   BATCH_SIZE, chunkNames, interpretBulk, interpretSingle, isUnwrappedResponse,
 } from '../lib/npm-downloads.mjs'
 
-const { done, record } = createCheckHarness()
-
-/**
- * @param {string} name
- * @param {unknown} actual
- * @param {unknown} expected
- */
-function check (name, actual, expected) {
-  const cond = actual === expected
-  if (!cond) console.error(`  FAIL  ${name}  (got: ${String(actual)}, want: ${String(expected)})`)
-  record(cond)
-}
+const { checkEqual: check, done } = createCheckHarness()
 
 // --- chunk boundaries, where the one-name remainder comes from ---
 /**

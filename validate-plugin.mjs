@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import { join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import yaml from 'js-yaml'
 import remarkFrontmatter from 'remark-frontmatter'
@@ -14,7 +15,11 @@ import { collectScannableText, findUnclosedFence } from './lib/mdast.mjs'
 import { buildCanonicalRelationVerbs, checkRelationVocabDrift } from './lib/schema-vocab.mjs'
 import { checkStalenessConsume, checkStalenessEmit } from './lib/staleness-contract.mjs'
 
-const ROOT = new URL('.', import.meta.url).pathname.replace(/\/$/, '')
+// `fileURLToPath`, not `.pathname`: the latter keeps percent-encoding, so a
+// checkout under a path containing a space resolves to `/a%20b/...` and every
+// readFile below dies with an uncaught ENOENT. The last surviving instance of a
+// bug already fixed in the sibling scripts.
+const ROOT = fileURLToPath(new URL('.', import.meta.url)).replace(/\/$/, '')
 
 /** @type {string[]} */
 const errors = []
@@ -729,11 +734,19 @@ if (existsSync(hooksPath)) {
             }
             // Validate command hook paths
             if (hookType === 'command' && isKeyWithType(hook, 'command', 'string')) {
-              // eslint-disable-next-line no-template-curly-in-string -- literal placeholder text being substituted, not a template literal
-              const resolved = hook.command.replaceAll('${CLAUDE_PLUGIN_ROOT}', ROOT)
-              // Extract the file path from the command (after "bash " or similar)
-              const parts = resolved.split(/\s+/)
-              const scriptPath = parts.find((p) => p.startsWith('/') || p.startsWith('./'))
+              // Find the path token in the UNRESOLVED command, THEN substitute —
+              // not the other way round. ROOT can contain a space (a checkout
+              // under "My Repos"), and splitting the RESOLVED string on
+              // whitespace tears the path in half, so a file that exists is
+              // reported missing. Invisible until ROOT stopped being
+              // percent-encoded a few lines up: `%20` is not whitespace, so the
+              // split worked by accident for as long as the path was wrong.
+              const parts = hook.command.split(/\s+/)
+              const rawPath = parts.find((p) =>
+                // eslint-disable-next-line no-template-curly-in-string -- literal placeholder text, not a template literal
+                p.startsWith('${CLAUDE_PLUGIN_ROOT}') || p.startsWith('/') || p.startsWith('./'))
+              // eslint-disable-next-line no-template-curly-in-string -- as above
+              const scriptPath = rawPath?.replaceAll('${CLAUDE_PLUGIN_ROOT}', ROOT)
               if (scriptPath && !existsSync(scriptPath)) {
                 error(hooksPath, `hooks.${event}: referenced file does not exist: ${hook.command}`)
               }

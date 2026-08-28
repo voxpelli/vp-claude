@@ -22,21 +22,7 @@ import {
   buildGate, classifyRow, compareRows, daysSince, DRIFT_ORDER, normalizeNpmName,
 } from '../lib/npm-triage.mjs'
 
-const { done, record } = createCheckHarness()
-
-/**
- * Reports both actual and expected on failure, silent on pass — same shape as
- * `scripts/check-version-distance.mjs`.
- *
- * @param {string} name
- * @param {unknown} actual
- * @param {unknown} expected
- */
-function check (name, actual, expected) {
-  const cond = actual === expected
-  if (!cond) console.error(`  FAIL  ${name}  (got: ${String(actual)}, want: ${String(expected)})`)
-  record(cond)
-}
+const { checkEqual: check, done } = createCheckHarness()
 
 const TODAY = new Date('2026-08-05T00:00:00Z')
 

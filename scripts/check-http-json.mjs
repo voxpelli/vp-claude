@@ -15,18 +15,7 @@ import {
   backoffDelay, createJsonFetcher, MAX_RETRY_AFTER_MS, parseRetryAfter,
 } from '../lib/http-json.mjs'
 
-const { done, record } = createCheckHarness()
-
-/**
- * @param {string} name
- * @param {unknown} actual
- * @param {unknown} expected
- */
-function check (name, actual, expected) {
-  const cond = actual === expected
-  if (!cond) console.error(`  FAIL  ${name}  (got: ${String(actual)}, want: ${String(expected)})`)
-  record(cond)
-}
+const { checkEqual: check, done } = createCheckHarness()
 
 const NOW = Date.parse('2026-08-05T12:00:00Z')
 
