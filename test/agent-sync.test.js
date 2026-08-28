@@ -60,6 +60,10 @@ describe('agent-sync', () => {
     assert.deepStrictEqual(result.added, [])
     assert.deepStrictEqual(result.updated, [])
     assert.deepStrictEqual(result.errors, [])
+    // ...but it IS a file we looked at, which is what tells this case apart
+    // from an empty or missing source directory. See the trio below.
+    assert.deepStrictEqual(result.unchanged, ['agent-a.md'])
+    assert.strictEqual(result.considered, 1)
   })
 
   it('ignores non-.md files in source', () => {
@@ -119,7 +123,14 @@ describe('agent-sync', () => {
     }
   })
 
-  it('missing source directory: empty result, no throw', () => {
+  // These two asserted byte-identical expectations — which was the bug, not a
+  // coincidence. Together with the identical-dest case above, three genuinely
+  // different outcomes all returned `{added:[], updated:[], errors:[]}`, so
+  // `/vpk-sync` announced "no changes needed" at severity `info` even for a
+  // checkout where nothing was installed. Each is now separated by a field,
+  // and each assertion below names the field that separates it.
+
+  it('missing source directory: reports a source-missing error, no throw', () => {
     clean()
     rmSync(sourceDir, { recursive: true, force: true })
 
@@ -127,15 +138,23 @@ describe('agent-sync', () => {
 
     assert.deepStrictEqual(result.added, [])
     assert.deepStrictEqual(result.updated, [])
-    assert.deepStrictEqual(result.errors, [])
+    assert.deepStrictEqual(result.unchanged, [])
+    assert.strictEqual(result.considered, 0)
+    assert.strictEqual(result.errors.length, 1)
+    assert.strictEqual(result.errors[0]?.op, 'source-missing')
   })
 
-  it('empty source directory: no changes', () => {
+  it('empty source directory: considered 0, and NOT an error', () => {
     clean()
     const result = syncAgentProfiles(sourceDir, targetDir)
+
     assert.deepStrictEqual(result.added, [])
     assert.deepStrictEqual(result.updated, [])
+    assert.deepStrictEqual(result.unchanged, [])
+    // Distinguishes this from the missing-source case above...
     assert.deepStrictEqual(result.errors, [])
+    // ...and from the all-current case above, where `considered` is 1.
+    assert.strictEqual(result.considered, 0)
   })
 
   it('collects mkdir errors instead of throwing', () => {
@@ -212,13 +231,17 @@ describe('getAgentsDir', () => {
 
 describe('formatSyncErrors', () => {
   it('returns empty string when there are no errors', () => {
-    assert.strictEqual(formatSyncErrors({ added: [], updated: [], errors: [] }), '')
+    assert.strictEqual(formatSyncErrors({
+      added: [], updated: [], unchanged: [], considered: 0, errors: [],
+    }), '')
   })
 
   it('names op, file, and message for each error (file optional)', () => {
     const msg = formatSyncErrors({
       added: [],
       updated: [],
+      unchanged: [],
+      considered: 0,
       errors: [
         { file: 'a.md', op: 'copy', message: 'EACCES' },
         { op: 'mkdir', message: 'ENOTDIR' },

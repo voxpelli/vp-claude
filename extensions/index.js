@@ -418,6 +418,12 @@ export default function vpKnowledgePiExtension (pi) {
             if (result.errors.length > 0) {
               process.stderr.write(`[vp-knowledge] agent sync: ${formatSyncErrors(result)} — edit agents/, not the installed copies\n`)
             }
+            // A source directory that exists but holds no profiles is a broken
+            // install, not a quiet success — it used to be indistinguishable
+            // from "everything already current" and so was reported as neither.
+            if (result.errors.length === 0 && result.considered === 0) {
+              process.stderr.write(`[vp-knowledge] agent sync: no agent profiles found in ${sourceDir} — nothing was installed\n`)
+            }
             if (ctx.hasUI) {
               if (result.added.length > 0) {
                 ctx.ui.notify(`Copied ${result.added.length} agent profile(s) to ~/.pi/agent/agents/`, 'info')
@@ -427,6 +433,9 @@ export default function vpKnowledgePiExtension (pi) {
               }
               if (result.errors.length > 0) {
                 ctx.ui.notify(`Agent sync: ${formatSyncErrors(result)}`, 'warning')
+              }
+              if (result.errors.length === 0 && result.considered === 0) {
+                ctx.ui.notify(`Agent sync: no agent profiles found in ${sourceDir} — nothing was installed`, 'warning')
               }
             }
           } catch (err) {

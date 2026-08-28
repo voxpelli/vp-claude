@@ -18,11 +18,30 @@ import { getAgentDir } from '@earendil-works/pi-coding-agent'
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 
-/** @typedef {'read-src'|'copy'|'mkdir'} SyncOp */
+/** @typedef {'read-src'|'copy'|'mkdir'|'source-missing'} SyncOp */
 
 /** @typedef {{ file?: string, op: SyncOp, message: string }} SyncError */
 
-/** @typedef {{ added: string[], updated: string[], errors: SyncError[] }} SyncResult */
+/**
+ * The outcome of one sync.
+ *
+ * `considered` and `unchanged` exist to keep three genuinely different
+ * outcomes apart. Before they did, all three returned `{added:[], updated:[],
+ * errors:[]}` — every profile already current, a source directory holding no
+ * `.md` files, and a source directory that does not exist — and `/vpk-sync`
+ * rendered all three as "no changes needed" at severity `info`. On a sparse
+ * checkout the user was told their profiles were current when none were
+ * installed. A missing source now leaves the success arm entirely via a
+ * `source-missing` error; an empty one is visible as `considered === 0`.
+ *
+ * @typedef SyncResult
+ * @property {string[]} added - profiles written that had no destination file
+ * @property {string[]} updated - profiles overwritten with different content
+ * @property {string[]} unchanged - profiles skipped as byte-identical at dest
+ * @property {number} considered - source `.md` files enumerated; 0 means there
+ *   was nothing to sync, which is never the same as "nothing needed syncing"
+ * @property {SyncError[]} errors
+ */
 
 /**
  * Allowlist for managed-agent filenames.
@@ -71,10 +90,18 @@ export function syncAgentProfiles (sourceDir, targetDir) {
   const result = {
     added: [],
     updated: [],
+    unchanged: [],
+    considered: 0,
     errors: [],
   }
 
-  if (!existsSync(sourceDir)) return result
+  if (!existsSync(sourceDir)) {
+    result.errors.push({
+      op: 'source-missing',
+      message: `agent source directory not found: ${sourceDir}`,
+    })
+    return result
+  }
 
   try {
     mkdirSync(targetDir, { recursive: true })
@@ -101,6 +128,8 @@ export function syncAgentProfiles (sourceDir, targetDir) {
     return result
   }
 
+  result.considered = sourceEntries.length
+
   for (const entry of sourceEntries) {
     if (!isManagedAgentName(entry)) {
       result.errors.push({ file: entry, op: 'copy', message: 'rejected unsafe path' })
@@ -121,6 +150,7 @@ export function syncAgentProfiles (sourceDir, targetDir) {
       // counts only real changes, not every no-op sync. Both reads are inside
       // this try, so an I/O error is collected like any other copy failure.
       if (existedBefore && readFileSync(src).equals(readFileSync(dest))) {
+        result.unchanged.push(entry)
         continue
       }
       copyFileSync(src, dest)
