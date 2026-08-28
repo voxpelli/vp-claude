@@ -16,6 +16,7 @@ schema:
     caveats
   performance?(array): string, performance characteristics — startup time, memory footprint, battery impact
   popularity?(array): string, Homebrew install analytics (30/90/365-day counts) with source + date stamp; source from Homebrew MCP or the formulae.brew.sh JSON analytics block, omit only when neither is available
+  compatibility?(array): string, OS/arch coverage — macOS version floor, Apple Silicon/Intel variants, availability on other platforms — plus peer-tool compatibility caveats. Harmonised with brew_formula's compatibility field; supersedes the undeclared `requirement` spelling
   pattern?(array): string, recurring usage patterns and integration recipes
   security?(array): string, supply-chain or runtime security considerations
   licensing?(array): string, paid/subscription/free model details and renewal/seat caveats

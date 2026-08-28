@@ -13,7 +13,14 @@ question.
 
 Launch these research queries simultaneously:
 
-**a) DeepWiki — architecture and design (GitHub-only):**
+**a) DeepWiki — architecture and design (GitHub-only, "maybe run" tier):**
+
+DeepWiki is in the **"maybe run"** tier of the freshness matrix — primarily
+useful for **new notes** (initial architectural discovery) or **deep dives**
+(when other sources can't explain something). For routine refreshes of
+existing notes, skip DeepWiki unless the "maybe run" conditions are met
+(changelog shows a major/minor bump, unresolved questions, or explicit user
+request).
 
 **Skip this source when `repo_forge != github`** (from Step 2) — DeepWiki
 indexes only GitHub repositories. Note the skip in Step 6 synthesis; it is
@@ -26,7 +33,12 @@ ask_question(repo="owner/repo", question="What are the key APIs, design patterns
 
 **Indexing lag** — DeepWiki re-indexes periodically, so for actively developed packages, recently added APIs may not appear yet. When the changelog step (3e) surfaces a version newer than what DeepWiki describes, treat its API coverage as incomplete for that version range and supplement from the changelog or commit log.
 
-**b) Context7 — API reference:**
+**b) Context7 — API reference ("maybe run" tier):**
+
+Context7 is in the **"maybe run"** tier of the freshness matrix. Run it only
+when the "maybe run" conditions are met — primarily when the changelog shows
+a major or minor version bump (new API surface to document). For routine
+refreshes with only patch bumps, skip it.
 ```
 resolve-library-id(libraryName="<package-name>")
 query-docs(libraryId="<resolved-id>", topic="API usage examples")
@@ -34,7 +46,15 @@ query-docs(libraryId="<resolved-id>", topic="API usage examples")
 
 Context7 is npm-biased. Attempt `resolve-library-id` for all ecosystems. If it
 returns no useful result or an unrelated library, skip source b and proceed with
-the remaining four sources. Note "source b unavailable" in your synthesis.
+the remaining sources. Note "source b unavailable" in your synthesis.
+
+**Its tool prefix varies by install** — `mcp__plugin_context7_context7__*` (the
+Claude Code plugin), `mcp__claude_ai_Context7__*` (the claude.ai connector), or
+`mcp__hyper-mcp__context7-*` (the hyper-mcp WASM plugin, which uses underscores
+where the other two use hyphens). Call whichever is present. If none is, that is
+an **unavailable source**, not a skipped one — Step 6 requires the two be
+reported differently, and "Context7 not installed" is a materially different
+statement from "Context7 had nothing useful".
 
 **c) Tavily — security and recent changes:**
 ```

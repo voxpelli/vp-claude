@@ -124,12 +124,21 @@ const VALID_AGENT_EFFORTS = new Set(/** @type {const} */ (['low', 'medium', 'hig
 const KNOWN_MCP_PREFIXES = [
   'mcp__basic-memory__',
   'mcp__deepwiki__',
+  // Context7 ships under three different prefixes depending on how it is
+  // installed — the Claude Code plugin, the claude.ai connector, and the
+  // hyper-mcp WASM plugin (whose tool names use underscores where the other two
+  // use hyphens). All three are declared because `allowed-tools` PRE-APPROVES
+  // rather than restricts: an entry for a server the user does not have costs
+  // nothing, while a missing one costs a permission prompt mid-research.
   'mcp__plugin_context7_context7__',
+  'mcp__claude_ai_Context7__',
+  'mcp__hyper-mcp__',
   'mcp__tavily__',
   'mcp__raindrop__',
   'mcp__readwise__',
   'mcp__socket-mcp__',
   'mcp__homebrew__',
+  'mcp__huggingface__',
 ]
 
 // Built-in Claude Code tool names this plugin's skills/agents can reference in

@@ -13,7 +13,14 @@ useful coverage of Homebrew, Actions, Docker, or VSCode ecosystems.
 
 Launch research queries — parallelize where possible:
 
-**a) DeepWiki — architecture and design (action:, docker:, conditional for gh:):**
+**a) DeepWiki — architecture and design (action:, docker:, conditional for gh:, "maybe run" tier):**
+
+DeepWiki is in the **"maybe run"** tier of the freshness matrix — primarily
+useful for **new notes** (initial architectural discovery) or **deep dives**
+(when other sources can't explain something). For routine refreshes of
+existing notes, skip DeepWiki unless the "maybe run" conditions are met
+(changelog shows a major/minor bump, unresolved questions, or explicit user
+request).
 
 Use DeepWiki for tools that have upstream GitHub repositories with meaningful
 code to analyze. Skip for `brew:` and `cask:` (formulae/casks rarely have

@@ -21,12 +21,53 @@ read_note(identifier="<prefix>-<name>", include_frontmatter=true, output_format=
 
 **Freshness check:** Scope research based on note age (check `updated_at`):
 
-| Note age | Sources to run | Sources to skip |
-|----------|---------------|-----------------|
-| Missing or >180 days | All (full pipeline) | None |
-| 60–180 days | All except Raindrop | Raindrop |
-| <60 days (**package** family) | DeepWiki + Context7 + changelog + Socket | Tavily, Raindrop, Readwise |
-| <60 days (**tool** family) | DeepWiki + changelog | Tavily, Raindrop, Readwise |
+| Note age | Sources to run | Sources to maybe run | Sources to skip |
+|----------|---------------|---------------------|-----------------|
+| Missing or >180 days | All (full pipeline) | — | None |
+| 60–180 days | All except Raindrop | DeepWiki | Raindrop |
+| <60 days (**package** family) | Tavily + changelog + Socket | Context7, Readwise, DeepWiki | Raindrop |
+| <60 days (**tool** family) | Tavily + changelog | Readwise, DeepWiki | Raindrop |
+
+**"Maybe run" semantics.** A source in the "maybe run" column is not run by
+default. Run it only when one of these conditions is met:
+
+- **Changelog trigger:** the changelog step reveals a **major or minor version
+  bump** since the last note (new API surface, new features, or breaking changes
+  worth documenting).
+- **Unresolved questions:** the existing note has `[gotcha]`, `[limitation]`,
+  or `[security]` observations that need deeper investigation, or the research
+  so far has unanswered questions.
+- **Explicit user request:** the invocation is a deep-dive (e.g. the user asked
+  for detailed research on a specific aspect), not a routine refresh.
+
+If none of these conditions apply, skip the "maybe run" sources and proceed
+with the "Sources to run" column only.
+
+**The matrix models staleness, not WRONGNESS — and a wrong note overrides it.**
+Every row above scales effort by how long ago the note was written, which assumes
+the note was right when written and has merely aged. A note can instead be
+*incorrect*: a mechanism described backwards, a capability it never had, a claim
+whose version-gating has since inverted. Age says nothing about that, and a
+recently-written note is no safer — it has simply been wrong for less time.
+
+A four-note batch found two such notes, so treat this as the expected rate on a
+mature graph, not an edge case.
+
+**When any source contradicts an existing observation — not merely supersedes it
+— stop treating the run as a refresh and run the full pipeline regardless of
+age.** A refresh-tier run is scoped to confirm and extend; it will not look hard
+enough to establish which of two conflicting claims is true. Then:
+
+- **Verify against PRIMARY source before rewriting** — the implementation, the
+  spec, the changelog entry at the relevant tag. Not a doc-AI summary, which is
+  a plausible-sounding second opinion and may describe a different version than
+  the one in play.
+- **Correct the observation in place; do not append the correction beside it.**
+  Two contradictory observations leave the reader to adjudicate, and the wrong
+  one keeps getting cited.
+- **Record what the claim was and why it was wrong**, not just the new value. A
+  bare correction invites the same wrong conclusion to be re-derived from the
+  same evidence.
 
 Always run the changelog step — version history moves fast. **(package family)**
 Always fetch download counts too — they change weekly and stale numbers mislead.
@@ -50,8 +91,10 @@ time research begins. Before launching enrichment:
    staleness window in practice — another agent or a manual `/intel`
    run may have refreshed the note between audit and this invocation.
 3. If the recomputed freshness is `<60 days`, narrow the source pipeline
-   per the freshness table above (skip Tavily, Raindrop, Readwise). Do NOT
-   re-run the full pipeline just because the audit said the note was stale.
+   per the freshness table above (run Tavily + changelog + Socket for package,
+   Tavily + changelog for tool; "maybe run" sources only if conditions are
+   met). Do NOT re-run the full pipeline just because the audit said the note
+   was stale.
 4. If the audit's stated drift fact (e.g. "version X.Y.Z behind upstream
    A.B.C") no longer matches what the re-read reveals, abort with
    `"stale audit input — note already current at <version>; no refresh

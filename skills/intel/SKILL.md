@@ -15,6 +15,10 @@ allowed-tools:
   - mcp__deepwiki__ask_question
   - mcp__plugin_context7_context7__resolve-library-id
   - mcp__plugin_context7_context7__query-docs
+  - mcp__claude_ai_Context7__resolve-library-id
+  - mcp__claude_ai_Context7__query-docs
+  - mcp__hyper-mcp__context7-resolve_library_id
+  - mcp__hyper-mcp__context7-query_docs
   - mcp__tavily__tavily_search
   - mcp__tavily__tavily_extract
   - mcp__raindrop__find_bookmarks
@@ -199,11 +203,20 @@ array), **`## Observations`** with `[category]`-tagged items, and
 
 Observation conventions:
 
-- **`[version]` (mandatory, every cohort)** — record the documented latest
-  version as a clean leading token, e.g. `- [version] 5.8.5`. The same value
-  goes in the header pipe (`… | v<version> | …`); keep them consistent. (Which
-  slot `--stale` reads first is cohort-dependent — the `[version]` observation
-  for npm, the header pipe otherwise — so refresh both.)
+- **`[version]` (mandatory, every cohort — and EXACTLY ONE per note)** — record
+  the documented latest version as a clean leading token, e.g.
+  `- [version] 5.8.5`. The same value goes in the header pipe
+  (`… | v<version> | …`); keep them consistent. (Which slot `--stale` reads first
+  is cohort-dependent — the `[version]` observation for npm, the header pipe
+  otherwise — so refresh both.)
+  **Never add a second `[version]` line, and never write release prose under the
+  `[version]` category.** The extractor takes the first PARSEABLE `[version]`
+  line in file order, so a narrative line like
+  `- [version] 3.0 dropped Node 18` placed above the canonical token silently
+  becomes the recorded version — the note then reads correctly to a human and
+  wrong to every consumer. Version narrative belongs in `## Release Highlights`
+  (package family) or a `[feature]` observation (tool family). When refreshing,
+  UPDATE the existing `[version]` line rather than appending a new one.
 - **`[popularity]`** — if a count was obtained, add it with metric window +
   source, e.g. `- [popularity] 2.1M downloads/week (npm, 2026-04)`. Omit for
   PyPI and Go (no reliable count).

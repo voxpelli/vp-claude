@@ -89,10 +89,40 @@ note truncated the body to frontmatter only under Pi's MCP adapter (Pi batch
 eval, 2026-07-19); not reproduced under Claude Code (2026-07-21 test — both
 parallel edits landed cleanly), so sequential edits are the safe default on any host. Chain
 edits sequentially across turns, or use a single `replace_section` anchored on a
-stable header — noting `replace_section` replaces the *entire* content under that
-header, so you must supply the full section body (a stale body reintroduces the
-data loss this rule guards against). If a batch is ever unavoidable, re-read
-afterward and confirm the body survived — a truncation shows as frontmatter-only.
+stable header — but read the boundary rule below first. If a batch is ever
+unavoidable, re-read afterward and confirm the body survived — a truncation
+shows as frontmatter-only.
+
+**`replace_section` does NOT replace the whole section — it stops at the first
+heading of ANY level.** This is the single most misread edit operation, and the
+older description here ("replaces the *entire* content under that header, so you
+must supply the full section body") produced exactly the wrong instruction:
+supplying the full body DUPLICATES every sub-heading, because the originals were
+never consumed. Verified against the installed version's source, not inferred —
+`entity_service.py` `replace_section_content` at tag `v0.22.1`, whose own
+docstring says "until it encounters the next header of ANY level" and whose loop
+is a bare `if next_line.startswith("#"): break`.
+
+Three consequences of that implementation, in the order they bite:
+
+- **A section with `###` children:** supply only the prose that sits directly
+  under the header, never the children. Anchor on the deepest heading you
+  actually mean to replace.
+- **No fenced-code awareness at 0.22.1.** The check is `startswith("#")` on the
+  raw line, so a `# comment` inside a ` ``` ` block ends the replacement early
+  and the rest of your content lands after a stray fence. Prefer `find_replace`
+  for any section containing code blocks.
+- **A header that does not match is not an error — it APPENDS.** A typo'd or
+  drifted header name silently creates a new section at end-of-file rather than
+  failing, so the note looks edited and the intended section is untouched. A
+  DUPLICATE header does raise (`ValueError`, "requires unique headers").
+
+⚠️ **Version-gated — recheck on upgrade.** Upstream `main` has since added a
+`replace_subsections` parameter defaulting to **`True`**, which INVERTS the
+boundary rule (it then consumes to the next same-or-higher-level heading), and
+added fenced-code awareness (`_fenced_code_line_flags`). Neither is present at
+0.22.1, and the installed `edit_note` tool schema exposes no such parameter —
+that absence is the cheapest way to tell which behaviour you have.
 
 **Re-read before re-anchoring.** If any edit has already landed on a note this
 session, re-read it before constructing the next `find_replace` anchor. The
@@ -110,6 +140,28 @@ If `find_replace` fails (no match found), the note may have been edited since
 you last read it. Re-run `read_note`, re-derive the anchor, and retry once.
 If the second attempt also fails, stop and report the error to the user — do
 not loop.
+
+**An `edit_note` ERROR does not mean the edit did not land. Re-read before any
+retry.** `database is locked` is the one seen in practice, and it is raised
+*after* the file on disk has already changed. Verified in the installed version's
+source (`entity_service.py` `edit_entity_with_content`, tag `v0.22.1`): the
+file write comes first and the index updates follow it in the same request —
+
+```
+checksum = await self.file_service.write_file(...)   # the file has changed HERE
+entity   = await self.upsert_entity_from_markdown(...)  # a lock error can raise HERE
+entity   = await self.repository.update(...)            # ...or HERE
+```
+
+— with the code's own comment reading "once the file write succeeds, we refresh
+observations, relations, and checksum in the same request".
+
+So the retry-once rule above applies ONLY to a no-match `find_replace`, which is
+a refusal that changed nothing. For any other error, `read_note` first and check
+whether your content is already present. A blind retry of an `append` writes it
+twice; a blind retry of a `find_replace` then fails no-match and reads as a
+second, unrelated problem. The note is fine either way — it is the INDEX that
+is behind, and the next sync reconciles it.
 
 **Cross-reference:** for upgrade-haul refreshes, the required dual-slot
 verification (both header pipe and `[version]` observation) is documented in
