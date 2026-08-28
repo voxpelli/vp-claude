@@ -50,6 +50,11 @@ it here are not obvious:
   standalone field — so `diarie migrate` today silently drops it, exits 0, and
   passes `diarie validate`. The gate is a published diarie release with that fix.
 
+**`ROADMAP.md` is the committed counterpart.** Because `.beads/` is gitignored
+and bd's write path is unreliable, deferred work that must survive a session is
+recorded in [ROADMAP.md](ROADMAP.md) with its revival trigger. Read it alongside
+`bd ready`; a clone carries the roadmap and not the backlog.
+
 **Pushing is human-gated.** An earlier machine-generated block in this repo
 mandated `git push` at session end; it was removed on purpose. Commit freely,
 push only when asked.
@@ -57,7 +62,21 @@ push only when asked.
 **MEMORY.md:** the same removed block said not to use it. This file is the
 authority — where [Releasing](#releasing) asks for a MEMORY.md update, do it.
 
+### bd CLI quirks
+
+- `bd create` (not `bd add`) — the `Did you mean ado?` typo suggestion is misleading
+- `bd create --type=bug` requires `## Steps to Reproduce` AND `## Acceptance Criteria` sections in the description
+- `bd create --type=task` requires `## Acceptance Criteria` — title-case "Criteria" only (lowercase rejected)
+- `bd close <id>` requires `-r "<summary>"` — non-empty reason is mandatory
+- `bd list` hides lower-priority issues by default — a fresh P3/P4 create is invisible in the default view; verify with `bd list -p <N>`
+- `bd close` success can silently revert when `.beads/` is gitignored — verify every close with `bd show <id>` (upstream: vp-claude-syw)
+
 ## What This Is
+
+See [VISION.md](VISION.md) for why this plugin exists and what it refuses to do,
+and [ROADMAP.md](ROADMAP.md) for deferred work and the trigger that revives each
+item.
+
 
 A Claude Code plugin (`vp-knowledge`) containing user-owned skills, agents, and hooks that build on [Basic Memory](https://github.com/basicmachines-co/basic-memory) (running as an MCP server). These complement the upstream `basicmachines-co/basic-memory-skills` (which provides core `memory-*` skills) with higher-level workflows for package and developer-tool research, knowledge graph maintenance, and automated quality checks.
 
@@ -91,16 +110,19 @@ agents/
   knowledge-maintainer.md            # All-in-one graph enhancer (writes, incl. tag fixes)
   knowledge-primer.md                # Autonomous project context priming
   raindrop-gardener.md               # Read-only Raindrop tag auditor
+  finding-verifier.md                # Read-only adversarial claim verifier (approve/refute findings)
+agents-pi/                           # Hand-maintained port of agents/ to pi-subagents frontmatter;
+                                     # sync source for the Pi extension, drift-guarded by check:agent-parity
 hooks/
   hooks.json                         # PreToolUse, PostToolUse, PostToolUseFailure, SessionStart
 schemas/                             # 23 BM note-schema definitions — source of truth (see ## Schemas)
-scripts/                             # CLI-first audit + npm-run-check utilities (see ## Scripts)
-lib/                                 # JS modules imported by check scripts (staleness-contract, version-distance, fourth-wall-rules, release-counts, mdast, installed-plugins, plugin-load-paths, portability-scan, bm-version-extract, analytics-guidance, observation-metadata, schema-vocab, check-harness, cohort-table-contract)
+scripts/                             # CLI-first audit + npm-run-check utilities (inventory: .claude/rules/scripts-and-validation.md)
+lib/                                 # JS modules imported by check scripts (staleness-contract, version-distance, fourth-wall-rules, release-counts, mdast, installed-plugins, plugin-load-paths, portability-scan, bm-version-extract, analytics-guidance, observation-metadata, schema-vocab, check-harness, cohort-table-contract, bm-search, link-resolution, npm-triage, ndjson, ast-grep-scope, http-json, npm-downloads, upstream-heading-vocab, mcp-naming-guidance)
 extensions/                          # Pi coding-agent extension (single-root hybrid): factory, agent-sync, config, MCP mapping
-test/                                # node:test suites for extensions/ (run by check:test + check:pi-load)
+test/                                # node:test suites for extensions/ (run by test:node; also loaded offline by check:pi-load)
 sgconfig.yml                         # ast-grep config — auto-discovers .ast-grep/rules/ (see .claude/rules/ast-grep-rules.md)
 .ast-grep/
-  rules/                              # Bespoke ast-grep lint rules enforcing house JS conventions over lib/+scripts/
+  rules/                              # Bespoke ast-grep lint rules enforcing house JS conventions (scope: lib/ast-grep-scope.mjs)
   rule-tests/                         # ast-grep test fixtures + snapshots proving each rule fires/stays silent correctly
 .claude/rules/                       # Path-scoped dev conventions, load on edit of matching files (see ## Detailed conventions)
 ```
@@ -130,12 +152,13 @@ component type — see [Detailed conventions](#detailed-conventions).
 - **people-intel** — five-source person research → BM person note. `/people-intel <name>`
 - **nudge** — mode-routed adoption nudges: bare `/nudge` syncs the `claude-code-noteworthy-features` BM note to a local tip cache (filtering adopted features); `/nudge check` scans session transcripts for real feature-use evidence and writes adoption status after approval. `/nudge [check]`
 
-### Agents (4)
+### Agents (5)
 
 - **knowledge-gardener** — read-only graph auditor (10 checks incl. version drift, tag alignment, fourth-wall). Never writes.
 - **knowledge-maintainer** — write agent acting on audit findings; confirms content changes; `delete_note`/`write_note` excluded.
 - **knowledge-primer** — read-only "before work" BM context briefer.
 - **raindrop-gardener** — read-only Raindrop tag auditor.
+- **finding-verifier** — read-only adversarial claim verifier; approves/refutes/qualifies findings against primary sources before they are written.
 
 ### Hooks (5)
 
@@ -189,16 +212,17 @@ Skills and agents reference tools from multiple MCP servers. When editing, use e
 |--------|--------|---------|
 | Basic Memory | `mcp__basic-memory__*` | All components |
 | DeepWiki | `mcp__deepwiki__*` | intel, people-intel |
-| Context7 | `mcp__plugin_context7_context7__*` | intel (package family only) |
+| Context7 | `mcp__plugin_context7_context7__*`, `mcp__claude_ai_Context7__*`, or `mcp__hyper-mcp__context7-*` (prefix varies by install) | intel (package family only) |
 | Tavily | `mcp__tavily__*` | intel, people-intel |
 | Raindrop | `mcp__raindrop__*` | intel, people-intel, tag-sync, session-bookmarks, raindrop-triage, raindrop-gardener |
 | Readwise | `mcp__readwise__*` | intel, people-intel, knowledge-gaps |
 | Socket | `mcp__socket-mcp__*` | intel (package family only) |
 | Homebrew MCP | `mcp__homebrew__*` | intel (tool family only, optional; brew/cask analytics) |
+| Hugging Face | `mcp__huggingface__*` | finding-verifier (ML paper claims only) |
 
 ## Validation
 
-`npm run check` — runs `check:plugin` (validate-plugin.mjs, incl. the CLAUDE.md size guard and the offline relation-vocabulary drift cross-check) + `check:lint` (eslint, `@voxpelli/eslint-config`) + `check:tsc` (`tsc --checkJs --allowJs` against JSDoc types; `tsconfig.json` extends `@voxpelli/tsconfig/node22.json`) + `check:type-coverage` (`type-coverage --at-least 99`) + `check:contract` (staleness drift-bucket contract self-test) + `check:md` (remark) + `check:sh` (shellcheck + shfmt) + `check:hooks` (hook integration tests) + `check:distance` (version-distance classifier self-test) + `check:fourthwall` (fourth-wall rule-registry self-test) + `check:release-counts` (CLAUDE.md/README.md component counts ↔ disk) + `check:mdast` (mdast prose/fenced split self-test) + `check:installed-plugins` (installed-plugin/skill resolver self-test) + `check:plugin-load-paths` (`${CLAUDE_PLUGIN_ROOT}` cross-load paths in skill prose resolve on disk) + `check:portability` (classifies same-skill/cross-skill/tooling `${CLAUDE_PLUGIN_ROOT}` refs for standalone skills.sh install survivability — warn-only live scan + classifier self-test) + `check:bm-version-extract` (S2 version-extractor self-test) + `check:analytics-guidance` (brew/cask analytics-source doc guidance self-test, guards against the v0.31.5 inverted-claim regression) + `check:obs-metadata` (observation `Verified:`/`Since:`/`Ownership:` trailer parser self-test) + `check:schema-vocab` (relation-verb malformed-variant drift guard self-test) + `check:upstream-headings` (UPSTREAM-*.md `## ` heading-membership drift guard self-test) + `check:ast-grep` (bespoke `.ast-grep/rules/` structural lint over `lib/`+`scripts/` source enforcing house JS conventions — ESM-only, no identifier-shadowing, JSDoc `@typedef`/`any` conventions; error-severity findings fail CI, warning-severity ones don't) + `check:ast-grep-test` (`ast-grep test` — snapshot self-test proving each bespoke rule fires on a planted violation and stays silent on the correct form) + `check:cohort-lockstep` (`--stale` cohort-table lockstep drift guard between `staleness-detection.md` and `knowledge-gardener.md` Step 5b self-test) + `check:pi-load` (offline Pi validation: the shared `skills/` tree via Pi's own `loadSkillsFromDir` + the `extensions/` factory import, no running agent) + `check:spec` (`skill-check` SKILL.md linter with a 1000-line body-line cap enforced as errors — the ~42 Claude-Code-vs-spec divergence findings stay non-gating warnings) + `check:test` (`node --test` over `test/` — the `node:test` suites for `extensions/`, isolated from the real `~/.pi/agent/agents/` via a preloaded `test/isolate-agents-dir.js`).
+`npm run check` — runs `check:plugin` (validate-plugin.mjs, incl. the CLAUDE.md size guard and the offline relation-vocabulary drift cross-check) + `check:lint` (eslint, `@voxpelli/eslint-config`) + `check:tsc` (`tsc --checkJs --allowJs` against JSDoc types; `tsconfig.json` extends `@voxpelli/tsconfig/node22.json`) + `check:type-coverage` (`type-coverage --at-least 99`) + `check:contract` (staleness drift-bucket contract self-test) + `check:md` (remark) + `check:sh` (shellcheck + shfmt) + `check:hooks` (hook integration tests) + `check:distance` (version-distance classifier self-test, incl. a source scan asserting every `return` literal in `classifyVersionDistance` is declared in `VERSION_DISTANCE_CLASSES` — the derived-map form of that check is vacuous and shipped once) + `check:npm-triage` (npm staleness-sweep decision-logic self-test — action classes, name normalization, completeness gate, and the lexicographic ordering key; a `DEFECT:`-prefixed case pins a current wrong answer so a fix has to flip a failing assertion — the five originally pinned are all flipped, the convention stands for the next) + `check:ndjson` (shared NDJSON reader/writer self-test — a truncated line is counted and reported, never thrown on and never dropped; the two drivers used to disagree about that) + `check:npm-downloads` (api.npmjs.org response-interpreter self-test — chunk boundaries, and the UNWRAPPED single-name response shape a 128-remainder chunk gets back, which the bulk path read as a keyed map and filed as `downloads-not-returned` while npm had in fact answered with a number) + `check:http-json` (throttle-aware JSON fetcher self-test — `Retry-After` in both RFC 9110 forms, jittered backoff, attempt counts in the failure reason; the policy it replaces lost 462 of the 512 eligible download counts to HTTP 429 and could only be observed in a live 21-minute run) + `check:mcp-naming-guidance` (drift guard against the retired MCP tool-naming rule — the claim that a Pi direct name replaces the server's hyphens with underscores, which named tools no host registers. Corrected in one place in 0.34.0 and found in three more by review, because the first sweep grepped for an identifier rather than for the rule in prose. Live scan over an explicit file allowlist plus a detector self-test; a historical qualifier within the preceding paragraph exempts a mention, so a design record may quote the retired rule as history) + `check:fourthwall` (fourth-wall rule-registry self-test) + `check:release-counts` (CLAUDE.md/README.md component counts ↔ disk) + `check:agent-parity` (drift guard between the canonical `agents/` set and the hand-maintained `agents-pi/` port, comparing each pi file's `portedFrom` sha256 against the canonical body — mirrors the drift-guard family. Its three early returns each push an error before returning: a missing `agents/`, an unreadable one, and — the vacuous case found 2026-08-27 — an `agents/` holding zero `.md` files, which left the comparison loop with nothing to iterate and reported success without checking anything) + `check:mdast` (mdast prose/fenced split self-test) + `check:installed-plugins` (installed-plugin/skill resolver self-test) + `check:plugin-load-paths` (`${CLAUDE_PLUGIN_ROOT}` cross-load paths in skill prose resolve on disk) + `check:portability` (classifies same-skill/cross-skill/tooling `${CLAUDE_PLUGIN_ROOT}` refs for standalone skills.sh install survivability — warn-only live scan + classifier self-test) + `check:bm-version-extract` (S2 version-extractor self-test) + `check:analytics-guidance` (brew/cask analytics-source doc guidance self-test, guards against the v0.31.5 inverted-claim regression) + `check:obs-metadata` (observation `Verified:`/`Since:`/`Ownership:` trailer parser self-test) + `check:schema-vocab` (relation-verb malformed-variant drift guard self-test) + `check:upstream-headings` (UPSTREAM-*.md `## ` heading-membership drift guard self-test) + `check:ast-grep` (bespoke `.ast-grep/rules/` structural lint over `lib/`+`scripts/`+`extensions/`+the `.claude/workflows/stale-npm-triage/` drivers, enforcing house JS conventions — ESM-only, no identifier-shadowing, JSDoc `@typedef`/`any` conventions. Its scope lives in `lib/ast-grep-scope.mjs`, shared with `fix:ast-grep` and drift-guarded against `package.json` before the scan runs; error-severity findings fail CI, warning-severity ones don't) + `check:ast-grep-test` (`ast-grep test` — snapshot self-test proving each bespoke rule fires on a planted violation and stays silent on the correct form) + `check:cohort-lockstep` (`--stale` cohort-table lockstep drift guard between `staleness-detection.md` and `knowledge-gardener.md` Step 5b self-test) + `check:bm-search` (shared `bm tool search-notes` enumeration core — envelope validation, paging against an injected fake, row shaping, completeness verdict; guards against an unrecognised response being coerced into a clean-looking empty page) + `check:pi-load` (offline Pi validation: the shared `skills/` tree via Pi's own `loadSkillsFromDir` + the `extensions/` factory import, no running agent) + `check:spec` (`skill-check` SKILL.md linter with a 1000-line body-line cap enforced as errors — the ~42 Claude-Code-vs-spec divergence findings stay non-gating warnings). `node --test` over `test/*.test.js` (the `node:test` suites for `extensions/`, isolated from the real `~/.pi/agent/agents/` via a preloaded `test/isolate-agents-dir.js`) runs as `test:node`, not under `check:*` — `npm test` runs `run-s check test:*` (checks then node tests) and `npm run test-ci` adds c8 coverage.
 Shell scripts are validated with `shellcheck` (linting) and `shfmt -d`
 (format verification). Requires `brew install shfmt` if not already present.
 `npm run fix:ast-grep` (`ast-grep scan --update-all`) applies any auto-fixable
@@ -210,46 +234,13 @@ only detect, never mutate; see `.claude/rules/ast-grep-rules.md`.
 The `scripts/` directory contains CLI-first audit utilities (used by the
 knowledge-gardener agent) plus `.mjs` self-tests wired into `npm run check`. The
 shell workers use `bm tool` CLI commands where possible and direct file access
-only for regex operations the CLI cannot express. The `bm` CLI quirks and the
-full drift-guard picture live in `.claude/rules/scripts-and-validation.md`.
+only for regex operations the CLI cannot express.
 
-| Script | Purpose | Used by |
-|--------|---------|---------|
-| `audit-scope-leak.sh <bm-root>` | Detect project-specific content (paths, env vars) in cross-project notes | gardener Step 7b |
-| `fetch-brew-upstream.sh` (stdin: names) | API-only: fetch upstream version/homepage/deprecated/disabled facts from formulae.brew.sh for a list of formula names piped on stdin; Tier 2 enrichment via gh release timing. **Never accesses `~/basic-memory/`** — the calling agent does BM access via MCP and pipes names here. | gardener Step 5b, `/knowledge-gaps --stale` |
-| `fetch-cask-upstream.sh` (stdin: tokens) | API-only: bulk `cask.json` indexed by token; leading comma-segment version, deprecated/disabled, `version=="latest"` → not-in-api. NDJSON-identical contract to brew. | gardener Step 5b, `/knowledge-gaps --stale cask` |
-| `fetch-npm-upstream.sh` (stdin: names) | API-only: abbreviated packument per name; `dist-tags.latest`, `.modified` age, latest-version `deprecated`. Scoped names work unencoded. | gardener Step 5b, `/knowledge-gaps --stale npm` |
-| `fetch-crate-upstream.sh` (stdin: names) | API-only: crates.io per name; `max_stable_version` + matching `created_at`. Required User-Agent, 1 s rate-limit between calls. | gardener Step 5b, `/knowledge-gaps --stale crate` |
-| `fetch-vscode-upstream.sh` (stdin: ids) | API-only: dual-source per `publisher.ext` id — Open VSX (authoritative verdict, `.version`/`.timestamp`) + VS Marketplace `extensionquery` (best-effort `marketplace_version` annotation). | gardener Step 5b, `/knowledge-gaps --stale vscode` |
-| `fetch-plugin-upstream.sh` (stdin: `owner/repo[#name]`) | `gh api`-only (no registry exists): resolves a marketplace-hosted identifier's `plugin.json` path live via `marketplace.json`, then reads `.version`. Composite join-back key — `name` in NDJSON output echoes the full input identifier, not a package name. | gardener Step 5b, `/knowledge-gaps --stale plugin` |
-| `audit-helpers.sh <subcommand>` | Dispatcher: bm-stats, scope-leak-summary, scope-leak-detail | gardener Step 0.5, 7b |
-| `check-hooks.mjs` | Integration tests verifying each hook emits exactly one JSON object | `npm run check:hooks` |
-| `check-pi-load.mjs` | Offline Pi smoke test: validates the shared `skills/` tree via Pi's own `loadSkillsFromDir` (error- and collision-level diagnostics fail) and imports the `extensions/` factory. The `node:test` suites for `extensions/` live in `test/` and run via `check:test`. | `npm run check:pi-load` |
-| `check-staleness-contract.mjs` | Fixture tests for the emit↔consume staleness drift-bucket contract (imports `lib/staleness-contract.mjs`) — proves the validator check catches bucket-string drift | `npm run check:contract` |
-| `check-version-distance.mjs` | Fixture tests for the semver↔calver version-distance classifier (imports `lib/version-distance.mjs`) — proves the scheme-mismatch guard and version-zero rule hold | `npm run check:distance` |
-| `check-fourthwall.mjs` | Fixture tests for the fourth-wall rule registry (imports `lib/fourth-wall-rules.mjs`) — every deterministic `detect` fires on a planted violation + stays silent on near-misses; vp-note-quality documents every rule id + its Detection column matches the registry | `npm run check:fourthwall` |
-| `check-release-counts.mjs` | Live + fixture check: CLAUDE.md `### Skills/Agents/Hooks (N)` headings, README.md's hooks-count sentence, and CLAUDE.md's schema-count comment anchor all match on-disk counts (imports `lib/release-counts.mjs`) | `npm run check:release-counts` |
-| `check-mdast.mjs` | Fixture self-test for `lib/mdast.mjs` `collectScannableText` — proves prose + inline-code is collected while fenced blocks (any depth: tilde, 4-backtick nesting) + frontmatter are skipped (powers `auditToolReferences`) | `npm run check:mdast` |
-| `list-installed-plugins.mjs` | CLI for `/knowledge-gaps --global` Step 7c: reads `~/.claude/plugins/*` + `~/.agents/.skill-lock.json`, emits NDJSON `{identifier, title, installedAt, members, sourceResolved}` per installed plugin/skill (file I/O only — resolution in `lib/installed-plugins.mjs`) | `/knowledge-gaps --global` |
-| `check-plugin-load-paths.mjs` | Live + fixture check: every bare `${CLAUDE_PLUGIN_ROOT}/...` cross-load path in `skills/**/*.md` prose (imports `lib/plugin-load-paths.mjs`) resolves on disk — catches a moved/renamed shared reference file that remark-validate-links and validate-plugin.mjs's hook-command resolution both miss | `npm run check:plugin-load-paths` |
-| `check-portability.mjs` | Warn-only live scan + hard classifier self-test (imports `lib/portability-scan.mjs`): classifies every `${CLAUDE_PLUGIN_ROOT}` ref in skill prose as same-skill (fixable portability debt — breaks under a standalone skills.sh install), cross-skill (accepted — a sibling-skill dependency), or tooling. Orthogonal to `check:plugin-load-paths` (resolves-on-disk vs. standalone-install survivability) | `npm run check:portability` |
-| `check-list-installed-plugins.mjs` | Fixture tests for `lib/installed-plugins.mjs` resolver — every owner/repo source shape (`./`, `./sub`, github, git-subdir, unresolved) + skill grouping-by-source | `npm run check:installed-plugins` |
-| `check-bm-version-extract.mjs` | Fixture tests for the S2 version extractor (imports `lib/bm-version-extract.mjs`) — covers all 6 priority-ordered patterns + the strict table-row label guard, the semver-range-in-prose non-match, and the channel-mismatch regression; this is the canonical logic mirrored as prose in `staleness-detection.md` S2 and `knowledge-gardener.md` Step 5b-ii | `npm run check:bm-version-extract` |
-| `check-analytics-guidance.mjs` | Live + fixture check: the two `intel` brew/cask ecosystem references, both note templates, the `brew_formula`/`brew_cask` schemas, and the user-facing `README.md` (imports `lib/analytics-guidance.mjs`) never reintroduce the inverted "JSON API does not expose analytics" claim fixed in v0.31.5, and each still mentions the JSON `analytics` fallback | `npm run check:analytics-guidance` |
-| `check-observation-metadata.mjs` | Fixture tests for the observation `Verified:`/`Since:`/`Ownership:` trailer parser (imports `lib/observation-metadata.mjs`) — valid trailers, near-miss non-matches that must not parse (lowercase field names, missing colon, ordinary em-dash prose), and malformed field values (non-ISO date, invalid calendar date, non-version `Since`, unenumerated `Ownership`) | `npm run check:obs-metadata` |
-| `check-schema-vocab.mjs` | Fixture tests for the relation-vocabulary malformed-variant drift guard (imports `lib/schema-vocab.mjs`) — picoschema Note-field extraction, `## Relation Vocabulary` bullet-candidate extraction, the space/colon malformed-variant detector (the v0.29.1 bug class), and confirms a well-formed-but-undeclared verb is deliberately left unflagged (that class belongs to `/schema-evolve`'s interactive reconciliation, not this guard) | `npm run check:schema-vocab` |
-| `check-upstream-headings.mjs` | Live + fixture check: every `## ` heading in a non-allowlisted `UPSTREAM-*.md` file (imports `lib/upstream-heading-vocab.mjs`) is a member of the canonical vocabulary (Feature Requests, Bugs, Upstream Opportunities, Cross-Vendor Inconsistencies, Trend Reviews, Resolved) — a membership check only, not order or completeness; `UPSTREAM-basic-memory.md` is allowlisted (genuinely different heading scheme by design) | `npm run check:upstream-headings` |
-| `check-ast-grep.mjs` | Runs the `.ast-grep/rules/` bespoke lint suite (via the `@ast-grep/cli` devDependency) over `lib/`+`scripts/`; in CI (`GITHUB_ACTIONS`) passes `--format github` so ast-grep's own native workflow-command annotations cover these findings, the same CI-visible-warnings treatment `validate-plugin.mjs`'s hand-rolled `warn()` gets, with no reimplementation needed. Detect-only — never mutates; see `npm run fix:ast-grep` and `.claude/rules/ast-grep-rules.md` | `npm run check:ast-grep` |
-| `check-cohort-lockstep.mjs` | Live + fixture check: the `--stale` cohort configuration table in `staleness-detection.md` and its mirrored table in `knowledge-gardener.md` Step 5b (imports `lib/cohort-table-contract.mjs`) list the same cohort set — line-regex anchored on the shared header-row labels (`Prefix`/`Fetch script`/`Deprecation?`), not a markdown AST (no `remark-gfm` table-parsing dependency installed) | `npm run check:cohort-lockstep` |
-
-### bd CLI quirks
-
-- `bd create` (not `bd add`) — the `Did you mean ado?` typo suggestion is misleading
-- `bd create --type=bug` requires `## Steps to Reproduce` AND `## Acceptance Criteria` sections in the description
-- `bd create --type=task` requires `## Acceptance Criteria` — title-case "Criteria" only (lowercase rejected)
-- `bd close <id>` requires `-r "<summary>"` — non-empty reason is mandatory
-- `bd list` hides lower-priority issues by default — a fresh P3/P4 create is invisible in the default view; verify with `bd list -p <N>`
-- `bd close` success can silently revert when `.beads/` is gitignored — verify every close with `bd show <id>` (upstream: vp-claude-syw)
+**The per-script inventory table lives in `.claude/rules/scripts-and-validation.md`**,
+alongside the `bm` CLI quirks and the full drift-guard picture. That rule loads
+automatically when you edit `scripts/**` or `lib/**` — exactly when the inventory
+is useful — so it costs nothing at session start and keeps this file inside the
+39,000-char size guard `check:plugin` enforces.
 
 ## Skill routing
 
@@ -269,6 +260,7 @@ When the user asks about knowledge or packages, choose the right skill:
 | "audit my knowledge graph", "full audit", "graph health" (graph-wide) | `knowledge-gardener` agent |
 | "fix these notes", "apply audit fixes", "tidy \[note\]" (named notes) | `/knowledge-maintain [note ...]` |
 | "fix the whole audit", "remediate the graph", "research missing packages" | `knowledge-maintainer` agent |
+| "schema drift", "evolve schema", "sync schemas", "unused schema fields", "declare a relation verb" | `/schema-evolve <type>` |
 | "sync nudge tips", "refresh the tip cache", "rebuild the tip cache" | `/nudge` |
 | "nudge me on unused features", "which features haven't I adopted", "nudge adoption" | `/nudge check` |
 
@@ -338,7 +330,7 @@ Version bump:
 - `CHANGELOG.md` — new version entry + compare link
 - `marketplace.json` — `vp-knowledge` version field
 - `README.md` — component counts, skill/agent descriptions, structure tree
-- `CLAUDE.md` — Components index counts + Plugin Layout tree; **per-item descriptions live in `.claude/rules/{skill,agent,hook}-development.md`** — update those when behaviour changes. Also update the `## Validation` list, `## Scripts` table, and `lib/` comment when adding/removing a `scripts/*.mjs` or `lib/*.mjs` (prose-only, not machine-guarded)
+- `CLAUDE.md` — Components index counts + Plugin Layout tree; **per-item descriptions live in `.claude/rules/{skill,agent,hook}-development.md`** — update those when behaviour changes. Also update the `## Validation` list here, plus the `## Script inventory` table and the `lib/` comment in `.claude/rules/scripts-and-validation.md`, when adding/removing a `scripts/*.mjs` or `lib/*.mjs` (prose-only, not machine-guarded)
 - `MEMORY.md` — component descriptions, version field
 
 Tag the release (after committing and pushing the bump):

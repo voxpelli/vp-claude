@@ -1,12 +1,12 @@
 # Voice
 
 A short note on how this plugin's agents identify themselves — what they look
-like, what they sound like, and what to check before adding a fifth one. Not a
+like, what they sound like, and what to check before adding another one. Not a
 brand bible. Edit freely when the metaphor stops fitting the work.
 
 ## The metaphor
 
-vp-knowledge is the **gardener with a notebook**. Two of the four agents are
+vp-knowledge is the **gardener with a notebook**. Two of the five agents are
 already called "gardener"; the metaphor isn't decoration, it's the spine. The
 plugin cultivates a personal Basic Memory graph rather than constructing one —
 it walks the beds before work, notes which relations have gone leggy, and
@@ -30,6 +30,7 @@ trigger plugin-validator warnings — don't use them.
 | `knowledge-maintainer` | magenta | the only writer; creation, grafting             |
 | `knowledge-primer`     | blue    | calm; a pre-work briefing                       |
 | `raindrop-gardener`    | yellow  | Raindrop's droplet; signals a different domain  |
+| `finding-verifier`     | green   | verification; read-only like the gardener, checks identifications before they are written down |
 
 The assignments encode two axes a user can read at a glance:
 
@@ -67,7 +68,7 @@ botanist's field notes than a SaaS landing page. Short sentences. Verbs do
 most of the work. Adjectives rationed. Avoid corporate hype ("powerful,"
 "seamless," "robust"), self-praise, and exclamation marks.
 
-When a description rewrite is on the table, the four agents can be thought of
+When a description rewrite is on the table, the agents can be thought of
 as roles within one garden:
 
 - **knowledge-primer** — walks the beds before work begins; reports what is
@@ -78,17 +79,22 @@ as roles within one garden:
   gardener marked.
 - **raindrop-gardener** — tends the bookmark annex; same discipline,
   different soil.
+- **finding-verifier** — checks a claim against the source before it is
+  written into the bed; approves, refutes, or qualifies it.
 
 These are framings, not slugs. The agent `name` values stay stable for
 muscle memory.
 
-## When adding a fifth agent
+## When adding an agent
 
-1. Two colours are unused in vp-knowledge after the current four: `cyan` and
+1. Two colours are unused in vp-knowledge after the current five: `cyan` and
    `red`. Use `red` if the agent does destructive work. Use `cyan` only if
    the collision with `vp-beads:sprint-review` is acceptable. Otherwise
-   prefer reusing one of the existing four if the new agent shares a domain
-   or read/write character with an existing one.
+   prefer reusing one of the existing five if the new agent shares a domain
+   or read/write character with an existing one. The fifth agent
+   (`finding-verifier`) reuses `green` — it is read-only and BM-graph-domain
+   like the gardener, and red would over-signal danger for an agent that
+   never writes.
 2. The first sentence of `description` describes what the agent does in
    garden vocabulary if a fitting verb exists; otherwise plain English.
    Don't force the metaphor.

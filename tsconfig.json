@@ -6,5 +6,6 @@
     "types": ["node"]
   },
   "files": ["validate-plugin.mjs"],
-  "include": ["lib/**/*.mjs", "scripts/**/*.mjs", "extensions/**/*.js", "test/**/*.js"]
+  "include": ["lib/**/*.mjs", "scripts/**/*.mjs",
+    ".claude/workflows/**/*.mjs", "extensions/**/*.js", "test/**/*.js"]
 }

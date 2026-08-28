@@ -3,27 +3,38 @@
   "type": "module",
   "description": "vp-knowledge Claude Code plugin: Basic Memory knowledge-graph skills, agents, and hooks for package/tool/person research and graph maintenance, plus the .mjs validation tooling that powers npm run check.",
   "pi": {
-    "extensions": ["./extensions"],
-    "skills": ["./skills"]
+    "extensions": [
+      "./extensions"
+    ],
+    "skills": [
+      "./skills"
+    ]
   },
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "scripts": {
     "check": "run-p check:*",
+    "check:agent-parity": "node scripts/check-agent-parity.mjs",
     "check:analytics-guidance": "node scripts/check-analytics-guidance.mjs",
     "check:ast-grep": "node scripts/check-ast-grep.mjs",
     "check:ast-grep-test": "ast-grep test",
+    "check:bm-search": "node scripts/check-bm-search.mjs",
     "check:bm-version-extract": "node scripts/check-bm-version-extract.mjs",
     "check:cohort-lockstep": "node scripts/check-cohort-lockstep.mjs",
     "check:contract": "node scripts/check-staleness-contract.mjs",
     "check:distance": "node scripts/check-version-distance.mjs",
     "check:fourthwall": "node scripts/check-fourthwall.mjs",
     "check:hooks": "node scripts/check-hooks.mjs",
+    "check:http-json": "node scripts/check-http-json.mjs",
     "check:installed-plugins": "node scripts/check-list-installed-plugins.mjs",
     "check:lint": "eslint",
+    "check:mcp-naming-guidance": "node scripts/check-mcp-naming-guidance.mjs",
     "check:md": "remark . --quiet --frail",
     "check:mdast": "node scripts/check-mdast.mjs",
+    "check:ndjson": "node scripts/check-ndjson.mjs",
+    "check:npm-downloads": "node scripts/check-npm-downloads.mjs",
+    "check:npm-triage": "node scripts/check-npm-triage.mjs",
     "check:obs-metadata": "node scripts/check-observation-metadata.mjs",
     "check:pi-load": "node scripts/check-pi-load.mjs",
     "check:plugin": "node validate-plugin.mjs",
@@ -33,14 +44,14 @@
     "check:schema-vocab": "node scripts/check-schema-vocab.mjs",
     "check:sh": "shellcheck hooks/*.sh scripts/*.sh && shfmt -d hooks/*.sh scripts/*.sh",
     "check:spec": "skill-check check --no-security-scan --max-body-lines 1000",
-    "check:test": "node --test --import ./test/isolate-agents-dir.js",
     "check:tsc": "tsc",
     "check:type-coverage": "type-coverage --detail --strict --at-least 99 --ignore-files 'test/*'",
     "check:upstream-headings": "node scripts/check-upstream-headings.mjs",
     "fix": "run-s fix:*",
-    "fix:ast-grep": "ast-grep scan --update-all --globs '!scripts/check-*.mjs' lib/ scripts/ extensions/",
-    "test": "node --test --import ./test/isolate-agents-dir.js",
-    "test-ci": "c8 --reporter=cobertura --reporter=lcov --reporter=text node --test --import ./test/isolate-agents-dir.js"
+    "fix:ast-grep": "ast-grep scan --update-all --globs '!scripts/check-*.mjs' lib/ scripts/ extensions/ .claude/workflows/stale-npm-triage/",
+    "test": "run-s check test:*",
+    "test-ci": "c8 --reporter=cobertura --reporter=lcov --reporter=text node --test --import ./test/isolate-agents-dir.js test/*.test.js",
+    "test:node": "node --test --import ./test/isolate-agents-dir.js test/*.test.js"
   },
   "dependencies": {
     "@voxpelli/typed-utils": "^5.0.0"

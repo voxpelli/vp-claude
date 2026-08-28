@@ -5,18 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.33.6][] - 2026-07-29
+## [0.34.0][] - 2026-08-28
 
-Corrections to guidance the skills **execute**. This repo's product is markdown
-that an LLM agent follows, so a wrong sentence is a behavioural bug that makes a
-future agent write a wrong, durable note into a knowledge graph. Every drift
-guard in `npm run check` verifies that two *documents* agree; none verifies that
-a document matches *reality* — so none of this was caught by CI, and CI was
-green throughout. Found by a `/intel brew:beads` run, then by two review rounds
-that attacked the corrections themselves.
+Two bodies of work land together, and they share a theme: **the checks were
+green the whole time.**
 
-Full reasoning, including which claims are verified at source and which are not,
-is committed at `docs/design/intel-corrections-2026-07-28.md`.
+The first is a set of corrections to guidance the skills *execute* (staged as
+0.33.6, never published). This repo's product is markdown that an LLM agent
+follows, so a wrong sentence is a behavioural bug that makes a future agent
+write a wrong, durable note into a knowledge graph. Every drift guard in
+`npm run check` verifies that two *documents* agree; none verifies that a
+document matches *reality*.
+
+The second is a sweep-and-repair release — two new workflows over the Basic
+Memory graph, a `agents-pi/` port of the agent set for the Pi coding agent, and
+a substantial hardening pass on both. That pass found **six self-tests in this
+repo's own `npm run check` that could not fail** — each caught by planting a
+defect and watching nothing report it, never by reading the code. A check that
+cannot fail is worse than a missing one: it spends CI time buying confidence it
+has not earned. The recurring shapes are a comparison against a value derived
+from the same source it is checking, and a guard whose early return leaves its
+error list empty.
+
+Full reasoning for the guidance corrections, including which claims are verified
+at source and which are not, is committed at
+`docs/design/intel-corrections-2026-07-28.md`; the link-integrity sweep's record
+is at `docs/design/link-integrity-sweep-2026-08-28.md` and the npm triage's at
+`docs/design/stale-npm-triage-2026-08-05.md`.
 
 **On dogfooding.** Invocation-path dogfooding did **not** run: the `vp-plugins`
 marketplace resolves to GitHub, so the local build cannot be installed without
@@ -29,7 +44,180 @@ combined `--jq` filter does repeat its scalar once per page, Homebrew's
 analytics leaves are variant-keyed objects, and the bulk index carries
 `analytics` on 0 of 8,520 entries.
 
+### Breaking
+
+- **The Pi extension no longer syncs agent profiles on startup by default.**
+  `agents.autoSync` flips from `true` to `false`: nothing is copied into
+  `~/.pi/agent/agents/` unless you ask for it. The old default overwrote that
+  directory unconditionally on every session start, so a hand-edited profile was
+  silently replaced — a surprising amount of damage for a convenience. Restore
+  the previous behaviour with `{"agents": {"autoSync": true}}` in
+  `~/.pi/agent/extensions/vp-knowledge.json`, or pull profiles on demand with
+  `/vpk-sync`. Documented in `docs/pi-setup.md`, which previously did not mention
+  agent profiles at all.
+
+### Added
+
+- **`VISION.md` and `ROADMAP.md`.** The first records why this plugin exists and
+  the two failure modes that shape it — a check that cannot fail is worse than
+  no check, and a guard that verifies two documents agree proves nothing about
+  reality. The second holds deferred work with the trigger that would revive
+  each item, which `bd` cannot do here because `.beads/` is gitignored and its
+  write path is unreliable, so a clone carries no backlog.
+- **`check:mcp-naming-guidance`** — a drift guard against the retired MCP
+  naming rule reappearing in prose, modelled on `check:analytics-guidance` and
+  scoped to an explicit file allowlist, since a bare hyphen/underscore search
+  hits legitimate Rust crate-name advice.
+
+- **`finding-verifier` — a read-only adversarial claim verifier.** Takes a set of
+  claims (from notes, research, or a port decision) and checks each against the
+  strongest primary source available — registry APIs, GitHub source, live
+  behaviour, official docs, web, user-library prior art — returning
+  APPROVE/REFUTE/PARTIAL/UNVERIFIABLE with evidence and an explicit
+  verified-vs-inferred distinction. Sibling of `knowledge-gardener`; reuses its
+  green per `VOICE.md`, since it is read-only and lives in the same domain. The
+  agent roster goes 4 → 5.
+- **`agents-pi/` — the agent set ported to the Pi coding agent**, plus the tooling
+  that keeps it honest. The canonical `agents/` files are Claude-Code-shaped and
+  produce a **zero-tool agent** if handed to Pi verbatim: its loader does not
+  understand `mcp__server__tool` names or capitalized builtins, and
+  `model: inherit` breaks it outright — so a plain copy yields an agent that
+  silently cannot do anything. `scripts/port-agent-frontmatter.mjs` and
+  `scripts/port-agent-to-pi.mjs` generate the port; `check:agent-parity` fails
+  when a canonical agent has no counterpart or when a port's `portedFrom` body
+  hash has gone stale. `agents/` remains the source of truth.
+- **`repair-links` — a dry-run workflow for the graph's dangling wiki-links.** A
+  deterministic classifier (`lib/link-resolution.mjs`) buckets each unresolved
+  relation as repairable, forward-reference (a real backlog item, not damage),
+  spurious (Basic Memory extracting an ordinary `[[...]]` prose mention as if it
+  were a relation — repairing one would invent a fact), or placeholder
+  (illustrative links inside schema templates). Only the undecided middle band
+  reaches an agent judge, and three independently-lensed reviewers adversarially
+  check both what it accepted and what it rejected. **Nothing is ever applied
+  automatically.** Backed by a new enumeration core (`lib/bm-search.mjs`,
+  `scripts/list-notes.mjs`, `scripts/list-unresolved-links.mjs`) that walks the
+  full relation and note index with type-checked envelopes and a
+  scanned-vs-server-total completeness check — replacing a per-target fuzzy
+  search measured getting roughly half its verdicts wrong in *both* directions.
+- **`stale-npm-triage` — a cheap-fleet drift and compliance sweep** over the npm
+  note cohort: shards note reads and registry lookups across cheap agents,
+  resolves upstream state, and ranks the result into one report that keeps
+  confirmed drift and "could not measure" in separate tables rather than blending
+  them. Ranking is a **lexicographic key** (action class → drift class →
+  downloads → note age → id) rather than a weighted sum, so a tidy popular patch
+  bump can no longer outscore a confirmed breaking change, and an unmeasured
+  input sorts as unknown instead of a silent zero.
+- **Semantic version comparison** in `lib/version-distance.mjs`: `1.2` and `1.2.0`
+  — and a CalVer pair the previous string equality could not see — now compare
+  equal, so a sweep stops reporting a spelling difference as confirmed drift.
+- **A `compatibility` field on the `brew_cask` schema**, harmonizing it with
+  `brew_formula` and retiring the undeclared `requirement` spelling seven cask
+  notes had drifted onto. Purely additive; every schema here is `validation: warn`.
+- New checks wired into `npm run check`: `check:agent-parity`, `check:bm-search`,
+  `check:http-json`, `check:ndjson`, `check:npm-downloads`, `check:npm-triage`.
+
 ### Fixed
+
+- **The extension told the model to call tools that do not exist, and skipped
+  its own quality checks when it did.** `flattenMcpToolName` derived a Pi
+  direct-tool name by replacing the MCP server's hyphens with underscores.
+  `pi-mcp-adapter` does not: its `sanitizeServerPrefix` keeps `-` in the
+  valid-character class, so it registers `basic-memory_search_notes` while this
+  produced `basic_memory_search_notes`. Measured against the live registry, six
+  of ten sampled derivations missed — including every `basic-memory` tool, the
+  server this plugin is built around. The names were not inert:
+  `buildMappingGuidance` states the rule as fact in the injected system prompt,
+  and an unrecognised tool name is *dropped silently* rather than refused, so a
+  model followed the rule, called nothing, and got no error.
+
+  The rule had four copies and correcting one found none of the others, because
+  the sweep grepped for the identifier rather than for the rule as written. The
+  port generator carried its own implementation with a table hardcoding the
+  wrong answer as data, which is where the dead names in installed agent files
+  came from — the pipeline manufactured them. A design record staged for export
+  to another repo prescribed the rule while warning that hand-maintained tables
+  "rot and can promise non-existent tools". And the error-recovery message
+  restated it at the one moment it did most damage: shown when a tool name
+  failed to resolve, telling the model to re-derive with the rule that caused
+  the failure. `check:mcp-naming-guidance` now guards the wording.
+
+- **Write-time quality checks silently never ran on six paths.**
+  `normalizeBmToolCall` matched one spelling of a Basic Memory call; the adapter
+  registers four, one differing by a single underscore. Worse, `args` given as a
+  plain object — a documented form in the adapter's schema — produced empty
+  params while still returning a *truthy* result, so the write was recognised,
+  the fourth-wall check skipped itself on empty content, and nothing downstream
+  could tell. `server` was treated as required though the schema marks it
+  optional; a prefixed tool name, which the adapter's own search hands the
+  model, matched nothing. A failed write whose content tripped the detector
+  returned the advisory *instead of* the error classification — inverted, and
+  phrased "before finalizing" as though the note existed.
+
+- **The error classifier could not match what a host emits.** It tested for
+  `'tool not found'`; the adapter writes `Tool "x" not found`, with the name
+  between the words. The `tool-missing` category was unreachable, and its test
+  passed only because it planted a string no host produces.
+
+- **Two guards that ran nothing.** The fixture-authenticity test asserted a
+  length, a hyphen, and an array compared to a copy of itself — a reviewer
+  disproved it by building the forged fixture its own note forbids, and all
+  three assertions passed. It now anchors on a name no derivation can produce.
+  And the CLI entry guard in three scripts compared `import.meta.url` against
+  `` `file://${process.argv[1]}` ``; the first percent-encodes and the second
+  does not, so on any path containing a space `check:agent-parity` exited 0
+  having compared nothing.
+
+- **Six self-tests that could not fail**, each found by plant-and-revert rather
+  than review. A link-enumeration completeness check compared two responses that
+  were independently coerced to empty. A `DRIFT_ORDER` check compared a tuple
+  against a value derived from that same tuple — and the same self-referential
+  shape was then restated across three new ORDER maps. A triage gate reported
+  success when every note read failed or the registry was entirely unreachable.
+  `check:ndjson`'s blank-line-tolerant round trip could not see a missing
+  trailing newline that the orchestrator's own `wc -l` verification depends on.
+  And `check:agent-parity` reported a clean port whenever `agents/` was missing,
+  unreadable, or held zero files — the loop iterated nothing and the still-empty
+  error list read as success.
+- **A bare `tools:` line ported as no tools at all.** The frontmatter parser's
+  block-list branch was unreachable: its regex required whitespace after the
+  colon, but the canonical YAML for a key whose value is a list is a bare
+  `tools:` with nothing after it. `agents/raindrop-gardener.md` is written that
+  way, so porting it emitted an agent with no `tools:` line — the exact
+  zero-tool failure `agents-pi/` exists to prevent. The committed port was
+  correct only because it had been fixed by hand.
+- **An unparseable documented version (`0.x`, `1.x`, `2026.x`) was filed as
+  confirmed drift** by the npm sweep, which now recommends a research run rather
+  than a token repair.
+- **A prerelease upstream version is no longer scored as confirmed drift** against
+  a stable note — stating a distance would silently pick which release line the
+  reader cares about — and gets its own `upstream-prerelease` class instead.
+- **462 of 578 download counts were being lost to HTTP 429 and scored as
+  unpopular rather than unmeasured.** Weekly counts are now fetched once in bulk
+  after the shard merge, through a throttle-aware client (`lib/http-json.mjs`)
+  honouring `Retry-After` in both RFC 9110 forms with jittered backoff. A related
+  bug: the shape npm returns for a chunk ending at exactly one package is
+  *unwrapped*, not a keyed map, and was read as "no answer" when npm had in fact
+  replied with a number.
+- **`/intel` told research agents five things that were not true**, verified
+  against the installed Basic Memory's source rather than a doc-AI summary:
+  `replace_section` stops at the first heading of *any* level rather than
+  replacing a whole section (so "supply the full section body" duplicated every
+  sub-heading); an `edit_note` error does **not** mean the edit failed to land,
+  because the file is written before the index updates, so a blind retry
+  double-applies; Context7's MCP prefix varies by install method and only one of
+  three was declared; the freshness matrix had no entry point for "the note is
+  *wrong*" as distinct from "the note is *old*"; and a second `[version]`
+  observation could silently outrank the canonical one.
+- **`/schema-evolve` made six wrong claims about the tools it drives**, found
+  running it live. The worst: `dropped_fields` returns every declared field below
+  10% usage, not fields never used — the old "remove if 0%" rule would have
+  deleted 16 live fields — and the Step 5 template's `[[entity]]` Picoschema type
+  is invalid, silently registering a relation as an observation category, which
+  breaks prescribed mode at precisely the job it exists to do.
+- **`check:http-json`'s backoff-clamp assertion survived deleting the clamp**,
+  though the unclamped arithmetic yields a negative delay at attempt 0 and wraps
+  to near-zero at attempt 33 via JavaScript's mod-32 shift.
+
 
 - **`--stale` could report an older version than a note records.**
   `extractBmVersion` was first-`[version]`-**line**-wins rather than
@@ -99,6 +287,32 @@ analytics leaves are variant-keyed objects, and the bulk index carries
   `UPSTREAM-*` only (`c8c854c`).
 
 ### Changed
+
+- **`/intel` reordered its source tiers.** DeepWiki is demoted from "always run on
+  a <60d note" to a "maybe run" tier, and Tavily is promoted onto the <60d fast
+  path for both families. The old matrix ran DeepWiki — best-effort, weekly-at-best
+  re-index — on every recent note while skipping the source that actually surfaces
+  time-sensitive release and breaking-change content, inverting their real value.
+  "Maybe run" now fires on a changelog major/minor bump, an unresolved
+  `[gotcha]`/`[limitation]`/`[security]` observation, or an explicit deep-dive
+  request. The documented source counts are unchanged — only the scheduling is.
+- **`node --test` moved out of `npm run check` into `test:node`**, per the
+  `voxpelli/node-module-template` convention; `npm test` is now
+  `run-s check test:*`. Scoped to `test/*.test.js` so a bare `node --test` no
+  longer auto-discovers and hangs on stray `.test.ts` files in local clone
+  directories. `npm run check` alone therefore covers less than it did — this is
+  contributor-facing surface only; `package.json` is `private`.
+- **The `.claude/workflows/**` lint exclusion was narrowed to the top-level
+  orchestrators.** Those genuinely run in the Workflow sandbox against injected
+  globals no config declares; the `<name>/*.mjs` driver files underneath are plain
+  Node programs, and are where every measurement in a triage report originates.
+  Bringing them under eslint, `tsc`, type-coverage and ast-grep surfaced 9 eslint
+  and 48 type errors that had shipped unseen. `lib/ast-grep-scope.mjs` now
+  drift-guards that scan scope against `package.json`.
+- **npm-triage decision logic moved from the driver into `lib/npm-triage.mjs`**,
+  per this repo's own file-I/O-in-scripts, logic-in-lib convention — which
+  immediately surfaced type errors and a real bug the driver had been hiding.
+
 
 - **A changelog, commit message or README is now treated as a claim, not
   evidence**, about anything outside its own diff. Two in-session
@@ -2526,7 +2740,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
-[0.33.6]: https://github.com/voxpelli/vp-claude/compare/v0.33.5...v0.33.6
+[0.34.0]: https://github.com/voxpelli/vp-claude/compare/v0.33.5...v0.34.0
 [0.33.5]: https://github.com/voxpelli/vp-claude/compare/v0.33.4...v0.33.5
 [0.33.4]: https://github.com/voxpelli/vp-claude/compare/v0.33.3...v0.33.4
 [0.33.3]: https://github.com/voxpelli/vp-claude/compare/v0.33.2...v0.33.3

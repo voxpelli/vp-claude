@@ -9,7 +9,7 @@
       "name": "vp-knowledge",
       "source": "./",
       "description": "Multi-ecosystem package research (npm, Rust, Go, PHP, Python, Ruby) with Socket supply-chain scoring, developer tool research (Homebrew with MCP analytics, GitHub Actions, Docker, VSCode, gh CLI extensions, Claude Code plugins, skills.sh bundles), multi-ecosystem version-drift detection (brew, npm, cask, crate, vscode, plugin), person research, knowledge gap analysis (incl. host-installed plugin/skill coverage), scope-partitioned graph audit/fix skills, project context priming, Readwise integration, session bookmarking, tag vocabulary sync, a Claude Code feature-adoption learning-nudge system, graph maintenance agents, and quality hooks for Basic Memory",
-      "version": "0.33.6"
+      "version": "0.34.0"
     },
     {
       "name": "vp-beads",
@@ -26,7 +26,7 @@
         "source": "github",
         "repo": "voxpelli/claude-git"
       },
-      "description": "Git workflow safety skills for stacked-PR chains: rebase-validate (five-layer pipeline — range-diff, sem, weave, jscpd, tests), stack-cascade (safety-tagged rebase --update-refs with atomic force-with-lease push), and tag-audit (SHA-grouped triage of accumulated safety tags with KEEP/DROP confirmation gate). Installable as a Claude Code plugin or via the cross-agent Agent Skills standard (skills.sh)",
+      "description": "Git workflow safety skills for stacked-PR chains: rebase-validate (five-layer pipeline \u2014 range-diff, sem, weave, jscpd, tests), stack-cascade (safety-tagged rebase --update-refs with atomic force-with-lease push), and tag-audit (SHA-grouped triage of accumulated safety tags with KEEP/DROP confirmation gate). Installable as a Claude Code plugin or via the cross-agent Agent Skills standard (skills.sh)",
       "version": "0.8.0"
     },
     {
@@ -35,7 +35,7 @@
         "source": "github",
         "repo": "voxpelli/claude-astgrep"
       },
-      "description": "Live ast-grep structural-lint diagnostics via the ast-grep language server: your .ast-grep/rules fire as you edit rather than only on an `ast-grep scan` run, with LSP quick-fixes. Rules hot-reload — edit a rule and the new rule applies immediately, no restart. That takes a stdio shim: ast-grep has no file watcher of its own and asks the client to watch for it, but Claude Code does not implement client-side file watching (it advertises didChangeWatchedFiles.dynamicRegistration as undefined and answers -32601), so ast-grep would otherwise serve its startup rule set forever. Both sides are behaving correctly; the gap is between them, and claude-code#32595 / #52693 are closed NOT_PLANNED. The shim answers the registration, watches the globs the server itself registered, and injects the notification the client never sends. An explicit stopgap: the durable fix is server-side in ast-grep (self-watch when the client declines, as rust-analyzer already does), and when that lands the shim becomes dead code and the Node requirement goes with it. Claims JavaScript, bash, and the web/config formats (json, yaml, markdown, css, html) — 15 extensions, never the 15 owned by official language servers, since a server that claims an extension and then dies still starves it. It therefore cannot silently disable pyright/rust-analyzer/gopls; enforced by a check on every build. Requires an sgconfig.yml in the project root, the ast-grep binary on PATH, and (since 0.4.0) Node >=20 on PATH — no node means no server at all, so pin 0.3.1 or set LSP_SHIM_DISABLE=1 to opt out. It is a feedback layer, so keep `ast-grep scan` as the CI gate",
+      "description": "Live ast-grep structural-lint diagnostics via the ast-grep language server: your .ast-grep/rules fire as you edit rather than only on an `ast-grep scan` run, with LSP quick-fixes. Rules hot-reload \u2014 edit a rule and the new rule applies immediately, no restart. That takes a stdio shim: ast-grep has no file watcher of its own and asks the client to watch for it, but Claude Code does not implement client-side file watching (it advertises didChangeWatchedFiles.dynamicRegistration as undefined and answers -32601), so ast-grep would otherwise serve its startup rule set forever. Both sides are behaving correctly; the gap is between them, and claude-code#32595 / #52693 are closed NOT_PLANNED. The shim answers the registration, watches the globs the server itself registered, and injects the notification the client never sends. An explicit stopgap: the durable fix is server-side in ast-grep (self-watch when the client declines, as rust-analyzer already does), and when that lands the shim becomes dead code and the Node requirement goes with it. Claims JavaScript, bash, and the web/config formats (json, yaml, markdown, css, html) \u2014 15 extensions, never the 15 owned by official language servers, since a server that claims an extension and then dies still starves it. It therefore cannot silently disable pyright/rust-analyzer/gopls; enforced by a check on every build. Requires an sgconfig.yml in the project root, the ast-grep binary on PATH, and (since 0.4.0) Node >=20 on PATH \u2014 no node means no server at all, so pin 0.3.1 or set LSP_SHIM_DISABLE=1 to opt out. It is a feedback layer, so keep `ast-grep scan` as the CI gate",
       "version": "0.4.3"
     }
   ]

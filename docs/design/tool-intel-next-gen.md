@@ -80,7 +80,7 @@ scripts/
                                     #   lines → findings) — invoked by haul Phase 3 and --verify Phase D
 ```
 
-Prose-only updates (not machine-guarded): CLAUDE.md Plugin Layout tree + Validation list + Scripts table + lib comment; `.claude/rules/skill-development.md` and `scripts-and-validation.md`; README; CHANGELOG; MEMORY.md.
+Prose-only updates (not machine-guarded): CLAUDE.md Plugin Layout tree + Validation list; the Script inventory table + lib comment in `.claude/rules/scripts-and-validation.md`; `.claude/rules/skill-development.md`; README; CHANGELOG; MEMORY.md.
 
 No frontmatter `allowed-tools` changes needed: workers launch as subagents; writes stay foreground with existing BM tools; `--verify`'s OSV.dev/deps.dev calls are plain `curl` (existing Bash), so `KNOWN_MCP_PREFIXES` is untouched. `AskUserQuestion` stays out of allowed-tools (convention); gates are prose-invoked.
 

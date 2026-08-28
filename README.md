@@ -8,6 +8,8 @@ vp-knowledge is a **single-root hybrid**: the same `skills/` tree and `extension
 
 See [Prerequisites](#prerequisites) below for the MCP servers the enrichment pipelines need — at minimum, Basic Memory.
 
+For why this plugin exists and the failure modes it is built around, see [VISION.md](VISION.md); for deferred work and what would revive each item, [ROADMAP.md](ROADMAP.md).
+
 ### On Claude Code
 
 Via slash commands:
@@ -543,6 +545,9 @@ agents/
   knowledge-maintainer.md              Read-write graph enhancer (effort: high)
   knowledge-primer.md                  Autonomous project context priming
   raindrop-gardener.md                 Read-only Raindrop tag auditor
+  finding-verifier.md                  Read-only adversarial claim verifier (approve/refute findings)
+agents-pi/                             Same five agents, ported to pi-subagents frontmatter
+                                       (sync source for the Pi extension; see docs/pi-setup.md)
 hooks/
   hooks.json                           PreToolUse, PostToolUse x2, PostToolUseFailure,
                                        SessionStart
@@ -649,6 +654,7 @@ VOICE.md                               Plugin identity, agent colors, descriptio
                       └── asks before content changes
  "prime context"   -> knowledge-primer    -> context brief (autonomous agent)
  "audit tags"      -> raindrop-gardener   -> tag health report (read-only)
+ "verify finding"  -> finding-verifier    -> APPROVE/REFUTE/PARTIAL verdicts with evidence (read-only)
 
  [any BM write]    -> PostToolUse hook    -> schema validation feedback
  [any file edit]   -> PostToolUse hook    -> shfmt drift diff + schema sync reminder

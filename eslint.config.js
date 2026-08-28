@@ -9,22 +9,31 @@ import { voxpelli } from '@voxpelli/eslint-config'
 // Options chosen to fit the repo rather than reshape it:
 //   - noMocha:   the check-*.mjs use a hand-rolled test() harness, not Mocha.
 //   - semi:false keep the existing no-semicolon style (neostandard's own default).
-//   - cliFiles:  scripts/ + validate-plugin.mjs ARE CLI tools, so process.exit(),
-//                console, and sync I/O are correct there — relax those rules for
-//                them only (lib/ stays library-strict). lib/check-harness.mjs is
-//                the one deliberate exception: it's shared test-runner plumbing
-//                for the scripts/check-*.mjs self-tests (PASS/FAIL logging +
-//                process.exit(1) on failure ARE its job), not business logic, so
-//                it gets the same CLI treatment rather than being forced to
-//                return data for every caller to print/exit itself.
+//   - cliFiles:  scripts/, validate-plugin.mjs and the .claude/workflows/ sweep
+//                drivers ARE CLI tools, so process.exit(), console, and sync I/O
+//                are correct there — relax those rules for them only. lib/ stays
+//                library-strict apart from two files that are CLI PLUMBING
+//                rather than business logic, and would otherwise force every
+//                caller to reimplement what they exist to share:
+//                  lib/check-harness.mjs — PASS/FAIL logging + process.exit(1)
+//                    on failure ARE its job for the scripts/check-*.mjs suite.
+//                  lib/ndjson.mjs — the shared NDJSON reader/writer for the
+//                    sweep drivers, all of which are one-shot processes where
+//                    sequential sync I/O is the point; making it async would
+//                    infect four call sites for no concurrency gain.
 export default [
   {
-    // .claude/workflows/*.js are Workflow-tool orchestration scripts: they run in
-    // the Workflow sandbox with injected globals (agent, pipeline, parallel, phase,
-    // args, budget) and ESM top-level await, so they are agent-runtime scripts, not
-    // part of the linted source tree. They also sit outside tsconfig's `include`, so
-    // tsc/type-coverage skip them by the same reasoning — keep both consistent.
-    ignores: ['.claude/workflows/**'],
+    // Only the top-level `.claude/workflows/*.js` orchestrators are ignored. They
+    // run in the Workflow sandbox against injected globals (agent, pipeline,
+    // parallel, phase, args, budget) that no config here declares, so they are
+    // agent-runtime scripts rather than source. tsconfig excludes them for the
+    // same reason.
+    //
+    // Their `<name>/*.mjs` DRIVERS are a different thing and are deliberately NOT
+    // ignored: plain Node CLI programs, no injected globals, and the place every
+    // measurement in the report comes from. They are linted, type-checked and
+    // ast-grep'd like the rest of the source tree.
+    ignores: ['.claude/workflows/*.js'],
   },
   ...voxpelli({
     noMocha: true,
@@ -32,7 +41,7 @@ export default [
     // extensions/ is the Pi extension (JS with JSDoc types); agent-sync + config
     // do intentional sync file I/O (atomic copy, manifest/config read-write), so
     // they get the same CLI relaxation as scripts/.
-    cliFiles: ['scripts/**/*.mjs', 'validate-plugin.mjs', 'lib/check-harness.mjs', 'extensions/agent-sync.js', 'extensions/config.js'],
+    cliFiles: ['scripts/**/*.mjs', '.claude/workflows/**/*.mjs', 'validate-plugin.mjs', 'lib/check-harness.mjs', 'lib/ndjson.mjs', 'extensions/agent-sync.js', 'extensions/config.js'],
   }),
   {
     name: 'vp-knowledge/repo-style',

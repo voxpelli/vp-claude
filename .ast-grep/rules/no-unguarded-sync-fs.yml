@@ -7,6 +7,16 @@ message: >-
   exempt (it returns false instead of throwing for ENOENT).
   (CLAUDE.md/scripts-and-validation.md: guard sync fs calls against uncaught throws.)
 severity: warning
+# The sweep drivers under .claude/workflows/ are single-shot CLI entry points,
+# not library or long-lived-host code: an I/O throw there is a real, loud
+# failure of a process that was about to exit anyway. The compensating control
+# is in the orchestrator, which refuses to write a report on ANY non-zero exit
+# and throws when `gate` is absent — so a failed write cannot produce a
+# clean-looking report. What the exit-1-vs-exit-2 distinction rank.mjs
+# documents actually buys is a better error MESSAGE, which is why this is
+# scoped out rather than fixed here. Every other rule still applies to them.
+ignores:
+  - '.claude/workflows/**'
 rule:
   kind: call_expression
   all:

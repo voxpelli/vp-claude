@@ -16,3 +16,44 @@ PLAN-*.md
 # Skill/tool evaluation records — gitignored, local-only; use BM-style [category]
 # and outcome tags like [version]/fixed[version] that trip no-undefined-references.
 evaluations/
+
+# Local clone / scratch dirs — untracked vendored checkouts (_tmp_*,
+# _research_dashboard, _kimchi_tmp, _astgrep_tmp, _polint_tmp, _tmp_atelier,
+# _tmp_narumiruna, _tmp_pi_monorepo, _tmp_powerline, _tmp_zentui) pulled in for
+# cross-referencing. Their own markdown + tooling is not part of this repo; a bare
+# `remark .` was walking every file in them (thousands of errors + EAGAIN spawns),
+# masking this repo's own lint. All such dirs start with an underscore and are
+# untracked, so `_*`/` touches nothing tracked (verified via `git ls-files`).
+# CI's fresh clone has none of them, so the exclusion is a no-op there.
+_*/
+
+# Frozen sweep inputs + the preserved batch-1 report — gitignored working data
+# with a known expiry, kept as the offline oracle for `rank.mjs` replays.
+#
+# The report in here is a HISTORICAL artefact and must stay byte-identical: its
+# two `no-literal-urls` warnings (`npm-@jazzer.js-core` parsing as a GFM email
+# autolink) are exactly the defect since fixed at source by code-spanning the
+# Note column. Linting a frozen record of a fixed bug would only ever produce
+# pressure to edit the record.
+.baseline-*/
+
+# Generated staleness report — gitignored, regenerated per run. Excluded so the
+# repo-wide `check:md` does not depend on a generated artefact being present.
+#
+# The original rationale here was WRONG on both halves, measured 2026-08-05:
+#   * "`[category]` tokens trip no-undefined-references" — the real report
+#     produces ZERO such findings. Every `[category]` token in it sits inside a
+#     backtick code span, where `[` is literal; that escaping contract is stated
+#     at the point of construction in rank.mjs.
+#   * "the workflow validates this file explicitly with `--rc-path`, so it is
+#     not left unchecked" — it was left unchecked. remark refuses an explicitly
+#     named ignored file with `Cannot process specified file: it's ignored` and
+#     exits 1, so from the moment this entry was added the workflow's validation
+#     step reported a failure that had nothing to do with markdown quality.
+#
+# The workflow therefore passes `--no-ignore`, which is what makes this entry
+# scope-limiting rather than validation-disabling. Do not remove that flag.
+# With it, the report's only real findings were two `no-literal-urls` warnings —
+# `npm-@jazzer.js-core` parsing as a GFM email autolink — now fixed at source by
+# code-spanning the Note column.
+stale-npm-triage.md
