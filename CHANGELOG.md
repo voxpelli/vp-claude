@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.2][] - 2026-08-28
+
+One theme: **a sample nobody can re-run is not evidence.** `--sample` told the
+model to draw "N titles at random" and never said how, so the draw happened
+in-context — neither demonstrably unbiased nor reproducible — while S8 dutifully
+reported "a random sample, not the full cohort", a claim no reader could check.
+Found by dogfooding `--stale npm`, where the draw had to be hand-rolled with
+`awk srand` and the seed typed into the footnote by hand, because the skill never
+asked for one.
+
+### Changed
+
+- **`--sample` now requires a mechanical draw with an explicit seed, and the S8
+  footnote must carry the seed *and* the command that produced it.** The command
+  is not decoration: POSIX leaves `awk`'s `rand()` sequence
+  implementation-defined, so an awk-seeded draw repeats only under the same
+  `awk`, whereas `shuf --random-seed` is a documented construction that repeats
+  on any machine with the same `shuf`. A seed alone therefore does not establish
+  *who* can reproduce the sample. No new dependency — `shuf` where it resolves,
+  an `awk` pipeline otherwise, both honouring the existing `min(N, pool)` clamp
+  natively, and both using the `printf`-pipe idiom S3 already establishes.
+  Verified on the live 645-note npm cohort (identical draw at the same seed,
+  disjoint at a different one) and on a 584-note pool (`shuf -n 999` returns 584
+  rather than erroring). Scoped deliberately to S1 and S8: the scope preflight's
+  sample option resolves to `--sample` and routes through S1, so restating the
+  mechanism there would have been a third copy to keep in lockstep.
+
+### Docs
+
+- **`ROADMAP.md` pruned to what is actually next**, with three of its claims
+  corrected rather than merely refreshed — they were wrong, not stale: the
+  `tools: none` mechanism, an assertion that `knowledge-gardener` cannot read a
+  file, and a comment in `scripts/port-agent-frontmatter.mjs` claiming a regex
+  narrowing fixed the list-truncation bug when it only fixed URL-as-key parsing.
+  A comment saying a bug is fixed is worse than the bug, because the next reader
+  stops looking.
+
 ## [0.34.1][] - 2026-08-28
 
 Two rounds of adversarial review over 0.34.0 and then over the fixes themselves.
@@ -2861,6 +2898,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
+[0.34.2]: https://github.com/voxpelli/vp-claude/compare/v0.34.1...v0.34.2
 [0.34.1]: https://github.com/voxpelli/vp-claude/compare/v0.34.0...v0.34.1
 [0.34.0]: https://github.com/voxpelli/vp-claude/compare/v0.33.5...v0.34.0
 [0.33.5]: https://github.com/voxpelli/vp-claude/compare/v0.33.4...v0.33.5
