@@ -111,4 +111,4 @@ check('...so the second one is not mistaken for a duplicate', noIdRead.duplicate
 check('...and only the real row is keyed', [...noIdRead.map.keys()].join(','), 'real')
 check('a non-string id is malformed too', readNdjson(fixture('num-id.ndjson', '{"id":7}\n')).malformed, 1)
 
-done(15)
+done()

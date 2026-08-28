@@ -115,4 +115,4 @@ check('compareSingleCount passes silently on a match', compareSingleCount('READM
 check('compareSingleCount catches a planted mismatch', compareSingleCount('README.md', 'Hooks', 5, 6).some((e) => e.includes('README.md') && e.includes('Hooks')))
 check('compareSingleCount flags a missing stated value — not a vacuous pass', compareSingleCount('README.md', 'Hooks', undefined, 5).length === 1)
 
-done(20)
+done()

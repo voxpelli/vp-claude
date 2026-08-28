@@ -185,4 +185,4 @@ check('the source scan found the function at all — a rename must fail loudly, 
 check('every class the function returns is declared in VERSION_DISTANCE_CLASSES',
   returned.join(','), [...VERSION_DISTANCE_CLASSES].sort().join(','))
 
-done(50)
+done()

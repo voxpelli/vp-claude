@@ -104,7 +104,7 @@ checkEqual('truncates to the requested length', errorMessage(new Error('abcdefgh
 // report columns as the literal text "undefined".
 checkEqual('a thrown string keeps its text, not the literal "undefined"', errorMessage('a string', 80), 'a string')
 checkEqual('a thrown object does not become "undefined" either', errorMessage({}, 80), '[object Object]')
-// eslint-disable-next-line unicorn/no-useless-undefined -- the explicit undefined IS the case under test
+
 checkEqual('null and undefined stringify rather than throw', `${errorMessage(null, 80)}/${errorMessage(undefined, 80)}`, 'null/undefined')
 
-done(12)
+done()

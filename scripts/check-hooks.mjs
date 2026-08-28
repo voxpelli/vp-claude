@@ -642,4 +642,4 @@ test('bash script from gardener → allowed', () => {
 // --- Summary ---
 const { failed } = getCounts()
 if (failed > 0) console.error(`${failed} test(s) failed`)
-done(30)
+done()

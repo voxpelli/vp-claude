@@ -477,4 +477,4 @@ if (PATTERN_SIGNATURES.length !== 6 || PATTERN_SIGNATURES.some((p, i) => p.id !=
 
 console.log(`PATTERN_SIGNATURES: ${PATTERN_SIGNATURES.length} entries`)
 
-done(50)
+done()

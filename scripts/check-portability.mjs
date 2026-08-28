@@ -99,4 +99,4 @@ check('scan: a file with no refs yields nothing', scanPortability('skills/tool-i
 // classifiable ref, else the live loop above proved nothing.
 check('corpus sanity: the live scan classified at least one real ref', sameSkill + crossSkill.length + tooling.length > 0)
 
-done(10)
+done()

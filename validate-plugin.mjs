@@ -752,7 +752,7 @@ if (existsSync(hooksPath)) {
               // root contained a space, which is the case the fix above exists
               // for: it tolerated the unquoted form the shell would itself split
               // at runtime, and went blind on the correct one.
-              const parts = hook.command.split(/\s+/).map((p) => p.replace(/^["']|["']$/g, ''))
+              const parts = hook.command.split(/\s+/).map((p) => p.replaceAll(/^["']|["']$/g, ''))
               const rawPath = parts.find((p) =>
                 // eslint-disable-next-line no-template-curly-in-string -- literal placeholder text, not a template literal
                 p.startsWith('${CLAUDE_PLUGIN_ROOT}') || p.startsWith('/') || p.startsWith('./'))

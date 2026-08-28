@@ -125,4 +125,4 @@ check('parity flags every registry rule when the table is absent', checkDetectio
 check('checklistMissingRuleIds catches an omitted id', checklistMissingRuleIds(skillMd.split('fw-session-boundary').join('')).missing.includes('fw-session-boundary'))
 check('checklistMissingRuleIds reports all ids on empty content', checklistMissingRuleIds('').missing.length === CANONICAL_FOURTH_WALL_RULES.length)
 
-done(40)
+done()

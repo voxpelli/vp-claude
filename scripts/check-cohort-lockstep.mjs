@@ -60,4 +60,4 @@ console.log('\ncohort-lockstep: a malformed table (no separator row) is reported
 const malformedTable = [HEADER_A, '| `brew` | `brew-` | `brew/` | x | y | yes |'].join('\n')
 check('malformed-table error surfaces', extractCohortTokens(malformedTable).errors.length > 0)
 
-done(5)
+done()

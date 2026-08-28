@@ -111,4 +111,4 @@ check('extracts multiple distinct paths from one document', extractPluginLoadPat
 const liveContent = readFileSync(join(ROOT, 'skills/knowledge-gaps/SKILL.md'), 'utf8')
 check('a known real skill file extracts at least one path (corpus sanity)', extractPluginLoadPaths(liveContent).length > 0)
 
-done(10)
+done()

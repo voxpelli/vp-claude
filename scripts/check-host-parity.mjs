@@ -13,16 +13,18 @@
 // would have reproduced.
 
 import { spawnSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { buildAuditReminder, classifyBmError } from '../extensions/index.js'
+import { guardedArrayIncludes } from '@voxpelli/typed-utils'
+import { buildAuditReminder, buildRecoveryGuidance, classifyBmError } from '../extensions/index.js'
 import { createCheckHarness } from '../lib/check-harness.mjs'
 import {
-  CADENCE_SPRINT_RANGE, ERROR_CATEGORY_EQUIVALENCE, ERROR_CORPUS,
-  PI_ERROR_CATEGORIES, PI_ONLY_ERROR_CATEGORIES,
+  CADENCE_SPRINT_RANGE, CLAUDE_ERROR_CATEGORIES, ERROR_CATEGORY_EQUIVALENCE, ERROR_CORPUS,
+  PI_ERROR_CATEGORIES, PI_ONLY_ERROR_CATEGORIES, RECOVERY_HOST_SUBSTITUTIONS,
 } from '../lib/host-parity.mjs'
 
 const { check, done } = createCheckHarness()
@@ -122,12 +124,21 @@ for (let n = 0; n < CADENCE_SPRINT_RANGE; n++) {
 console.log('\nBM error taxonomy (same input → equivalent category)')
 /** @type {Set<string>} */
 const seenPiCategories = new Set()
+/** @type {Set<string>} */
+const seenClaudeTags = new Set()
 for (const sample of ERROR_CORPUS) {
   const ctx = additionalContext(runHook('post-bm-failure-classify.sh', JSON.stringify({ error: sample })))
   const claudeTag = /\[([a-z-]+)\]/.exec(ctx)?.[1] ?? '(none)'
   const piCategory = classifyBmError(sample)
   seenPiCategories.add(piCategory)
-  const expected = ERROR_CATEGORY_EQUIVALENCE[claudeTag]
+  seenClaudeTags.add(claudeTag)
+  // Guarded rather than indexed straight: the equivalence map is keyed over the
+  // ClaudeErrorCategory union now, so an unrecognised tag has to be handled
+  // rather than silently yielding undefined. That narrowing is the whole benefit
+  // of the union — before, `@type {Record<string,string>}` accepted anything.
+  const expected = guardedArrayIncludes(CLAUDE_ERROR_CATEGORIES, claudeTag)
+    ? ERROR_CATEGORY_EQUIVALENCE[claudeTag]
+    : undefined
   const same = expected === piCategory
   if (!same) {
     console.error(`        Claude Code: [${claudeTag}] → expects "${expected ?? '(unmapped tag)'}"`)
@@ -165,17 +176,97 @@ for (const piName of Object.values(ERROR_CATEGORY_EQUIVALENCE)) {
     /** @type {readonly string[]} */ (PI_ERROR_CATEGORIES).includes(piName)
   )
 }
+// ...and the CLAUDE side, which had no coverage at all. A seventh arm added to
+// the hook — no Pi counterpart, no equivalence entry, no corpus string — left
+// this check at 61/61.
+for (const tag of CLAUDE_ERROR_CATEGORIES) {
+  check(`${tag} is reachable from the corpus`, seenClaudeTags.has(tag))
+  check(`${tag} has an equivalence entry`, tag in ERROR_CATEGORY_EQUIVALENCE)
+}
+for (const tag of seenClaudeTags) {
+  check(`emitted tag "${tag}" is one the hand-written list knows about`,
+    /** @type {readonly string[]} */ (CLAUDE_ERROR_CATEGORIES).includes(tag))
+}
 
-// ── 4. Shared prose both hosts inject ───────────────────────────────────────
+// ── 3b. SOURCE SCAN: every category either side can EMIT is declared ────────
 //
-// One deliberate difference must SURVIVE this check: the Pi recovery text says
-// "the basic-memory (mcp__basic-memory__*) tools" where Claude Code says "the
-// mcp__basic-memory__* tools", because on Pi the server is addressed by name.
-// A byte-identical assertion would be wrong, so this checks the invariant
-// instead — both must point the reader at the same tool namespace.
-console.log('\nshared guidance')
-const compactCtx = additionalContext(runHook('session-start.sh', JSON.stringify({ source: 'compact' })))
-check('the Claude Code recovery block names the BM tool namespace', compactCtx.includes('mcp__basic-memory__'))
-check('...and tells the reader not to edit the store directly', /never edit ~\/basic-memory files directly/.test(compactCtx))
+// The behavioural coverage above cannot see an arm no corpus string reaches. A
+// seventh branch planted in the bash hook — `quota exceeded` → `[rate-limited]`,
+// with no Pi counterpart, no equivalence entry and no corpus string — left this
+// file fully green, because nothing ever triggered it.
+//
+// So this reads each implementation's own source for the literals it can emit,
+// the way `check:distance` scans `classifyVersionDistance` for its `return`
+// literals. Both scans assert they found something first: a rename must fail
+// loudly rather than compare two empty sets.
+console.log('\ncategory declarations (source scan)')
 
-done(50)
+const hookSource = readFileSync(join(HOOKS_DIR, 'post-bm-failure-classify.sh'), 'utf8')
+const emittedTags = [...new Set([...hookSource.matchAll(/MSG="\[([a-z-]+)\]/g)].map((m) => m[1]))]
+check('the hook scan found tags at all (a rewrite must fail loudly, not vacuously)', emittedTags.length >= 5)
+for (const tag of emittedTags) {
+  check(`hook emits [${tag}], which CLAUDE_ERROR_CATEGORIES declares`,
+    /** @type {readonly string[]} */ (CLAUDE_ERROR_CATEGORIES).includes(String(tag)))
+}
+for (const tag of CLAUDE_ERROR_CATEGORIES) {
+  check(`CLAUDE_ERROR_CATEGORIES declares [${tag}], which the hook can still emit`, emittedTags.includes(tag))
+}
+
+const extSource = readFileSync(join(ROOT, 'extensions', 'index.js'), 'utf8')
+const classifyBody = /export function classifyBmError \([\s\S]*?\n\}/.exec(extSource)?.[0] ?? ''
+check('the classifyBmError scan found the function at all', classifyBody.length > 0)
+const returnedCategories = [...new Set([...classifyBody.matchAll(/return '([a-z-]+)'/g)].map((m) => m[1]))]
+check('...and its return literals', returnedCategories.length >= 5)
+for (const category of returnedCategories) {
+  check(`classifyBmError can return "${category}", which PI_ERROR_CATEGORIES declares`,
+    /** @type {readonly string[]} */ (PI_ERROR_CATEGORIES).includes(String(category)))
+}
+
+// ── 4. The post-compaction recovery text ────────────────────────────────────
+//
+// A REAL two-host comparison. This section used to describe the Pi wording in
+// detail and then assert only against `compactCtx` — the bash host — so it
+// passed with the entire Pi recovery sentence deleted. Verified: a reviewer
+// replaced it with placeholder text and got 61/61.
+//
+// The two texts differ in exactly one declared place, so everything else is
+// compared BYTE FOR BYTE rather than by a "both mention the namespace"
+// invariant that a wholesale rewrite would satisfy.
+console.log('\npost-compaction recovery (both hosts)')
+const claudeRecovery = additionalContext(runHook('session-start.sh', JSON.stringify({ source: 'compact' })))
+  .split('\n\n').find((p) => p.startsWith('Post-compaction recovery')) ?? ''
+let piRecovery = buildRecoveryGuidance('Post-compaction recovery')
+for (const { claude, pi } of RECOVERY_HOST_SUBSTITUTIONS) {
+  check(`the declared Pi-only wording is actually present: "${pi.slice(0, 40)}…"`, piRecovery.includes(pi))
+  piRecovery = piRecovery.replace(pi, claude)
+}
+check('both hosts emit a recovery block at all', claudeRecovery.length > 0 && piRecovery.length > 0)
+if (claudeRecovery !== piRecovery) {
+  console.error(`        claude: ${claudeRecovery.slice(0, 160)}`)
+  console.error(`        pi:    ${piRecovery.slice(0, 160)}`)
+}
+check('the two recovery texts are identical once the declared difference is normalised',
+  claudeRecovery === piRecovery)
+
+// ── 5. The constants the sections above depend on ───────────────────────────
+//
+// Asserted directly, because an assertion-count floor cannot see them shrink.
+// With CADENCE_SPRINT_RANGE at 2 instead of 13 this file reported 50/50 and
+// exit 0 — against a floor of 50 — while losing the very property its own
+// docblock says the constant exists to protect.
+console.log('\ncorpus sizes')
+check(`CADENCE_SPRINT_RANGE (${CADENCE_SPRINT_RANGE}) spans more than one 4-sprint cycle`, CADENCE_SPRINT_RANGE > 8)
+check(`ERROR_CORPUS (${ERROR_CORPUS.length}) has not been trimmed`, ERROR_CORPUS.length >= 33)
+check('the corpus still contains strings matching TWO arms, or branch order is unobservable',
+  ERROR_CORPUS.filter((sample) => {
+    const t = sample.toLowerCase()
+    return [
+      /connection refused|timeout|unavailable|econnrefused|etimedout/,
+      /not found|does not exist|no note|no such/,
+      /invalid|missing.*field|malformed|validation\s*error|schema validation|too long|too short/,
+      /permission|denied|unauthorized|forbidden/,
+      /already exists|duplicate|conflict/,
+    ].filter((re) => re.test(t)).length > 1
+  }).length >= 5)
+
+done(70)
