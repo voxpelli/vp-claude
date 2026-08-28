@@ -5,15 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased][]
+## [0.34.1][] - 2026-08-28
 
-Post-0.34.0 review findings, and one theme that runs through all of them:
-**removing a suppression is a search strategy, not just a fix.** `@ts-nocheck`
-and a typedef with every property optional are the same tool — both say "do not
-check this" — and both had accumulated drift behind them that no amount of
-reading would have found.
+Two rounds of adversarial review over 0.34.0 and then over the fixes themselves.
+The theme of the first round: **removing a suppression is a search strategy, not
+just a fix** — `@ts-nocheck` and a typedef with every property optional both say
+"do not check this", and both had accumulated drift behind them that no amount
+of reading would have found.
+
+The theme of the second is sharper. **Three of the four guards the first round
+added contained an instance of the defect they exist to catch**, and the
+mechanism was the same every time: a confident comment explaining why the code
+was sound, reviewed instead of the code.
 
 Every fix below was verified by planting the defect and watching the guard fail.
+The workflow refactors are additionally verified end-to-end: replaying
+`rank.mjs` over the real 578-note cohort produces **0 differing rows** against
+0.34.0.
 
 ### Fixed
 
@@ -53,8 +61,6 @@ Every fix below was verified by planting the defect and watching the guard fail.
   called a lexicographic ordering key "scoring", and said the workflow had never
   run at scale when it has run twice over 578 notes.
 
-### Fixed (re-review of this branch's own work)
-
 Three adversarial reviewers were re-run against the branch above. They found
 that **three of the four guards it added contained an instance of the exact
 defect those guards exist to catch** — and the mechanism was the same each time:
@@ -82,14 +88,6 @@ code.
   rejection, `pool()` returned array holes for a `limit` below 1, and
   `validate-plugin.mjs` went blind on a **quoted** hook path — which is what you
   would write if your plugin root contained a space, the case its own fix cites.
-
-### Changed (re-review)
-
-- **`done()`'s floor is no longer required.** 20 of 24 scripts have assertion
-  counts that vary with nothing but hand-edited source, so their floors bounded
-  nothing while inviting reflexive bumping. It defaults to 1; an explicit floor
-  remains only where the count is genuinely corpus-driven, and the two constants
-  that mattered are now asserted directly instead.
 
 ### Added
 
@@ -121,6 +119,12 @@ code.
   a grep — and now has one. The prediction that their retry policies would
   diverge is kept in the file it was written in, because a confident forecast
   about which code will diverge, falsified, is worth more than a clean account.
+
+- **`done()`'s floor is no longer required.** 20 of 24 scripts have assertion
+  counts that vary with nothing but hand-edited source, so their floors bounded
+  nothing while inviting reflexive bumping. It defaults to 1; an explicit floor
+  remains only where the count is genuinely corpus-driven, and the two constants
+  that mattered are now asserted directly instead.
 
 ## [0.34.0][] - 2026-08-28
 
@@ -2857,7 +2861,7 @@ This is purely additive — the single prefixed-identifier path
 
 - Initial release: `package-intel` skill, `knowledge-gaps` skill, `knowledge-gardener` agent, `knowledge-maintainer` agent, PostToolUse / PreCompact / SessionStart hooks.
 
-[Unreleased]: https://github.com/voxpelli/vp-claude/compare/v0.34.0...HEAD
+[0.34.1]: https://github.com/voxpelli/vp-claude/compare/v0.34.0...v0.34.1
 [0.34.0]: https://github.com/voxpelli/vp-claude/compare/v0.33.5...v0.34.0
 [0.33.5]: https://github.com/voxpelli/vp-claude/compare/v0.33.4...v0.33.5
 [0.33.4]: https://github.com/voxpelli/vp-claude/compare/v0.33.3...v0.33.4
