@@ -18,11 +18,11 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { buildAuditReminder, classifyBmError } from '../extensions/index.js'
 import { createCheckHarness } from '../lib/check-harness.mjs'
 import {
   CADENCE_SPRINT_RANGE, CROSS_HOST_ERROR_CASES, PI_ERROR_CATEGORIES, PI_ONLY_ERROR_CATEGORIES,
 } from '../lib/host-parity.mjs'
-import { buildAuditReminder, classifyBmError } from '../extensions/index.js'
 
 const { check, done } = createCheckHarness()
 
@@ -114,7 +114,7 @@ for (let n = 0; n < CADENCE_SPRINT_RANGE; n++) {
 // categories). What must hold is that the same error text reaches CORRESPONDING
 // categories, so the advice a user gets does not depend on their host.
 console.log('\nBM error taxonomy (same input → corresponding category)')
-for (const { sample, claude, pi } of CROSS_HOST_ERROR_CASES) {
+for (const { claude, pi, sample } of CROSS_HOST_ERROR_CASES) {
   const ctx = additionalContext(runHook('post-bm-failure-classify.sh', JSON.stringify({ error: sample })))
   check(`"${sample}" → [${claude}] on Claude Code`, ctx.includes(`[${claude}]`))
   check(`"${sample}" → ${pi} on Pi`, classifyBmError(sample) === pi)

@@ -25,8 +25,8 @@
     "check:contract": "node scripts/check-staleness-contract.mjs",
     "check:distance": "node scripts/check-version-distance.mjs",
     "check:fourthwall": "node scripts/check-fourthwall.mjs",
-    "check:host-parity": "node scripts/check-host-parity.mjs",
     "check:hooks": "node scripts/check-hooks.mjs",
+    "check:host-parity": "node scripts/check-host-parity.mjs",
     "check:http-json": "node scripts/check-http-json.mjs",
     "check:installed-plugins": "node scripts/check-list-installed-plugins.mjs",
     "check:lint": "eslint",
@@ -52,8 +52,8 @@
     "fix": "run-s fix:*",
     "fix:ast-grep": "ast-grep scan --update-all --globs '!scripts/check-*.mjs' lib/ scripts/ extensions/ .claude/workflows/stale-npm-triage/",
     "test": "run-s check test:*",
-    "test-ci": "c8 --reporter=cobertura --reporter=lcov --reporter=text node --test --import ./test/isolate-agents-dir.js test/*.test.js",
-    "test:node": "node --test --import ./test/isolate-agents-dir.js test/*.test.js"
+    "test:node": "node --test --import ./test/isolate-agents-dir.js test/*.test.js",
+    "test-ci": "c8 --reporter=cobertura --reporter=lcov --reporter=text node --test --import ./test/isolate-agents-dir.js test/*.test.js"
   },
   "dependencies": {
     "@voxpelli/typed-utils": "^5.0.0"

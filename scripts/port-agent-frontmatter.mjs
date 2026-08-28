@@ -23,8 +23,8 @@
  * Prints the pi frontmatter block to stdout.
  */
 
-import { pathToFileURL } from 'node:url'
 import { readFileSync } from 'node:fs'
+import { pathToFileURL } from 'node:url'
 
 /** @type {Record<string, string[]>} */
 const TOOL_MAP = {

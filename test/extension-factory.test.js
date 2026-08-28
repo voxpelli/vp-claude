@@ -5,10 +5,12 @@
 import './isolate-agents-dir.js'
 
 import assert from 'node:assert'
-import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
+import {
+  existsSync, mkdtempSync, readdirSync, rmSync,
+} from 'node:fs'
 
 import vpKnowledgePiExtension, { __resetStartupMaintenance } from '../extensions/index.js'
 import { createMockContext, createMockPi } from './mock-pi-api.js'

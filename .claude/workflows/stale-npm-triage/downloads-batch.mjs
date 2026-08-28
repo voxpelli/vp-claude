@@ -27,8 +27,10 @@
 
 import { createJsonFetcher } from '../../../lib/http-json.mjs'
 import { readNdjson, writeNdjson } from '../../../lib/ndjson.mjs'
-import { BATCH_SIZE, chunkNames, interpretBulk, interpretSingle } from '../../../lib/npm-downloads.mjs'
 import { errorMessage, pool } from '../../../lib/pool.mjs'
+import {
+  BATCH_SIZE, chunkNames, interpretBulk, interpretSingle,
+} from '../../../lib/npm-downloads.mjs'
 
 const [registryPath, outPath, concurrencyRaw] = process.argv.slice(2)
 if (!registryPath || !outPath) {

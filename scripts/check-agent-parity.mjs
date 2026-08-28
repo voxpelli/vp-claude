@@ -15,10 +15,10 @@
  * pure parse + compare, exits non-zero on any divergence.
  */
 
-import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { parseFrontmatter } from '@earendil-works/pi-coding-agent'
 

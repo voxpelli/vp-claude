@@ -1,5 +1,5 @@
 import assert from 'node:assert'
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 
 import { flattenMcpToolName, parseMcpToolName, VP_KNOWLEDGE_SKILL_NAMES } from '../extensions/mcp-mapping.js'
