@@ -79,8 +79,8 @@ of maintaining both halves catches drift cases a single-source record misses.
 - **BM error classification hook** (2026-04-05) — Both plugins have a
   PostToolUseFailure command hook for BM tools that classifies errors into
   categories (`server-unavailable`, `note-not-found`, `invalid-argument`,
-  `permission-error`, `unknown-error`) and emits recovery guidance via
-  `additionalContext`.
+  `permission-error`, `note-conflict`, `unknown-error`) and emits recovery
+  guidance via `additionalContext`.
   Status: aligned · Last verified: 2026-04-05 (per vp-beads's record)
   Note: vp-claude matches 5 BM tools (`write_note`, `edit_note`,
   `schema_validate`, `schema_diff`, `schema_infer`); vp-beads matches 7

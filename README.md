@@ -384,7 +384,7 @@ Five hooks run automatically in the background:
 
 - **PostToolUse** (BM writes) — After any `write_note` or `edit_note`, validates the note structure against its schema and scans the note content for deterministic fourth-wall violations. Catches malformed notes and self-referential graph language immediately.
 - **PostToolUse** (file edits) — After editing shell scripts, detects formatting drift with `shfmt -d`, surfaces the diff, and auto-fixes with `shfmt -w`. After editing schema files, reminds to sync Basic Memory.
-- **PostToolUseFailure** — Classifies Basic Memory write and schema tool failures into five categories with actionable recovery guidance.
+- **PostToolUseFailure** — Classifies Basic Memory write and schema tool failures into six categories with actionable recovery guidance.
 - **SessionStart** — Injects a knowledge graph status summary and suggests `/knowledge-prime` for project context or `/knowledge-ask` for topic-specific questions. After a compaction (`source=compact`), it also re-injects a condensed graph-recovery context so the continuing session still knows the Basic Memory tools and research skills exist. On non-compact sessions it also surfaces one learning-nudge tip per day (throttled, no repeats) from the `/nudge`-synced cache, behind a `VP_KNOWLEDGE_DISABLE_NUDGE=1` kill-switch.
 - **PreToolUse** (gardener Bash) — Blocks Python and Node.js script execution when running as the knowledge-gardener agent (via `permissionDecision: "deny"`), enforcing read-only discipline.
 
