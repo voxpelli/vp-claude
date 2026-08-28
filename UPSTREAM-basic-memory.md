@@ -15,6 +15,8 @@ Friction, limitations, and capability discoveries found while building vp-knowle
 - The ~40KB `read_note` `find_replace`-truncation workaround is **retired** — it described a defect that never existed. `mcp/tools/read_note.py` returns the response body whole at 0.22.1, with no size branch at v0.15.0, v0.20.0 or v0.21.6 either, and `services/entity_service.py`'s `find_replace` is a plain `str.count`/`str.replace` with no size gate. Live: ten `find_replace` edits landed byte-exactly on a 51–53KB note. What is real is host-side — a large tool result may be redirected to a file rather than shown inline, and anchoring on the *inline preview* instead of the persisted body is the actual failure mode. The skill prose now says that instead (no KB threshold; none was ever measured).
 - The count-echo is **explained, not merely observed** — and my earlier reading of it was wrong. `models/knowledge.py` defines a note's relations as `incoming_relations + outgoing_relations`, and `edit_note.py` computes resolved/unresolved over that combined set, emitting the `Unresolved:` line only when non-zero. So an inflated relations echo is correct by design, not an artifact (verified arithmetically against the live graph: 15 inbound + 14 outbound − 1 unresolved = the observed 28/1). The genuine artifact is the opposite — a transient **under**-count listing inbound rows only, which is the #940 symptom above.
 
+**Update (2026-07-29):** the snapshot above is stale on one point — **v0.22.1 is now the latest RELEASE** (verified `gh release list`), not v0.21.6; the local install matches it. Upstream `main` is well ahead of that release (issue numbers past #1163, closed 2026-07-27), so several entries below are pinned to 0.22.1 and need re-measuring after the next release. Four new entries added this session from a link-integrity audit: the relation search-index projection defect, `SearchResult` omitting `to_name`, `build_context`'s default 7-day relation window, and a link-repair-suggestion Upstream Opportunity. Two relevant merged-but-unreleased fixes: [#1163](https://github.com/basicmachines-co/basic-memory/issues/1163)/PR #1165 (durable relation-resolution search refresh) and #1076/PR #1079 (DB-first writes omitting observation/relation rows).
+
 ### Open / in-progress upstream
 
 | Issue/PR | Effect on local entries |
@@ -45,8 +47,57 @@ These local entries have no upstream issue/PR despite being clear friction. Cand
 - No bulk metadata/version projection — cohort `--stale` must `read_note` every entity (388 npm notes = 388 round-trips) — feature request (high-value; candidate home: `.md-wiki-vec` committable index; **verified novel upstream 2026-06-10** — nearest is #884 directory-index records and #933 read_note pagination, neither projects metadata)
 - `edit_note` response metadata transiently inflates/deflates observation/relation counts (index re-parse echo on `###`-subsectioned notes; file stays correct; self-clears on re-sync) — clear bug, high-value filing; **verified unreported upstream 2026-06-10** — cite [#763](https://github.com/basicmachines-co/basic-memory/issues/763) + [#940](https://github.com/basicmachines-co/basic-memory/issues/940) as likely shared async-indexing root; distinct from #931 (persistent silent drop, not transient inflation) — **downgraded to unconfirmed on 0.22.1 (2026-07-15), pending live re-test**
 - `[[wiki-link]]` in prose/observation context silently extracted as a spurious / `relation_type`-polluted relation — the silent under-200-char sibling of the `edit_note` MaxLen(200) error; file + `schema_validate` look clean. **Verified this session 2026-06-16** (Flattr `relation_type` = a whole sentence; 2 stray `links_to` in the new OAuth notes); clear bug, high-value filing
+- Relation search index is a lossy AND duplicated projection of the `relation` table — ~40 relations absent from the index entirely is the serious half; **no upstream issue found** (two `gh search issues` queries, 2026-07-29 — absence of evidence). Re-measure past 0.22.1 before filing, since #1163/PR #1165 may cover part of it
+- `SearchResult` omits `to_name` (the literal wiki-link text) though `SearchIndexRow` and `RelationSummary` both carry it — one optional field; **easy, well-scoped contribution**
+- `build_context` relation traversal defaults to a 7-day window and caps at 1 year, returning an empty relation set indistinguishable from a note with no relations — clear footgun, feature request
+- `edit_note` non-transactional file-vs-index write, and the checksum committing before search indexing (a lock at the index stage leaves a checksum-clean entity that sync then skips) — clear bug, high-value filing
 
 ## Open items
+
+### `edit_note` is not transactional across its file write and its index update
+
+Observed 2026-07-29 while applying 120 link repairs through six concurrent
+agents against one project. 22 of the 120 calls returned
+`(sqlite3.OperationalError) database is locked` — and **every one of those 22
+had already written the markdown file**. Verified by reading all 120 target
+files off disk afterwards: 120 applied, 0 not applied, 0 partial.
+
+So the error does not mean "nothing happened". It means "the file changed and
+the index did not", which is the opposite of what a caller would assume and the
+opposite of what a retry expects — retrying is actively wrong, because the
+`find_text` is already gone.
+
+The lock landed at four different statements across the failures, which shows
+the index update is itself multi-statement and not wrapped in one transaction:
+
+```
+UPDATE entity SET title=?, note_type=?, ...
+UPDATE entity SET checksum=?, updated_at=? WHERE entity.id = ?
+DELETE FROM observation WHERE observation.entity_id = ? AND observation.project_id = ?
+DELETE FROM relation  WHERE relation.from_id = ?
+INSERT INTO relation ... ON CONFLICT DO NOTHING
+DELETE FROM search_index WHERE entity_id = ? AND project_id = ?
+```
+
+A lock between the `DELETE FROM relation` and the following `INSERT` would leave
+a note with **zero relations in the index** while its file is correct — a state
+no single-writer run can produce. That did not happen here (0 of the 78 edited
+notes came back from `bm orphans`), but nothing in the sequence prevents it.
+
+Two mitigating facts, both worth knowing: a lock on the *checksum* update leaves
+the database holding a pre-edit checksum, so the note looks dirty to the next
+sync and is re-indexed automatically; and the file-watch sync did eventually
+reconcile everything here — a fresh enumeration went from 1,317 unresolved
+edges to 1,197, exactly the 120 repaired, with no manual reindex.
+
+`bm status` reported "No changes" and `bm doctor` passed throughout, including
+while the index was mid-damage. That matches the already-recorded pattern for
+the duplicate-observation defect: the health vocabulary does not cover index
+consistency, so neither command can be used to confirm a write landed.
+
+Practical guidance for any concurrent writer: serialise writes to one project,
+treat a lock error as "unknown, verify against the file" rather than "failed",
+and verify against the markdown rather than the tool's own response.
 
 ### `operation="append"` with `section=` appends to end of file, not end of section
 
@@ -345,3 +396,42 @@ Severity: degraded · Ownership: upstream · Workaround: full — git for author
 **Impact:** Medium — this is the proposed remedy for the "Forward-reference relations are never re-resolved" phantom-edge bug above. `bm reindex` exposes only `--search`/`--embeddings`/`--full` and never re-resolves relations, so the only bulk way to clear phantom `to_id NULL` edges is the much heavier `bm reset --reindex` (a full directory resync that fixes them incidentally by touching every file). A source comment in `entity_service.py` acknowledges an intended design where the cloud side writes unresolved rows and a later "relation repair pass" fills in `to_id` — but the local CLI never exposes that pass.
 **Desired:** a local `bm reindex --relations` (or similar) that re-runs link resolution over unresolved relation rows without a full resync — the O(1) fix for today's O(referencing-notes) phantom-edge workaround.
 Severity: degraded · Ownership: upstream · Workaround: partial — `bm reset --reindex` full resync, or re-write each referencing note. Directly cross-refs the "Forward-reference relations are never re-resolved" bug above.
+
+---
+
+### The relation search index is a lossy AND duplicated projection of the `relation` table
+
+**Discovered:** 2026-07-29 (link-integrity audit; reproduced independently by an adversarial verification pass)
+**Impact:** High for anything that reads relations through `search_notes`. On a ~13k-relation graph the FTS5 `search_index` disagreed with the `relation` table in three directions at once: **15.4k index rows for 13.1k relations** (~1,850 relation ids carrying duplicate index rows), **~50 index ids with no backing relation row**, and — worst — **~40 relations absent from the index entirely**, so they are unreachable through search at any page size or dedupe key. A further 15 ids were bound to more than one permalink. This is distinct from the duplicate-*observation* defect (that one is in the `observation` table, on the sync/write path; this one is the index projection of `relation`). `relation.id` itself is fine: it is a proper primary key with `UNIQUE (from_id, to_name, relation_type)` — the id is only unreliable *as returned by search*.
+**Consumer consequence:** a dangling-link audit built on `search_notes(entity_types=["relation"])` over-reports (duplicates), mis-attributes (misbound ids), and silently under-reports (missing rows). Deduping on `permalink` alone is correct and sufficient — a relation's permalink is `slug(from_permalink/relation_type/to_name)` (`models/knowledge.py`), so it already encodes the natural key — but deduping only ever *approximates* truth, since rows absent from the index cannot be recovered from it.
+**Status:** Open on 0.22.1. Upstream [#1163](https://github.com/basicmachines-co/basic-memory/issues/1163) (PR #1165, merged 2026-07-27, post-0.22.1 and unreleased) closes one producer of stale relation rows; whether it addresses the missing-row and duplicate-row halves is unverified. Two `gh search issues` queries found no issue describing this symptom — absence of evidence, not proof it is unfiled. Re-measure after upgrading past 0.22.1 before filing.
+Severity: degraded · Ownership: upstream · Workaround: partial — dedupe on `permalink`, and treat the relation index as approximate; read the markdown (or the `relation` table) when completeness matters.
+
+---
+
+### `SearchResult` does not expose `to_name`, the literal wiki-link text (Feature Request)
+
+**Discovered:** 2026-07-29 (building a dangling-link repair pass)
+**Impact:** Medium — a relation row carries `to_name`, the link text exactly as the author typed it, populated even when the relation is unresolved. `SearchResult` (`schemas/search.py`) omits it in 0.22.1 **and on current main**, and the relation permalink embeds only a slugified, lossy form. So a consumer that finds dangling links via `search_notes(entity_types=["relation"])` cannot recover what was actually written — which is exactly the string a repair has to rewrite. Adding one optional field would close the gap for every link-hygiene tool.
+**Partial mitigation found:** `build_context` DOES return `to_name` verbatim per relation, including for dangling ones (`context_service.py` populates it into `RelationSummary`) — but it is per-note and time-windowed (see the `build_context` timeframe entry below), so it does not scale to a graph-wide audit.
+**Desired:** add `to_name: Optional[str]` to `SearchResult` for relation-type results, mirroring the field already present on `SearchIndexRow` and `RelationSummary`.
+Severity: minor · Ownership: upstream · Workaround: partial — `build_context` per source note, or read the markdown.
+
+---
+
+### `build_context` relation traversal is time-windowed by default (7 days) and hard-capped at 1 year
+
+**Discovered:** 2026-07-29 (verifying whether `to_name` was recoverable without reading files)
+**Impact:** Medium, and it is a quiet one. `timeframe` defaults to `"7d"`, so `build_context` on a note whose relations were written earlier returns `related_results: []` and `total_relations: 0` — indistinguishable from a note that genuinely has no relations. First observed as an apparent refutation of the `to_name` finding; the relations were simply older than the default window. The parameter is also validated at **≤ 1 year** (`"5 years ago"` raises a pydantic `Value error`), so on a graph older than that no single call can return a note's full relation set.
+**Desired:** either default relation traversal to unbounded (time-filtering the *related activity* is the useful case, not the edge set), or make the zero-result case distinguishable — e.g. report how many relations were excluded by the window.
+Severity: degraded · Ownership: upstream · Workaround: full — pass an explicit long `timeframe` (up to `"1 year"`); be aware it cannot exceed that.
+
+---
+
+### Link-repair suggestion, not just re-resolution (Upstream Opportunity)
+
+**Discovered:** 2026-07-29
+**What was built:** a deterministic classifier that decides whether a short-form wiki-link can be safely rewritten to a longer existing title, by inspecting the SEPARATOR the candidate title resumes with rather than any similarity or length metric. Continuing at `" - "` / `" — "` / `": "` is the same subject; continuing the token with no space names a different entity. Verified exhaustively over one vault: all 83 token-continuation title pairs named distinct entities (`npm-ms` → `npm-msw`, `brew-git` → `brew-git-delta`). Length is actively misleading — a correct repair measured 18% of its candidate's length, a wrong one 56%.
+**Why upstream might want it:** this complements the "No local relation-repair pass" feature request above. That one asks to *re-resolve* relations mechanically; this one addresses the harder half — proposing a correction when the written text does not match any title. It is deterministic, cheap and explainable, which suits a tool that must never silently rewrite a user's prose.
+Source: separator classifier + a dry-run repair workflow in this repo · Merge readiness: needs-redesign — the rule presupposes a `<Name> - <Description>` / `<prefix>-<name>` title convention and would need to be configurable
+Ownership: us · Workaround: full — implemented downstream; 120 repairs applied and verified against the files.
