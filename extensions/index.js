@@ -248,12 +248,18 @@ const BM_TOOLS = new Set([
 ])
 
 /**
- * Parse a JSON string into a plain object, or `{}` for anything that is not a
- * JSON object (malformed, array, primitive, null). Used for the proxy path,
- * where the params arrive as a JSON string.
+ * Parse a JSON string into a plain object, or `null` for anything that is not a
+ * JSON object (malformed, array, primitive, JSON `null`). Used for the proxy
+ * path, where the params arrive as a JSON string.
+ *
+ * `null`, not `{}`: an unparseable args string means the call's arguments are
+ * UNKNOWN, which is not the same as a call that had none. Returning `{}` made
+ * the two indistinguishable, and a truncated `args` string — what a token
+ * cutoff on a long note actually produces — then read as an empty-content
+ * write and skipped the fourth-wall check without a word.
  *
  * @param {string} raw
- * @returns {Record<string, unknown>}
+ * @returns {Record<string, unknown> | null}
  */
 function parseJsonObject (raw) {
   try {
@@ -262,8 +268,8 @@ function parseJsonObject (raw) {
     if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
       return /** @type {Record<string, unknown>} */ (parsed)
     }
-  } catch { /* malformed args — treat as no params */ }
-  return {}
+  } catch { /* malformed args — fall through to null */ }
+  return null
 }
 
 /**
@@ -316,17 +322,23 @@ export function stripBmPrefix (toolName) {
  * skipped itself on an empty `content`. The prompt asks the model to stringify;
  * that is a request, not a guarantee.
  *
+ * The return distinguishes three states rather than two. `{}` means the call
+ * genuinely carried no arguments; `null` means they could not be read and the
+ * caller must not treat the params as empty; anything else is the arguments.
+ *
  * @param {unknown} input
- * @returns {Record<string, unknown>}
+ * @returns {Record<string, unknown> | null}
  */
 export function readProxyArgs (input) {
-  if (typeof input !== 'object' || input === null) return {}
+  if (typeof input !== 'object' || input === null) return null
   const { args } = /** @type {Record<string, unknown>} */ (input)
+  // Absent is legitimate — plenty of BM tools take no arguments.
+  if (args === undefined) return {}
   if (typeof args === 'string') return parseJsonObject(args)
   if (typeof args === 'object' && args !== null && !Array.isArray(args)) {
     return /** @type {Record<string, unknown>} */ (args)
   }
-  return {}
+  return null
 }
 
 /**
@@ -349,8 +361,13 @@ export function readProxyArgs (input) {
  * call fell through to `null` and neither the fourth-wall nor the
  * `schema_validate` reminder ever fired.
  *
+ * `params` is nullable, and the null is load-bearing: it means this IS a Basic
+ * Memory call but its arguments could not be read. A caller that wants
+ * `params.content` has to decide what that means rather than inheriting an
+ * empty object that reads as "no content".
+ *
  * @param {{ toolName?: string, input?: unknown }} event
- * @returns {{ tool: string, params: Record<string, unknown> } | null}
+ * @returns {{ tool: string, params: Record<string, unknown> | null } | null}
  */
 export function normalizeBmToolCall (event) {
   const toolName = event.toolName ?? ''
@@ -373,9 +390,10 @@ export function normalizeBmToolCall (event) {
   // Direct paths: flat name or Claude-style verbatim.
   const bare = stripBmPrefix(toolName)
   if (bare === null) return null
+  if (event.input === undefined) return { tool: bare, params: {} }
   const params = (typeof event.input === 'object' && event.input !== null)
     ? /** @type {Record<string, unknown>} */ (event.input)
-    : {}
+    : null
   return { tool: bare, params }
 }
 
@@ -541,7 +559,15 @@ export default function vpKnowledgePiExtension (pi) {
 
       // `content` is an input param: from the parsed JSON args on the proxy path,
       // from event.input on the direct paths — normalizeBmToolCall unifies both.
-      const noteContent = typeof bm.params.content === 'string' ? bm.params.content : ''
+      //
+      // `params === null` means the arguments could not be read at all, which a
+      // token cutoff truncating a long note's `args` string produces for real.
+      // It is NOT a note with no content, so it gets the same stderr sink the
+      // catch block below uses rather than quietly reading as empty.
+      if (bm.params === null) {
+        process.stderr.write(`[vp-knowledge] fourth-wall check skipped: could not read arguments for ${bm.tool}\n`)
+      }
+      const noteContent = typeof bm.params?.content === 'string' ? bm.params.content : ''
       if (noteContent && config.qualityChecks.fourthWall) {
         try {
           const modPath = findFourthWallModule()

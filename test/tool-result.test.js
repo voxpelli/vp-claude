@@ -70,10 +70,39 @@ describe('normalizeBmToolCall', () => {
     )
   })
 
-  it('proxy path: malformed args yield empty params (no throw)', () => {
+  // This case asserted `params: {}` until the arg shape was fixed. That made
+  // "the arguments could not be read" indistinguishable from "the call had no
+  // arguments", and since the tool still normalized successfully nothing
+  // downstream noticed: the write was recognised, `params.content` read as
+  // absent, and the fourth-wall check skipped itself in silence. A truncated
+  // `args` string is exactly what a token cutoff on a long note produces.
+  it('proxy path: unreadable args yield null params, never empty ones', () => {
+    for (const args of ['not json', '[1,2]', '"a string"', 'null', 42, ['x'], true]) {
+      assert.deepStrictEqual(
+        normalizeBmToolCall({ toolName: 'mcp', input: { server: 'basic-memory', tool: 'read_note', args } }),
+        { tool: 'read_note', params: null },
+        `args ${JSON.stringify(args)} must be reported as unreadable`
+      )
+    }
+  })
+
+  it('proxy path: absent args are empty params, not unreadable ones', () => {
+    // Plenty of BM tools legitimately take no arguments; that must stay
+    // distinguishable from the truncated-JSON case above.
     assert.deepStrictEqual(
-      normalizeBmToolCall({ toolName: 'mcp', input: { server: 'basic-memory', tool: 'read_note', args: 'not json' } }),
-      { tool: 'read_note', params: {} }
+      normalizeBmToolCall({ toolName: 'mcp', input: { server: 'basic-memory', tool: 'recent_activity' } }),
+      { tool: 'recent_activity', params: {} }
+    )
+  })
+
+  it('direct path: a non-object input is unreadable, an absent one is empty', () => {
+    assert.deepStrictEqual(
+      normalizeBmToolCall({ toolName: 'basic-memory_read_note', input: 'garbage' }),
+      { tool: 'read_note', params: null }
+    )
+    assert.deepStrictEqual(
+      normalizeBmToolCall({ toolName: 'basic-memory_recent_activity' }),
+      { tool: 'recent_activity', params: {} }
     )
   })
 
