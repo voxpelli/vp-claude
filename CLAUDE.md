@@ -117,7 +117,7 @@ hooks/
   hooks.json                         # PreToolUse, PostToolUse, PostToolUseFailure, SessionStart
 schemas/                             # 23 BM note-schema definitions — source of truth (see ## Schemas)
 scripts/                             # CLI-first audit + npm-run-check utilities (inventory: .claude/rules/scripts-and-validation.md)
-lib/                                 # JS modules imported by check scripts (staleness-contract, version-distance, fourth-wall-rules, release-counts, mdast, installed-plugins, plugin-load-paths, portability-scan, bm-version-extract, analytics-guidance, observation-metadata, schema-vocab, check-harness, cohort-table-contract, bm-search, link-resolution, npm-triage, ndjson, ast-grep-scope, http-json, npm-downloads, upstream-heading-vocab, mcp-naming-guidance)
+lib/                                 # JS modules imported by check scripts (staleness-contract, version-distance, fourth-wall-rules, release-counts, mdast, installed-plugins, plugin-load-paths, portability-scan, bm-version-extract, analytics-guidance, observation-metadata, schema-vocab, check-harness, cohort-table-contract, bm-search, link-resolution, npm-triage, ndjson, pool, ast-grep-scope, http-json, npm-downloads, upstream-heading-vocab, mcp-naming-guidance)
 extensions/                          # Pi coding-agent extension (single-root hybrid): factory, agent-sync, config, MCP mapping
 test/                                # node:test suites for extensions/ (run by test:node; also loaded offline by check:pi-load)
 sgconfig.yml                         # ast-grep config — auto-discovers .ast-grep/rules/ (see .claude/rules/ast-grep-rules.md)

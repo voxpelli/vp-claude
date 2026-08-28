@@ -36,6 +36,7 @@ import { extractBmVersion } from '../../../lib/bm-version-extract.mjs'
 import { detectFourthWallViolations } from '../../../lib/fourth-wall-rules.mjs'
 import { writeNdjson } from '../../../lib/ndjson.mjs'
 import { normalizeNpmName } from '../../../lib/npm-triage.mjs'
+import { errorMessage, pool } from '../../../lib/pool.mjs'
 import { extractPicoschemaRelationVerbs } from '../../../lib/schema-vocab.mjs'
 
 const execFileAsync = promisify(execFile)
@@ -329,44 +330,7 @@ async function scanOne (id) {
   }
 }
 
-/**
- * Bounded worker pool. The concurrency cap is the load-bearing parameter here:
- * each `bm` call is its own OS process, so an unbounded fan-out over a 580-note
- * cohort would spawn 580 of them. This is the PER-SHARD slice of a global cap
- * of `shards × concurrency`, enforced by the caller, not here.
- *
- * A rejected item is captured as a row rather than propagated, so one bad note
- * cannot discard the shard's completed work.
- *
- * @param {string[]} items
- * @param {number} limit
- * @param {(item: string) => Promise<import('../../../lib/npm-triage.mjs').ScanRow>} fn
- * @returns {Promise<import('../../../lib/npm-triage.mjs').ScanRow[]>}
- */
-async function pool (items, limit, fn) {
-  /** @type {import('../../../lib/npm-triage.mjs').ScanRow[]} */
-  const results = Array.from({ length: items.length })
-  let next = 0
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (next < items.length) {
-      const i = next++
-      // Hoisted and guarded for `noUncheckedIndexedAccess`. The guard is
-      // unreachable — `i < items.length` by the loop condition — but expressing
-      // that to the checker with a cast would also hide a real hole if the
-      // bounds ever changed.
-      const item = items[i]
-      if (item === undefined) continue
-      try {
-        results[i] = await fn(item)
-      } catch (err) {
-        results[i] = { id: item, status: 'read-failed', error: String(err && /** @type {Error} */ (err).message).slice(0, 200) }
-      }
-    }
-  }))
-  return results
-}
-
-const rows = await pool(ids, CONCURRENCY, scanOne)
+const rows = await pool(ids, CONCURRENCY, scanOne, (item, err) => ({ id: item, status: 'read-failed', error: errorMessage(err) }))
 writeNdjson(outPath, rows)
 
 /** @type {Record<string, number>} */

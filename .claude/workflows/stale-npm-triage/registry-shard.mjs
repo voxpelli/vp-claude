@@ -41,6 +41,7 @@
 
 import { createJsonFetcher } from '../../../lib/http-json.mjs'
 import { readNdjson, writeNdjson } from '../../../lib/ndjson.mjs'
+import { errorMessage, pool } from '../../../lib/pool.mjs'
 
 const [scanPath, outPath, concurrencyRaw] = process.argv.slice(2)
 if (!scanPath || !outPath) {
@@ -119,44 +120,12 @@ async function resolveOne (row) {
   }
 }
 
-/**
- * Bounded worker pool with per-item failure isolation: a rejected item becomes
- * a row, so one reset connection cannot discard a shard's completed work.
- *
- * @param {{ id: string, name: string }[]} items
- * @param {number} limit
- * @param {(item: { id: string, name: string }) => Promise<import('../../../lib/ndjson.mjs').NdjsonRow & import('../../../lib/npm-triage.mjs').RegistryRow>} fn
- * @returns {Promise<(import('../../../lib/ndjson.mjs').NdjsonRow & import('../../../lib/npm-triage.mjs').RegistryRow)[]>}
- */
-async function pool (items, limit, fn) {
-  /** @type {(import('../../../lib/ndjson.mjs').NdjsonRow & import('../../../lib/npm-triage.mjs').RegistryRow)[]} */
-  const results = Array.from({ length: items.length })
-  let next = 0
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (next < items.length) {
-      const i = next++
-      // Hoisted and guarded for `noUncheckedIndexedAccess`. The guard is
-      // unreachable — `i < items.length` by the loop condition — but expressing
-      // that to the checker with a cast would also hide a real hole if the
-      // bounds ever changed.
-      const item = items[i]
-      if (item === undefined) continue
-      try {
-        results[i] = await fn(item)
-      } catch (err) {
-        results[i] = {
-          id: item.id,
-          name: item.name,
-          upstreamState: 'api-unavailable',
-          detail: String(err && /** @type {Error} */ (err).message).slice(0, 200),
-        }
-      }
-    }
-  }))
-  return results
-}
-
-const out = await pool(rowsIn, CONCURRENCY, resolveOne)
+const out = await pool(rowsIn, CONCURRENCY, resolveOne, (item, err) => ({
+  id: item.id,
+  name: item.name,
+  upstreamState: 'api-unavailable',
+  detail: errorMessage(err),
+}))
 writeNdjson(outPath, out)
 
 /** @type {Record<string, number>} */

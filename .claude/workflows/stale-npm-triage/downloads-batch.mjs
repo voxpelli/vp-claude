@@ -28,6 +28,7 @@
 import { createJsonFetcher } from '../../../lib/http-json.mjs'
 import { readNdjson, writeNdjson } from '../../../lib/ndjson.mjs'
 import { BATCH_SIZE, chunkNames, interpretBulk, interpretSingle } from '../../../lib/npm-downloads.mjs'
+import { errorMessage, pool } from '../../../lib/pool.mjs'
 
 const [registryPath, outPath, concurrencyRaw] = process.argv.slice(2)
 if (!registryPath || !outPath) {
@@ -102,21 +103,16 @@ async function resolveScoped (row) {
   byName.set(row.name, interpretSingle(res.json))
 }
 
-let next = 0
-await Promise.all(Array.from({ length: Math.min(CONCURRENCY, scoped.length) }, async () => {
-  while (next < scoped.length) {
-    const item = scoped[next++]
-    if (item === undefined) continue
-    try {
-      await resolveScoped(item)
-    } catch (err) {
-      byName.set(item.name, {
-        weeklyDownloads: null,
-        downloadsState: `downloads-unavailable:threw:${String(err && /** @type {Error} */ (err).message).slice(0, 80)}`,
-      })
-    }
-  }
-}))
+// The third copy of the bounded-worker loop, and the one a grep for `pool`
+// never found because it was never a named function. It differs from the two
+// shards only in what a rejection means here: there is no row to return, so the
+// failure is recorded in `byName` and the pool's own result array is discarded.
+await pool(scoped, CONCURRENCY, resolveScoped, (item, err) => {
+  byName.set(item.name, {
+    weeklyDownloads: null,
+    downloadsState: `downloads-unavailable:threw:${errorMessage(err, 80)}`,
+  })
+})
 
 // ── Emit one row per wanted package, keyed by note id for the rank join ─────
 const out = wanted.map(r => ({
