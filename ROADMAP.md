@@ -32,10 +32,13 @@ The two with lasting consequences:
   neither guard could fail on the disagreement. Fixed, and `check:host-parity`
   now compares the two hosts *behaviourally* — replanting the old bash cadence
   fails it at 9 of 13 sprint counts. That guard is the durable half.
-- **`createCheckHarness().done()` exited 0 having run no assertions.** `done()`
-  now takes a required floor and refuses `done(0)`, because a guard against
-  vacuous checks that permits its own vacuous configuration is the same bug in
-  the remedy's clothes.
+- **`createCheckHarness().done()` exited 0 having run no assertions.** It now
+  fails on zero. The first fix made the floor a REQUIRED argument at all 24 call
+  sites; the re-review showed 20 of those scripts have counts that vary with
+  nothing but hand-edited source, so their floors bounded nothing while inviting
+  reflexive bumping. An explicit floor now survives only where the count is
+  genuinely corpus-driven — and where a specific constant matters, it is
+  asserted directly, since a total-assertion floor cannot see one shrink.
 
 One finding is deliberately **not** acted on. `driftClassesRanked` and
 `unmeasuredReasonsRanked` in `lib/npm-triage.mjs` are `[].every()` over a
