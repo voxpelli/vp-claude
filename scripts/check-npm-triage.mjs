@@ -36,7 +36,7 @@ function row (scanRow, registryRow, extra) {
   return classifyRow({
     id: 'npm-fixture',
     scanRow: scanRow ? { id: 'npm-fixture', status: 'ok', packagesShape: 'string-array', titleForm: 'hyphen', hasVersionObs: true, relationCount: 3, missingSections: [], ...scanRow } : undefined,
-    registryRow: registryRow ? { upstreamState: 'ok', ...registryRow } : undefined,
+    registryRow: registryRow ? { id: 'npm-fixture', upstreamState: 'ok', ...registryRow } : undefined,
     schemaRow: extra?.schemaRow,
     censusDate: extra?.censusDate ?? null,
     today: TODAY,
@@ -83,7 +83,7 @@ check('unmeasured with nothing recoverable → no-version-recorded',
 check('unmeasured but recoverable from an observation → version-in-wrong-slot',
   row({ npmName: 'x', versionRecoverableFromObservation: true }, { upstreamVersion: '2.0.0' }).reason, 'version-in-wrong-slot')
 check('schema says a version field exists but the body read nothing → version-slot-malformed',
-  row({ npmName: 'x' }, { upstreamVersion: '2.0.0' }, { schemaRow: { fields: ['version'] } }).reason, 'version-slot-malformed')
+  row({ npmName: 'x' }, { upstreamVersion: '2.0.0' }, { schemaRow: { id: 'npm-fixture', fields: ['version'] } }).reason, 'version-slot-malformed')
 
 check('same version, no gaps → current',
   row({ npmName: 'x', version: '1.2.3' }, { upstreamVersion: '1.2.3' }).action, 'current')
@@ -175,7 +175,7 @@ function gate (o) {
     cohort,
     rows,
     scan: o?.scan ?? new Map(cohort.map(id => [id, { id, status: 'ok', npmName: id }])),
-    registry: o?.registry ?? new Map(cohort.map(id => [id, { upstreamState: 'ok' }])),
+    registry: o?.registry ?? new Map(cohort.map(id => [id, { id, upstreamState: 'ok' }])),
     scanFilePresent: true,
     registryFilePresent: true,
     malformedLines: 0,
@@ -243,7 +243,7 @@ const allReadsFailed = {
 }
 const registryOutage = {
   cohort: ['a', 'b'],
-  registry: new Map([['a', { upstreamState: 'api-unavailable' }], ['b', { upstreamState: 'api-unavailable' }]]),
+  registry: new Map([['a', { id: 'a', upstreamState: 'api-unavailable' }], ['b', { id: 'b', upstreamState: 'api-unavailable' }]]),
   rows: [{ action: 'blocked', reason: 'api-unavailable' }, { action: 'blocked', reason: 'api-unavailable' }],
 }
 
@@ -336,7 +336,7 @@ check('a malformed NDJSON line fails inputsParsed', buildGate({
   cohort: ['a'],
   rows: [{ action: 'intel' }],
   scan: new Map([['a', { id: 'a', status: 'ok', npmName: 'a' }]]),
-  registry: new Map([['a', { upstreamState: 'ok' }]]),
+  registry: new Map([['a', { id: 'a', upstreamState: 'ok' }]]),
   scanFilePresent: true,
   registryFilePresent: true,
   malformedLines: 1,

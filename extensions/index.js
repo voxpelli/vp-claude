@@ -590,7 +590,10 @@ export default function vpKnowledgePiExtension (pi) {
       // token cutoff truncating a long note's `args` string produces for real.
       // It is NOT a note with no content, so it gets the same stderr sink the
       // catch block below uses rather than quietly reading as empty.
-      if (bm.params === null) {
+      // Gated on the same config flag as the check itself. Unconditional, this
+      // reported "fourth-wall check skipped" for a check that was never going to
+      // run when `qualityChecks.fourthWall` is false.
+      if (bm.params === null && config.qualityChecks.fourthWall) {
         process.stderr.write(`[vp-knowledge] fourth-wall check skipped: could not read arguments for ${bm.tool}\n`)
       }
       const noteContent = typeof bm.params?.content === 'string' ? bm.params.content : ''

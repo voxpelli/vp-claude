@@ -108,25 +108,48 @@ let malformedLines = 0
  * truncated shard write. Silently skipping would shrink coverage while every
  * count still looked self-consistent.
  *
- * Generic in the row type, and each call below names which one it is reading.
- * It returned one `Map<string, Record<string, unknown>>` for all four files,
- * which is structurally assignable to every row type at once — so the four
- * `classifyRow` slots below accepted any of the four maps interchangeably, and
- * wiring `downloads` into `scanRow:` type-checked cleanly while classifying the
- * whole cohort as unscanned. The rows come off disk, so the type argument is an
- * assertion about what the producer wrote rather than something this function
- * can verify; naming it per call site is what makes that assertion reviewable
- * instead of blanket.
+ * Generic in the row type, and each call below both names which one it is
+ * reading AND supplies a runtime guard for it.
+ *
+ * The guard is the point. This returned one `Map<string, Record<string,
+ * unknown>>` for all four files, cast through `unknown` — so the four required
+ * discriminants added to `lib/npm-triage.mjs` defended nothing HERE, at the only
+ * place rows enter the program. Verified: a `RegistryRow` in the `scanRow` slot
+ * type-checked clean and produced `action: "blocked", reason: "undefined"` — the
+ * literal string — for a whole cohort, with no throw, no error row and no gate
+ * tripped. The comment on those typedefs says a cast is "worse than a required
+ * field, because at least a cast leaves a token to distrust"; the cast was right
+ * here and nobody distrusted it.
+ *
+ * A row that parses but does not match its file's shape counts as `malformed`,
+ * which `rank.mjs` treats as a fatal input error. That is the correct severity:
+ * it means the file is not what the caller believes it is.
  *
  * @template {Record<string, unknown>} T
  * @param {string} p
+ * @param {(row: Record<string, unknown>) => row is T} isRow
  * @returns {Map<string, T>}
  */
-function loadNdjson (p) {
+function loadNdjson (p, isRow) {
   const { malformed, map } = readNdjson(p)
   malformedLines += malformed
-  return /** @type {Map<string, T>} */ (/** @type {unknown} */ (map))
+  /** @type {Map<string, T>} */
+  const out = new Map()
+  for (const [id, row] of map) {
+    if (isRow(row)) out.set(id, row)
+    else malformedLines++
+  }
+  return out
 }
+
+/** @param {Record<string, unknown>} r @returns {r is ScanRow} */
+const isScanRow = (r) => typeof r.id === 'string' && typeof r.status === 'string'
+/** @param {Record<string, unknown>} r @returns {r is RegistryRow} */
+const isRegistryRow = (r) => typeof r.upstreamState === 'string'
+/** @param {Record<string, unknown>} r @returns {r is DownloadsRow} */
+const isDownloadsRow = (r) => typeof r.downloadsState === 'string'
+/** @param {Record<string, unknown>} r @returns {r is SchemaRow} */
+const isSchemaRow = (r) => Array.isArray(r.fields)
 
 const cohortPath = `${outDir}/cohort.txt`
 const scanPath = `${outDir}/scan.ndjson`
@@ -136,13 +159,13 @@ const cohort = existsSync(cohortPath)
   ? readFileSync(cohortPath, 'utf8').split('\n').map(s => s.trim()).filter(Boolean)
   : []
 /** @type {Map<string, ScanRow>} */
-const scan = loadNdjson(scanPath)
+const scan = loadNdjson(scanPath, isScanRow)
 /** @type {Map<string, RegistryRow>} */
-const registry = loadNdjson(registryPath)
+const registry = loadNdjson(registryPath, isRegistryRow)
 /** @type {Map<string, SchemaRow>} */
-const schema = loadNdjson(`${outDir}/schema.ndjson`)
+const schema = loadNdjson(`${outDir}/schema.ndjson`, isSchemaRow)
 /** @type {Map<string, DownloadsRow>} */
-const downloads = loadNdjson(`${outDir}/downloads.ndjson`)
+const downloads = loadNdjson(`${outDir}/downloads.ndjson`, isDownloadsRow)
 
 /** Carried forward so the denominator can be reconciled against what BM reported. */
 let enumerateSummary = null

@@ -120,7 +120,7 @@ function parseJsonObjects (stdout) {
 
 // --- Test runner ---
 
-const { done, getCounts, record } = createCheckHarness()
+const { done, record } = createCheckHarness()
 
 /**
  * Richer form of `check-harness.mjs`'s `check(name, cond)`: runs a check
@@ -640,6 +640,4 @@ test('bash script from gardener → allowed', () => {
 })
 
 // --- Summary ---
-const { failed } = getCounts()
-if (failed > 0) console.error(`${failed} test(s) failed`)
 done()

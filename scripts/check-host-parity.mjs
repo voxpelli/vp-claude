@@ -152,7 +152,7 @@ for (const sample of ERROR_CORPUS) {
 // The sides come from different places ON PURPOSE. `PI_ERROR_CATEGORIES` is
 // hand-written in lib/host-parity.mjs; `seenPiCategories` is what the classifier
 // actually returned above. A coverage check whose sides both derive from one
-// source passes for any content — this repo has shipped that five times, most
+// source passes for any content — this repo keeps shipping that shape, most
 // recently inside the guard written to end it.
 console.log('\ntaxonomy coverage')
 const declaredPiOnly = new Set(Object.keys(PI_ONLY_ERROR_CATEGORIES))

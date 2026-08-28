@@ -96,6 +96,21 @@ describe('normalizeBmToolCall', () => {
   })
 
   it('direct path: a non-object input is unreadable, an absent one is empty', () => {
+    // The ARRAY cases are the point, and their absence is what let a real bug
+    // through: this test used to cover only `'garbage'` and an absent input —
+    // the two shapes on which the direct and proxy paths agree. An array
+    // satisfies `typeof x === 'object'`, so it arrived as a truthy `params`,
+    // `params === null` was false, no "could not read arguments" line was
+    // written, and `params.content` was undefined — the fourth-wall check then
+    // skipped itself in exactly the silence this contract exists to remove.
+    // A value already sitting in the proxy loop above would have exposed it.
+    for (const arrayInput of [['x'], [1, 2], []]) {
+      assert.deepStrictEqual(
+        normalizeBmToolCall({ toolName: 'basic-memory_read_note', input: arrayInput }),
+        { tool: 'read_note', params: null },
+        `an array input (${JSON.stringify(arrayInput)}) must be unreadable, not params`
+      )
+    }
     assert.deepStrictEqual(
       normalizeBmToolCall({ toolName: 'basic-memory_read_note', input: 'garbage' }),
       { tool: 'read_note', params: null }
