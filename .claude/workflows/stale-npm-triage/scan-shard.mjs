@@ -330,7 +330,7 @@ async function scanOne (id) {
   }
 }
 
-const rows = await pool(ids, CONCURRENCY, scanOne, (item, err) => ({ id: item, status: 'read-failed', error: errorMessage(err) }))
+const rows = await pool(ids, CONCURRENCY, scanOne, (item, err) => ({ id: item, status: 'read-failed', error: errorMessage(err, 200) }))
 writeNdjson(outPath, rows)
 
 /** @type {Record<string, number>} */

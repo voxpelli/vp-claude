@@ -223,7 +223,7 @@ export function classifyBmError (errorText) {
   if (/not found|does not exist|no note|no such/.test(t)) {
     return 'missing-target'
   }
-  if (/invalid|missing.*field|malformed|validation ?error|schema validation|too long|too short/.test(t)) {
+  if (/invalid|missing.*field|malformed|validation\s*error|schema validation|too long|too short/.test(t)) {
     return 'schema-violation'
   }
   if (/permission|denied|unauthorized|forbidden/.test(t)) {
@@ -347,7 +347,11 @@ export function stripBmPrefix (toolName) {
  * @returns {Record<string, unknown> | null}
  */
 export function readProxyArgs (input) {
-  if (typeof input !== 'object' || input === null) return null
+  // `Array.isArray` here as well as on `args` below: an array satisfies
+  // `typeof x === 'object'`, so without it a call whose whole input is an array
+  // reported `{}` — "no arguments" — rather than `null`. Two of the three array
+  // checks in this file were present and this one was not.
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) return null
   const { args } = /** @type {Record<string, unknown>} */ (input)
   // Absent is legitimate — plenty of BM tools take no arguments.
   if (args === undefined) return {}
@@ -408,7 +412,12 @@ export function normalizeBmToolCall (event) {
   const bare = stripBmPrefix(toolName)
   if (bare === null) return null
   if (event.input === undefined) return { tool: bare, params: {} }
-  const params = (typeof event.input === 'object' && event.input !== null)
+  // `!Array.isArray` matters and was missing: an array reached here as a truthy
+  // `params`, so `params === null` was false, no "could not read arguments" line
+  // was written, and `params.content` was undefined — the fourth-wall check then
+  // skipped itself in exactly the silence this whole change removes. The proxy
+  // path rejected arrays from the start; the direct path did not.
+  const params = (typeof event.input === 'object' && event.input !== null && !Array.isArray(event.input))
     ? /** @type {Record<string, unknown>} */ (event.input)
     : null
   return { tool: bare, params }

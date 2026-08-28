@@ -741,14 +741,29 @@ if (existsSync(hooksPath)) {
               // reported missing. Invisible until ROOT stopped being
               // percent-encoded a few lines up: `%20` is not whitespace, so the
               // split worked by accident for as long as the path was wrong.
-              const parts = hook.command.split(/\s+/)
+              //
+              // Quotes are stripped before matching, and a command with NO
+              // recognisable path token is an error rather than a silent pass.
+              // Both were holes: `bash "${CLAUDE_PLUGIN_ROOT}/hooks/x.sh"` found
+              // no token, `rawPath` was undefined, and `if (scriptPath && …)`
+              // then made "no path found" indistinguishable from "path valid" —
+              // so a hook pointing at a deleted file validated clean. The sting
+              // is that quoting is exactly what you would write if your plugin
+              // root contained a space, which is the case the fix above exists
+              // for: it tolerated the unquoted form the shell would itself split
+              // at runtime, and went blind on the correct one.
+              const parts = hook.command.split(/\s+/).map((p) => p.replace(/^["']|["']$/g, ''))
               const rawPath = parts.find((p) =>
                 // eslint-disable-next-line no-template-curly-in-string -- literal placeholder text, not a template literal
                 p.startsWith('${CLAUDE_PLUGIN_ROOT}') || p.startsWith('/') || p.startsWith('./'))
-              // eslint-disable-next-line no-template-curly-in-string -- as above
-              const scriptPath = rawPath?.replaceAll('${CLAUDE_PLUGIN_ROOT}', ROOT)
-              if (scriptPath && !existsSync(scriptPath)) {
-                error(hooksPath, `hooks.${event}: referenced file does not exist: ${hook.command}`)
+              if (rawPath === undefined) {
+                error(hooksPath, `hooks.${event}: no script path found in command — cannot verify it exists: ${hook.command}`)
+              } else {
+                // eslint-disable-next-line no-template-curly-in-string -- as above
+                const scriptPath = rawPath.replaceAll('${CLAUDE_PLUGIN_ROOT}', ROOT)
+                if (!existsSync(scriptPath)) {
+                  error(hooksPath, `hooks.${event}: referenced file does not exist: ${hook.command}`)
+                }
               }
             }
           }

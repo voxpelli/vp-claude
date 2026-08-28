@@ -124,7 +124,7 @@ const out = await pool(rowsIn, CONCURRENCY, resolveOne, (item, err) => ({
   id: item.id,
   name: item.name,
   upstreamState: 'api-unavailable',
-  detail: errorMessage(err),
+  detail: errorMessage(err, 200),
 }))
 writeNdjson(outPath, out)
 
