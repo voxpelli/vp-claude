@@ -19,7 +19,27 @@ now been bitten by more than once. Refer to an item by its heading.
 
 ---
 
-## ▶ Next step (2026-08-28): make the read-only agents read-only on Pi
+## ▶ Next step (2026-08-28): the post-0.34.0 review findings
+
+Three adversarial reviews after the release found live defects, each verified by
+execution. The executable detail is in the session plan; the two that matter
+most, recorded here because they travel with a clone:
+
+- **The audit-cadence policy is implemented twice and the copies contradict each
+  other today.** `hooks/session-start.sh` says sprint 48 *will be* an audit
+  sprint; `extensions/index.js` says it *is* one. The JS is right. Both sides are
+  tested and the tests pin opposite answers, so neither guard can fail on the
+  thing that is wrong. `check:agent-parity` guards `agents/` ↔ `agents-pi/`;
+  **nothing guards `hooks/` ↔ `extensions/`**.
+- **`createCheckHarness().done()` exits 0 having run no assertions** — `0/0
+  passed`. It sits under 22 check scripts, 7 of which carry a denominator guard.
+  Ninth instance of this repo's signature bug class, and the first in the shared
+  substrate rather than in one check.
+
+Then the Pi hardening below, which is unchanged and still the largest gap between
+what this plugin claims about itself and what it enforces.
+
+## After that: make the read-only agents read-only on Pi
 
 Four agents this plugin documents as read-only — `knowledge-gardener`,
 `knowledge-primer`, `raindrop-gardener`, `finding-verifier` — reach every write
